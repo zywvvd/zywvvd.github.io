@@ -1,6 +1,98 @@
 <?xml version="1.0" encoding="utf-8"?>
 <search>
   <entry>
+    <title>Git - reset, checkout, revert 总结</title>
+    <url>/2020/10/17/git/git_get_back/git-get-back/</url>
+    <content><![CDATA[<blockquote>
+<p>在git版本管理中，经常有将其他提交与当前代码环境内容交互的需求，其中<code>git reset</code>、<code>git checkout</code>和<code>git revert</code>是与此类需求有关的一些命令，它们可以用来调整代码仓库中的某些更改；而且<code>git reset</code>和<code>git checkout</code>两个命令不仅可以作用于提交，还可以作用于特定文件，本文介绍上述三个命令的区别与工作原理。</p>
+</blockquote>
+<a id="more"></a>
+
+<h3 id="git-基础内容"><a href="#git-基础内容" class="headerlink" title="git 基础内容"></a>git 基础内容</h3><blockquote>
+<p>git 相关基础概念与常用命令使用方法在 <a href="https://www.zywvvd.com/2020/05/06/git/git_usage/git-usage/">Git - 使用教程</a> 中有介绍，本文在此基础上进行展开。</p>
+</blockquote>
+<h3 id="作用域"><a href="#作用域" class="headerlink" title="作用域"></a>作用域</h3><p>这三个命令可以作用于<strong>提交</strong>和<strong>文件</strong>：</p>
+<table>
+<thead>
+<tr>
+<th align="center">命令</th>
+<th align="center">可用于提交</th>
+<th align="center">可用于文件</th>
+</tr>
+</thead>
+<tbody><tr>
+<td align="center">git reset</td>
+<td align="center">√</td>
+<td align="center">√</td>
+</tr>
+<tr>
+<td align="center">git checkout</td>
+<td align="center">√</td>
+<td align="center">√</td>
+</tr>
+<tr>
+<td align="center">git revert</td>
+<td align="center">√</td>
+<td align="center">×</td>
+</tr>
+</tbody></table>
+<blockquote>
+<p>下面从这两个作用域的角度分别介绍相关命令的功能。</p>
+</blockquote>
+<h3 id="作用于提交"><a href="#作用于提交" class="headerlink" title="作用于提交"></a>作用于提交</h3><blockquote>
+<p>三个命令常用的用法均为回退，但是三个命令的实现细节事实上有很大的区别。</p>
+</blockquote>
+<h4 id="git-reset"><a href="#git-reset" class="headerlink" title="git reset"></a>git reset</h4><ul>
+<li><p>工作原理：</p>
+<p>当 reset 的作用对象为提交时，reset将一个分支的末端指向另一个提交。</p>
+<ul>
+<li><p>通过传入这些标记来修改你的缓存区或工作目录：</p>
+<p>–soft – 缓存区和工作目录都不会被改变</p>
+<p>–mixed (默认选项) 缓存区和你指定的提交同步，但工作目录不受影响</p>
+<p>–hard – 缓存区和工作目录都同步到你指定的提交</p>
+</li>
+</ul>
+</li>
+<li><p>实例应用：</p>
+<ul>
+<li><pre><code>git reset HEAD~2
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">  </span><br><span class="line">  把当前分支reset到HEAD~2。</span><br><span class="line">  </span><br><span class="line">-</span><br></pre></td></tr></table></figure>
+git reset --mixed HEAD
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line"></span><br><span class="line">  将当前的改动从缓存区中移除，但是这些改动还留在工作目录中。</span><br><span class="line">  </span><br><span class="line">-</span><br></pre></td></tr></table></figure>
+git reset --hard HEAD
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">  </span><br><span class="line">    完全舍弃还没有提交的改动</span><br><span class="line"></span><br><span class="line">#### checkout</span><br><span class="line"></span><br><span class="line">- 工作原理：</span><br><span class="line"></span><br><span class="line">  checkout命令以提交为参数时，将当前工作区、暂存区、仓库均切换到目标提交时的状态。</span><br><span class="line"></span><br><span class="line">- 实例应用：</span><br><span class="line"></span><br><span class="line">  -</span><br></pre></td></tr></table></figure>
+git checkout &lt;branch&gt;
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line"></span><br><span class="line">    切换到指定分支</span><br><span class="line"></span><br><span class="line">### 代码回退总结</span><br><span class="line"></span><br><span class="line">- 未使用 git add 缓存代码时</span><br></pre></td></tr></table></figure>
+git checkout -- [file]
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line"></span><br><span class="line">&gt; 将缓存区的文件覆盖到工作区中，在文件名与分支名没有歧义时可以省略&#96;--&#96;。</span><br></pre></td></tr></table></figure>
+git checkout .  
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line"></span><br><span class="line"></span><br><span class="line">&gt; 放弃所有的工作区文件修改。</span><br><span class="line"></span><br><span class="line">- 使用 git add 缓存代码后</span><br></pre></td></tr></table></figure>
+git reset HEAD filepathname
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line"></span><br><span class="line">&gt; 对于已经提交到缓存区的修改，此命令用来清除 git 对于文件修改的缓存。相当于撤销 git add 命令所在的工作，在使用本命令后，本地的修改并不会消失。</span><br></pre></td></tr></table></figure>
+git reset HEAD . 
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line"></span><br><span class="line">&gt; 放弃所有的缓存。</span><br><span class="line"></span><br><span class="line">- 使用 git commit 提交了代码后</span><br></pre></td></tr></table></figure>
+git reset --hard HEAD^
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line"></span><br><span class="line">&gt; 回退到上一次commit的状态。</span><br></pre></td></tr></table></figure>
+git reset --hard commit-id</code></pre></li>
+</ul>
+</li>
+</ul>
+<blockquote>
+<p>回退到任意版本。</p>
+</blockquote>
+<h3 id="参考资料："><a href="#参考资料：" class="headerlink" title="参考资料："></a>参考资料：</h3><ul>
+<li><a href="https://www.cnblogs.com/houpeiyong/p/5890748.html" target="_blank" rel="noopener">https://www.cnblogs.com/houpeiyong/p/5890748.html</a></li>
+<li><a href="https://www.jianshu.com/p/285302d1eb73" target="_blank" rel="noopener">https://www.jianshu.com/p/285302d1eb73</a></li>
+</ul>
+]]></content>
+      <categories>
+        <category>Git</category>
+      </categories>
+      <tags>
+        <tag>Git</tag>
+      </tags>
+  </entry>
+  <entry>
     <title>Typora 快捷键</title>
     <url>/2020/10/16/software/typora-usage/typora-usage/</url>
     <content><![CDATA[<blockquote>
@@ -2172,7 +2264,7 @@
       </tags>
   </entry>
   <entry>
-    <title>Git - 使用教程</title>
+    <title>Git - 常用命令使用教程</title>
     <url>/2020/05/06/git/git_usage/git-usage/</url>
     <content><![CDATA[<blockquote>
 <p>本文介绍git常用命令的使用方法。</p>
@@ -2847,47 +2939,13 @@
 <blockquote>
 <p>检出标签所在的commit，会处于“分离头指针（detached HEAD）”的状态。</p>
 </blockquote>
-<h3 id="代码回退总结"><a href="#代码回退总结" class="headerlink" title="代码回退总结"></a>代码回退总结</h3><ul>
-<li>未使用 git add 缓存代码时</li>
+<h4 id="git-选项"><a href="#git-选项" class="headerlink" title="git 选项"></a>git 选项</h4><ul>
+<li>-d –delete：删除</li>
+<li>-f –force：强制 </li>
+<li>-m –move：移动或重命名 </li>
+<li>-r –remote：远程 </li>
+<li>-a –all：所有</li>
 </ul>
-<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">git checkout -- [file]</span><br></pre></td></tr></table></figure>
-
-<blockquote>
-<p>将缓存区的文件覆盖到工作区中，在文件名与分支名没有歧义时可以省略<code>--</code>。</p>
-</blockquote>
-<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">git checkout .</span><br></pre></td></tr></table></figure>
-
-
-<blockquote>
-<p>放弃所有的工作区文件修改。</p>
-</blockquote>
-<ul>
-<li>使用 git add 缓存代码后</li>
-</ul>
-<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">git reset HEAD filepathname</span><br></pre></td></tr></table></figure>
-
-<blockquote>
-<p>对于已经提交到缓存区的修改，此命令用来清除 git 对于文件修改的缓存。相当于撤销 git add 命令所在的工作，在使用本命令后，本地的修改并不会消失。</p>
-</blockquote>
-<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">git reset HEAD .</span><br></pre></td></tr></table></figure>
-
-<blockquote>
-<p>放弃所有的缓存。</p>
-</blockquote>
-<ul>
-<li>使用 git commit 提交了代码后</li>
-</ul>
-<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">git reset --hard HEAD^</span><br></pre></td></tr></table></figure>
-
-<blockquote>
-<p>回退到上一次commit的状态。</p>
-</blockquote>
-<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">git reset --hard commit-id</span><br></pre></td></tr></table></figure>
-
-<blockquote>
-<p>回退到任意版本。</p>
-</blockquote>
-<h4 id="git-选项"><a href="#git-选项" class="headerlink" title="git 选项"></a>git 选项</h4><p>-d –delete：删除 -D –delete –force的快捷键 -f –force：强制 -m –move：移动或重命名 -M –move –force的快捷键 -r –remote：远程 -a –all：所有</p>
 <h3 id="参考资料："><a href="#参考资料：" class="headerlink" title="参考资料："></a>参考资料：</h3><ul>
 <li><a href="https://www.runoob.com/git/git-basic-operations.html" target="_blank" rel="noopener">https://www.runoob.com/git/git-basic-operations.html</a></li>
 <li><a href="https://www.jianshu.com/p/37f3a7e4a193" target="_blank" rel="noopener">https://www.jianshu.com/p/37f3a7e4a193</a></li>
