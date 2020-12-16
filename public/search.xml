@@ -1,6 +1,273 @@
 <?xml version="1.0" encoding="utf-8"?>
 <search>
   <entry>
+    <title>python opencv 显示多窗口图像并获取点击处像素点坐标</title>
+    <url>/2020/12/16/image_processing/cv-image-event/cv-image-event/</url>
+    <content><![CDATA[<blockquote>
+<p>本文介绍使用python 的 opencv 库显示多个图片窗口，并获取点击点像素位置的方法。</p>
+</blockquote>
+<a id="more"></a>
+
+<h3 id="opencv-显示图像"><a href="#opencv-显示图像" class="headerlink" title="opencv 显示图像"></a>opencv 显示图像</h3><blockquote>
+<p>显示图像主要通过<code>namedWindow</code>方法定义窗口，和<code>imshow</code>方法刷新窗口内容实现的，需要停止时按<code>Esc</code>键退出并销毁窗口：</p>
+</blockquote>
+<figure class="highlight python"><table><tr><td class="code"><pre><span class="line">image = np.zeros((<span class="number">512</span>,<span class="number">512</span>,<span class="number">3</span>), np.uint8)</span><br><span class="line">cv2.namedWindow(<span class="string">'image'</span>)</span><br><span class="line"><span class="keyword">while</span>(<span class="literal">True</span>):</span><br><span class="line">    cv2.imshow(<span class="string">'image'</span>, image)</span><br><span class="line">    <span class="keyword">if</span> cv2.waitKey(<span class="number">20</span>) &amp; <span class="number">0xFF</span> == <span class="number">27</span>:</span><br><span class="line">        <span class="keyword">break</span></span><br><span class="line">cv2.destroyAllWindows()</span><br></pre></td></tr></table></figure>
+
+<blockquote>
+<p>显示多幅图像就使用不同的窗口名称建立窗口即可：</p>
+</blockquote>
+<figure class="highlight python"><table><tr><td class="code"><pre><span class="line">image_1 = np.zeros((<span class="number">512</span>,<span class="number">512</span>,<span class="number">3</span>), np.uint8)</span><br><span class="line">cv2.namedWindow(<span class="string">'image_1'</span>)</span><br><span class="line">image_2 = np.zeros((<span class="number">512</span>,<span class="number">512</span>,<span class="number">3</span>), np.uint8)</span><br><span class="line">cv2.namedWindow(<span class="string">'image_1'</span>)</span><br><span class="line"><span class="keyword">while</span>(<span class="literal">True</span>):</span><br><span class="line">    cv2.imshow(<span class="string">'image_1'</span>, image_1)</span><br><span class="line">    cv2.imshow(<span class="string">'image_2'</span>, image_2)</span><br><span class="line">    <span class="keyword">if</span> cv2.waitKey(<span class="number">20</span>) &amp; <span class="number">0xFF</span> == <span class="number">27</span>:</span><br><span class="line">        <span class="keyword">break</span></span><br><span class="line">cv2.destroyAllWindows()</span><br></pre></td></tr></table></figure>
+
+<h3 id="获取鼠标单击事件信息"><a href="#获取鼠标单击事件信息" class="headerlink" title="获取鼠标单击事件信息"></a>获取鼠标单击事件信息</h3><blockquote>
+<p>本质上是cv库中的事件绑定、触发、捕获信息的流程，就用简单的示例抛砖引玉了。</p>
+</blockquote>
+<ul>
+<li>定义事件函数：</li>
+</ul>
+<figure class="highlight python"><table><tr><td class="code"><pre><span class="line"><span class="function"><span class="keyword">def</span> <span class="title">get_point</span><span class="params">(event, x, y, flags, param)</span>:</span></span><br><span class="line">    <span class="keyword">if</span> event == cv2.EVENT_LBUTTONDOWN:</span><br><span class="line">        print(<span class="string">'clicking: '</span>, x, y)</span><br></pre></td></tr></table></figure>
+
+<ul>
+<li>绑定事件：</li>
+</ul>
+<figure class="highlight python"><table><tr><td class="code"><pre><span class="line">cv2.setMouseCallback(<span class="string">'image_1'</span>, get_point, param)</span><br></pre></td></tr></table></figure>
+
+<blockquote>
+<p>可以向事件中传入参数，放在<code>param</code>位置。</p>
+</blockquote>
+<h3 id="示例"><a href="#示例" class="headerlink" title="示例"></a>示例</h3><figure class="highlight python"><table><tr><td class="code"><pre><span class="line"><span class="keyword">import</span> cv2</span><br><span class="line"><span class="keyword">import</span> numpy <span class="keyword">as</span> np</span><br><span class="line"></span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">def</span> <span class="title">get_point</span><span class="params">(event, x, y, flags, param)</span>:</span></span><br><span class="line">    <span class="comment"># 鼠标单击事件</span></span><br><span class="line">    <span class="keyword">if</span> event == cv2.EVENT_LBUTTONDOWN:</span><br><span class="line">        <span class="comment"># 输出坐标</span></span><br><span class="line">        print(<span class="string">'clicking: '</span>, x, y)</span><br><span class="line">        <span class="comment"># 在传入参数图像上画出该点</span></span><br><span class="line">        cv2.circle(param, (x, y), <span class="number">1</span>, (<span class="number">255</span>, <span class="number">255</span>, <span class="number">255</span>), thickness=<span class="number">-1</span>)</span><br><span class="line"></span><br><span class="line"></span><br><span class="line"><span class="keyword">if</span> __name__ == <span class="string">"__main__"</span>:</span><br><span class="line">    <span class="comment"># 定义两幅图像</span></span><br><span class="line">    image_1 = np.zeros((<span class="number">200</span>, <span class="number">200</span>, <span class="number">3</span>), dtype=<span class="string">'uint8'</span>)</span><br><span class="line">    image_2 = np.zeros((<span class="number">200</span>, <span class="number">200</span>, <span class="number">3</span>), dtype=<span class="string">'uint8'</span>)</span><br><span class="line"></span><br><span class="line">    <span class="comment"># 定义两个窗口 并绑定事件 传入各自对应的参数</span></span><br><span class="line">    cv2.namedWindow(<span class="string">'image_1'</span>)</span><br><span class="line">    cv2.setMouseCallback(<span class="string">'image_1'</span>, get_point, image_1)</span><br><span class="line"></span><br><span class="line">    cv2.namedWindow(<span class="string">'image_2'</span>)</span><br><span class="line">    cv2.setMouseCallback(<span class="string">'image_2'</span>, get_point, image_2)</span><br><span class="line"></span><br><span class="line">    <span class="comment"># 显示图像</span></span><br><span class="line">    <span class="keyword">while</span>(<span class="literal">True</span>):</span><br><span class="line">        cv2.imshow(<span class="string">'image_1'</span>, image_1)</span><br><span class="line">        cv2.imshow(<span class="string">'image_2'</span>, image_2)</span><br><span class="line">        <span class="keyword">if</span> cv2.waitKey(<span class="number">20</span>) &amp; <span class="number">0xFF</span> == <span class="number">27</span>:</span><br><span class="line">            <span class="keyword">break</span></span><br><span class="line"></span><br><span class="line">    <span class="comment"># 销毁窗口</span></span><br><span class="line">    cv2.destroyAllWindows()</span><br></pre></td></tr></table></figure>
+
+]]></content>
+      <categories>
+        <category>python</category>
+        <category>opencv</category>
+      </categories>
+      <tags>
+        <tag>python</tag>
+        <tag>opencv</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>二次型优化问题 - 4 - 二次型优化方法</title>
+    <url>/2020/12/15/machine_learning/conjugate-gradient-problem-define/ways-to-optimize/ways-to-optimize/</url>
+    <content><![CDATA[<blockquote>
+<p>在确定了可优化二次型的类型后，本文讨论二次型的优化方法。</p>
+</blockquote>
+<a id="more"></a>
+
+<h3 id="当前问题"><a href="#当前问题" class="headerlink" title="当前问题"></a>当前问题</h3><ul>
+<li><p>解方程$\bf{Ax}=\bf{b}$</p>
+</li>
+<li><p>其中$\bf{A}$为半正定矩阵</p>
+</li>
+<li><p>$\bf{A}$的秩与其增广矩阵$\bf{Ab}$的秩相等</p>
+</li>
+</ul>
+<h2 id="优化方法"><a href="#优化方法" class="headerlink" title="优化方法"></a>优化方法</h2><h3 id="代数法"><a href="#代数法" class="headerlink" title="代数法"></a>代数法</h3><h4 id="高斯消元法"><a href="#高斯消元法" class="headerlink" title="高斯消元法"></a>高斯消元法</h4><ul>
+<li>在$\bf{A}$的行列式不为0时，可以逐项消除半边系数，得到三角阵，计算得到$x_n$再逐步带入计算出其他未知数，得到计算结果。</li>
+</ul>
+<p>$$<br>\begin{equation}<br>\begin{split}<br>{a_{11}}{x_1} + {a_{12}}{x_2} +  \cdots {a_{1n}}{x_n} = {b_1}\\<br>{a_{22}}{x_2} +  \cdots {a_{2n}}{x_n} = {b_2}\\<br> \vdots \\<br>{a_{nn}}{x_n} = {b_n}<br>\end{split}<br>\end{equation}<br>$$</p>
+<ul>
+<li>其他代数方法在高斯消元法基础上进行改进</li>
+</ul>
+<h4 id="高斯主元素消元法"><a href="#高斯主元素消元法" class="headerlink" title="高斯主元素消元法"></a>高斯主元素消元法</h4><ul>
+<li>为解决无法面对主元素为0或主元素绝对值过小带来的精度不够的问题，提出了主元素消元</li>
+<li>核心思想是选择系数绝对值最大的行作为基准进行消元，可以有效缓解上述问题</li>
+</ul>
+<h4 id="矩阵求逆"><a href="#矩阵求逆" class="headerlink" title="矩阵求逆"></a>矩阵求逆</h4><ul>
+<li>对于矩阵$\bf{A}$可逆的情况，可以直接求出$\bf{A}$的逆矩阵，则：</li>
+</ul>
+<p>$$<br>{\bf{x}} = {\bf{A^{-1}}}{\bf{b}}<br>$$</p>
+<h3 id="迭代法"><a href="#迭代法" class="headerlink" title="迭代法"></a>迭代法</h3><blockquote>
+<p>代数法的时间复杂度都在 $O(n^3)$的数量级上，在实践中难以接受；</p>
+<p>迭代法的思想是可以每次贪心地计算局部最优解，逐步向全局最优解逼近</p>
+</blockquote>
+<h4 id="最速下降法-梯度法"><a href="#最速下降法-梯度法" class="headerlink" title="最速下降法/梯度法"></a>最速下降法/梯度法</h4><ul>
+<li>沿着当前梯度的反方向前进至方向梯度为0，重新计算当前位置的梯度，重新出发</li>
+<li>不断重复该过程，直到精度满足要求。</li>
+</ul>
+]]></content>
+      <categories>
+        <category>机器学习</category>
+        <category>优化方法</category>
+      </categories>
+      <tags>
+        <tag>机器学习</tag>
+        <tag>优化方法</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>二次型优化问题 - 3 - 导数与极值点</title>
+    <url>/2020/12/13/machine_learning/conjugate-gradient-problem-define/gradient-related/gradient-related/</url>
+    <content><![CDATA[<blockquote>
+<p>本文介绍在已经<a href="https://www.zywvvd.com/2020/11/16/machine_learning/conjugate-gradient-problem-define/conjugate-gradient/">定义好的问题</a>下，二次型导数与极值点相关内容。</p>
+</blockquote>
+<a id="more"></a>
+
+<h3 id="导数为0的点是否存在"><a href="#导数为0的点是否存在" class="headerlink" title="导数为0的点是否存在"></a>导数为0的点是否存在</h3><ul>
+<li>对于一般的二次型：</li>
+</ul>
+<p>$$<br>f({\bf{x} }) = \frac{1}{2}{\bf{xAx} } - { {\bf{b} }^{\bf{T} } }{\bf{x} } + {\bf{c} } \tag{1} \label{1}<br>$$</p>
+<ul>
+<li>导数为：</li>
+</ul>
+<p>$$<br>f’({\bf{x}}) = {\bf{Ax}} - {\bf{b}} \tag{2} \label{2}<br>$$</p>
+<ul>
+<li>导数为0的点是否存在与方程$\bf{Ax}=\bf{b}$是否有解等价</li>
+<li>设${r_A} = r(A)$为$\bf{A}$的秩</li>
+<li>$\bf{Ab}$为增广矩阵，${r_{Ab}} = r(\bf{Ab})$为增广矩阵的秩，有：</li>
+</ul>
+<table>
+<thead>
+<tr>
+<th>条件</th>
+<th>结论</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>$r_{A}&lt;r_{Ab}$</td>
+<td>方程组无解，二次型不存在导数为0的点</td>
+</tr>
+<tr>
+<td>$r_{A}=r_{Ab}=n$</td>
+<td>方程组有唯一解，二次型有唯一导数为0的点</td>
+</tr>
+<tr>
+<td>$r_{A}=r_{Ab}&lt;n$</td>
+<td>方程组有无数组解，二次型有无数个导数为0的点</td>
+</tr>
+<tr>
+<td>$r_{A}&gt;r_{Ab}$</td>
+<td>不可能，增广矩阵的秩不会变小</td>
+</tr>
+</tbody></table>
+<h3 id="极值点是否存在"><a href="#极值点是否存在" class="headerlink" title="极值点是否存在"></a>极值点是否存在</h3><ul>
+<li><p>当导数为零的点不存在时，即$\eqref{2}$方程组无解时，极值点不存在</p>
+</li>
+<li><p>当导数为0的点存在时：</p>
+<ul>
+<li>若$\bf{A}$为正定矩阵，则式$\eqref{1}$有极小值，就是最小值</li>
+<li>若$\bf{A}$为负定矩阵，则式$\eqref{1}$有极大值，就是最大值</li>
+<li>若$\bf{A}$为半正定矩阵，且存在特征值为0，由于前提是方程组有解，则增广矩阵的秩和矩阵$\bf{A}$的秩相等，那么$\bf{b}$中对应的值为0，方程组有无限多组解，但需要满足某种条件，在这组条件下，方程组都是极小值，也就是说若$\bf{A}$为半正定矩阵则$\eqref{1}$有极小值，同时就是最小值</li>
+<li>同理若$\bf{A}$为半负定矩阵，则$\eqref{1}$有极大值，也即最大值</li>
+<li>若$\bf{A}$的特征值有正有负，则$\eqref{1}$有极小/大值，但不是最小/大值，此时$\eqref{1}$没有最小/大值</li>
+</ul>
+</li>
+<li><p>为使得讨论有意义，我们之后讨论的$\eqref{1}$的优化均在$\bf{A}$为半正定矩阵的条件下，来寻找其极小值，也就是最小值</p>
+</li>
+</ul>
+]]></content>
+      <categories>
+        <category>机器学习</category>
+        <category>优化方法</category>
+      </categories>
+      <tags>
+        <tag>机器学习</tag>
+        <tag>优化方法</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>二次型优化问题 - 2 - 二次型参数确定</title>
+    <url>/2020/12/12/machine_learning/conjugate-gradient-problem-define/Quadratic-cofficient/Quadratic-cofficient/</url>
+    <content><![CDATA[<blockquote>
+<p>本文属于二次型优化问题系列文章，主要介绍二次型参数的定义由来。</p>
+</blockquote>
+<a id="more"></a>
+
+<h3 id="提出问题"><a href="#提出问题" class="headerlink" title="提出问题"></a>提出问题</h3><ul>
+<li>需要优化的函数二次型的形式：</li>
+</ul>
+<p>$$<br>f({\bf{x} }) = \frac{1}{2}{\bf{xAx} } - { {\bf{b} }^{\bf{T} } }{\bf{x} } + {\bf{c} } \tag{1} \label{eq1}<br>$$</p>
+<ul>
+<li>而原始n元多项式为：</li>
+</ul>
+<p>$$<br>f({x_1},{x_2},{x_3},…,{x_n}) = {a_{1,1}}x_1^2 + {a_{1,2}}{x_1}{x_2} + {a_{1,3}}{x_1}{x_3} +  \cdots  + {a_{1,n}}{x_1}{x_n} + {a_{2,1}}x_2{x_1} + {a_{2,2}}{x_2^2} + {a_{2,3}}{x_2}{x_3} +  \cdots  + {a_{2,n}}{x_2}{x_n} +  \cdots  + {a_{n,n}}x_n^2+{b_1}x_1+{b_2}x_2+\cdots+{b_n}x_n+c<br>$$</p>
+<ul>
+<li>其中，表示$\bf{A}$：</li>
+</ul>
+<p>$$<br>A = \left[ {\begin{array}{*{20}{c}}<br>{a_{1,1}^ \bullet }&amp; \cdots &amp;{a_{n,n}^ \bullet }<br>\end{array}} \right] \tag{3} \label{eq3}<br>$$</p>
+<ul>
+<li>将$\bf{A}$与多项式系数对应：</li>
+</ul>
+<p>$$<br>a_{i,i}^ \bullet  = {a_{i,i}},1 \le i \le n\ \tag{4}<br>$$</p>
+<p>$$<br>a_{i,j}^ \bullet  + a_{j,i}^ \bullet  = {a_{i,j}},1 \le i &lt; j \le n\ \tag{5} \label{eq5}<br>$$</p>
+<p>$$<br>{a_{i,j}} = 0,1 \le j &lt; i \le n \tag{6}<br>$$</p>
+<ul>
+<li>那么对应$\bf{A}$中非对角线的元素，仅需要保证公式$\eqref{eq5}$成立即可，那么对于不相等的$i,j$，可以有无数种$a_{i,j}^ \bullet  + a_{j,i}^ \bullet$的组合满足条件，$\bf{A}$该如何确定？</li>
+</ul>
+<h3 id="二次型矩阵"><a href="#二次型矩阵" class="headerlink" title="二次型矩阵"></a>二次型矩阵</h3><ul>
+<li>在定义实数空间内的二次型时，二次型矩阵被要求为对称的，也就是要求：</li>
+</ul>
+<p>$$<br>a_{i,j}^ \bullet  = a_{j,i}^ \bullet  = \frac{1}{2}{a_{i,j}},1 \le i &lt; j \le n \tag{7}<br>$$</p>
+<ul>
+<li>也就确定了唯一的$\bf{A}$，来表示一个确定的多元二次函数。</li>
+</ul>
+<h3 id="为何如此"><a href="#为何如此" class="headerlink" title="为何如此"></a>为何如此</h3><ul>
+<li>定义的用处就是来确定问题，这种定义可以唯一确定二次函数，没有任何歧义和变化，用于统一数学术语</li>
+<li>我觉得很关键的问题是如此定义$\bf{A}$会给求导带来很大方便</li>
+<li>我们略去一次项与常数项，得到纯粹的二次型：</li>
+</ul>
+<p>$$<br>f({\bf{x} }) = \frac{1}{2}{\bf{xAx} } \tag{8} \label{eqq8}<br>$$</p>
+<ul>
+<li>即：</li>
+</ul>
+<p>$$<br>f({\bf{x} }) = \frac{1}{2}\sum\limits_{i,j = 1}^n {a_{i,j}^ \bullet } {x_i}{x_j} \tag{9}<br>$$</p>
+<ul>
+<li>仍用$\eqref{eq3}$表示$\bf{A}$，对$\eqref{eqq8}$中的向量$\bf{x}$求导：</li>
+</ul>
+<p>$$<br>f’({x_i}) = \frac{1}{2}[\sum\limits_{j = 1,j \ne i}^n {(a_{i,j}^ \bullet  + a_{j,i}^ \bullet )} {x_j} + 2a_{i,i}^ \bullet {x_i}] \tag{10}<br>$$</p>
+<ul>
+<li>如果$\bf{A}$是对称阵，那么$a_{i,j}^ \bullet  = a_{j,i}^ \bullet $，有：</li>
+</ul>
+<p>$$<br>f’({x_i}) = \frac{1}{2}\sum\limits_{j = 1}^n {a_{i,j}^ \bullet } {x_j} \tag{11}<br>$$</p>
+<p>$$<br>f’(\bf{x}) = \bf{Ax} \tag{12}<br>$$</p>
+<ul>
+<li>也就是说定义$\bf{A}$为对称阵可以唯一确定二次型矩阵，也可以方便地对二次型进行求导。</li>
+</ul>
+]]></content>
+      <categories>
+        <category>机器学习</category>
+        <category>优化方法</category>
+      </categories>
+      <tags>
+        <tag>机器学习</tag>
+        <tag>优化方法</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>Windows 添加开机启动应用</title>
+    <url>/2020/12/12/windows/win-add-startup/win-add-startup/</url>
+    <content><![CDATA[<blockquote>
+<p>本文记录Windows添加开启启动项的方法。</p>
+</blockquote>
+<a id="more"></a>
+
+<h3 id="打开配置"><a href="#打开配置" class="headerlink" title="打开配置"></a>打开配置</h3><ul>
+<li>按下 <code>win + R</code> 调出运行命令，在运行中输入 <code>shell:startup</code></li>
+</ul>
+<p><img src="https://photos.zywvvd.com/icey-mate-book/20201212112610.png" alt=""></p>
+<ul>
+<li>按下<code>确定</code>后进入<code>启动文件夹</code></li>
+</ul>
+<h3 id="添加应用"><a href="#添加应用" class="headerlink" title="添加应用"></a>添加应用</h3><ul>
+<li>将需要开机启动的应用快捷方式放入到<code>启动文件夹</code>中：</li>
+</ul>
+<p><img src="https://photos.zywvvd.com/icey-mate-book/20201212113054.png" alt=""></p>
+<h3 id="测试"><a href="#测试" class="headerlink" title="测试"></a>测试</h3><h4 id="方法一"><a href="#方法一" class="headerlink" title="方法一"></a>方法一</h4><ul>
+<li>可以重启电脑查看是否应用已经重启</li>
+</ul>
+<h4 id="方法二"><a href="#方法二" class="headerlink" title="方法二"></a>方法二</h4><ul>
+<li>打开任务管理器，进入<code>启动</code>选项卡，查看我们刚刚加入的应用是否在项目中：</li>
+</ul>
+<p><img src="https://photos.zywvvd.com/icey-mate-book/20201212113357.png" alt=""></p>
+]]></content>
+      <categories>
+        <category>Windows</category>
+      </categories>
+      <tags>
+        <tag>Windows</tag>
+      </tags>
+  </entry>
+  <entry>
     <title>科学上网初级教程</title>
     <url>/2020/12/04/internet/scientific-online/</url>
     <content><![CDATA[<blockquote>
@@ -1228,19 +1495,19 @@ cond(no)->sub</textarea><textarea id="flowchart-0-options" style="display: none"
   </entry>
   <entry>
     <title>二次型优化问题 - 1 - 问题描述</title>
-    <url>/2020/11/16/machine_learning/conjugate-gradient/conjugate-gradient/</url>
+    <url>/2020/11/16/machine_learning/conjugate-gradient-problem-define/conjugate-gradient/</url>
     <content><![CDATA[<blockquote>
 <p>在各种场景可能都会遇到需要求解多元二次函数极值的问题，本系列文章介绍相关的计算方法，核心内容为共轭梯度法。</p>
 <p>本文介绍问题定义。</p>
 </blockquote>
 <a id="more"></a>
 
-<h2 id="问题定义"><a href="#问题定义" class="headerlink" title="问题定义"></a>问题定义</h2><ul>
-<li>多元二次函数，维度为$n$，那么可以用以下公式描述该函数：</li>
+<h3 id="问题定义"><a href="#问题定义" class="headerlink" title="问题定义"></a>问题定义</h3><ul>
+<li>多元二次多项式，维度为$n$，那么可以用以下公式描述该函数：</li>
 </ul>
 <p>$$<br>f({x_1},{x_2},{x_3},…,{x_n}) = {a_{1,1}}x_1^2 + {a_{1,2}}{x_1}{x_2} + {a_{1,3}}{x_1}{x_3} +  \cdots  + {a_{1,n}}{x_1}{x_n} + {a_{2,1}}x_2{x_1} + {a_{2,2}}{x_2^2} + {a_{2,3}}{x_2}{x_3} +  \cdots  + {a_{2,n}}{x_2}{x_n} +  \cdots  + {a_{n,n}}x_n^2+{b_1}x_1+{b_2}x_2+\cdots+{b_n}x_n+c<br>$$</p>
 <blockquote>
-<p>其中$a_{i,j}$为二次项系数，共有$n^2$项，$1 \le i,j \le n$;</p>
+<p>其中$a_{i,j}$为二次项系数，共有$n^2$项，$1 \le i,j \le n$，且所有的$a$不全为0，即$\exists a_{i,j} \ne 0$;</p>
 <p>$b_k$为一次项系数，共$n$项，$1 \le k \le n$;</p>
 <p>$c$为常数项。</p>
 </blockquote>
@@ -1250,7 +1517,8 @@ cond(no)->sub</textarea><textarea id="flowchart-0-options" style="display: none"
 <p>$$<br>f({x_1},{x_2},{x_3},…,{ x_n}) = f({\bf{x}}) = {\bf{x} }\bf{A}{\bf{x} } + { {\bf{b} }^T}{\bf{x} } + c<br>$$</p>
 <blockquote>
 <p>转化过程中$\bf{A},\bf{b}$满足：</p>
-<p>${\bf{A} }$ 为$n$阶方阵，${ {\bf{A} }<em>{i,j} } = {a</em>{i,j} }$</p>
+<p>${\bf{A} }$ 为$n$阶对称方阵，${ {\bf{A} }<em>{i,j} } = {a</em>{i,j} }$</p>
+<p>因为$\exists a_{i,j} \ne 0$，$\bf{A}$不为零矩阵</p>
 <p>$\bf{b}_i=b_i$</p>
 </blockquote>
 <ul>
@@ -1258,7 +1526,24 @@ cond(no)->sub</textarea><textarea id="flowchart-0-options" style="display: none"
 </ul>
 <p>$$<br>f({\bf{x} }) = \frac{1}{2}{\bf{xAx} } - { {\bf{b} }^{\bf{T} } }{\bf{x} } + {\bf{c} }<br>$$</p>
 <ul>
-<li>我们的目标就是寻找该函数的极值点$\bf{x^*}$的坐标。</li>
+<li>我们的目标就是寻找该函数的极值点的坐标，我们把该目标称为$\bf{x^*}$。</li>
+</ul>
+<h3 id="简要分析"><a href="#简要分析" class="headerlink" title="简要分析"></a>简要分析</h3><ul>
+<li>当前问题其实就是多元二次方程极值求解的问题</li>
+<li>此类函数在函数定义域内处处连续可导</li>
+<li>极值点必然处于导数为0的位置</li>
+</ul>
+<h3 id="需要解决的问题"><a href="#需要解决的问题" class="headerlink" title="需要解决的问题"></a>需要解决的问题</h3><ul>
+<li>同一个多元二次方程表示成二次型的参数$\bf{A},\bf{b},\bf{c}$是否唯一，如果不唯一该如何设置，为什么如此设置</li>
+<li>该问题是否存在导数为0的点</li>
+<li>导数为0的点如何求解</li>
+<li>导数为0的点是否就是极值点</li>
+<li>对于给定的二次型如何判断是否可优化</li>
+<li>对于可优化的二次型都有什么方法寻找极值点</li>
+<li>寻找极值点的方法们都有哪些优缺点，为什么需要提出共轭梯度法</li>
+<li>代数解法，梯度下降法介绍与分析</li>
+<li>共轭梯度法介绍与分析</li>
+<li>共轭梯度法的相关证明</li>
 </ul>
 ]]></content>
       <categories>
@@ -11017,10 +11302,20 @@ cond(no)->sub</textarea><textarea id="flowchart-0-options" style="display: none"
 <p>示例编码：</p>
 <figure class="highlight markdown"><table><tr><td class="code"><pre><span class="line">$$</span><br><span class="line">\mathbf&#123;X&#125;<span class="emphasis">_1\times\mathbf&#123;X&#125;_</span>2 = \mathbf&#123;X&#125;_3</span><br><span class="line">$$</span><br></pre></td></tr></table></figure>
 <p>实际效果：</p>
-<img src="/2020/02/18/words/markdown/course/Markdown/gongshi.png" class="" title="公式示例">
+<p>$$<br>\mathbf{X}_1\times\mathbf{X}_2 = \mathbf{X}_3<br>$$</p>
+<blockquote>
+<p>而且公式可以编号和引用：</p>
+</blockquote>
+<p>语法：</p>
+<ul>
+<li>编号：<code>\tag{1}</code></li>
+<li>标签：<code>\label{eq1}</code></li>
+<li>引用：<code>\eqref{eq1}​</code></li>
+</ul>
+<p>示例编码：</p>
+<figure class="highlight markdown"><table><tr><td class="code"><pre><span class="line">$$</span><br><span class="line">\mathbf&#123;X&#125;<span class="emphasis">_1\times\mathbf&#123;X&#125;_</span>2 = \mathbf&#123;X&#125;_3 \tag&#123;1&#125; \label&#123;eq1&#125;</span><br><span class="line">$$</span><br><span class="line">在公式$\eqref&#123;eq1&#125;$中...</span><br></pre></td></tr></table></figure>
 
-
-
+<p>实际效果：<br>$$<br>\mathbf{X}_1\times\mathbf{X}_2 = \mathbf{X}_3 \tag{1} \label{eq2}<br>$$<br>在公式$\eqref{eq2}$中…</p>
 <h2 id="任务列表"><a href="#任务列表" class="headerlink" title="任务列表"></a>任务列表</h2><blockquote>
 <p>简单的任务标记</p>
 </blockquote>
@@ -11056,7 +11351,7 @@ cond(no)->sub</textarea><textarea id="flowchart-0-options" style="display: none"
 </blockquote>
 <p>语法： ```mermaid  和  ``` 包裹的部分 可以解读成流程图</p>
 <p>示例编码：</p>
-<figure class="highlight c"><table><tr><td class="code"><pre><span class="line">​&lt;pre <span class="class"><span class="keyword">class</span>="<span class="title">mermaid</span>"&gt;<span class="title">graph</span> <span class="title">LR</span></span></span><br><span class="line"><span class="class"><span class="title">A</span>[方形] --&gt;<span class="title">B</span>(圆角)</span></span><br><span class="line"><span class="class">    <span class="title">B</span> --&gt; <span class="title">C</span>&#123;</span>条件a&#125;</span><br><span class="line">    C --&gt;|a=<span class="number">1</span>| D[结果<span class="number">1</span>]</span><br><span class="line">    C --&gt;|a=<span class="number">2</span>| E[结果<span class="number">2</span>]</span><br><span class="line">    F[横向流程图]</span><br><span class="line">​&lt;/pre&gt;</span><br><span class="line"></span><br><span class="line"></span><br><span class="line">实际效果：</span><br><span class="line"></span><br><span class="line">&#123;% asset_img liuchengtu.png  流程图示例 %&#125;</span><br><span class="line"></span><br><span class="line"></span><br><span class="line"></span><br><span class="line">## 转义字符</span><br><span class="line"></span><br><span class="line">&gt; Markdown 使用了很多特殊符号来表示特定的意义，如果需要显示特定的符号则需要使用转义字符，Markdown 使用反斜杠转义特殊字符</span><br><span class="line"></span><br><span class="line">语法：`\` 加特殊字符</span><br><span class="line"></span><br><span class="line">示例编码：</span><br><span class="line"></span><br><span class="line">```markdown</span><br><span class="line">\*\*不想被加粗\*\*我也不想\*\*</span><br></pre></td></tr></table></figure>
+<figure class="highlight c"><table><tr><td class="code"><pre><span class="line">​&lt;pre <span class="class"><span class="keyword">class</span>="<span class="title">mermaid</span>"&gt;<span class="title">graph</span> <span class="title">LR</span></span></span><br><span class="line"><span class="class"><span class="title">A</span>[方形] --&gt;<span class="title">B</span>(圆角)</span></span><br><span class="line"><span class="class">    <span class="title">B</span> --&gt; <span class="title">C</span>&#123;</span>条件a&#125;</span><br><span class="line">    C --&gt;|a=<span class="number">1</span>| D[结果<span class="number">1</span>]</span><br><span class="line">    C --&gt;|a=<span class="number">2</span>| E[结果<span class="number">2</span>]</span><br><span class="line">    F[横向流程图]</span><br><span class="line">​&lt;/pre&gt;</span><br><span class="line"></span><br><span class="line"></span><br><span class="line">实际效果：</span><br><span class="line"></span><br><span class="line">&#123;% asset_img liuchengtu.png  流程图示例 %&#125;</span><br><span class="line"></span><br><span class="line"></span><br><span class="line"></span><br><span class="line">## 转义字符</span><br><span class="line"></span><br><span class="line">&gt; Markdown 使用了很多特殊符号来表示特定的意义，如果需要显示特定的符号则需要使用转义字符，Markdown 使用反斜杠转义特殊字符</span><br><span class="line"></span><br><span class="line">语法：`\` 加特殊字符</span><br><span class="line"></span><br><span class="line">示例编码：</span><br><span class="line"></span><br><span class="line">​```markdown</span><br><span class="line">\*\*不想被加粗\*\*我也不想\*\*</span><br></pre></td></tr></table></figure>
 
 <p>实际效果：</p>
 <p>**不想被加粗**我也不想**</p>
