@@ -1,6 +1,428 @@
 <?xml version="1.0" encoding="utf-8"?>
 <search>
   <entry>
+    <title>二次型优化问题 - 6 - 共轭梯度法</title>
+    <url>/2020/12/26/machine_learning/conjugate-gradient-algorithm/conjugate-alg/conjugate-alg/</url>
+    <content><![CDATA[<blockquote>
+<p>本文介绍二次型优化方法中比较优秀的迭代方法——共轭梯度法。</p>
+</blockquote>
+<a id="more"></a>
+
+<h3 id="问题描述"><a href="#问题描述" class="headerlink" title="问题描述"></a>问题描述</h3><blockquote>
+<p>重述我们需要优化的问题：</p>
+</blockquote>
+<p>$$<br>f({\bf{x} }) = \frac{1}{2}{\bf{x^TAx} } - { {\bf{b} }^{\bf{T} } }{\bf{x} } + {\bf{c} } \tag{1} \label{1}<br>$$</p>
+<ul>
+<li>矩阵$\bf{A}$正定对称</li>
+<li>目标为优化$\bf{x}$，使得$f(\bf{x})$取得最小值</li>
+</ul>
+<h3 id="最速下降法的问题"><a href="#最速下降法的问题" class="headerlink" title="最速下降法的问题"></a>最速下降法的问题</h3><ul>
+<li>贪心计算局部最小值</li>
+<li>没有全局视野，没有使用真正的模型建模</li>
+<li>导致优化过程需要反复迭代才能逐步逼近最优值</li>
+</ul>
+<h3 id="轭"><a href="#轭" class="headerlink" title="轭"></a>轭</h3><blockquote>
+<p>轭是一个汉字，读作è，本意是指驾车时套在牲口脖子上的曲木，引申义是束缚，控制。该文字在《仪礼·既夕礼》和《荀子·正论》等文献均有记载。        ——百度百科</p>
+</blockquote>
+<p><img src="https://photos.zywvvd.com/icey-mate-book/20201226144811.jpg"></p>
+<ul>
+<li>数学中很多轭相关的内容，此处的共轭表示相互约束，在某个条件下可以相互作用的意思。</li>
+</ul>
+<h3 id="共轭梯度法思想来源"><a href="#共轭梯度法思想来源" class="headerlink" title="共轭梯度法思想来源"></a>共轭梯度法思想来源</h3><ul>
+<li>为解决最速下降法来回往复的问题，人们开始思考是否有可以直接在需要优化的二次函数定义下直接对其进行优化，是否可以通过有限步计算得到真正的最优解</li>
+<li>那么假设我们使用关于该问题精确的模型而不是近似的局部最优模型，我们如果可以在某个N维空间中，分别计算出最优解的各个维度的坐标，就可以达到上述目的</li>
+<li>那么如何设计这个空间，如何可以分步计算并且可以整合成真正的结果，是共轭梯度法来解决的问题</li>
+<li>该方法的核心思想是建立一组N维空间线性无关的一组基，理论上这组基的线性组合可以表示空间中任意一点，共轭梯度法通过多次计算，精确求解目标在空间中位置在这组基空间中的各个系数分量，达到求解最优值的目的</li>
+<li>该方法和最速下降法却别在精确建模，有了上帝视角，每次迭代计算将该方向需要调整的分量值调整到极致，也就是说之后的计算再也不用考虑该方向上的运动分量了，这是一个精确求解问题的过程，不是逐步简单建模向最优值挪动的逼近过程</li>
+</ul>
+<h3 id="共轭基的定义"><a href="#共轭基的定义" class="headerlink" title="共轭基的定义"></a>共轭基的定义</h3><p>设$\bf{A}$为$n$阶实对称正定矩阵，如果有两个$n$维列<a href="https://baike.baidu.com/item/%E5%90%91%E9%87%8F" target="_blank" rel="noopener">向量</a>$\bf{s}_1$和$\bf{s}_2$满足</p>
+
+$$
+{\bf{s}}_1^T{\bf{A}}{{\bf{s}}_2} = 0 \tag{2} \label{2}
+$$
+
+
+<p>则称向量$\bf{s}_1$和$\bf{s}_2$对于矩阵$\bf{A}$共轭。如果$\bf{A}$为单位矩阵，则式$\eqref{2}$即成为$\bf{s}_1$$\bf{s}_2$，这样两个向量的点积为零，此二向量在几何上是正交的，它是共轭的一种特例。</p>
+<p>设A为对称正定矩阵，若一组非零向量$\bf{s}_1$,$\bf{s}_2$,…,$\bf{s}_n$满足</p>
+
+$$
+{\bf{s}}_i^T{\bf{A}}{{\bf{s}}_j} = 0   (i≠j) \tag{3}
+$$
+
+则称向量系${{\bf{s}}_i}(1 \le i \le n)$为关于矩阵$\bf{A}$共轭。
+
+若${{\bf{s}}_i}(1 \le i \le n)$之间线性无关，那么我们称该向量集合为$n$维空间中关于矩阵$\bf{A}$的一组共轭基。
+
+
+<h3 id="共轭基的作用"><a href="#共轭基的作用" class="headerlink" title="共轭基的作用"></a>共轭基的作用</h3><ul>
+<li>假设有一组关于矩阵$\bf{A}$的共轭基$\bf{D}$：</li>
+</ul>
+<p>$$<br>\bf{D}={ {\bf{d}_1},{\bf{d}_2},…,{\bf{d}_n}}  \tag{4}<br>$$</p>
+<ul>
+<li>设二次型函数$\eqref{1}$的极值为$\bf{x}^*$，用$\bf{D}$表似为：</li>
+</ul>
+
+$$
+{ {\bf{x} }^*} = {\lambda _1}{ {\bf{d} }_1} + {\lambda _2}{ {\bf{d} }_2} +  \cdots  + {\lambda _n}{ {\bf{d} }_n} \tag{5}
+$$
+
+
+
+<ul>
+<li>因为函数极值处在各个方向的导数为0有：</li>
+</ul>
+
+$$
+\begin{array}{l}
+f'({{\bf{x}}^*}) = {\bf{A}}{{\bf{x}}^*} - {\bf{b}} = 0\\
+ \Rightarrow {\bf{A}}{{\bf{x}}^*} = {\bf{b}}
+\end{array} \tag{6}
+$$
+
+
+
+<ul>
+<li>我们计算${\bf{d}}_i^T{\bf{A}}{{\bf{x}}^*}$，根据不同共轭基之间相互共轭：
+
+</li>
+</ul>
+
+$$
+\begin{array}{l}
+{\bf{d}}_i^T{\bf{A}}{{\bf{x}}^*} &= {\bf{d}}_i^T{\bf{A}}\left( {{\lambda _0}{{\bf{d}}_0} +  \ldots  + {\lambda _{n - 1}}{{\bf{d}}_{n - 1}}} \right)\\
+ &= {\lambda _i}{\bf{d}}_i^T{\bf{A}}{{\bf{d}}_i} + 0\\ \tag{7}
+\end{array} 
+$$
+
+
+
+<ul>
+<li>得到：</li>
+</ul>
+
+$$
+{\lambda _i} = \frac{{{\bf{d}}_i^T{\bf{A}}{{\bf{x}}^*}}}{{{\bf{d}}_i^T{\bf{A}}{{\bf{d}}_i}}} = \frac{{{\bf{d}}_i^T{\bf{b}}}}{{{\bf{d}}_i^T{\bf{A}}{{\bf{d}}_i}}} \tag{8} \label{8}
+$$
+
+
+
+<ul>
+<li>对于${\lambda _i}$的求解，我们已知的变量为$\bf{b}$和$\bf{A}$，如果我们已经得到了空间中关于$\bf{A}$的共轭基（任意一组），我们都可以直接解得${\lambda _i}$</li>
+<li>这是一个令人振奋的结论，所以我们当前的工作重点转为了如何快速地求得一组关于$\bf{A}$的共轭基</li>
+</ul>
+<h3 id="根据定义获取共轭基"><a href="#根据定义获取共轭基" class="headerlink" title="根据定义获取共轭基"></a>根据定义获取共轭基</h3><ul>
+<li>有了定义，我们不难想到暴力获取共轭基的方法：</li>
+</ul>
+<pre class="mermaid">    graph TB
+        A(随机生成n个n维向量)
+        B{i=1-n循环}
+        C[剔除向量j=1-i的分量]
+        E[收集向量1-n]
+        D[得到向量i]
+
+        A-->B
+        C --> D
+        D --> B
+        B-- 循环结束 --> E --> F(输出共轭基)
+        B-- 循环未结束 -->C</pre>
+
+<ul>
+<li>这套方法下来，我们就可以得到根据定义计算出来的共轭基，带入$\eqref{8}$计算得到极值，没有任何问题</li>
+<li>但事实上这个运算量与代数法解${\bf{A}}{{\bf{x}}} = {\bf{b}}$的过程具有相当的运算复杂度，没有给该优化问题带来性能收益</li>
+</ul>
+<h3 id="共轭梯度法"><a href="#共轭梯度法" class="headerlink" title="共轭梯度法"></a>共轭梯度法</h3><blockquote>
+<p>此算法核心步骤与最速下降法相同，分别为寻找共轭方向与计算运动步长。</p>
+</blockquote>
+<h4 id="寻找共轭方向"><a href="#寻找共轭方向" class="headerlink" title="寻找共轭方向"></a>寻找共轭方向</h4><blockquote>
+<p>由于计算梯度简单，寻找共轭梯度的过程依附于梯度方向的计算。</p>
+</blockquote>
+<ul>
+<li>优化目标为$\bf{x}^*$，初始位置为$\bf{x}_1$，需要求得的共轭基为 $\bf{D}={ {\bf{d}_1},{\bf{d}_2},…,{\bf{d}_n}}$</li>
+<li>计算初始$\bf{x}_1$位置的梯度，第一个共轭基为梯度的反方向：</li>
+</ul>
+
+$$
+{{\bf{d}}_1} =  - {{\bf{g}}_1} =  - ({\bf{A}}{{\bf{x}}_1} - {\bf{b}}) = {\bf{b}} - {\bf{A}}{{\bf{x}}_1} \tag{9}
+$$
+
+
+
+<ul>
+<li>第$i$个梯度若要剔除掉第$j$个共轭基$(j&lt;i)$方向的分量，需要减去该方向的$\beta_j $分量：</li>
+</ul>
+
+$$
+\begin{array}{l}
+{\bf{d}}_j^T{\bf{A}}({{\bf{g}}_i} - \beta_j {{\bf{d}}_j}) = 0\\
+{\bf{d}}_j^T{\bf{A}}{{\bf{g}}_i} = \beta_j {\bf{d}}_j^T{\bf{A}}{{\bf{d}}_j}\\
+\beta_j  = \frac{{{\bf{d}}_j^T{\bf{A}}{{\bf{g}}_i}}}{{{\bf{d}}_j^T{\bf{A}}{{\bf{d}}_j}}}
+\end{array} \tag{10}
+$$
+
+
+<ul>
+<li>因此第$k$个共轭基为：</li>
+</ul>
+
+$$
+\begin{array}{l}
+{{\bf{d}}_k} = {{\bf{g}}_k} - \sum\limits_{i = 1}^{k - 1} {\frac{{{\bf{d}}_i^T{\bf{A}}{{\bf{g}}_k}}}{{{\bf{d}}_i^T{\bf{A}}{{\bf{d}}_i}}}{{\bf{d}}_i}} \\
+{{\bf{d}}_k}={{\bf{g}}_k} -\sum\limits_{i = 1}^{k - 1}\beta_i{{\bf{d}}_i}
+
+\end{array} \tag{11}
+$$
+
+
+<ul>
+<li>目前，我们如果可以确定每一次迭代移动的$\bf{x}_i$的位置，求得$\bf{g}_i$，那么就可以根据第1到第$i-1$个共轭基确定当前第$i$个共轭基</li>
+<li>因此当前我们的目标是在有了共轭方向后，如何确定在该方向上的运动距离</li>
+</ul>
+<h4 id="确定运动距离"><a href="#确定运动距离" class="headerlink" title="确定运动距离"></a>确定运动距离</h4><h5 id="方法一"><a href="#方法一" class="headerlink" title="方法一"></a>方法一</h5><blockquote>
+<p>确定运动步长，也就是一个共轭基的系数，限制该系数的条件为：</p>
+</blockquote>
+<ul>
+<li>当前共轭基的方向$\bf{d}<em>{k}$与误差向量$\bf{e}</em>{k+1}=\bf{x}^*-x_{k+1}$共轭：</li>
+</ul>
+
+$$
+\begin{aligned}
+\bf{d}_{k}^{T^{\prime}} A e_{k+1} &=\bf{d}_{k}^{T} A\left(x^{*}-x_{k+1}\right) \\
+&=\bf{d}_{k}^{T} A\left(x^{*}-x_{k}+x_{k}-x_{k+1}\right) \\
+&=\bf{d}_{k}^{T} A\left(e_{k}-\alpha_{k} \bf{d}_{k}\right) \\
+&=\bf{d}_{k}^{T} A e_{k}-\alpha_{k} \bf{d}_{k}^{T} A \bf{d}_{k}=0
+\end{aligned}
+$$
+
+
+
+<ul>
+<li>有：</li>
+</ul>
+
+$$
+\begin{aligned}
+\alpha_{k} &=\frac{\bf{d}_{k}^{T} A e_{k}}{\bf{d}_{k}^{T} A \bf{d}_{k}} \\
+&=\frac{\bf{d}_{k}^{T} A\left(x^{*}-x_{k}\right)}{\bf{d}_{k}^{T} A \bf{d}_{k}} \\
+&=\frac{\bf{d}_{k}^{T}\left(A x^{*}-A x_{k}\right)}{\bf{d}_{k}^{T} A \bf{d}_{k}} \\
+&=\frac{\bf{d}_{k}^{T}\left(b-A x_{k}\right)}{\bf{d}_{k}^{T} A \bf{d}_{k}} \\
+&=-\frac{\bf{d}_{k}^{T} g_{k}}{\bf{d}_{k}^{T} A \bf{d}_{k}}
+\end{aligned}
+$$
+
+
+<h3 id="参考资料"><a href="#参考资料" class="headerlink" title="参考资料"></a>参考资料</h3><ul>
+<li><a href="https://baike.baidu.com/item/%E5%85%B1%E8%BD%AD%E6%96%B9%E5%90%91/9312634?fr=aladdin" target="_blank" rel="noopener">https://baike.baidu.com/item/%E5%85%B1%E8%BD%AD%E6%96%B9%E5%90%91/9312634?fr=aladdin</a></li>
+<li><a href="https://blog.csdn.net/lusongno1/article/details/78550803" target="_blank" rel="noopener">https://blog.csdn.net/lusongno1/article/details/78550803</a></li>
+<li><a href="https://blog.csdn.net/weixin_37895339/article/details/84640137" target="_blank" rel="noopener">https://blog.csdn.net/weixin_37895339/article/details/84640137</a></li>
+<li><a href="https://zhuanlan.zhihu.com/p/64227658" target="_blank" rel="noopener">https://zhuanlan.zhihu.com/p/64227658</a></li>
+</ul>
+<link rel="stylesheet" href="/css/spoiler.css" type="text/css"><script src="/js/spoiler.js" type="text/javascript" async></script>]]></content>
+      <categories>
+        <category>机器学习</category>
+        <category>优化方法</category>
+      </categories>
+      <tags>
+        <tag>机器学习</tag>
+        <tag>优化方法</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>Hexo -15- 折叠博客内容</title>
+    <url>/2020/12/26/hexo/16_fold-content/fold-content/</url>
+    <content><![CDATA[<blockquote>
+<p>在写博客时，可能会遇到需要读者选读的内容，此时出现了折叠博客内容的需求。本文介绍在Hexo中自定义折叠部分内容的方法。</p>
+</blockquote>
+<a id="more"></a>
+
+<h3 id="需求描述"><a href="#需求描述" class="headerlink" title="需求描述"></a>需求描述</h3><ul>
+<li>可折叠部分内容，暴露标题，在读者需要查看标题下内容时点击展开</li>
+<li>支持尽可能多的markdown语法</li>
+<li>方便快速</li>
+</ul>
+<h3 id="方法一：-HTML语法-使用-details-元素"><a href="#方法一：-HTML语法-使用-details-元素" class="headerlink" title="方法一： HTML语法 - 使用 details 元素"></a>方法一： HTML语法 - 使用 details 元素</h3><h4 id="使用方法"><a href="#使用方法" class="headerlink" title="使用方法"></a>使用方法</h4><blockquote>
+<p>使用 <code>&lt;details&gt; &lt;/details&gt;</code> 标签包裹需要隐藏的内容<br>在其中使用<code>&lt;summary&gt; &lt;/summary&gt;</code>标签包裹需要隐藏内容的标题</p>
+</blockquote>
+<details>
+  <summary>隐藏内容的标题</summary>
+
+<p>隐藏文字隐藏文字隐藏文字。  </p>
+<p>支持 <code>markdown</code> 语法</p>
+<h5 id="支持标题"><a href="#支持标题" class="headerlink" title="支持标题"></a>支持标题</h5><h5 id="支持简单文本编辑"><a href="#支持简单文本编辑" class="headerlink" title="支持简单文本编辑"></a>支持简单文本编辑</h5><ul>
+<li>支持 <strong>粗体</strong>、<em>斜体</em></li>
+</ul>
+<h5 id="支持列表"><a href="#支持列表" class="headerlink" title="支持列表"></a>支持列表</h5><ul>
+<li>列表1</li>
+<li>列表2</li>
+</ul>
+<h5 id="支持图片"><a href="#支持图片" class="headerlink" title="支持图片"></a>支持图片</h5><ul>
+<li>md插入图片语法：<img src="https://www.zywvvd.com/about/index/1.png" alt="markdown 图片"></li>
+<li>html插入图片语法：</li>
+</ul>
+<div style='margin:0 auto'>
+<img src="https://www.baidu.com/img/baidu_jgylogo3.gif"  />
+</div>
+
+<h5 id="支持代码块"><a href="#支持代码块" class="headerlink" title="支持代码块"></a>支持代码块</h5><ul>
+<li>行内代码 <code>markdown</code></li>
+</ul>
+<figure class="highlight cpp"><table><tr><td class="code"><pre><span class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">&lt;initializer_list&gt;</span></span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">&lt;iostream&gt;</span></span></span><br><span class="line"><span class="class"><span class="keyword">struct</span> <span class="title">A</span> &#123;</span></span><br><span class="line">A() &#123; <span class="built_in">std</span>::<span class="built_in">cout</span> &lt;&lt; <span class="string">"1"</span>; &#125;</span><br><span class="line">A(<span class="keyword">int</span>) &#123; <span class="built_in">std</span>::<span class="built_in">cout</span> &lt;&lt; <span class="string">"2"</span>; &#125;</span><br><span class="line">A(<span class="built_in">std</span>::<span class="built_in">initializer_list</span>&lt;<span class="keyword">int</span>&gt;) &#123; <span class="built_in">std</span>::<span class="built_in">cout</span> &lt;&lt; <span class="string">"3"</span>; &#125;</span><br><span class="line">&#125;;</span><br><span class="line"><span class="function"><span class="keyword">int</span> <span class="title">main</span><span class="params">(<span class="keyword">int</span> argc, <span class="keyword">char</span> *argv[])</span> </span>&#123;</span><br><span class="line">A a1;</span><br><span class="line">A a2&#123;&#125;;</span><br><span class="line">A a3&#123; <span class="number">1</span> &#125;;</span><br><span class="line">A a4&#123; <span class="number">1</span>, <span class="number">2</span> &#125;;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h5 id="支持表格"><a href="#支持表格" class="headerlink" title="支持表格"></a>支持表格</h5><table>
+<thead>
+<tr>
+<th>文字</th>
+<th>文字</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>文字</td>
+<td>文字</td>
+</tr>
+</tbody></table>
+<h5 id="支持公式"><a href="#支持公式" class="headerlink" title="支持公式"></a>支持公式</h5><ul>
+<li>行内公式$Y=aX^2+bX+c$<br>$$<br>Y=aX^2+bX+c<br>$$</li>
+</ul>
+</details>
+
+<h4 id="示例代码"><a href="#示例代码" class="headerlink" title="示例代码"></a>示例代码</h4><blockquote>
+<p>上述示例代码如下(由于markdown解码问题，示例cpp代码段前后的 ``` 请自行补全)：</p>
+</blockquote>
+<details>
+  <summary>示例代码</summary>
+
+
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">&lt;details&gt;</span><br><span class="line">  &lt;summary&gt;隐藏内容的标题&lt;&#x2F;summary&gt;</span><br><span class="line"></span><br><span class="line">隐藏文字隐藏文字隐藏文字。  </span><br><span class="line"></span><br><span class="line">支持 &#96;markdown&#96; 语法</span><br><span class="line"></span><br><span class="line">##### 支持标题</span><br><span class="line"></span><br><span class="line">##### 支持简单文本编辑</span><br><span class="line">- 支持 **粗体**、*斜体*</span><br><span class="line"></span><br><span class="line">##### 支持列表</span><br><span class="line">- 列表1</span><br><span class="line">- 列表2</span><br><span class="line"></span><br><span class="line">##### 支持图片</span><br><span class="line">- md插入图片语法：![markdown 图片](https:&#x2F;&#x2F;www.zywvvd.com&#x2F;about&#x2F;index&#x2F;1.png)</span><br><span class="line">- html插入图片语法：</span><br><span class="line"></span><br><span class="line">&lt;div style&#x3D;&#39;margin:0 auto&#39;&gt;</span><br><span class="line">&lt;img src&#x3D;&quot;https:&#x2F;&#x2F;www.baidu.com&#x2F;img&#x2F;baidu_jgylogo3.gif&quot;  &#x2F;&gt;</span><br><span class="line">&lt;&#x2F;div&gt;</span><br><span class="line"></span><br><span class="line">##### 支持代码块</span><br><span class="line">- 行内代码 &#96;markdown&#96;</span><br><span class="line"></span><br><span class="line">cpp</span><br><span class="line">#include &lt;initializer_list&gt;</span><br><span class="line">#include &lt;iostream&gt;</span><br><span class="line">struct A &#123;</span><br><span class="line">    A() &#123; std::cout &lt;&lt; &quot;1&quot;; &#125;</span><br><span class="line">    A(int) &#123; std::cout &lt;&lt; &quot;2&quot;; &#125;</span><br><span class="line">    A(std::initializer_list&lt;int&gt;) &#123; std::cout &lt;&lt; &quot;3&quot;; &#125;</span><br><span class="line">&#125;;</span><br><span class="line">int main(int argc, char *argv[]) &#123;</span><br><span class="line">    A a1;</span><br><span class="line">    A a2&#123;&#125;;</span><br><span class="line">    A a3&#123; 1 &#125;;</span><br><span class="line">    A a4&#123; 1, 2 &#125;;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">##### 支持表格</span><br><span class="line"></span><br><span class="line">| 文字 | 文字 |</span><br><span class="line">| ---- | ---- |</span><br><span class="line">| 文字 | 文字 |</span><br><span class="line"></span><br><span class="line">##### 支持公式</span><br><span class="line">- 行内公式$Y&#x3D;aX^2+bX+c$</span><br><span class="line">$$</span><br><span class="line">Y&#x3D;aX^2+bX+c</span><br><span class="line">$$</span><br><span class="line"></span><br><span class="line">&lt;&#x2F;details&gt;</span><br></pre></td></tr></table></figure>
+
+</details>
+
+<h3 id="方法二：-使用hexo-sliding-spoiler插件"><a href="#方法二：-使用hexo-sliding-spoiler插件" class="headerlink" title="方法二： 使用hexo-sliding-spoiler插件"></a>方法二： 使用hexo-sliding-spoiler插件</h3><h4 id="官网链接"><a href="#官网链接" class="headerlink" title="官网链接"></a>官网链接</h4><p><a href="https://github.com/fletchto99/hexo-sliding-spoiler" target="_blank" rel="noopener">hexo-sliding-spoiler</a></p>
+<h4 id="插件安装"><a href="#插件安装" class="headerlink" title="插件安装"></a>插件安装</h4><figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">npm install hexo-sliding-spoiler --save</span><br></pre></td></tr></table></figure>
+
+<h4 id="自定义设置"><a href="#自定义设置" class="headerlink" title="自定义设置"></a>自定义设置</h4><ul>
+<li>可以修改<code>css</code>文件来自定义配置样式</li>
+</ul>
+<blockquote>
+<p>例如：可以自定义修改默认的 <code>show hide</code> 关键字</p>
+<ul>
+<li>打开文件 <code>hexo\node_modules\hexo-sliding-spoiler\assets\spoiler.css</code>，找到25-31行，修改其中的 <code>content</code>。</li>
+<li>例如： 将<code>Show</code> 改为 <code>▶</code> ，<code>Hide</code>改为<code>▼</code></li>
+</ul>
+</blockquote>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">.spoiler.collapsed .spoiler-title:before &#123;</span><br><span class="line">    content: &quot;Show: &quot;;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">.spoiler.expanded .spoiler-title:before &#123;</span><br><span class="line">    content: &quot;Hide: &quot;;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h4 id="使用方法-1"><a href="#使用方法-1" class="headerlink" title="使用方法"></a>使用方法</h4><blockquote>
+<p>安装好插件后，使用 <code> {% spoiler "隐藏内容的标题" %} </code> 和<code> {% endspoiler %}</code>包裹需要隐藏的内容即可。</p>
+</blockquote>
+<div class='spoiler collapsed'>
+    <div class='spoiler-title'>
+        隐藏内容的标题
+    </div>
+    <div class='spoiler-content'>
+        <p>隐藏文字隐藏文字隐藏文字。  </p>
+<p>支持 <code>markdown</code> 语法</p>
+<h5 id="支持标题"><a href="#支持标题" class="headerlink" title="支持标题"></a>支持标题</h5><h5 id="支持简单文本编辑"><a href="#支持简单文本编辑" class="headerlink" title="支持简单文本编辑"></a>支持简单文本编辑</h5><ul>
+<li>支持 <strong>粗体</strong>、<em>斜体</em></li>
+</ul>
+<h5 id="支持列表"><a href="#支持列表" class="headerlink" title="支持列表"></a>支持列表</h5><ul>
+<li>列表1</li>
+<li>列表2</li>
+</ul>
+<h5 id="支持图片"><a href="#支持图片" class="headerlink" title="支持图片"></a>支持图片</h5><ul>
+<li>md插入图片语法：<img src="https://www.zywvvd.com/about/index/1.png" alt="markdown 图片"></li>
+<li>html插入图片语法：</li>
+</ul>
+<div style='margin:0 auto'>
+<img src="https://www.baidu.com/img/baidu_jgylogo3.gif"  />
+</div>
+
+<h5 id="支持代码块"><a href="#支持代码块" class="headerlink" title="支持代码块"></a>支持代码块</h5><ul>
+<li>行内代码 <code>markdown</code></li>
+</ul>
+<figure class="highlight cpp"><table><tr><td class="code"><pre><span class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">&lt;initializer_list&gt;</span></span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">&lt;iostream&gt;</span></span></span><br><span class="line"><span class="class"><span class="keyword">struct</span> <span class="title">A</span> &#123;</span></span><br><span class="line">    A() &#123; <span class="built_in">std</span>::<span class="built_in">cout</span> &lt;&lt; <span class="string">"1"</span>; &#125;</span><br><span class="line">    A(<span class="keyword">int</span>) &#123; <span class="built_in">std</span>::<span class="built_in">cout</span> &lt;&lt; <span class="string">"2"</span>; &#125;</span><br><span class="line">    A(<span class="built_in">std</span>::<span class="built_in">initializer_list</span>&lt;<span class="keyword">int</span>&gt;) &#123; <span class="built_in">std</span>::<span class="built_in">cout</span> &lt;&lt; <span class="string">"3"</span>; &#125;</span><br><span class="line">&#125;;</span><br><span class="line"><span class="function"><span class="keyword">int</span> <span class="title">main</span><span class="params">(<span class="keyword">int</span> argc, <span class="keyword">char</span> *argv[])</span> </span>&#123;</span><br><span class="line">    A a1;</span><br><span class="line">    A a2&#123;&#125;;</span><br><span class="line">    A a3&#123; <span class="number">1</span> &#125;;</span><br><span class="line">    A a4&#123; <span class="number">1</span>, <span class="number">2</span> &#125;;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h5 id="支持表格"><a href="#支持表格" class="headerlink" title="支持表格"></a>支持表格</h5><table>
+<thead>
+<tr>
+<th>文字</th>
+<th>文字</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>文字</td>
+<td>文字</td>
+</tr>
+</tbody></table>
+<h5 id="支持公式"><a href="#支持公式" class="headerlink" title="支持公式"></a>支持公式</h5><ul>
+<li>行内公式$Y=aX^2+bX+c$<br>$$<br>Y=aX^2+bX+c<br>$$</li>
+</ul>
+
+    </div>
+</div>
+
+<h4 id="示例代码-1"><a href="#示例代码-1" class="headerlink" title="示例代码"></a>示例代码</h4><blockquote>
+<p>上述示例代码如下(由于markdown解码问题，示例cpp代码段前后的 ``` 请自行补全)：</p>
+</blockquote>
+<div class='spoiler collapsed'>
+    <div class='spoiler-title'>
+        示例代码
+    </div>
+    <div class='spoiler-content'>
+        <figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">&#123;% spoiler &quot;隐藏内容的标题&quot; %&#125;</span><br><span class="line"></span><br><span class="line">隐藏文字隐藏文字隐藏文字。  </span><br><span class="line"></span><br><span class="line">支持 &#96;markdown&#96; 语法</span><br><span class="line"></span><br><span class="line">##### 支持标题</span><br><span class="line"></span><br><span class="line">##### 支持简单文本编辑</span><br><span class="line">- 支持 **粗体**、*斜体*</span><br><span class="line"></span><br><span class="line">##### 支持列表</span><br><span class="line">- 列表1</span><br><span class="line">- 列表2</span><br><span class="line"></span><br><span class="line">##### 支持图片</span><br><span class="line">- md插入图片语法：![markdown 图片](https:&#x2F;&#x2F;www.zywvvd.com&#x2F;about&#x2F;index&#x2F;1.png)</span><br><span class="line">- html插入图片语法：</span><br><span class="line"></span><br><span class="line">&lt;div style&#x3D;&#39;margin:0 auto&#39;&gt;</span><br><span class="line">&lt;img src&#x3D;&quot;https:&#x2F;&#x2F;www.baidu.com&#x2F;img&#x2F;baidu_jgylogo3.gif&quot;  &#x2F;&gt;</span><br><span class="line">&lt;&#x2F;div&gt;</span><br><span class="line"></span><br><span class="line">##### 支持代码块</span><br><span class="line">- 行内代码 &#96;markdown&#96;</span><br><span class="line"></span><br><span class="line">cpp</span><br><span class="line">#include &lt;initializer_list&gt;</span><br><span class="line">#include &lt;iostream&gt;</span><br><span class="line">struct A &#123;</span><br><span class="line">    A() &#123; std::cout &lt;&lt; &quot;1&quot;; &#125;</span><br><span class="line">    A(int) &#123; std::cout &lt;&lt; &quot;2&quot;; &#125;</span><br><span class="line">    A(std::initializer_list&lt;int&gt;) &#123; std::cout &lt;&lt; &quot;3&quot;; &#125;</span><br><span class="line">&#125;;</span><br><span class="line">int main(int argc, char *argv[]) &#123;</span><br><span class="line">    A a1;</span><br><span class="line">    A a2&#123;&#125;;</span><br><span class="line">    A a3&#123; 1 &#125;;</span><br><span class="line">    A a4&#123; 1, 2 &#125;;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"></span><br><span class="line">##### 支持表格</span><br><span class="line"></span><br><span class="line">| 文字 | 文字 |</span><br><span class="line">| ---- | ---- |</span><br><span class="line">| 文字 | 文字 |</span><br><span class="line"></span><br><span class="line">##### 支持公式</span><br><span class="line">- 行内公式$Y&#x3D;aX^2+bX+c$</span><br><span class="line">$$</span><br><span class="line">Y&#x3D;aX^2+bX+c</span><br><span class="line">$$</span><br><span class="line"></span><br><span class="line">&#123;% endspoiler %&#125;</span><br></pre></td></tr></table></figure>
+
+
+
+    </div>
+</div>
+
+<h3 id="方法对比"><a href="#方法对比" class="headerlink" title="方法对比"></a>方法对比</h3><table>
+<thead>
+<tr>
+<th></th>
+<th>details</th>
+<th>endspoiler</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>markdown支持</td>
+<td>基本支持常用语法</td>
+<td>基本支持常用语法</td>
+</tr>
+<tr>
+<td>使用</td>
+<td>直接使用</td>
+<td>需要安装插件</td>
+</tr>
+<tr>
+<td>外观</td>
+<td>简洁清爽，保留原始格式</td>
+<td>默认灰色底边，内容带框</td>
+</tr>
+<tr>
+<td>动画</td>
+<td>无</td>
+<td>有过渡动画</td>
+</tr>
+<tr>
+<td>配置</td>
+<td>不需要/无法配置</td>
+<td>可以自定义配置显示样式</td>
+</tr>
+</tbody></table>
+<blockquote>
+<p>个人建议使用 <code>endspoiler</code>插件，毕竟是为hexo设计的插件，可以进行自定义配置。</p>
+</blockquote>
+<h3 id="参考资料"><a href="#参考资料" class="headerlink" title="参考资料"></a>参考资料</h3><ul>
+<li><a href="https://blog.csdn.net/qq_36408085/article/details/104323711" target="_blank" rel="noopener">https://blog.csdn.net/qq_36408085/article/details/104323711</a></li>
+</ul>
+<link rel="stylesheet" href="/css/spoiler.css" type="text/css"><script src="/js/spoiler.js" type="text/javascript" async></script>]]></content>
+      <categories>
+        <category>Hexo</category>
+      </categories>
+      <tags>
+        <tag>Hexo</tag>
+      </tags>
+  </entry>
+  <entry>
     <title>Hexo -15- 解决 Hexo Mathjax 无法显示多行公式的问题</title>
     <url>/2020/12/22/hexo/15_formula/formula-error/</url>
     <content><![CDATA[<blockquote>
@@ -43,7 +465,7 @@ $$
 <h4 id="问题2"><a href="#问题2" class="headerlink" title="问题2"></a>问题2</h4><ul>
 <li>或者显示公式不正常，多行公式会挤成一行：</li>
 </ul>
-<p><img src="https://photos.zywvvd.com/image_canglan/20201222003739.png" alt=""></p>
+<p><img src="https://photos.zywvvd.com/image_canglan/20201222003739.png"></p>
 <h3 id="原因分析"><a href="#原因分析" class="headerlink" title="原因分析"></a>原因分析</h3><h4 id="问题1-1"><a href="#问题1-1" class="headerlink" title="问题1"></a>问题1</h4><ul>
 <li>由于hexo解码时关注{{，}}，%% 等连续字符，会将这部分代码解读为其他带有特殊含义的内容</li>
 <li>如果公式中恰巧出现了此类字符，会报出上述错误</li>
@@ -65,7 +487,7 @@ $$
 
 </li>
 </ul>
-]]></content>
+<link rel="stylesheet" href="/css/spoiler.css" type="text/css"><script src="/js/spoiler.js" type="text/javascript" async></script>]]></content>
       <categories>
         <category>Hexo</category>
       </categories>
@@ -151,7 +573,7 @@ $$
 <h5 id="获取geogebra图形的iframe代码"><a href="#获取geogebra图形的iframe代码" class="headerlink" title="获取geogebra图形的iframe代码"></a>获取<code>geogebra</code>图形的<code>iframe</code>代码</h5><ul>
 <li>打开<code>geogebra 6</code>（网页版、客户端都可以），<a href="https://www.geogebra.org/classic" target="_blank" rel="noopener">https://www.geogebra.org/classic</a> 并编辑内容</li>
 <li>分享后获得分享链接，替换<code>src</code>内容部分</li>
-<li>此处以<a href="https://blog.csdn.net/fatty_zhu/article/details/77411254的示例src为例：" target="_blank" rel="noopener">https://blog.csdn.net/fatty_zhu/article/details/77411254的示例src为例：</a></li>
+<li>此处以<a href="https://blog.csdn.net/fatty_zhu/article/details/77411254%E7%9A%84%E7%A4%BA%E4%BE%8Bsrc%E4%B8%BA%E4%BE%8B%EF%BC%9A" target="_blank" rel="noopener">https://blog.csdn.net/fatty_zhu/article/details/77411254的示例src为例：</a></li>
 </ul>
 <figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">&lt;iframe </span><br><span class="line">scrolling&#x3D;&quot;no&quot; </span><br><span class="line">title&#x3D;&quot;布丰投针实验&quot; src&#x3D;&quot;https:&#x2F;&#x2F;www.geogebra.org&#x2F;material&#x2F;iframe&#x2F;id&#x2F;A25F9Tzs&#x2F;width&#x2F;1347&#x2F;height&#x2F;598&#x2F;border&#x2F;888888&#x2F;smb&#x2F;false&#x2F;stb&#x2F;false&#x2F;stbh&#x2F;false&#x2F;ai&#x2F;false&#x2F;asb&#x2F;false&#x2F;sri&#x2F;true&#x2F;rc&#x2F;false&#x2F;ld&#x2F;false&#x2F;sdz&#x2F;true&#x2F;ctl&#x2F;false&quot; </span><br><span class="line">width&#x3D;&quot;800px&quot; </span><br><span class="line">height&#x3D;&quot;400px&quot;&gt;</span><br><span class="line">&lt;&#x2F;iframe&gt;</span><br></pre></td></tr></table></figure>
 
@@ -175,7 +597,7 @@ $$
 <li><p>也可以将画好的图形下载成<code>网页.html</code>格式</p>
 </li>
 </ul>
-<p><img src="https://photos.zywvvd.com/images_matrixtime/20201219152843.png" alt=""></p>
+<p><img src="https://photos.zywvvd.com/images_matrixtime/20201219152843.png"></p>
 <ul>
 <li>得到如下这段代码，这段代码直接黏贴到一个空的html文件联网即可运行。</li>
 </ul>
@@ -551,7 +973,7 @@ window.onload = function() {applet.inject('ggbApplet')};
 <li><a href="https://kz16.top/" target="_blank" rel="noopener">https://kz16.top/</a></li>
 <li><a href="https://wiki.geogebra.org/en/Reference:GeoGebra_App_Parameters" target="_blank" rel="noopener">https://wiki.geogebra.org/en/Reference:GeoGebra_App_Parameters</a></li>
 </ul>
-]]></content>
+<link rel="stylesheet" href="/css/spoiler.css" type="text/css"><script src="/js/spoiler.js" type="text/javascript" async></script>]]></content>
       <categories>
         <category>tools</category>
         <category>geogebra</category>
@@ -643,7 +1065,7 @@ window.onload = function() {applet.inject('ggbApplet')};
 <h3 id="参考资料"><a href="#参考资料" class="headerlink" title="参考资料"></a>参考资料</h3><ul>
 <li><a href="https://blog.csdn.net/andyzhaojianhui/article/details/79864906" target="_blank" rel="noopener">https://blog.csdn.net/andyzhaojianhui/article/details/79864906</a></li>
 </ul>
-]]></content>
+<link rel="stylesheet" href="/css/spoiler.css" type="text/css"><script src="/js/spoiler.js" type="text/javascript" async></script>]]></content>
       <categories>
         <category>Linux</category>
       </categories>
@@ -729,7 +1151,7 @@ window.onload = function() {applet.inject('ggbApplet')};
 <figure class="highlight shell"><table><tr><td class="code"><pre><span class="line">dvc import https://github.com/example/registry music/songs</span><br></pre></td></tr></table></figure>
 
 <h5 id="更新数据"><a href="#更新数据" class="headerlink" title="更新数据"></a>更新数据</h5><p>若项目引用的registry中的数据发送了更新，可以使用<code>dvc update</code>同步此数据：</p>
-<figure class="highlight shell"><table><tr><td class="code"><pre><span class="line">dvc update dataset.dvc</span><br></pre></td></tr></table></figure>]]></content>
+<figure class="highlight shell"><table><tr><td class="code"><pre><span class="line">dvc update dataset.dvc</span><br></pre></td></tr></table></figure><link rel="stylesheet" href="/css/spoiler.css" type="text/css"><script src="/js/spoiler.js" type="text/javascript" async></script>]]></content>
       <categories>
         <category>dvc</category>
       </categories>
@@ -880,7 +1302,7 @@ $$
 <li>如果可以有正确拟合真实二次型的迭代优化方法，那么如果找到了这个模型下的最优值，岂不就迭代得到了全局最优解</li>
 <li>带着这个初衷，大神们提出了共轭梯度法</li>
 </ul>
-]]></content>
+<link rel="stylesheet" href="/css/spoiler.css" type="text/css"><script src="/js/spoiler.js" type="text/javascript" async></script>]]></content>
       <categories>
         <category>机器学习</category>
         <category>优化方法</category>
@@ -926,12 +1348,12 @@ $$
 </blockquote>
 <h3 id="示例"><a href="#示例" class="headerlink" title="示例"></a>示例</h3><figure class="highlight python"><table><tr><td class="code"><pre><span class="line"><span class="keyword">import</span> cv2</span><br><span class="line"><span class="keyword">import</span> numpy <span class="keyword">as</span> np</span><br><span class="line"></span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">def</span> <span class="title">get_point</span><span class="params">(event, x, y, flags, param)</span>:</span></span><br><span class="line">    <span class="comment"># 鼠标单击事件</span></span><br><span class="line">    <span class="keyword">if</span> event == cv2.EVENT_LBUTTONDOWN:</span><br><span class="line">        <span class="comment"># 输出坐标</span></span><br><span class="line">        print(<span class="string">'clicking: '</span>, x, y)</span><br><span class="line">        <span class="comment"># 在传入参数图像上画出该点</span></span><br><span class="line">        cv2.circle(param, (x, y), <span class="number">1</span>, (<span class="number">255</span>, <span class="number">255</span>, <span class="number">255</span>), thickness=<span class="number">-1</span>)</span><br><span class="line"></span><br><span class="line"></span><br><span class="line"><span class="keyword">if</span> __name__ == <span class="string">"__main__"</span>:</span><br><span class="line">    <span class="comment"># 定义两幅图像</span></span><br><span class="line">    image_1 = np.zeros((<span class="number">200</span>, <span class="number">200</span>, <span class="number">3</span>), dtype=<span class="string">'uint8'</span>)</span><br><span class="line">    image_2 = np.zeros((<span class="number">200</span>, <span class="number">200</span>, <span class="number">3</span>), dtype=<span class="string">'uint8'</span>)</span><br><span class="line"></span><br><span class="line">    <span class="comment"># 定义两个窗口 并绑定事件 传入各自对应的参数</span></span><br><span class="line">    cv2.namedWindow(<span class="string">'image_1'</span>)</span><br><span class="line">    cv2.setMouseCallback(<span class="string">'image_1'</span>, get_point, image_1)</span><br><span class="line"></span><br><span class="line">    cv2.namedWindow(<span class="string">'image_2'</span>)</span><br><span class="line">    cv2.setMouseCallback(<span class="string">'image_2'</span>, get_point, image_2)</span><br><span class="line"></span><br><span class="line">    <span class="comment"># 显示图像</span></span><br><span class="line">    <span class="keyword">while</span>(<span class="literal">True</span>):</span><br><span class="line">        cv2.imshow(<span class="string">'image_1'</span>, image_1)</span><br><span class="line">        cv2.imshow(<span class="string">'image_2'</span>, image_2)</span><br><span class="line">        <span class="keyword">if</span> cv2.waitKey(<span class="number">20</span>) &amp; <span class="number">0xFF</span> == <span class="number">27</span>:</span><br><span class="line">            <span class="keyword">break</span></span><br><span class="line"></span><br><span class="line">    <span class="comment"># 销毁窗口</span></span><br><span class="line">    cv2.destroyAllWindows()</span><br></pre></td></tr></table></figure>
 
-<p><img src="https://photos.zywvvd.com/images_matrixtime/20201216144831.png" alt=""></p>
+<p><img src="https://photos.zywvvd.com/images_matrixtime/20201216144831.png"></p>
 <h3 id="源码"><a href="#源码" class="headerlink" title="源码"></a>源码</h3><p><a href="https://github.com/zywvvd/Python_Practise" target="_blank" rel="noopener">https://github.com/zywvvd/Python_Practise</a></p>
 <h3 id="参考资料"><a href="#参考资料" class="headerlink" title="参考资料"></a>参考资料</h3><ul>
 <li><a href="https://blog.csdn.net/qq_41360787/article/details/103258773" target="_blank" rel="noopener">https://blog.csdn.net/qq_41360787/article/details/103258773</a></li>
 </ul>
-]]></content>
+<link rel="stylesheet" href="/css/spoiler.css" type="text/css"><script src="/js/spoiler.js" type="text/javascript" async></script>]]></content>
       <categories>
         <category>python</category>
         <category>opencv</category>
@@ -987,7 +1409,7 @@ $$
 <blockquote>
 <p>随后我们重点介绍迭代法相关内容</p>
 </blockquote>
-]]></content>
+<link rel="stylesheet" href="/css/spoiler.css" type="text/css"><script src="/js/spoiler.js" type="text/javascript" async></script>]]></content>
       <categories>
         <category>机器学习</category>
         <category>优化方法</category>
@@ -1057,7 +1479,7 @@ $$
 <li><p>为使得讨论有意义，我们之后讨论的$\eqref{1}$的优化均在$\bf{A}$为半正定矩阵的条件下，来寻找其极小值，也就是最小值</p>
 </li>
 </ul>
-]]></content>
+<link rel="stylesheet" href="/css/spoiler.css" type="text/css"><script src="/js/spoiler.js" type="text/javascript" async></script>]]></content>
       <categories>
         <category>机器学习</category>
         <category>优化方法</category>
@@ -1125,7 +1547,7 @@ $$
 <ul>
 <li>也就是说定义$\bf{A}$为对称阵可以唯一确定二次型矩阵，也可以方便地对二次型进行求导。</li>
 </ul>
-]]></content>
+<link rel="stylesheet" href="/css/spoiler.css" type="text/css"><script src="/js/spoiler.js" type="text/javascript" async></script>]]></content>
       <categories>
         <category>机器学习</category>
         <category>优化方法</category>
@@ -1146,22 +1568,22 @@ $$
 <h3 id="打开配置"><a href="#打开配置" class="headerlink" title="打开配置"></a>打开配置</h3><ul>
 <li>按下 <code>win + R</code> 调出运行命令，在运行中输入 <code>shell:startup</code></li>
 </ul>
-<p><img src="https://photos.zywvvd.com/icey-mate-book/20201212112610.png" alt=""></p>
+<p><img src="https://photos.zywvvd.com/icey-mate-book/20201212112610.png"></p>
 <ul>
 <li>按下<code>确定</code>后进入<code>启动文件夹</code></li>
 </ul>
 <h3 id="添加应用"><a href="#添加应用" class="headerlink" title="添加应用"></a>添加应用</h3><ul>
 <li>将需要开机启动的应用快捷方式放入到<code>启动文件夹</code>中：</li>
 </ul>
-<p><img src="https://photos.zywvvd.com/icey-mate-book/20201212113054.png" alt=""></p>
+<p><img src="https://photos.zywvvd.com/icey-mate-book/20201212113054.png"></p>
 <h3 id="测试"><a href="#测试" class="headerlink" title="测试"></a>测试</h3><h4 id="方法一"><a href="#方法一" class="headerlink" title="方法一"></a>方法一</h4><ul>
 <li>可以重启电脑查看是否应用已经重启</li>
 </ul>
 <h4 id="方法二"><a href="#方法二" class="headerlink" title="方法二"></a>方法二</h4><ul>
 <li>打开任务管理器，进入<code>启动</code>选项卡，查看我们刚刚加入的应用是否在项目中：</li>
 </ul>
-<p><img src="https://photos.zywvvd.com/icey-mate-book/20201212113357.png" alt=""></p>
-]]></content>
+<p><img src="https://photos.zywvvd.com/icey-mate-book/20201212113357.png"></p>
+<link rel="stylesheet" href="/css/spoiler.css" type="text/css"><script src="/js/spoiler.js" type="text/javascript" async></script>]]></content>
       <categories>
         <category>Windows</category>
       </categories>
@@ -1199,7 +1621,7 @@ $$
 </thead>
 <tbody><tr>
 <td><a href="https://bwh88.net/aff.php?aff=55490&gid=1" target="_blank" rel="noopener"><strong>BandwagonHost</strong></a></td>
-<td>俗称<strong>搬瓦工</strong>，可能是最广为人知的境外<strong><del>廉价</del>VPS</strong>服务商。VPS线路针对中国网络特别优化，网速很给力，<strong>支持支付宝</strong>。</td>
+<td>俗称<strong>搬瓦工</strong>，可能是最广为人知的境外**<del>廉价</del>VPS<strong>服务商。VPS线路针对中国网络特别优化，网速很给力，</strong>支持支付宝**。</td>
 </tr>
 <tr>
 <td><a href="https://www.akkocloud.com/aff.php?aff=122&gid=7" target="_blank" rel="noopener"><strong>AkkoCloud</strong></a></td>
@@ -1220,7 +1642,7 @@ $$
 <h4 id="链接服务器"><a href="#链接服务器" class="headerlink" title="链接服务器"></a>链接服务器</h4><blockquote>
 <p>随便打开一个终端使用ssh链接，在服务器管理界面中获取ip与密码：</p>
 </blockquote>
-<p><img src="https://photos.zywvvd.com/images_matrixtime/20201204204502.png" alt=""></p>
+<p><img src="https://photos.zywvvd.com/images_matrixtime/20201204204502.png"></p>
 <figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">ssh root@your_ip</span><br><span class="line">-&gt;</span><br><span class="line">enter password</span><br></pre></td></tr></table></figure>
 
 <h4 id="安装V2Ray并获取配置信息"><a href="#安装V2Ray并获取配置信息" class="headerlink" title="安装V2Ray并获取配置信息"></a>安装V2Ray并获取配置信息</h4><blockquote>
@@ -1269,7 +1691,7 @@ $$
 <li><p>点击系统托盘的<code>V2RayN</code>图标，弹出程序主界面，选择服务器<code>添加Vmess服务器</code>选项</p>
 </li>
 </ul>
-<h4 id="填入配置信息"><a href="#填入配置信息" class="headerlink" title="填入配置信息"></a>填入配置信息</h4><p><img src="https://photos.zywvvd.com/images_matrixtime/20201204205457.png" alt=""></p>
+<h4 id="填入配置信息"><a href="#填入配置信息" class="headerlink" title="填入配置信息"></a>填入配置信息</h4><p><img src="https://photos.zywvvd.com/images_matrixtime/20201204205457.png"></p>
 <ul>
 <li><p>填入ip 端口 和id（都是刚刚记录过的）</p>
 </li>
@@ -1283,16 +1705,16 @@ $$
 <h4 id="测试服务器延迟"><a href="#测试服务器延迟" class="headerlink" title="测试服务器延迟"></a>测试服务器延迟</h4><blockquote>
 <p>服务器延迟不是 -1 或 <code>timeout</code> 即说明连接成功</p>
 </blockquote>
-<p><img src="https://photos.zywvvd.com/images_matrixtime/20201204205924.png" alt=""></p>
-<h4 id="开启科学上网"><a href="#开启科学上网" class="headerlink" title="开启科学上网"></a>开启科学上网</h4><p><img src="https://photos.zywvvd.com/images_matrixtime/20201204210018.png" alt=""></p>
+<p><img src="https://photos.zywvvd.com/images_matrixtime/20201204205924.png"></p>
+<h4 id="开启科学上网"><a href="#开启科学上网" class="headerlink" title="开启科学上网"></a>开启科学上网</h4><p><img src="https://photos.zywvvd.com/images_matrixtime/20201204210018.png"></p>
 <ul>
 <li>开启http代理或PAC，随后就是见证奇迹的时刻了</li>
 </ul>
-<p><img src="https://photos.zywvvd.com/images_matrixtime/20201204210141.png" alt=""></p>
+<p><img src="https://photos.zywvvd.com/images_matrixtime/20201204210141.png"></p>
 <ul>
 <li>have fun ~</li>
 </ul>
-]]></content>
+<link rel="stylesheet" href="/css/spoiler.css" type="text/css"><script src="/js/spoiler.js" type="text/javascript" async></script>]]></content>
       <categories>
         <category>internet</category>
       </categories>
@@ -1304,7 +1726,7 @@ $$
     <title>Python ImportError libGL.so.1 cannot open shared object file No such file or directory 解决方案</title>
     <url>/2020/12/04/python/import-error/import-error-0/</url>
     <content><![CDATA[<blockquote>
-<p>刚装的 linux 环境中使用 python 导入包时可能会报 <code>libGL.so.1: cannot open shared object file</code> 的错误，本文记录解决方案。</p>
+<p>刚装的 linux 环境中使用 python 导入包时可能会报 <code> libGL.so.1: cannot open shared object file</code> 的错误，本文记录解决方案。</p>
 </blockquote>
 <a id="more"></a>
 
@@ -1324,7 +1746,7 @@ $$
 <h3 id="参考资料"><a href="#参考资料" class="headerlink" title="参考资料"></a>参考资料</h3><ul>
 <li><a href="https://stackoverflow.com/questions/63544251/import-cv2-in-sagemaker-studio-jupyter-notebook-throws-importerror-libgl-so-1" target="_blank" rel="noopener">https://stackoverflow.com/questions/63544251/import-cv2-in-sagemaker-studio-jupyter-notebook-throws-importerror-libgl-so-1</a></li>
 </ul>
-]]></content>
+<link rel="stylesheet" href="/css/spoiler.css" type="text/css"><script src="/js/spoiler.js" type="text/javascript" async></script>]]></content>
       <categories>
         <category>python</category>
         <category>故障排除</category>
@@ -1391,7 +1813,7 @@ $$
 <li><p><a href="https://www.cnblogs.com/wuchangsoft/p/9767074.html" target="_blank" rel="noopener">https://www.cnblogs.com/wuchangsoft/p/9767074.html</a></p>
 </li>
 </ul>
-]]></content>
+<link rel="stylesheet" href="/css/spoiler.css" type="text/css"><script src="/js/spoiler.js" type="text/javascript" async></script>]]></content>
       <categories>
         <category>Linux</category>
         <category>docker</category>
@@ -1727,7 +2149,7 @@ $$
 <h3 id="下载驱动"><a href="#下载驱动" class="headerlink" title="下载驱动"></a>下载驱动</h3><ul>
 <li>官网下载 <a href="https://www.nvidia.cn/geforce/drivers/" target="_blank" rel="noopener">https://www.nvidia.cn/geforce/drivers/</a></li>
 </ul>
-<p><img src="https://photos.zywvvd.com/images_matrixtime/20201203201343.png" alt=""></p>
+<p><img src="https://photos.zywvvd.com/images_matrixtime/20201203201343.png"></p>
 <ul>
 <li>在搜索列表中选择合适自己目标的驱动版本(也不建议选择最新的,应用开发有可能跟不上,够用就好)</li>
 <li>我下载了 <code>NVIDIA-Linux-x86_64-450.80.02.run</code></li>
@@ -1752,7 +2174,7 @@ $$
 </blockquote>
 <h3 id="查看驱动更新结果"><a href="#查看驱动更新结果" class="headerlink" title="查看驱动更新结果"></a>查看驱动更新结果</h3><figure class="highlight shell"><table><tr><td class="code"><pre><span class="line"><span class="meta">$</span><span class="bash"> nvidia-smi</span></span><br></pre></td></tr></table></figure>
 
-<p><img src="https://photos.zywvvd.com/images_matrixtime/20201203202133.png" alt=""></p>
+<p><img src="https://photos.zywvvd.com/images_matrixtime/20201203202133.png"></p>
 <ul>
 <li>更新成功。</li>
 </ul>
@@ -1760,7 +2182,7 @@ $$
 <li><a href="https://blog.csdn.net/qq_30163461/article/details/80314630?utm_medium=distribute.pc_relevant.none-task-blog-BlogCommendFromBaidu-2.control&amp;depth_1-utm_source=distribute.pc_relevant.none-task-blog-BlogCommendFromBaidu-2.control" target="_blank" rel="noopener">https://blog.csdn.net/qq_30163461/article/details/80314630?utm_medium=distribute.pc_relevant.none-task-blog-BlogCommendFromBaidu-2.control&amp;depth_1-utm_source=distribute.pc_relevant.none-task-blog-BlogCommendFromBaidu-2.control</a></li>
 <li><a href="https://www.cnblogs.com/haiyang21/p/12699593.html" target="_blank" rel="noopener">https://www.cnblogs.com/haiyang21/p/12699593.html</a></li>
 </ul>
-]]></content>
+<link rel="stylesheet" href="/css/spoiler.css" type="text/css"><script src="/js/spoiler.js" type="text/javascript" async></script>]]></content>
       <categories>
         <category>Linux</category>
       </categories>
@@ -1846,7 +2268,7 @@ $$
 <li><p><a href="https://zhuanlan.zhihu.com/p/133707658" target="_blank" rel="noopener">https://zhuanlan.zhihu.com/p/133707658</a></p>
 </li>
 </ul>
-]]></content>
+<link rel="stylesheet" href="/css/spoiler.css" type="text/css"><script src="/js/spoiler.js" type="text/javascript" async></script>]]></content>
       <categories>
         <category>python</category>
         <category>pytorch</category>
@@ -1878,7 +2300,7 @@ $$
 </ul>
 <h3 id="解决方案"><a href="#解决方案" class="headerlink" title="解决方案"></a>解决方案</h3><figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">sudo umount -f -a -t cifs -l cifs_dir</span><br></pre></td></tr></table></figure>
 
-]]></content>
+<link rel="stylesheet" href="/css/spoiler.css" type="text/css"><script src="/js/spoiler.js" type="text/javascript" async></script>]]></content>
       <categories>
         <category>Linux</category>
       </categories>
@@ -1906,11 +2328,11 @@ $$
 <h3 id="解决方案"><a href="#解决方案" class="headerlink" title="解决方案"></a>解决方案</h3><ul>
 <li>关闭Windows防火墙：</li>
 </ul>
-<p><img src="https://photos.zywvvd.com/images_matrixtime/20201116143452.png" alt=""></p>
+<p><img src="https://photos.zywvvd.com/images_matrixtime/20201116143452.png"></p>
 <ul>
 <li>问题解决，可以正常mount windows 磁盘</li>
 </ul>
-]]></content>
+<link rel="stylesheet" href="/css/spoiler.css" type="text/css"><script src="/js/spoiler.js" type="text/javascript" async></script>]]></content>
       <categories>
         <category>Linux</category>
       </categories>
@@ -1931,8 +2353,11 @@ $$
 <h4 id="主题配置"><a href="#主题配置" class="headerlink" title="主题配置"></a>主题配置</h4><ul>
 <li>在主题配置文件中找到<code>mermaid</code>选项，将<code>enable</code>设置为<code>true</code>。</li>
 </ul>
-<p><img src="https://photos.zywvvd.com/image_canglan/20201123235944.png" alt=""></p>
-<h3 id="加入mermaid代码块"><a href="#加入mermaid代码块" class="headerlink" title="加入mermaid代码块"></a>加入mermaid代码块</h3><figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">graph TD</span><br><span class="line">    B((开始)) --&gt;C&#123;判断&#125;</span><br><span class="line">    C --  a&#x3D;1 --&gt;D[执行语句1]</span><br><span class="line">    C --  a&#x3D;2  --&gt;E[执行语句2]</span><br><span class="line">    C --  a&#x3D;3 --&gt;F[执行语句3]</span><br><span class="line">    C -- a&#x3D;4  --&gt;G[执行语句4]</span><br><span class="line">    D--&gt; AA((结束))</span><br><span class="line">    E--&gt; AA</span><br><span class="line">    F--&gt; AA</span><br><span class="line">   G--&gt; AA</span><br></pre></td></tr></table></figure>
+<p><img src="https://photos.zywvvd.com/image_canglan/20201123235944.png"></p>
+<h3 id="加入mermaid代码块"><a href="#加入mermaid代码块" class="headerlink" title="加入mermaid代码块"></a>加入mermaid代码块</h3><blockquote>
+<p>官网有最全的说明文档 <a href="https://mermaidjs.github.io/" target="_blank" rel="noopener">https://mermaidjs.github.io/</a> ，此处记录常用使用方法。</p>
+</blockquote>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">graph TD</span><br><span class="line">    B((开始)) --&gt;C&#123;判断&#125;</span><br><span class="line">    C --  a&#x3D;1 --&gt;D[执行语句1]</span><br><span class="line">    C --  a&#x3D;2  --&gt;E[执行语句2]</span><br><span class="line">    C --  a&#x3D;3 --&gt;F[执行语句3]</span><br><span class="line">    C -- a&#x3D;4  --&gt;G[执行语句4]</span><br><span class="line">    D--&gt; AA((结束))</span><br><span class="line">    E--&gt; AA</span><br><span class="line">    F--&gt; AA</span><br><span class="line">   G--&gt; AA</span><br></pre></td></tr></table></figure>
 
 
 
@@ -1975,7 +2400,7 @@ $$
 <td>与TB相同</td>
 </tr>
 </tbody></table>
-<h4 id="节点"><a href="#节点" class="headerlink" title="节点"></a>节点</h4><p>语法结构如下：<code>A[名称] --&gt; B(名称)</code><br>其中，A、B均代表形状名称，<code>--&gt;</code>表示箭头指向，形状样式用后面的括号来表示，括号里面的内容是形状中要显示的文本内容。其中有以下几种形状：</p>
+<h4 id="节点"><a href="#节点" class="headerlink" title="节点"></a>节点</h4><p>语法结构如下：<code>A[名称] --&gt; B(名称)</code><br>其中，A、B均代表形状名称，<code> --&gt;</code>表示箭头指向，形状样式用后面的括号来表示，括号里面的内容是形状中要显示的文本内容。其中有以下几种形状：</p>
 <table>
 <thead>
 <tr>
@@ -2080,7 +2505,7 @@ $$
 <h3 id="序列图语法"><a href="#序列图语法" class="headerlink" title="序列图语法"></a>序列图语法</h3><p>使用以下语法开始序列图</p>
 <figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">sequenceDiagram</span><br><span class="line">    [参与者1][消息线][参与者2]:消息体</span><br><span class="line">    ...</span><br></pre></td></tr></table></figure>
 
-<h4 id="参与者"><a href="#参与者" class="headerlink" title="参与者"></a>参与者</h4><p>上例中的张三、李四都是参与者，上例中的语法是最简单的，也可以明显表明参与者有哪些</p>
+<h4 id="参与者"><a href="#参与者" class="headerlink" title="参与者"></a>参与者</h4><p>定义参与者</p>
 <figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">sequenceDiagram</span><br><span class="line">    participant 参与者 1</span><br><span class="line">    participant 参与者 2</span><br><span class="line">    ...</span><br><span class="line">    participant 简称 as 参与者 3 #该语法可以在接下来的描述中使用简称来代替参与者 312345</span><br></pre></td></tr></table></figure>
 
 <h4 id="消息线"><a href="#消息线" class="headerlink" title="消息线"></a>消息线</h4><p>|类型|描述|<br>|<code>-&gt;</code>|无箭头的实线|<br>|<code>--&gt;</code>|无箭头的虚线|<br>|<code>-&gt;&gt;</code>|有箭头的实线|<br>|<code>--&gt;&gt;</code>|有箭头的虚线|<br>|<code>-x</code>|末端为叉的实线（表示异步）|<br>|<code>--x</code>|末端为叉的虚线（表示异步）|</p>
@@ -2143,12 +2568,16 @@ $$
 
 
 <h3 id="参考资料"><a href="#参考资料" class="headerlink" title="参考资料"></a>参考资料</h3><ul>
-<li><a href="https://mermaid-js.github.io/mermaid/#/flowchart" target="_blank" rel="noopener">https://mermaid-js.github.io/mermaid/#/flowchart</a></li>
-<li><a href="https://www.jianshu.com/p/af48cc77b57a" target="_blank" rel="noopener">https://www.jianshu.com/p/af48cc77b57a</a></li>
-<li><a href="https://baijiahao.baidu.com/s?id=1641809867954032650&amp;wfr=spider&amp;for=pc" target="_blank" rel="noopener">https://baijiahao.baidu.com/s?id=1641809867954032650&amp;wfr=spider&amp;for=pc</a></li>
-<li><a href="https://blog.csdn.net/fenghuizhidao/article/details/79440583" target="_blank" rel="noopener">https://blog.csdn.net/fenghuizhidao/article/details/79440583</a></li>
+<li><p><a href="https://mermaidjs.github.io/" target="_blank" rel="noopener">https://mermaidjs.github.io</a></p>
+</li>
+<li><p><a href="https://www.jianshu.com/p/af48cc77b57a" target="_blank" rel="noopener">https://www.jianshu.com/p/af48cc77b57a</a></p>
+</li>
+<li><p><a href="https://baijiahao.baidu.com/s?id=1641809867954032650&amp;wfr=spider&amp;for=pc" target="_blank" rel="noopener">https://baijiahao.baidu.com/s?id=1641809867954032650&amp;wfr=spider&amp;for=pc</a></p>
+</li>
+<li><p><a href="https://blog.csdn.net/fenghuizhidao/article/details/79440583" target="_blank" rel="noopener">https://blog.csdn.net/fenghuizhidao/article/details/79440583</a></p>
+</li>
 </ul>
-]]></content>
+<link rel="stylesheet" href="/css/spoiler.css" type="text/css"><script src="/js/spoiler.js" type="text/javascript" async></script>]]></content>
       <categories>
         <category>Hexo</category>
       </categories>
@@ -2169,7 +2598,7 @@ $$
 <h3 id="添加Flow代码"><a href="#添加Flow代码" class="headerlink" title="添加Flow代码"></a>添加Flow代码</h3><ul>
 <li>需要在代码块(ctrl + shift + k)中，选择语言为<code>flow</code>。</li>
 </ul>
-<p><img src="https://photos.zywvvd.com/image_canglan/20201123232520.png" alt=""></p>
+<p><img src="https://photos.zywvvd.com/image_canglan/20201123232520.png"></p>
 <ul>
 <li>添加flow代码：</li>
 </ul>
@@ -2227,7 +2656,7 @@ $$
 <figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">a-&gt;b</span><br><span class="line">b-&gt;c</span><br></pre></td></tr></table></figure>
 
 <ul>
-<li>condition是判断，可以取yes和no两种结果，对于不同结果可以有不同走向。如：<br><code>cond(yes)-&gt;out</code>表示condition成立时转向out执行；<br><code>cond(no)-&gt;op</code>表示condition不成立时转向op执行；</li>
+<li>condition是判断，可以取yes和no两种结果，对于不同结果可以有不同走向。如：<br><code>cond(yes)-&gt;out </code>表示condition成立时转向out执行；<br><code>cond(no)-&gt;op</code>表示condition不成立时转向op执行；</li>
 </ul>
 <h4 id="连接方向"><a href="#连接方向" class="headerlink" title="连接方向"></a>连接方向</h4><ul>
 <li>连接线有上下左右四个方向，如果需要指定连接线连接到某一特定方向，在连接线开始的元素后面添加方向即可，方向包括：</li>
@@ -2259,7 +2688,7 @@ cond(yes,right)->out->e
 cond(no)->sub</textarea><textarea id="flowchart-0-options" style="display: none">{"scale":1,"line-width":2,"line-length":50,"text-margin":10,"font-size":12}</textarea><script>  var code = document.getElementById("flowchart-0-code").value;  var options = JSON.parse(decodeURIComponent(document.getElementById("flowchart-0-options").value));  var diagram = flowchart.parse(code);  diagram.drawSVG("flowchart-0", options);</script></p>
 </li>
 </ul>
-]]></content>
+<link rel="stylesheet" href="/css/spoiler.css" type="text/css"><script src="/js/spoiler.js" type="text/javascript" async></script>]]></content>
       <categories>
         <category>Hexo</category>
       </categories>
@@ -2285,7 +2714,7 @@ cond(no)->sub</textarea><textarea id="flowchart-0-options" style="display: none"
 </ul>
 <figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">import matplotlib</span><br><span class="line">matplotlib.use(&#39;Agg&#39;)</span><br></pre></td></tr></table></figure>
 
-]]></content>
+<link rel="stylesheet" href="/css/spoiler.css" type="text/css"><script src="/js/spoiler.js" type="text/javascript" async></script>]]></content>
       <categories>
         <category>Python</category>
         <category>故障排除</category>
@@ -2344,7 +2773,7 @@ cond(no)->sub</textarea><textarea id="flowchart-0-options" style="display: none"
 <li><a href="https://pytorch.apachecn.org/docs/0.3/onnx.html" target="_blank" rel="noopener">https://pytorch.apachecn.org/docs/0.3/onnx.html</a></li>
 <li><a href="https://www.jianshu.com/p/5a0a09fbdeba" target="_blank" rel="noopener">https://www.jianshu.com/p/5a0a09fbdeba</a></li>
 </ul>
-]]></content>
+<link rel="stylesheet" href="/css/spoiler.css" type="text/css"><script src="/js/spoiler.js" type="text/javascript" async></script>]]></content>
       <categories>
         <category>深度学习</category>
         <category>pytorch</category>
@@ -2378,12 +2807,12 @@ cond(no)->sub</textarea><textarea id="flowchart-0-options" style="display: none"
 <h4 id="可视化网络"><a href="#可视化网络" class="headerlink" title="可视化网络"></a>可视化网络</h4><ul>
 <li>运行程序</li>
 </ul>
-<p><img src="https://photos.zywvvd.com/images_matrixtime/20201113152042.png" alt=""></p>
+<p><img src="https://photos.zywvvd.com/images_matrixtime/20201113152042.png"></p>
 <ul>
 <li>打开模型文件，可以看到模型的网络结构：</li>
 </ul>
-<p><img src="https://photos.zywvvd.com/images_matrixtime/20201113152349.png" alt=""></p>
-]]></content>
+<p><img src="https://photos.zywvvd.com/images_matrixtime/20201113152349.png"></p>
+<link rel="stylesheet" href="/css/spoiler.css" type="text/css"><script src="/js/spoiler.js" type="text/javascript" async></script>]]></content>
       <categories>
         <category>深度学习</category>
         <category>pytorch</category>
@@ -2447,7 +2876,7 @@ cond(no)->sub</textarea><textarea id="flowchart-0-options" style="display: none"
 <li>共轭梯度法介绍与分析</li>
 <li>共轭梯度法的相关证明</li>
 </ul>
-]]></content>
+<link rel="stylesheet" href="/css/spoiler.css" type="text/css"><script src="/js/spoiler.js" type="text/javascript" async></script>]]></content>
       <categories>
         <category>机器学习</category>
         <category>优化方法</category>
@@ -2503,7 +2932,7 @@ cond(no)->sub</textarea><textarea id="flowchart-0-options" style="display: none"
 <li><a href="https://blog.csdn.net/guyuealian/article/details/104179723" target="_blank" rel="noopener">https://blog.csdn.net/guyuealian/article/details/104179723</a></li>
 <li><a href="https://blog.csdn.net/qq_33883462/article/details/81050795" target="_blank" rel="noopener">https://blog.csdn.net/qq_33883462/article/details/81050795</a></li>
 </ul>
-]]></content>
+<link rel="stylesheet" href="/css/spoiler.css" type="text/css"><script src="/js/spoiler.js" type="text/javascript" async></script>]]></content>
       <categories>
         <category>Python</category>
       </categories>
@@ -2522,7 +2951,7 @@ cond(no)->sub</textarea><textarea id="flowchart-0-options" style="display: none"
 <h3 id="问题复现"><a href="#问题复现" class="headerlink" title="问题复现"></a>问题复现</h3><blockquote>
 <p>在Windows中调用 <code>pynvml.nvmlInit()</code>时出错：</p>
 </blockquote>
-<p><img src="https://photos.zywvvd.com/images_matrixtime/20201106155637.png" alt=""></p>
+<p><img src="https://photos.zywvvd.com/images_matrixtime/20201106155637.png"></p>
 <blockquote>
 <p>错误信息：</p>
 </blockquote>
@@ -2547,7 +2976,7 @@ cond(no)->sub</textarea><textarea id="flowchart-0-options" style="display: none"
 <blockquote>
 <p>会返回当前系统的 nvidia-smi.exe的位置 （前提是当前cuda安装正常，可以使用nvidia-smi）</p>
 </blockquote>
-<p><img src="https://photos.zywvvd.com/images_matrixtime/20201106161405.png" alt=""></p>
+<p><img src="https://photos.zywvvd.com/images_matrixtime/20201106161405.png"></p>
 <ul>
 <li>去相应位置查看，发现<code>vnml.dll</code>文件和他在一起，所以只要将代码中路径指向它就行了。</li>
 </ul>
@@ -2570,11 +2999,11 @@ cond(no)->sub</textarea><textarea id="flowchart-0-options" style="display: none"
 <li><p>将<code>nvml.dll</code>文件放在文件夹里</p>
 </li>
 </ul>
-<h4 id="运行示例"><a href="#运行示例" class="headerlink" title="运行示例"></a>运行示例</h4><p><img src="https://photos.zywvvd.com/images_matrixtime/20201106162159.png" alt=""></p>
+<h4 id="运行示例"><a href="#运行示例" class="headerlink" title="运行示例"></a>运行示例</h4><p><img src="https://photos.zywvvd.com/images_matrixtime/20201106162159.png"></p>
 <h3 id="参考资料："><a href="#参考资料：" class="headerlink" title="参考资料："></a>参考资料：</h3><ul>
 <li><a href="https://blog.csdn.net/com_fang_bean/article/details/107988018" target="_blank" rel="noopener">https://blog.csdn.net/com_fang_bean/article/details/107988018</a></li>
 </ul>
-]]></content>
+<link rel="stylesheet" href="/css/spoiler.css" type="text/css"><script src="/js/spoiler.js" type="text/javascript" async></script>]]></content>
       <categories>
         <category>深度学习</category>
         <category>GPU</category>
@@ -2624,7 +3053,7 @@ cond(no)->sub</textarea><textarea id="flowchart-0-options" style="display: none"
 <h3 id="参考资料"><a href="#参考资料" class="headerlink" title="参考资料"></a>参考资料</h3><ul>
 <li><a href="http://www.ngui.cc/51cto/show-33630.html" target="_blank" rel="noopener">http://www.ngui.cc/51cto/show-33630.html</a></li>
 </ul>
-]]></content>
+<link rel="stylesheet" href="/css/spoiler.css" type="text/css"><script src="/js/spoiler.js" type="text/javascript" async></script>]]></content>
       <categories>
         <category>深度学习</category>
         <category>GPU</category>
@@ -2645,7 +3074,7 @@ cond(no)->sub</textarea><textarea id="flowchart-0-options" style="display: none"
 <h3 id="问题复现"><a href="#问题复现" class="headerlink" title="问题复现"></a>问题复现</h3><ul>
 <li>刚刚安装好VS code 与 Anaconda时，hello world程序不在终端显示打印内容：</li>
 </ul>
-<p><img src="https://photos.zywvvd.com/image_canglan/20201102234922.png" alt=""></p>
+<p><img src="https://photos.zywvvd.com/image_canglan/20201102234922.png"></p>
 <blockquote>
 <p>不显示打印内容。</p>
 </blockquote>
@@ -2655,7 +3084,7 @@ cond(no)->sub</textarea><textarea id="flowchart-0-options" style="display: none"
 <h3 id="修改方法"><a href="#修改方法" class="headerlink" title="修改方法"></a>修改方法</h3><ul>
 <li>文件-首选项-设置-打开设置：</li>
 </ul>
-<p><img src="https://photos.zywvvd.com/image_canglan/20201102235621.png" alt=""></p>
+<p><img src="https://photos.zywvvd.com/image_canglan/20201102235621.png"></p>
 <ul>
 <li>修改”python.pythonPath”：</li>
 </ul>
@@ -2667,8 +3096,8 @@ cond(no)->sub</textarea><textarea id="flowchart-0-options" style="display: none"
 <h3 id="问题解决"><a href="#问题解决" class="headerlink" title="问题解决"></a>问题解决</h3><ul>
 <li>程序运行时调用<code>python.exe</code>，而且输出正常。</li>
 </ul>
-<p><img src="https://photos.zywvvd.com/image_canglan/20201102235748.png" alt=""></p>
-]]></content>
+<p><img src="https://photos.zywvvd.com/image_canglan/20201102235748.png"></p>
+<link rel="stylesheet" href="/css/spoiler.css" type="text/css"><script src="/js/spoiler.js" type="text/javascript" async></script>]]></content>
       <categories>
         <category>IDE</category>
         <category>VS code</category>
@@ -2694,22 +3123,22 @@ cond(no)->sub</textarea><textarea id="flowchart-0-options" style="display: none"
 <blockquote>
 <p>直接安装下载的 KiteSetup.exe 即可。</p>
 </blockquote>
-<p><img src="https://photos.zywvvd.com/images_matrixtime/20201029095905.png" alt=""></p>
+<p><img src="https://photos.zywvvd.com/images_matrixtime/20201029095905.png"></p>
 <h4 id="在-VS-code-中使用-kite"><a href="#在-VS-code-中使用-kite" class="headerlink" title="在 VS code 中使用 kite"></a>在 VS code 中使用 kite</h4><blockquote>
 <p>安装插件 Kite AI Code AutoComplete</p>
 </blockquote>
-<p><img src="https://photos.zywvvd.com/images_matrixtime/20201029100241.png" alt=""></p>
+<p><img src="https://photos.zywvvd.com/images_matrixtime/20201029100241.png"></p>
 <blockquote>
 <p>随后可以跟着自动弹出的教程学习使用方法。</p>
 </blockquote>
 <blockquote>
 <p>事实上写代码时仅需关注右下角是否开启了Kite即可：</p>
 </blockquote>
-<p><img src="https://photos.zywvvd.com/images_matrixtime/20201029100608.png" alt=""></p>
+<p><img src="https://photos.zywvvd.com/images_matrixtime/20201029100608.png"></p>
 <blockquote>
 <p>此时写Python代码会有kite 的自动补全：</p>
 </blockquote>
-<p><img src="https://photos.zywvvd.com/images_matrixtime/20201029101019.png" alt=""></p>
+<p><img src="https://photos.zywvvd.com/images_matrixtime/20201029101019.png"></p>
 <h3 id="Linux"><a href="#Linux" class="headerlink" title="Linux"></a>Linux</h3><ul>
 <li><a href="https://www.kite.com/download/?loc=top_nav#" target="_blank" rel="noopener">https://www.kite.com/download/?loc=top_nav#</a></li>
 </ul>
@@ -2724,7 +3153,7 @@ cond(no)->sub</textarea><textarea id="flowchart-0-options" style="display: none"
 <li>得说明的是现在的Kite已经收费了</li>
 <li>不交费的话每日有使用上限，反正我大概打开IDE一两分钟就会用完</li>
 </ul>
-]]></content>
+<link rel="stylesheet" href="/css/spoiler.css" type="text/css"><script src="/js/spoiler.js" type="text/javascript" async></script>]]></content>
       <categories>
         <category>IDE</category>
         <category>VS code</category>
@@ -2755,30 +3184,30 @@ cond(no)->sub</textarea><textarea id="flowchart-0-options" style="display: none"
 </blockquote>
 </li>
 </ul>
-<p><img src="https://photos.zywvvd.com/images_matrixtime/20201028143530.png" alt=""></p>
+<p><img src="https://photos.zywvvd.com/images_matrixtime/20201028143530.png"></p>
 <h3 id="配置主机信息"><a href="#配置主机信息" class="headerlink" title="配置主机信息"></a>配置主机信息</h3><blockquote>
 <p>ctrl + shift + p</p>
 </blockquote>
-<p><img src="https://photos.zywvvd.com/images_matrixtime/20201028174129.png" alt=""></p>
-<p><img src="https://photos.zywvvd.com/images_matrixtime/20201028175152.png" alt=""></p>
+<p><img src="https://photos.zywvvd.com/images_matrixtime/20201028174129.png"></p>
+<p><img src="https://photos.zywvvd.com/images_matrixtime/20201028175152.png"></p>
 <figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">Host alias</span><br><span class="line">    HostName 192.168.10.12</span><br><span class="line">    Port 3721</span><br><span class="line">    User root</span><br><span class="line">    IdentityFile ~\.ssh\id_rsa</span><br><span class="line">    IdentitiesOnly yes</span><br></pre></td></tr></table></figure>
 
-<h3 id="vs-code-连接远程主机"><a href="#vs-code-连接远程主机" class="headerlink" title="vs code 连接远程主机"></a>vs code 连接远程主机</h3><p><img src="https://photos.zywvvd.com/images_matrixtime/20201028175324.png" alt=""></p>
+<h3 id="vs-code-连接远程主机"><a href="#vs-code-连接远程主机" class="headerlink" title="vs code 连接远程主机"></a>vs code 连接远程主机</h3><p><img src="https://photos.zywvvd.com/images_matrixtime/20201028175324.png"></p>
 <blockquote>
 <p>之后选择目标主机的操作系统。</p>
 </blockquote>
 <ul>
 <li>成功连接到远程主机：</li>
 </ul>
-<p><img src="https://photos.zywvvd.com/images_matrixtime/20201102202219.png" alt=""></p>
+<p><img src="https://photos.zywvvd.com/images_matrixtime/20201102202219.png"></p>
 <ul>
 <li>打开文件夹运行程序时，选择使用的Python环境：</li>
 </ul>
-<p><img src="https://photos.zywvvd.com/images_matrixtime/20201102202420.png" alt=""></p>
+<p><img src="https://photos.zywvvd.com/images_matrixtime/20201102202420.png"></p>
 <ul>
 <li>插入断点调试程序，与本机无异：</li>
 </ul>
-<p><img src="https://photos.zywvvd.com/images_matrixtime/20201102202548.png" alt=""></p>
+<p><img src="https://photos.zywvvd.com/images_matrixtime/20201102202548.png"></p>
 <h3 id="填坑"><a href="#填坑" class="headerlink" title="填坑"></a>填坑</h3><h4 id="如果报错：Bad-owner-or-permissions-on-C-Users-Admin-ssh-config"><a href="#如果报错：Bad-owner-or-permissions-on-C-Users-Admin-ssh-config" class="headerlink" title="如果报错：Bad owner or permissions on C:\Users\Admin/.ssh/config"></a>如果报错：Bad owner or permissions on C:\Users\Admin/.ssh/config</h4><blockquote>
 <p>解决方案参考： <a href="https://zixizixi.cn/windows_vscode_ssh_error_bad-owner-or-permissions" target="_blank" rel="noopener">https://zixizixi.cn/windows_vscode_ssh_error_bad-owner-or-permissions</a></p>
 </blockquote>
@@ -2805,7 +3234,7 @@ cond(no)->sub</textarea><textarea id="flowchart-0-options" style="display: none"
 <p>将config绝对路径填在SSH设置里：</p>
 </blockquote>
 <ul>
-<li><img src="https://photos.zywvvd.com/images_matrixtime/20201028180850.png" alt=""></li>
+<li><img src="https://photos.zywvvd.com/images_matrixtime/20201028180850.png"></li>
 </ul>
 <h3 id="参考资料："><a href="#参考资料：" class="headerlink" title="参考资料："></a>参考资料：</h3><ul>
 <li><p><a href="https://www.jb51.net/article/184071.htm" target="_blank" rel="noopener">https://www.jb51.net/article/184071.htm</a></p>
@@ -2815,7 +3244,7 @@ cond(no)->sub</textarea><textarea id="flowchart-0-options" style="display: none"
 <li><p><a href="https://blog.csdn.net/u011436427/article/details/102981641" target="_blank" rel="noopener">https://blog.csdn.net/u011436427/article/details/102981641</a></p>
 </li>
 </ul>
-]]></content>
+<link rel="stylesheet" href="/css/spoiler.css" type="text/css"><script src="/js/spoiler.js" type="text/javascript" async></script>]]></content>
       <categories>
         <category>IDE</category>
         <category>VS code</category>
@@ -2899,7 +3328,7 @@ cond(no)->sub</textarea><textarea id="flowchart-0-options" style="display: none"
 </ul>
 <figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">ssh -p 3721 root@192.168.10.12</span><br></pre></td></tr></table></figure>
 
-<p><img src="https://photos.zywvvd.com/images_matrixtime/20201102200256.png" alt=""></p>
+<p><img src="https://photos.zywvvd.com/images_matrixtime/20201102200256.png"></p>
 <ul>
 <li>如果不清楚Linux系统端口映射配置情况：</li>
 </ul>
@@ -2911,15 +3340,15 @@ cond(no)->sub</textarea><textarea id="flowchart-0-options" style="display: none"
 <ul>
 <li>新建会话，填写名称、IP、端口号（我们刚刚配置过的）：</li>
 </ul>
-<p><img src="https://photos.zywvvd.com/images_matrixtime/20201102200522.png" alt=""></p>
+<p><img src="https://photos.zywvvd.com/images_matrixtime/20201102200522.png"></p>
 <ul>
 <li>用户身份认证，填入用户名密码（刚刚配置过的）：</li>
 </ul>
-<p><img src="https://photos.zywvvd.com/images_matrixtime/20201102200640.png" alt=""></p>
+<p><img src="https://photos.zywvvd.com/images_matrixtime/20201102200640.png"></p>
 <ul>
 <li>随后就可以使用该会话直接登录docker容器了，为远程调试打下了坚实的基础：</li>
 </ul>
-<p><img src="https://photos.zywvvd.com/images_matrixtime/20201102200804.png" alt=""></p>
+<p><img src="https://photos.zywvvd.com/images_matrixtime/20201102200804.png"></p>
 <h3 id="填坑"><a href="#填坑" class="headerlink" title="填坑"></a>填坑</h3><ul>
 <li><p>ssh: Could not resolve hostname 192.168.10.12:3721: Name or service not known</p>
 <blockquote>
@@ -2953,7 +3382,7 @@ cond(no)->sub</textarea><textarea id="flowchart-0-options" style="display: none"
 <h3 id="参考资料"><a href="#参考资料" class="headerlink" title="参考资料"></a>参考资料</h3><ul>
 <li><a href="https://blog.csdn.net/hanchaobiao/article/details/84069299" target="_blank" rel="noopener">https://blog.csdn.net/hanchaobiao/article/details/84069299</a></li>
 </ul>
-]]></content>
+<link rel="stylesheet" href="/css/spoiler.css" type="text/css"><script src="/js/spoiler.js" type="text/javascript" async></script>]]></content>
       <categories>
         <category>软件</category>
         <category>Windows 10</category>
@@ -2999,7 +3428,7 @@ cond(no)->sub</textarea><textarea id="flowchart-0-options" style="display: none"
 <ul>
 <li>至此问题解决，github可以正常访问。</li>
 </ul>
-]]></content>
+<link rel="stylesheet" href="/css/spoiler.css" type="text/css"><script src="/js/spoiler.js" type="text/javascript" async></script>]]></content>
       <categories>
         <category>Git</category>
       </categories>
@@ -3023,21 +3452,21 @@ cond(no)->sub</textarea><textarea id="flowchart-0-options" style="display: none"
 <p><a href="https://chrome.google.com/webstore" target="_blank" rel="noopener">https://chrome.google.com/webstore</a></p>
 </li>
 <li><p>搜索 <code>gitHub 加速</code>：</p>
-<p><img src="https://photos.zywvvd.com/images_matrixtime/20201028171530.png" alt=""></p>
+<p><img src="https://photos.zywvvd.com/images_matrixtime/20201028171530.png"></p>
 </li>
 <li><p>安装 github 加速插件</p>
 </li>
 <li><p>此时重新打开之前下不来的GitHub页面：</p>
 </li>
 </ul>
-<p><img src="https://photos.zywvvd.com/images_matrixtime/20201028171703.png" alt=""></p>
+<p><img src="https://photos.zywvvd.com/images_matrixtime/20201028171703.png"></p>
 <ul>
 <li>可以使用镜像地址下载仓库，速度与之前不可同日而语。</li>
 </ul>
 <blockquote>
 <p>终于痛快了 。</p>
 </blockquote>
-]]></content>
+<link rel="stylesheet" href="/css/spoiler.css" type="text/css"><script src="/js/spoiler.js" type="text/javascript" async></script>]]></content>
       <categories>
         <category>Git</category>
       </categories>
@@ -3166,7 +3595,7 @@ cond(no)->sub</textarea><textarea id="flowchart-0-options" style="display: none"
 <li><a href="https://www.cnblogs.com/houpeiyong/p/5890748.html" target="_blank" rel="noopener">https://www.cnblogs.com/houpeiyong/p/5890748.html</a></li>
 <li><a href="https://www.jianshu.com/p/285302d1eb73" target="_blank" rel="noopener">https://www.jianshu.com/p/285302d1eb73</a></li>
 </ul>
-]]></content>
+<link rel="stylesheet" href="/css/spoiler.css" type="text/css"><script src="/js/spoiler.js" type="text/javascript" async></script>]]></content>
       <categories>
         <category>Git</category>
       </categories>
@@ -3232,7 +3661,7 @@ cond(no)->sub</textarea><textarea id="flowchart-0-options" style="display: none"
 <p>例如：输入: + smile + :，注意两边都有:</p>
 <p>:smile:</p>
 </blockquote>
-]]></content>
+<link rel="stylesheet" href="/css/spoiler.css" type="text/css"><script src="/js/spoiler.js" type="text/javascript" async></script>]]></content>
       <categories>
         <category>Software</category>
       </categories>
@@ -3333,7 +3762,7 @@ cond(no)->sub</textarea><textarea id="flowchart-0-options" style="display: none"
 <td align="center">退出调试</td>
 </tr>
 </tbody></table>
-]]></content>
+<link rel="stylesheet" href="/css/spoiler.css" type="text/css"><script src="/js/spoiler.js" type="text/javascript" async></script>]]></content>
       <categories>
         <category>Python</category>
       </categories>
@@ -3359,7 +3788,7 @@ cond(no)->sub</textarea><textarea id="flowchart-0-options" style="display: none"
 
 <h3 id="并行执行"><a href="#并行执行" class="headerlink" title="并行执行"></a>并行执行</h3><figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">parallel -u &lt; test.txt</span><br></pre></td></tr></table></figure>
 
-]]></content>
+<link rel="stylesheet" href="/css/spoiler.css" type="text/css"><script src="/js/spoiler.js" type="text/javascript" async></script>]]></content>
       <categories>
         <category>Linux</category>
       </categories>
@@ -3389,7 +3818,7 @@ cond(no)->sub</textarea><textarea id="flowchart-0-options" style="display: none"
 <blockquote>
 <p>重启VS code 即可</p>
 </blockquote>
-]]></content>
+<link rel="stylesheet" href="/css/spoiler.css" type="text/css"><script src="/js/spoiler.js" type="text/javascript" async></script>]]></content>
       <categories>
         <category>IDE</category>
         <category>VS code</category>
@@ -3410,23 +3839,23 @@ cond(no)->sub</textarea><textarea id="flowchart-0-options" style="display: none"
 <h2 id="Windows-系统设置"><a href="#Windows-系统设置" class="headerlink" title="Windows 系统设置"></a>Windows 系统设置</h2><h3 id="打开SMB服务"><a href="#打开SMB服务" class="headerlink" title="打开SMB服务"></a>打开SMB服务</h3><blockquote>
 <p>打开 <strong>控制面板</strong> -&gt; <strong>程序和功能 -</strong>&gt; <strong>启动SMB 1.0/CIFS文件共享支持</strong> -&gt; <strong>重启计算机</strong></p>
 </blockquote>
-<p><img src="https://photos.zywvvd.com/images_matrixtime/20200730104725.png" alt=""></p>
+<p><img src="https://photos.zywvvd.com/images_matrixtime/20200730104725.png"></p>
 <h3 id="设置共享文件夹"><a href="#设置共享文件夹" class="headerlink" title="设置共享文件夹"></a>设置共享文件夹</h3><blockquote>
 <p><strong>需要共享的文件夹</strong> -&gt; <strong>右键 属性</strong> -&gt; <strong>共享</strong> -&gt; <strong>共享设置</strong> -&gt;<strong>添加Everyone用户</strong> -&gt; <strong>设置需要为该用户开放的权限</strong></p>
 </blockquote>
-<p><img src="https://photos.zywvvd.com/image_canglan/20200810000517.png" alt=""></p>
+<p><img src="https://photos.zywvvd.com/image_canglan/20200810000517.png"></p>
 <blockquote>
 <p>配置完共享设置后可以在<code>网络</code>中看到自己共享的目录:</p>
 </blockquote>
-<p><img src="https://photos.zywvvd.com/image_canglan/20200810001648.png" alt=""></p>
+<p><img src="https://photos.zywvvd.com/image_canglan/20200810001648.png"></p>
 <blockquote>
 <p>此时在你的windows系统中，该目录网络路径为 <code>\\计算机名\路径名</code>，其他网络中的用户也可以使用该地址访问你共享的内容:</p>
 </blockquote>
-<p><img src="https://photos.zywvvd.com/image_canglan/20200810001842.png" alt=""></p>
+<p><img src="https://photos.zywvvd.com/image_canglan/20200810001842.png"></p>
 <h3 id="设置共享是否需要密码"><a href="#设置共享是否需要密码" class="headerlink" title="设置共享是否需要密码"></a>设置共享是否需要密码</h3><blockquote>
 <p>打开 <strong>控制面板</strong> -&gt; <strong>网络和共享中心 -</strong>&gt; <strong>高级共享设置</strong> -&gt; <strong>所有网络</strong> -&gt; <strong>配置密码保护的共享</strong> 即可</p>
 </blockquote>
-<p><img src="https://photos.zywvvd.com/image_canglan/20200810001014.png" alt=""></p>
+<p><img src="https://photos.zywvvd.com/image_canglan/20200810001014.png"></p>
 <h3 id="防火墙设置"><a href="#防火墙设置" class="headerlink" title="防火墙设置"></a>防火墙设置</h3><blockquote>
 <p>在可以为可用性牺牲安全性的场景中可以关闭防火墙</p>
 </blockquote>
@@ -3440,7 +3869,7 @@ cond(no)->sub</textarea><textarea id="flowchart-0-options" style="display: none"
 <blockquote>
 <p>注：在Windows的<code>\\计算机名\路径名</code>地址在Linux挂载中不好用，需要将计算机名换为Windows计算机的IP地址。</p>
 </blockquote>
-]]></content>
+<link rel="stylesheet" href="/css/spoiler.css" type="text/css"><script src="/js/spoiler.js" type="text/javascript" async></script>]]></content>
       <categories>
         <category>Linux</category>
       </categories>
@@ -3469,7 +3898,7 @@ cond(no)->sub</textarea><textarea id="flowchart-0-options" style="display: none"
 <blockquote>
 <p>然后<code>conda activate</code>等相关命令就能用了。</p>
 </blockquote>
-]]></content>
+<link rel="stylesheet" href="/css/spoiler.css" type="text/css"><script src="/js/spoiler.js" type="text/javascript" async></script>]]></content>
       <categories>
         <category>Python</category>
         <category>故障排除</category>
@@ -3590,7 +4019,7 @@ cond(no)->sub</textarea><textarea id="flowchart-0-options" style="display: none"
 </ul>
 </li>
 </ul>
-]]></content>
+<link rel="stylesheet" href="/css/spoiler.css" type="text/css"><script src="/js/spoiler.js" type="text/javascript" async></script>]]></content>
       <categories>
         <category>Linux</category>
       </categories>
@@ -3616,7 +4045,7 @@ cond(no)->sub</textarea><textarea id="flowchart-0-options" style="display: none"
 <li><code>l</code>: 右移一列</li>
 <li><code>h</code>: 左移一列</li>
 </ul>
-<p><img src="https://photos.zywvvd.com/image_canglan/20200722223706.png" alt=""></p>
+<p><img src="https://photos.zywvvd.com/image_canglan/20200722223706.png"></p>
 <ul>
 <li><code>Ctrl+f</code>: 下翻页</li>
 <li><code>Ctrl+f</code>: 上翻页</li>
@@ -3636,23 +4065,23 @@ cond(no)->sub</textarea><textarea id="flowchart-0-options" style="display: none"
 <li><code>$</code>: 光标移至行尾</li>
 <li><code>num - gg</code>: 移动至<code>num</code>行第一个单词</li>
 <li><code>num - G</code>: 移动至<code>num</code>行第一个单词</li>
-<li><code>:num - Enter</code>: 移动至<code>num</code>行第一个单词</li>
-<li><code>:$ - Enter</code>: 移动至<code>num</code>行第一个单词</li>
+<li> <code>:num - Enter</code>: 移动至<code>num</code>行第一个单词</li>
+<li> <code>:$ - Enter</code>: 移动至<code>num</code>行第一个单词</li>
 <li><code>gg</code>: 返回文件首部第一个单词</li>
 <li><code>G</code>: 到文件最末行第一个单词</li>
 </ul>
 <h4 id="工作状态"><a href="#工作状态" class="headerlink" title="工作状态"></a>工作状态</h4><ul>
 <li><code>Ctrl+g</code>: 显示文件名 工作状态 当前行数</li>
 </ul>
-<p><img src="https://photos.zywvvd.com/image_canglan/20200722232829.png" alt=""></p>
+<p><img src="https://photos.zywvvd.com/image_canglan/20200722232829.png"></p>
 <ul>
 <li><code>g - Ctrl+g</code>: 显示当前行列详细信息</li>
 </ul>
-<p><img src="https://photos.zywvvd.com/image_canglan/20200722233132.png" alt=""></p>
+<p><img src="https://photos.zywvvd.com/image_canglan/20200722233132.png"></p>
 <ul>
 <li><code>:set ruler</code>: 开启标尺信息</li>
 </ul>
-<p><img src="https://photos.zywvvd.com/image_canglan/20200722233404.png" alt=""></p>
+<p><img src="https://photos.zywvvd.com/image_canglan/20200722233404.png"></p>
 <blockquote>
 <p>开启标尺后，<code>Ctrl+g</code>不再显示重复信息</p>
 </blockquote>
@@ -3660,7 +4089,7 @@ cond(no)->sub</textarea><textarea id="flowchart-0-options" style="display: none"
 <li><code>:set noruler</code>: 关闭标尺信息</li>
 <li><code>:set ruler!</code>: 对当前ruler设置取反（如果关闭则打开，如果打开则关闭）</li>
 </ul>
-]]></content>
+<link rel="stylesheet" href="/css/spoiler.css" type="text/css"><script src="/js/spoiler.js" type="text/javascript" async></script>]]></content>
       <categories>
         <category>文字编码</category>
         <category>vim</category>
@@ -3701,7 +4130,7 @@ cond(no)->sub</textarea><textarea id="flowchart-0-options" style="display: none"
 <p><strong>ESC</strong>，退出输入模式，切换到命令模式</p>
 <h4 id="底线命令模式"><a href="#底线命令模式" class="headerlink" title="底线命令模式"></a>底线命令模式</h4><p>在命令模式下按下:（英文冒号）就进入了底线命令模式。</p>
 <p>底线命令模式可以输入单个或多个字符的命令。</p>
-<p><img src="https://photos.zywvvd.com/image_canglan/20200721001354.png" alt=""></p>
+<p><img src="https://photos.zywvvd.com/image_canglan/20200721001354.png"></p>
 <blockquote>
 <p>参考：<a href="https://www.runoob.com/linux/linux-vim.html" target="_blank" rel="noopener">https://www.runoob.com/linux/linux-vim.html</a></p>
 </blockquote>
@@ -3713,7 +4142,7 @@ cond(no)->sub</textarea><textarea id="flowchart-0-options" style="display: none"
 </ul>
 <figure class="highlight shell"><table><tr><td class="code"><pre><span class="line">vim test.txt</span><br></pre></td></tr></table></figure>
 
-<p><img src="https://photos.zywvvd.com/image_canglan/20200721002209.png" alt=""></p>
+<p><img src="https://photos.zywvvd.com/image_canglan/20200721002209.png"></p>
 <blockquote>
 <p>此时默认是命令模式，编辑文件需要进入编辑模式。</p>
 </blockquote>
@@ -3721,7 +4150,7 @@ cond(no)->sub</textarea><textarea id="flowchart-0-options" style="display: none"
 <li>编辑模式</li>
 </ul>
 <p>按下 <code>i</code>键进入编辑模式， 输入文本内容。</p>
-<p><img src="https://photos.zywvvd.com/image_canglan/20200721002108.png" alt=""></p>
+<p><img src="https://photos.zywvvd.com/image_canglan/20200721002108.png"></p>
 <blockquote>
 <p>输入结束后按下<code>esc</code>键返回命令模式，保存文件需要在单行模式下进行。</p>
 </blockquote>
@@ -3729,10 +4158,10 @@ cond(no)->sub</textarea><textarea id="flowchart-0-options" style="display: none"
 <li>保存文件</li>
 </ul>
 <p>在命令模式中按下<code>:</code>键进入单行模式，输入wq按下回车，表示<code>写入-退出</code>当前文件。</p>
-<p><img src="https://photos.zywvvd.com/image_canglan/20200721002558.png" alt=""></p>
+<p><img src="https://photos.zywvvd.com/image_canglan/20200721002558.png"></p>
 <p>可以看到我们成功使用vim建立了文件并保存。</p>
-<p><img src="https://photos.zywvvd.com/image_canglan/20200721002732.png" alt=""></p>
-]]></content>
+<p><img src="https://photos.zywvvd.com/image_canglan/20200721002732.png"></p>
+<link rel="stylesheet" href="/css/spoiler.css" type="text/css"><script src="/js/spoiler.js" type="text/javascript" async></script>]]></content>
       <categories>
         <category>文字编码</category>
         <category>vim</category>
@@ -3760,19 +4189,19 @@ cond(no)->sub</textarea><textarea id="flowchart-0-options" style="display: none"
 <ul>
 <li>查询 <strong>github.com</strong></li>
 </ul>
-<p><img src="https://photos.zywvvd.com/image/20200708003724.png" alt=""></p>
+<p><img src="https://photos.zywvvd.com/image/20200708003724.png"></p>
 <ul>
 <li>保存结果</li>
 </ul>
-<p><img src="https://photos.zywvvd.com/image_canglan/20200708003825.png" alt=""></p>
+<p><img src="https://photos.zywvvd.com/image_canglan/20200708003825.png"></p>
 <ul>
 <li>查询 <strong>github.global.ssl.fastly.net</strong></li>
 </ul>
-<p><img src="https://photos.zywvvd.com/image_canglan/20200708003914.png" alt=""></p>
+<p><img src="https://photos.zywvvd.com/image_canglan/20200708003914.png"></p>
 <ul>
 <li>保存结果 </li>
 </ul>
-<p><img src="https://photos.zywvvd.com/image_canglan/20200708003950.png" alt=""></p>
+<p><img src="https://photos.zywvvd.com/image_canglan/20200708003950.png"></p>
 <h3 id="写入host文件"><a href="#写入host文件" class="headerlink" title="写入host文件"></a>写入host文件</h3><ul>
 <li>Windows </li>
 </ul>
@@ -3808,8 +4237,8 @@ cond(no)->sub</textarea><textarea id="flowchart-0-options" style="display: none"
 <blockquote>
 <p>重启浏览器即可访问 github</p>
 </blockquote>
-<p><img src="https://photos.zywvvd.com/image_canglan/20200708005147.png" alt=""></p>
-]]></content>
+<p><img src="https://photos.zywvvd.com/image_canglan/20200708005147.png"></p>
+<link rel="stylesheet" href="/css/spoiler.css" type="text/css"><script src="/js/spoiler.js" type="text/javascript" async></script>]]></content>
       <categories>
         <category>故障排除</category>
       </categories>
@@ -3894,7 +4323,7 @@ cond(no)->sub</textarea><textarea id="flowchart-0-options" style="display: none"
 
 <h4 id="重现环境"><a href="#重现环境" class="headerlink" title="重现环境"></a>重现环境</h4><figure class="highlight shell"><table><tr><td class="code"><pre><span class="line">mkdir -p path_to_my_new_env # 建议放在anaconda的envs文件夹中</span><br><span class="line">tar -xzf my_env.tar.gz -C path_to_my_new_env # 解压包中文件</span><br><span class="line">source path_to_my_new_env/bin/activate # 激活该环境</span><br><span class="line">(my_env) $ python # 进入一下该环境下的 python 随后退出</span><br><span class="line">(my_env) $ conda-unpack # 十分重要，请不要忽略</span><br></pre></td></tr></table></figure>
 
-]]></content>
+<link rel="stylesheet" href="/css/spoiler.css" type="text/css"><script src="/js/spoiler.js" type="text/javascript" async></script>]]></content>
       <categories>
         <category>Python</category>
         <category>运行环境</category>
@@ -4002,7 +4431,7 @@ cond(no)->sub</textarea><textarea id="flowchart-0-options" style="display: none"
 <h2 id="获取源码"><a href="#获取源码" class="headerlink" title="获取源码"></a>获取源码</h2><blockquote>
 <p>文中测试环境与所有源码可在<a href="https://github.com/zywvvd/Python_Practise" target="_blank" rel="noopener">Github</a>下载。</p>
 </blockquote>
-]]></content>
+<link rel="stylesheet" href="/css/spoiler.css" type="text/css"><script src="/js/spoiler.js" type="text/javascript" async></script>]]></content>
       <categories>
         <category>Python</category>
       </categories>
@@ -4082,7 +4511,7 @@ cond(no)->sub</textarea><textarea id="flowchart-0-options" style="display: none"
 </blockquote>
 <figure class="highlight shell"><table><tr><td class="code"><pre><span class="line">:~/test# ln -snf tar_dir/second_test_file.txt file_link </span><br><span class="line">:~/test# cat file_link </span><br><span class="line">Second_Test_File_Data</span><br></pre></td></tr></table></figure>
 
-]]></content>
+<link rel="stylesheet" href="/css/spoiler.css" type="text/css"><script src="/js/spoiler.js" type="text/javascript" async></script>]]></content>
       <categories>
         <category>Linux</category>
       </categories>
@@ -4109,14 +4538,14 @@ cond(no)->sub</textarea><textarea id="flowchart-0-options" style="display: none"
 <h3 id="针对C盘空间变小"><a href="#针对C盘空间变小" class="headerlink" title="针对C盘空间变小"></a>针对C盘空间变小</h3><ul>
 <li><p>进入C盘根目录</p>
 </li>
-<li><p><img src="https://photos.zywvvd.com/matrixtime/20200619195812.png" alt=""></p>
+<li><p><img src="https://photos.zywvvd.com/matrixtime/20200619195812.png"></p>
 </li>
 <li><p>删除<code>$360Section</code>即可</p>
 </li>
-<li><p><img src="https://photos.zywvvd.com/matrixtime/20200619200324.png" alt=""></p>
+<li><p><img src="https://photos.zywvvd.com/matrixtime/20200619200324.png"></p>
 </li>
 </ul>
-]]></content>
+<link rel="stylesheet" href="/css/spoiler.css" type="text/css"><script src="/js/spoiler.js" type="text/javascript" async></script>]]></content>
       <categories>
         <category>软件</category>
         <category>故障排除</category>
@@ -4157,7 +4586,7 @@ cond(no)->sub</textarea><textarea id="flowchart-0-options" style="display: none"
 </blockquote>
 <figure class="highlight shell"><table><tr><td class="code"><pre><span class="line"><span class="meta">#</span><span class="bash"> Install TensorRT.</span></span><br><span class="line">sudo apt-get install -y --no-install-recommends libnvinfer6=6.0.1-1+cuda10.1 \</span><br><span class="line">    libnvinfer-dev=6.0.1-1+cuda10.1 \</span><br><span class="line">    libnvinfer-plugin6=6.0.1-1+cuda10.1</span><br></pre></td></tr></table></figure>
 
-]]></content>
+<link rel="stylesheet" href="/css/spoiler.css" type="text/css"><script src="/js/spoiler.js" type="text/javascript" async></script>]]></content>
       <categories>
         <category>深度学习</category>
         <category>Tensorflow</category>
@@ -4228,7 +4657,7 @@ cond(no)->sub</textarea><textarea id="flowchart-0-options" style="display: none"
 <blockquote>
 <p>当最后一行输出True表示GPU可用，如果是False请查看错误信息。</p>
 </blockquote>
-]]></content>
+<link rel="stylesheet" href="/css/spoiler.css" type="text/css"><script src="/js/spoiler.js" type="text/javascript" async></script>]]></content>
       <categories>
         <category>软件</category>
         <category>软件安装</category>
@@ -4253,7 +4682,7 @@ cond(no)->sub</textarea><textarea id="flowchart-0-options" style="display: none"
 <h2 id="代码修改"><a href="#代码修改" class="headerlink" title="代码修改"></a>代码修改</h2><ul>
 <li>Keras版本 2.2.4 其他版本不保证一定使用相同的方法，但大体思路不变</li>
 </ul>
-<h3 id="model-fit-generator"><a href="#model-fit-generator" class="headerlink" title="model.fit_generator"></a>model.fit_generator</h3><p><img src="https://photos.zywvvd.com/matrixtime/20200610154931.png" alt=""></p>
+<h3 id="model-fit-generator"><a href="#model-fit-generator" class="headerlink" title="model.fit_generator"></a>model.fit_generator</h3><p><img src="https://photos.zywvvd.com/matrixtime/20200610154931.png"></p>
 <blockquote>
 <p>找到<code>fit_generator</code>函数定义位置，加入控制参数<code>get_predict</code>：</p>
 </blockquote>
@@ -4261,7 +4690,7 @@ cond(no)->sub</textarea><textarea id="flowchart-0-options" style="display: none"
 
 <figure class="highlight python"><table><tr><td class="code"><pre><span class="line"><span class="keyword">return</span> training_generator.fit_generator(</span><br><span class="line">            self, generator,</span><br><span class="line">            steps_per_epoch=steps_per_epoch,</span><br><span class="line">            epochs=epochs,</span><br><span class="line">            verbose=verbose,</span><br><span class="line">            callbacks=callbacks,</span><br><span class="line">            validation_data=validation_data,</span><br><span class="line">            validation_steps=validation_steps,</span><br><span class="line">            class_weight=class_weight,</span><br><span class="line">            max_queue_size=max_queue_size,</span><br><span class="line">            workers=workers,</span><br><span class="line">            use_multiprocessing=use_multiprocessing,</span><br><span class="line">            shuffle=shuffle,</span><br><span class="line">            initial_epoch=initial_epoch,</span><br><span class="line">            get_predict = get_predict) <span class="comment"># 加入 get_predict</span></span><br></pre></td></tr></table></figure>
 
-<h3 id="training-generator-fit-generator"><a href="#training-generator-fit-generator" class="headerlink" title="training_generator.fit_generator"></a>training_generator.fit_generator</h3><p><img src="https://photos.zywvvd.com/matrixtime/20200610155253.png" alt=""></p>
+<h3 id="training-generator-fit-generator"><a href="#training-generator-fit-generator" class="headerlink" title="training_generator.fit_generator"></a>training_generator.fit_generator</h3><p><img src="https://photos.zywvvd.com/matrixtime/20200610155253.png"></p>
 <blockquote>
 <p>找到<code>training_generator.fit_generator</code>定义位置，加入<code>get_predict</code>:</p>
 </blockquote>
@@ -4272,7 +4701,7 @@ cond(no)->sub</textarea><textarea id="flowchart-0-options" style="display: none"
 </blockquote>
 <figure class="highlight python"><table><tr><td class="code"><pre><span class="line"><span class="comment"># Epoch finished.</span></span><br><span class="line"><span class="keyword">if</span> steps_done &gt;= steps_per_epoch <span class="keyword">and</span> do_validation:</span><br><span class="line">    <span class="keyword">if</span> val_gen:</span><br><span class="line">        </span><br><span class="line">        <span class="keyword">if</span> get_predict:</span><br><span class="line">            <span class="comment">## 如果启动获取预测结果功能，那么将get_predict设置为True</span></span><br><span class="line">            <span class="comment">## 返回值会包括 gts_and_preds </span></span><br><span class="line">            val_outs, gts_and_preds = model.evaluate_generator(</span><br><span class="line">                val_enqueuer_gen,</span><br><span class="line">                validation_steps,</span><br><span class="line">                workers=<span class="number">0</span>,</span><br><span class="line">                get_predict=get_predict)</span><br><span class="line">        <span class="keyword">else</span>:</span><br><span class="line">            val_outs = model.evaluate_generator(</span><br><span class="line">                val_enqueuer_gen,</span><br><span class="line">                validation_steps,</span><br><span class="line">                workers=<span class="number">0</span>)                            </span><br><span class="line">    <span class="keyword">else</span>:</span><br><span class="line">        <span class="comment"># No need for try/except because</span></span><br><span class="line">        <span class="comment"># data has already been validated.</span></span><br><span class="line">        val_outs = model.evaluate(</span><br><span class="line">            val_x, val_y,</span><br><span class="line">            batch_size=batch_size,</span><br><span class="line">            sample_weight=val_sample_weights,</span><br><span class="line">            verbose=<span class="number">0</span>)</span><br><span class="line">    val_outs = to_list(val_outs)</span><br><span class="line">    <span class="comment"># Same labels assumed.</span></span><br><span class="line">    <span class="keyword">for</span> l, o <span class="keyword">in</span> zip(out_labels, val_outs):</span><br><span class="line">        epoch_logs[<span class="string">'val_'</span> + l] = o</span><br><span class="line">    </span><br><span class="line">    <span class="comment">## 将返回值 gts_and_preds 保存到 log 中</span></span><br><span class="line">    <span class="keyword">if</span> get_predict:</span><br><span class="line">        epoch_logs[<span class="string">'val_gts_and_preds'</span>] = gts_and_preds</span><br><span class="line">        </span><br><span class="line"><span class="keyword">if</span> callback_model.stop_training:</span><br><span class="line">    <span class="keyword">break</span></span><br></pre></td></tr></table></figure>
 
-<h3 id="model-evaluate-generator"><a href="#model-evaluate-generator" class="headerlink" title="model.evaluate_generator"></a>model.evaluate_generator</h3><p><img src="https://photos.zywvvd.com/matrixtime/20200610155915.png" alt=""></p>
+<h3 id="model-evaluate-generator"><a href="#model-evaluate-generator" class="headerlink" title="model.evaluate_generator"></a>model.evaluate_generator</h3><p><img src="https://photos.zywvvd.com/matrixtime/20200610155915.png"></p>
 <blockquote>
 <p>进入<code>model.evaluate_generator</code>函数，加入<code>get_predict</code>变量：</p>
 </blockquote>
@@ -4282,7 +4711,7 @@ cond(no)->sub</textarea><textarea id="flowchart-0-options" style="display: none"
 
 
 
-<h3 id="training-generator-evaluate-generator"><a href="#training-generator-evaluate-generator" class="headerlink" title="training_generator.evaluate_generator"></a>training_generator.evaluate_generator</h3><p><img src="https://photos.zywvvd.com/matrixtime/20200610163145.png" alt=""></p>
+<h3 id="training-generator-evaluate-generator"><a href="#training-generator-evaluate-generator" class="headerlink" title="training_generator.evaluate_generator"></a>training_generator.evaluate_generator</h3><p><img src="https://photos.zywvvd.com/matrixtime/20200610163145.png"></p>
 <blockquote>
 <p>进入<code>training_generator.evaluate_generator</code>，添加<code>get_predict</code>变量，新建三个变量：</p>
 </blockquote>
@@ -4301,7 +4730,7 @@ cond(no)->sub</textarea><textarea id="flowchart-0-options" style="display: none"
 <blockquote>
 <p>至此核心的功能已经实现，但还有一个小问题。</p>
 </blockquote>
-<h3 id="keras-callbacks-TensorBoard-write-logs"><a href="#keras-callbacks-TensorBoard-write-logs" class="headerlink" title="keras.callbacks.TensorBoard._write_logs"></a>keras.callbacks.TensorBoard._write_logs</h3><p><img src="https://photos.zywvvd.com/matrixtime/20200610163226.png" alt=""></p>
+<h3 id="keras-callbacks-TensorBoard-write-logs"><a href="#keras-callbacks-TensorBoard-write-logs" class="headerlink" title="keras.callbacks.TensorBoard._write_logs"></a>keras.callbacks.TensorBoard._write_logs</h3><p><img src="https://photos.zywvvd.com/matrixtime/20200610163226.png"></p>
 <blockquote>
 <p>Keras的Tensorboard会记录logs中的内容，但是他只认识 int, float 等数值格式，我们保存在log中的复杂字典他没办法写入tesnorboard，需要对<code>_write_logs</code>做微小的调整：</p>
 </blockquote>
@@ -4327,7 +4756,7 @@ cond(no)->sub</textarea><textarea id="flowchart-0-options" style="display: none"
 <p>将<code>get_predict</code>设为 False 时则屏蔽了我们做出的所有修改，与原始Keras代码完全相同；</p>
 <p>目前没有发现其他的问题，有任何不对头可以随时交流。</p>
 </blockquote>
-]]></content>
+<link rel="stylesheet" href="/css/spoiler.css" type="text/css"><script src="/js/spoiler.js" type="text/javascript" async></script>]]></content>
       <categories>
         <category>深度学习</category>
         <category>Keras</category>
@@ -4351,7 +4780,7 @@ cond(no)->sub</textarea><textarea id="flowchart-0-options" style="display: none"
 <ul>
 <li>当前80服务器中没有可见的 <code>/disk/zhangyiwei</code>文件夹可用于挂载</li>
 </ul>
-<p><img src="https://photos.zywvvd.com/matrixtime/20200603165054.png" alt=""></p>
+<p><img src="https://photos.zywvvd.com/matrixtime/20200603165054.png"></p>
 <h2 id="设置共享文件夹"><a href="#设置共享文件夹" class="headerlink" title="设置共享文件夹"></a>设置共享文件夹</h2><blockquote>
 <p>共享文件夹在<code>/etc/exports</code>文件中配置，在文件末尾添加：</p>
 </blockquote>
@@ -4394,8 +4823,8 @@ cond(no)->sub</textarea><textarea id="flowchart-0-options" style="display: none"
 </blockquote>
 <figure class="highlight shell"><table><tr><td class="code"><pre><span class="line"><span class="meta">$</span><span class="bash"> showmount -e 192.168.10.80</span></span><br><span class="line">Export list for 192.168.10.80:</span><br><span class="line">/disk/zhangyiwei *</span><br><span class="line">/disk/lujunyi    *</span><br></pre></td></tr></table></figure>
 
-<p><img src="https://photos.zywvvd.com/matrixtime/20200603171804.png" alt=""></p>
-]]></content>
+<p><img src="https://photos.zywvvd.com/matrixtime/20200603171804.png"></p>
+<link rel="stylesheet" href="/css/spoiler.css" type="text/css"><script src="/js/spoiler.js" type="text/javascript" async></script>]]></content>
       <categories>
         <category>Linux</category>
       </categories>
@@ -4422,15 +4851,15 @@ cond(no)->sub</textarea><textarea id="flowchart-0-options" style="display: none"
 <h3 id="替换产品序列号"><a href="#替换产品序列号" class="headerlink" title="替换产品序列号"></a>替换产品序列号</h3><ul>
 <li>右键 我的电脑 -&gt; 属性 -&gt; 更改产品密钥</li>
 </ul>
-<p><img src="https://photos.zywvvd.com/matrixtime/20200602172554.png" alt=""></p>
+<p><img src="https://photos.zywvvd.com/matrixtime/20200602172554.png"></p>
 <ul>
 <li>输入企业版密钥，关闭当前工作的程序并保存工作进度，一路下一步即可</li>
 </ul>
-<p><img src="https://photos.zywvvd.com/matrixtime/20200602172926.png" alt=""></p>
+<p><img src="https://photos.zywvvd.com/matrixtime/20200602172926.png"></p>
 <h2 id="开启NFS服务"><a href="#开启NFS服务" class="headerlink" title="开启NFS服务"></a>开启NFS服务</h2><ul>
 <li>控制面板 -&gt; 程序和功能 -&gt; 勾选NFS服务 -&gt; 确定</li>
 </ul>
-<p><img src="https://photos.zywvvd.com/matrixtime/20200602173153.png" alt=""></p>
+<p><img src="https://photos.zywvvd.com/matrixtime/20200602173153.png"></p>
 <ul>
 <li>在CMD中测试，输入 mount -h 查看输出</li>
 </ul>
@@ -4442,15 +4871,15 @@ cond(no)->sub</textarea><textarea id="flowchart-0-options" style="display: none"
 <h2 id="磁盘挂载"><a href="#磁盘挂载" class="headerlink" title="磁盘挂载"></a>磁盘挂载</h2><ul>
 <li>映射磁盘驱动器</li>
 </ul>
-<p><img src="https://photos.zywvvd.com/matrixtime/20200602173956.png" alt=""></p>
+<p><img src="https://photos.zywvvd.com/matrixtime/20200602173956.png"></p>
 <ul>
 <li>映射网络上的一个地址即可</li>
 </ul>
-<p><img src="https://photos.zywvvd.com/matrixtime/20200602174125.png" alt=""></p>
+<p><img src="https://photos.zywvvd.com/matrixtime/20200602174125.png"></p>
 <ul>
 <li>映射成功</li>
 </ul>
-<p><img src="https://photos.zywvvd.com/matrixtime/20200602174202.png" alt=""></p>
+<p><img src="https://photos.zywvvd.com/matrixtime/20200602174202.png"></p>
 <h3 id="莫名其妙挂载失败的问题"><a href="#莫名其妙挂载失败的问题" class="headerlink" title="莫名其妙挂载失败的问题"></a>莫名其妙挂载失败的问题</h3><blockquote>
 <p>在cmd中输入命令</p>
 </blockquote>
@@ -4476,7 +4905,7 @@ cond(no)->sub</textarea><textarea id="flowchart-0-options" style="display: none"
 <blockquote>
 <p>就好了。。。</p>
 </blockquote>
-]]></content>
+<link rel="stylesheet" href="/css/spoiler.css" type="text/css"><script src="/js/spoiler.js" type="text/javascript" async></script>]]></content>
       <categories>
         <category>软件</category>
         <category>Windows 10</category>
@@ -4500,7 +4929,7 @@ cond(no)->sub</textarea><textarea id="flowchart-0-options" style="display: none"
 
 <h2 id="实际效果"><a href="#实际效果" class="headerlink" title="实际效果"></a>实际效果</h2><figure class="highlight shell"><table><tr><td class="code"><pre><span class="line"><span class="meta">$</span><span class="bash"> pip list</span></span><br><span class="line">Traceback (most recent call last):</span><br><span class="line">  File "e:\program_files\annoconda\lib\runpy.py", line 193, in _run_module_as_main</span><br><span class="line">    "__main__", mod_spec)</span><br><span class="line">  File "e:\program_files\annoconda\lib\runpy.py", line 85, in _run_code</span><br><span class="line">    exec(code, run_globals)</span><br><span class="line">  File "E:\Program_Files\Annoconda\Scripts\pip.exe\__main__.py", line 4, in &lt;module&gt;</span><br><span class="line">ModuleNotFoundError: No module named 'pip'</span><br><span class="line"></span><br><span class="line"><span class="meta">$</span><span class="bash"> python -m ensurepip</span></span><br><span class="line">Looking in links: C:\Users\Admin\AppData\Local\Temp\tmp1ggp6o2t</span><br><span class="line">Requirement already satisfied: setuptools in e:\program_files\annoconda\lib\site-packages (45.1.0)</span><br><span class="line">Collecting pip</span><br><span class="line">jupyterlab 2.1.0 has requirement jupyterlab_server&gt;=1.1.0, but you'll have jupyterlab-server 1.0.0 which is incompatible.</span><br><span class="line">jupyterlab-server 1.0.0 has requirement jsonschema&gt;=3.0.1, but you'll have jsonschema 2.6.0 which is incompatible.</span><br><span class="line">imgviz 1.1.0 has requirement Pillow&gt;=5.3.0, but you'll have pillow 5.2.0 which is incompatible.</span><br><span class="line">Installing collected packages: pip</span><br><span class="line">Successfully installed pip-10.0.1</span><br><span class="line"></span><br><span class="line"><span class="meta">$</span><span class="bash"> python -m pip install --upgrade pip</span></span><br><span class="line">Looking in indexes: https://mirrors.aliyun.com/pypi/simple/</span><br><span class="line">Collecting pip</span><br><span class="line">  Using cached https://mirrors.aliyun.com/pypi/packages/43/84/23ed6a1796480a6f1a2d38f2802901d078266bda38388954d01d3f2e821d/pip-20.1.1-py2.py3-none-any.whl</span><br><span class="line">jupyterlab 2.1.0 has requirement jupyterlab_server&gt;=1.1.0, but you'll have jupyterlab-server 1.0.0 which is incompatible.</span><br><span class="line">jupyterlab-server 1.0.0 has requirement jsonschema&gt;=3.0.1, but you'll have jsonschema 2.6.0 which is incompatible.</span><br><span class="line">imgviz 1.1.0 has requirement Pillow&gt;=5.3.0, but you'll have pillow 5.2.0 which is incompatible.</span><br><span class="line">Installing collected packages: pip</span><br><span class="line">  Found existing installation: pip 10.0.1</span><br><span class="line">    Uninstalling pip-10.0.1:</span><br><span class="line">      Successfully uninstalled pip-10.0.1</span><br><span class="line">Successfully installed pip-20.1.1</span><br><span class="line">You are using pip version 20.1.1, however version 20.2b1 is available.</span><br><span class="line">You should consider upgrading via the 'python -m pip install --upgrade pip' command.</span><br></pre></td></tr></table></figure>
 
-]]></content>
+<link rel="stylesheet" href="/css/spoiler.css" type="text/css"><script src="/js/spoiler.js" type="text/javascript" async></script>]]></content>
       <categories>
         <category>程序人生</category>
         <category>故障排除</category>
@@ -4525,11 +4954,11 @@ cond(no)->sub</textarea><textarea id="flowchart-0-options" style="display: none"
 
 <h2 id="加入网络层"><a href="#加入网络层" class="headerlink" title="加入网络层"></a>加入网络层</h2><figure class="highlight python"><table><tr><td class="code"><pre><span class="line">x = Lambda(cut_map, arguments=&#123;<span class="string">'index'</span>:<span class="number">32</span>&#125;, name = <span class="string">'classify_Lambda'</span>)(x)</span><br></pre></td></tr></table></figure>
 
-<h2 id="网络效果"><a href="#网络效果" class="headerlink" title="网络效果"></a>网络效果</h2><p><img src="https://photos.zywvvd.com/matrixtime/20200525210335.png" alt=""></p>
+<h2 id="网络效果"><a href="#网络效果" class="headerlink" title="网络效果"></a>网络效果</h2><p><img src="https://photos.zywvvd.com/matrixtime/20200525210335.png"></p>
 <h2 id="使用说明"><a href="#使用说明" class="headerlink" title="使用说明"></a>使用说明</h2><ul>
 <li>建议该层主要用于训练好的模型的特征处理，直接放入准备训练的模型会造成该层无法传播梯度。</li>
 </ul>
-]]></content>
+<link rel="stylesheet" href="/css/spoiler.css" type="text/css"><script src="/js/spoiler.js" type="text/javascript" async></script>]]></content>
       <categories>
         <category>深度学习</category>
         <category>Keras</category>
@@ -4580,7 +5009,7 @@ cond(no)->sub</textarea><textarea id="flowchart-0-options" style="display: none"
 <figure class="highlight python"><table><tr><td class="code"><pre><span class="line">iou : <span class="number">0.0</span></span><br><span class="line">mean_iou_numpy : <span class="number">0.5295</span></span><br><span class="line">result : <span class="number">0.0</span> </span><br><span class="line">same <span class="keyword">with</span> ground truth: <span class="literal">True</span></span><br><span class="line">result : <span class="number">0.5295000076293945</span> </span><br><span class="line">same <span class="keyword">with</span> ground truth: <span class="literal">True</span></span><br></pre></td></tr></table></figure>
 
 <h3 id="源码下载"><a href="#源码下载" class="headerlink" title="源码下载"></a>源码下载</h3><p><a href="https://github.com/zywvvd/Python_Practise" target="_blank" rel="noopener">https://github.com/zywvvd/Python_Practise</a></p>
-]]></content>
+<link rel="stylesheet" href="/css/spoiler.css" type="text/css"><script src="/js/spoiler.js" type="text/javascript" async></script>]]></content>
       <categories>
         <category>深度学习</category>
         <category>Keras</category>
@@ -4619,7 +5048,7 @@ cond(no)->sub</textarea><textarea id="flowchart-0-options" style="display: none"
 
 <h3 id="编译"><a href="#编译" class="headerlink" title="编译"></a>编译</h3><figure class="highlight python"><table><tr><td class="code"><pre><span class="line">model.compile(optimizer=Adam(lr=config.LEARNING_RATE), loss=my_loss, loss_weights= my_loss_weights, metrics= my_metrics)</span><br></pre></td></tr></table></figure>
 
-]]></content>
+<link rel="stylesheet" href="/css/spoiler.css" type="text/css"><script src="/js/spoiler.js" type="text/javascript" async></script>]]></content>
       <categories>
         <category>深度学习</category>
         <category>Keras</category>
@@ -4657,7 +5086,7 @@ cond(no)->sub</textarea><textarea id="flowchart-0-options" style="display: none"
 <li>设置虚拟前置节点，现场生成后置节点，更加鲁棒，甚至同时囊括了输入为None的情况</li>
 <li>需要注意返回前置节点作为新链表头</li>
 </ul>
-]]></content>
+<link rel="stylesheet" href="/css/spoiler.css" type="text/css"><script src="/js/spoiler.js" type="text/javascript" async></script>]]></content>
       <categories>
         <category>算法</category>
         <category>链表</category>
@@ -4691,7 +5120,7 @@ cond(no)->sub</textarea><textarea id="flowchart-0-options" style="display: none"
 <td>O()</td>
 </tr>
 </tbody></table>
-<h4 id="解题备注"><a href="#解题备注" class="headerlink" title="解题备注"></a>解题备注</h4>]]></content>
+<h4 id="解题备注"><a href="#解题备注" class="headerlink" title="解题备注"></a>解题备注</h4><link rel="stylesheet" href="/css/spoiler.css" type="text/css"><script src="/js/spoiler.js" type="text/javascript" async></script>]]></content>
       <categories>
         <category>算法</category>
         <category>XX</category>
@@ -4725,7 +5154,7 @@ cond(no)->sub</textarea><textarea id="flowchart-0-options" style="display: none"
 <td>O()</td>
 </tr>
 </tbody></table>
-<h4 id="解题备注"><a href="#解题备注" class="headerlink" title="解题备注"></a>解题备注</h4>]]></content>
+<h4 id="解题备注"><a href="#解题备注" class="headerlink" title="解题备注"></a>解题备注</h4><link rel="stylesheet" href="/css/spoiler.css" type="text/css"><script src="/js/spoiler.js" type="text/javascript" async></script>]]></content>
       <categories>
         <category>算法</category>
         <category>排序</category>
@@ -4759,7 +5188,7 @@ cond(no)->sub</textarea><textarea id="flowchart-0-options" style="display: none"
 <td>O()</td>
 </tr>
 </tbody></table>
-<h4 id="解题备注"><a href="#解题备注" class="headerlink" title="解题备注"></a>解题备注</h4>]]></content>
+<h4 id="解题备注"><a href="#解题备注" class="headerlink" title="解题备注"></a>解题备注</h4><link rel="stylesheet" href="/css/spoiler.css" type="text/css"><script src="/js/spoiler.js" type="text/javascript" async></script>]]></content>
       <categories>
         <category>算法</category>
         <category>排序</category>
@@ -4807,7 +5236,7 @@ cond(no)->sub</textarea><textarea id="flowchart-0-options" style="display: none"
 <li>下载graphviz-2.38.msi ，我是在这里下载的 <a href="https://www.5down.net/soft/graphviz.html" target="_blank" rel="noopener">https://www.5down.net/soft/graphviz.html</a></li>
 <li>我安装在了E盘：<code>E:\Program Files (x86)\Graphviz2.38\bin</code></li>
 <li>将路径加入到系统变量</li>
-<li><img src="https://photos.zywvvd.com/matrixtime/20200520110131.png" alt=""></li>
+<li><img src="https://photos.zywvvd.com/matrixtime/20200520110131.png"></li>
 </ul>
 </li>
 </ul>
@@ -4822,11 +5251,11 @@ cond(no)->sub</textarea><textarea id="flowchart-0-options" style="display: none"
 <ul>
 <li><p>在报错的位置找到<code>pydot</code></p>
 </li>
-<li><p><img src="https://photos.zywvvd.com/matrixtime/20200520110546.png" alt=""></p>
+<li><p><img src="https://photos.zywvvd.com/matrixtime/20200520110546.png"></p>
 </li>
 <li><p>找到Dot类</p>
 </li>
-<li><p><img src="https://photos.zywvvd.com/matrixtime/20200520110627.png" alt=""></p>
+<li><p><img src="https://photos.zywvvd.com/matrixtime/20200520110627.png"></p>
 </li>
 <li><p>类的开头代码是这样的：</p>
 </li>
@@ -4846,10 +5275,10 @@ cond(no)->sub</textarea><textarea id="flowchart-0-options" style="display: none"
 <ul>
 <li><p>保存再次运行程序即可</p>
 </li>
-<li><p><img src="https://photos.zywvvd.com/matrixtime/20200520110906.png" alt=""></p>
+<li><p><img src="https://photos.zywvvd.com/matrixtime/20200520110906.png"></p>
 </li>
 </ul>
-]]></content>
+<link rel="stylesheet" href="/css/spoiler.css" type="text/css"><script src="/js/spoiler.js" type="text/javascript" async></script>]]></content>
       <categories>
         <category>深度学习</category>
         <category>Keras</category>
@@ -4886,11 +5315,11 @@ cond(no)->sub</textarea><textarea id="flowchart-0-options" style="display: none"
 <h2 id="putty配置修改"><a href="#putty配置修改" class="headerlink" title="putty配置修改"></a>putty配置修改</h2><blockquote>
 <p>将端口号由22修改为3722即可：</p>
 </blockquote>
-<p><img src="https://photos.zywvvd.com/matrixtime/20200514200415.png" alt=""></p>
+<p><img src="https://photos.zywvvd.com/matrixtime/20200514200415.png"></p>
 <h2 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h2><blockquote>
 <p>本质上与直接连接服务器没有区别，只是使用了端口映射，解决了这个问题。</p>
 </blockquote>
-]]></content>
+<link rel="stylesheet" href="/css/spoiler.css" type="text/css"><script src="/js/spoiler.js" type="text/javascript" async></script>]]></content>
       <categories>
         <category>程序人生</category>
         <category>IDE</category>
@@ -4967,11 +5396,11 @@ cond(no)->sub</textarea><textarea id="flowchart-0-options" style="display: none"
 <ul>
 <li>运行puttygen （在putty同位置文件夹内）</li>
 </ul>
-<p><img src="https://photos.zywvvd.com/matrixtime/20200514191003.png" alt=""></p>
+<p><img src="https://photos.zywvvd.com/matrixtime/20200514191003.png"></p>
 <ul>
 <li>选择<code>Conversions</code>菜单项中的<code>Import key</code>选项：</li>
 </ul>
-<p><img src="https://photos.zywvvd.com/matrixtime/20200514191136.png" alt=""></p>
+<p><img src="https://photos.zywvvd.com/matrixtime/20200514191136.png"></p>
 <ul>
 <li>选择生成的id_rsa文件</li>
 <li>在puttygen的界面上点击<code>Save private key</code>按钮就可以把私钥转换为ppk的格式了（不要点<code>Generate</code>）</li>
@@ -4982,64 +5411,64 @@ cond(no)->sub</textarea><textarea id="flowchart-0-options" style="display: none"
 <ul>
 <li>配置 Session ：</li>
 </ul>
-<p><img src="https://photos.zywvvd.com/matrixtime/20200514190333.png" alt=""></p>
+<p><img src="https://photos.zywvvd.com/matrixtime/20200514190333.png"></p>
 <blockquote>
 <p>主要配置IP和端口号，在Saved Sessions里配置可以区分的名字，之后供WingIDE调用</p>
 </blockquote>
 <ul>
 <li>配置 Connection-Data选项卡，在自动登录用户名处填入需要自动登录的用户名（我的是root）</li>
 </ul>
-<p><img src="https://photos.zywvvd.com/matrixtime/20200514192550.png" alt=""></p>
+<p><img src="https://photos.zywvvd.com/matrixtime/20200514192550.png"></p>
 <ul>
 <li>配置 Connection-SSH-Auth选项卡，浏览选择刚刚生成的私钥ppk文件：</li>
 </ul>
-<p><img src="https://photos.zywvvd.com/matrixtime/20200514192014.png" alt=""></p>
+<p><img src="https://photos.zywvvd.com/matrixtime/20200514192014.png"></p>
 <ul>
 <li>回到Session，点击<code>Save</code>保存当前配置到<code>test_3722</code>中：</li>
 </ul>
-<p><img src="https://photos.zywvvd.com/matrixtime/20200514192711.png" alt=""></p>
+<p><img src="https://photos.zywvvd.com/matrixtime/20200514192711.png"></p>
 <ul>
 <li>此后每次打开putty双击我们的<code>test_3722</code>即可连接到远程服务器：</li>
 </ul>
-<p><img src="https://photos.zywvvd.com/matrixtime/20200514193220.png" alt=""></p>
+<p><img src="https://photos.zywvvd.com/matrixtime/20200514193220.png"></p>
 <h3 id="配置WingIDE"><a href="#配置WingIDE" class="headerlink" title="配置WingIDE"></a>配置WingIDE</h3><blockquote>
 <p>距离成功仅一步之遥。</p>
 <p>打开WingIDE， Project -&gt; New Project</p>
 </blockquote>
-<p><img src="https://photos.zywvvd.com/matrixtime/20200514193933.png" alt=""></p>
+<p><img src="https://photos.zywvvd.com/matrixtime/20200514193933.png"></p>
 <blockquote>
 <p>其中 Identifier 为该工程的名称， Host Name为我们刚刚保存的Putty名称，点击<code>OK</code>。</p>
 </blockquote>
 <ul>
 <li>此时可以选择保存工程，也可以一会再说</li>
 </ul>
-<p><img src="https://photos.zywvvd.com/matrixtime/20200514194133.png" alt=""></p>
+<p><img src="https://photos.zywvvd.com/matrixtime/20200514194133.png"></p>
 <ul>
 <li>在远程的默认python路径往往不是我们需要的，我的常用python在conda的一个自建的环境中，可以指定其为wingIDE的默认远程python环境：</li>
 </ul>
-<p><img src="https://photos.zywvvd.com/matrixtime/20200514194516.png" alt=""></p>
+<p><img src="https://photos.zywvvd.com/matrixtime/20200514194516.png"></p>
 <ul>
 <li>随后一路OK，出现此对话框说明配置成功：</li>
 </ul>
-<p><img src="https://photos.zywvvd.com/matrixtime/20200514194611.png" alt=""></p>
+<p><img src="https://photos.zywvvd.com/matrixtime/20200514194611.png"></p>
 <ul>
 <li>重启python shell 可以在本地看到远程的python shell：</li>
 </ul>
-<p><img src="https://photos.zywvvd.com/matrixtime/20200514194723.png" alt=""></p>
+<p><img src="https://photos.zywvvd.com/matrixtime/20200514194723.png"></p>
 <ul>
 <li>可以简单通过操作系统验证是否配置成远程python</li>
 </ul>
-<p><img src="https://photos.zywvvd.com/matrixtime/20200514194830.png" alt=""></p>
+<p><img src="https://photos.zywvvd.com/matrixtime/20200514194830.png"></p>
 <ul>
 <li>在project中可以加入远程的工程</li>
 </ul>
-<p><img src="https://photos.zywvvd.com/matrixtime/20200514194908.png" alt=""></p>
-<p><img src="https://photos.zywvvd.com/matrixtime/20200514195000.png" alt=""></p>
+<p><img src="https://photos.zywvvd.com/matrixtime/20200514194908.png"></p>
+<p><img src="https://photos.zywvvd.com/matrixtime/20200514195000.png"></p>
 <blockquote>
 <p>可以本地修改远程代码，并运行调试：</p>
 </blockquote>
-<p><img src="https://photos.zywvvd.com/matrixtime/20200514195140.png" alt=""></p>
-]]></content>
+<p><img src="https://photos.zywvvd.com/matrixtime/20200514195140.png"></p>
+<link rel="stylesheet" href="/css/spoiler.css" type="text/css"><script src="/js/spoiler.js" type="text/javascript" async></script>]]></content>
       <categories>
         <category>程序人生</category>
         <category>IDE</category>
@@ -5061,7 +5490,7 @@ cond(no)->sub</textarea><textarea id="flowchart-0-options" style="display: none"
 
 <h2 id="调用json包写入数据时加入"><a href="#调用json包写入数据时加入" class="headerlink" title="调用json包写入数据时加入"></a>调用json包写入数据时加入</h2><figure class="highlight python"><table><tr><td class="code"><pre><span class="line">json.dump(final_json, fp, indent=<span class="number">3</span>, cls= MyEncoder)</span><br></pre></td></tr></table></figure>
 
-]]></content>
+<link rel="stylesheet" href="/css/spoiler.css" type="text/css"><script src="/js/spoiler.js" type="text/javascript" async></script>]]></content>
       <categories>
         <category>程序人生</category>
         <category>Python</category>
@@ -5293,7 +5722,7 @@ cond(no)->sub</textarea><textarea id="flowchart-0-options" style="display: none"
 <td align="center">向后缩进</td>
 </tr>
 </tbody></table>
-]]></content>
+<link rel="stylesheet" href="/css/spoiler.css" type="text/css"><script src="/js/spoiler.js" type="text/javascript" async></script>]]></content>
       <categories>
         <category>程序人生</category>
         <category>IDE</category>
@@ -5307,7 +5736,7 @@ cond(no)->sub</textarea><textarea id="flowchart-0-options" style="display: none"
     <title>解决 cuDNN launch failure 错误</title>
     <url>/2020/05/09/deep_learning/keras/cudnn-launch-failure-fix/cudnn-launch-failure-fix/</url>
     <content><![CDATA[<blockquote>
-<p>在神经网络模型推断过程中，报错<code>Internal: cuDNN launch failure : input shape ([1,3,2048,2048]) node bn_data/FusedBatchNorm</code>，本文记录解决方案。</p>
+<p>在神经网络模型推断过程中，报错<code>Internal: cuDNN launch failure : input shape ([1,3,2048,2048]) node bn_data/FusedBatchNorm </code>，本文记录解决方案。</p>
 </blockquote>
 <a id="more"></a>
 
@@ -5324,7 +5753,7 @@ cond(no)->sub</textarea><textarea id="flowchart-0-options" style="display: none"
 <h3 id="方案2"><a href="#方案2" class="headerlink" title="方案2"></a>方案2</h3><figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">os.environ[&#39;TF_FORCE_GPU_ALLOW_GROWTH&#39;] &#x3D; &#39;true&#39;</span><br></pre></td></tr></table></figure>
 
 <p>原理相同，只是不一样的写法。</p>
-]]></content>
+<link rel="stylesheet" href="/css/spoiler.css" type="text/css"><script src="/js/spoiler.js" type="text/javascript" async></script>]]></content>
       <categories>
         <category>深度学习</category>
         <category>Keras</category>
@@ -5458,7 +5887,7 @@ cond(no)->sub</textarea><textarea id="flowchart-0-options" style="display: none"
 <li><p><a href="https://www.runoob.com/docker/docker-tutorial.html" target="_blank" rel="noopener">https://www.runoob.com/docker/docker-tutorial.html</a></p>
 </li>
 </ul>
-]]></content>
+<link rel="stylesheet" href="/css/spoiler.css" type="text/css"><script src="/js/spoiler.js" type="text/javascript" async></script>]]></content>
       <categories>
         <category>Docker</category>
       </categories>
@@ -5506,7 +5935,7 @@ cond(no)->sub</textarea><textarea id="flowchart-0-options" style="display: none"
 <h2 id="Git-信息流"><a href="#Git-信息流" class="headerlink" title="Git 信息流"></a>Git 信息流</h2><blockquote>
 <p>初次接触git的人需要对git信息流有一个初步的理解，掌握脉络之后就明白各个命令实在干什么了，主要流程如下图：</p>
 </blockquote>
-<p><img src="https://photos.zywvvd.com/image/20200506231304.png" alt=""></p>
+<p><img src="https://photos.zywvvd.com/image/20200506231304.png"></p>
 <h3 id="主要概念"><a href="#主要概念" class="headerlink" title="主要概念"></a>主要概念</h3><ul>
 <li>workspace（工作区）：当前工作目录，它持有实际文件；</li>
 <li>inedex（暂存区）：保存临时改动，workspace的文件改动后通过add命令添加到index；</li>
@@ -5570,9 +5999,9 @@ cond(no)->sub</textarea><textarea id="flowchart-0-options" style="display: none"
 <p>配置提交代码时的用户信息</p>
 </blockquote>
 <h3 id="本地信息流管理"><a href="#本地信息流管理" class="headerlink" title="本地信息流管理"></a>本地信息流管理</h3><blockquote>
-<p>本地信息流主要涉及<strong>工作区(workspace)</strong>、<strong>暂存区(index)</strong>和<strong>版本库(repository)</strong></p>
+<p>本地信息流主要涉及<strong>工作区(workspace)**、</strong>暂存区(index)<strong>和</strong>版本库(repository)**</p>
 </blockquote>
-<p><img src="https://photos.zywvvd.com/image/20200527000031.png" alt=""></p>
+<p><img src="https://photos.zywvvd.com/image/20200527000031.png"></p>
 <h4 id="git-add"><a href="#git-add" class="headerlink" title="git add"></a>git add</h4><blockquote>
 <p><strong>git add</strong> 命令可将该文件添加到暂存区。</p>
 </blockquote>
@@ -6025,7 +6454,7 @@ cond(no)->sub</textarea><textarea id="flowchart-0-options" style="display: none"
 <figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">git branch -d -r &lt;branchname&gt;</span><br></pre></td></tr></table></figure>
 
 <blockquote>
-<p>删除远程分支，删除后还需推送到服务器 <code>git push origin:&lt;branchname&gt;</code>。</p>
+<p>删除远程分支，删除后还需推送到服务器 <code> git push origin:&lt;branchname&gt;</code>。</p>
 </blockquote>
 <figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">git branch -m &lt;oldbranch&gt; &lt;newbranch&gt;</span><br></pre></td></tr></table></figure>
 
@@ -6046,7 +6475,7 @@ cond(no)->sub</textarea><textarea id="flowchart-0-options" style="display: none"
 <p>创建分支并切换过去。</p>
 </blockquote>
 <h4 id="git-merge"><a href="#git-merge" class="headerlink" title="git merge"></a>git merge</h4><blockquote>
-<p>用于从指定的<strong>commit(s)</strong>合并到<strong>当前分支</strong>的操作，有以下两种用途：</p>
+<p>用于从指定的<strong>commit(s)**合并到</strong>当前分支**的操作，有以下两种用途：</p>
 <ol>
 <li>用于git-pull中，来整合另一代码仓库中的变化（即：git pull = git fetch + git merge）</li>
 <li>用于从一个分支到另一个分支的合并</li>
@@ -6158,7 +6587,7 @@ cond(no)->sub</textarea><textarea id="flowchart-0-options" style="display: none"
 </blockquote>
 <h4 id="git-选项"><a href="#git-选项" class="headerlink" title="git 选项"></a>git 选项</h4><ul>
 <li>-d –delete：删除</li>
-<li>-f –force：强制 </li>
+<li> -f –force：强制 </li>
 <li>-m –move：移动或重命名 </li>
 <li>-r –remote：远程 </li>
 <li>-a –all：所有</li>
@@ -6168,12 +6597,12 @@ cond(no)->sub</textarea><textarea id="flowchart-0-options" style="display: none"
 <li><a href="https://www.jianshu.com/p/37f3a7e4a193" target="_blank" rel="noopener">https://www.jianshu.com/p/37f3a7e4a193</a></li>
 <li><a href="https://blog.csdn.net/chaiyu2002/article/details/82120256" target="_blank" rel="noopener">https://blog.csdn.net/chaiyu2002/article/details/82120256</a></li>
 <li><a href="https://www.cnblogs.com/djiankuo/p/6492533.html" target="_blank" rel="noopener">https://www.cnblogs.com/djiankuo/p/6492533.html</a></li>
-<li><a href="https://git-scm.com/book/zh/v2/Git-分支-分支管理" target="_blank" rel="noopener">https://git-scm.com/book/zh/v2/Git-%E5%88%86%E6%94%AF-%E5%88%86%E6%94%AF%E7%AE%A1%E7%90%86</a></li>
+<li><a href="https://git-scm.com/book/zh/v2/Git-%E5%88%86%E6%94%AF-%E5%88%86%E6%94%AF%E7%AE%A1%E7%90%86" target="_blank" rel="noopener">https://git-scm.com/book/zh/v2/Git-%E5%88%86%E6%94%AF-%E5%88%86%E6%94%AF%E7%AE%A1%E7%90%86</a></li>
 <li><a href="https://www.jianshu.com/p/58a166f24c81" target="_blank" rel="noopener">https://www.jianshu.com/p/58a166f24c81</a></li>
 <li><a href="https://blog.csdn.net/stone_yw/article/details/80795669" target="_blank" rel="noopener">https://blog.csdn.net/stone_yw/article/details/80795669</a></li>
-<li><a href="https://git-scm.com/book/zh/v2/Git-基础-打标签" target="_blank" rel="noopener">https://git-scm.com/book/zh/v2/Git-%E5%9F%BA%E7%A1%80-%E6%89%93%E6%A0%87%E7%AD%BE</a></li>
+<li><a href="https://git-scm.com/book/zh/v2/Git-%E5%9F%BA%E7%A1%80-%E6%89%93%E6%A0%87%E7%AD%BE" target="_blank" rel="noopener">https://git-scm.com/book/zh/v2/Git-%E5%9F%BA%E7%A1%80-%E6%89%93%E6%A0%87%E7%AD%BE</a></li>
 </ul>
-]]></content>
+<link rel="stylesheet" href="/css/spoiler.css" type="text/css"><script src="/js/spoiler.js" type="text/javascript" async></script>]]></content>
       <categories>
         <category>Git</category>
       </categories>
@@ -6199,16 +6628,16 @@ cond(no)->sub</textarea><textarea id="flowchart-0-options" style="display: none"
 <h2 id="Bounding-Box-bbox"><a href="#Bounding-Box-bbox" class="headerlink" title="Bounding Box (bbox)"></a>Bounding Box (bbox)</h2><blockquote>
 <p>目标检测需要定位图像中的目标位置和类别，反映在数据上的形式就是使用矩形框框出目标区域，并标记类别标签，这就是目标检测的Bounding Box ，标注与算法输出都使用该形式，以便机器学习并对比实验结果。</p>
 </blockquote>
-<p><img src="https://photos.zywvvd.com/image/20200505191519.png" alt=""></p>
+<p><img src="https://photos.zywvvd.com/image/20200505191519.png"></p>
 <h2 id="ROI-region-of-interest"><a href="#ROI-region-of-interest" class="headerlink" title="ROI (region of interest)"></a>ROI (region of interest)</h2><blockquote>
 <p>感兴趣区域，与bbox概念类似，定义图像中我们感兴趣的部分，交给机器进行学习。</p>
 </blockquote>
-<p><img src="https://photos.zywvvd.com/image/20200505192257.png" alt=""></p>
+<p><img src="https://photos.zywvvd.com/image/20200505192257.png"></p>
 <h2 id="IoU-Intersection-over-Union"><a href="#IoU-Intersection-over-Union" class="headerlink" title="IoU (Intersection over Union)"></a>IoU (Intersection over Union)</h2><blockquote>
 <p>交集并集比（交并比），在已有的数据库中，我们会用某种方法 标注数据，赋予数据中目标区域与类别，也就是标注ROI，检测算法学习数据后得到检测模型，模型作用于某个图像输出检测结果bbox。</p>
 <p>IoU就是用于评价检测模型输出结果的，计算方法就是输出bbox与标记bbox交集面积与并集面积的比值。比值越高表明结果越准，反之亦然。</p>
 </blockquote>
-<p><img src="https://photos.zywvvd.com/image/20200505192424.png" alt=""></p>
+<p><img src="https://photos.zywvvd.com/image/20200505192424.png"></p>
 <h2 id="confidence"><a href="#confidence" class="headerlink" title="confidence"></a>confidence</h2><blockquote>
 <p>confidence（置信度）表明检测模型对于自己检测出目标的置信程度，值越大表明模型更加笃定自己检测结果的准确性。</p>
 </blockquote>
@@ -6229,7 +6658,7 @@ cond(no)->sub</textarea><textarea id="flowchart-0-options" style="display: none"
 <p><a href="https://www.zywvvd.com/2020/02/27/machine_learning/basic_knowledge/performance_evaluation/Performance-evaluation/">机器学习-基础知识 - Precision, Recall, Sensitivity, Specificity, Accuracy, FNR, FPR, TPR, TNR, F1 Score, Balanced F Score</a></p>
 <p>也可以绘制ROC、PR曲线：</p>
 <p><a href="https://www.zywvvd.com/2020/02/27/machine_learning/basic_knowledge/PR_and_ROC/PR-and-ROC/">机器学习-基础知识 - PR、ROC曲线与AUC</a></p>
-]]></content>
+<link rel="stylesheet" href="/css/spoiler.css" type="text/css"><script src="/js/spoiler.js" type="text/javascript" async></script>]]></content>
       <categories>
         <category>机器学习</category>
       </categories>
@@ -6266,7 +6695,7 @@ cond(no)->sub</textarea><textarea id="flowchart-0-options" style="display: none"
 </blockquote>
 <figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">&lt;header class&#x3D;&quot;post-header&quot;&gt;</span><br><span class="line"></span><br><span class="line">&lt;&#123;%- if theme.seo %&#125;h2&#123;% else %&#125;h1&#123;%- endif %&#125; class&#x3D;&quot;post-title&quot; itemprop&#x3D;&quot;name headline&quot;&gt;</span><br><span class="line">  &#123;&#123;- page.title &#125;&#125;</span><br><span class="line">  &#123;&#123;- post_edit(page.source) &#125;&#125;</span><br><span class="line">&lt;&#x2F;&#123;%- if theme.seo %&#125;h2&#123;% else %&#125;h1&#123;%- endif %&#125;&gt;</span><br><span class="line"></span><br><span class="line">&lt;div class&#x3D;&quot;post-meta&quot;&gt;</span><br><span class="line">  &#123;%- if page.description %&#125;</span><br><span class="line">    &lt;div class&#x3D;&quot;post-description&quot;&gt;&#123;&#123; page.description &#125;&#125;&lt;&#x2F;div&gt;</span><br><span class="line">  &#123;%- endif %&#125;</span><br><span class="line"></span><br><span class="line">	&#123;%- if page.type &#x3D;&#x3D; &#39;photography&#39; %&#125;</span><br><span class="line">	  </span><br><span class="line">	  &lt;div class&#x3D;&quot;album_image_grid&quot;&gt;</span><br><span class="line"></span><br><span class="line">	  &lt;&#x2F;div&gt;</span><br><span class="line">	  &lt;script src&#x3D;&quot;&#x2F;&#x2F;cdn.jsdelivr.net&#x2F;npm&#x2F;jquery@3&#x2F;dist&#x2F;jquery.min.js&quot;&gt;&lt;&#x2F;script&gt;</span><br><span class="line">	  &lt;script type&#x3D;&quot;text&#x2F;javascript&quot; src&#x3D;&quot;&#x2F;photos&#x2F;album.js&quot;&gt;&lt;&#x2F;script&gt;</span><br><span class="line"></span><br><span class="line">	&#123;%- endif %&#125;</span><br><span class="line">  &#123;% include &#39;_partials&#x2F;page&#x2F;breadcrumb.swig&#39; %&#125;</span><br><span class="line">&lt;&#x2F;div&gt;</span><br><span class="line"></span><br><span class="line">&lt;&#x2F;header&gt;</span><br></pre></td></tr></table></figure>
 
-<p><img src="https://photos.zywvvd.com/image/20200428235933.png" alt=""></p>
+<p><img src="https://photos.zywvvd.com/image/20200428235933.png"></p>
 <h3 id="建立album-js文件"><a href="#建立album-js文件" class="headerlink" title="建立album.js文件"></a>建立album.js文件</h3><blockquote>
 <p>在Hexo/themes/next/source/photos文件夹内建立相册js文件 <code>album.js</code>，写入如下内容：</p>
 </blockquote>
@@ -6275,7 +6704,7 @@ cond(no)->sub</textarea><textarea id="flowchart-0-options" style="display: none"
 <blockquote>
 <p>此时访问某个二级目录的地址可以看到图像已经上线</p>
 </blockquote>
-<p><img src="https://photos.zywvvd.com/image/20200429000313.png" alt=""></p>
+<p><img src="https://photos.zywvvd.com/image/20200429000313.png"></p>
 <h2 id="建立相册目录"><a href="#建立相册目录" class="headerlink" title="建立相册目录"></a>建立相册目录</h2><h3 id="主题配置"><a href="#主题配置" class="headerlink" title="主题配置"></a>主题配置</h3><blockquote>
 <p>在Hexo/themes/next/layout文件夹内，修改page.swig，在schedule的elif后面加入内容：</p>
 </blockquote>
@@ -6294,11 +6723,11 @@ cond(no)->sub</textarea><textarea id="flowchart-0-options" style="display: none"
 <blockquote>
 <p>此时便有了相册目录：</p>
 </blockquote>
-<p><img src="https://photos.zywvvd.com/image/20200429001245.png" alt=""></p>
+<p><img src="https://photos.zywvvd.com/image/20200429001245.png"></p>
 <blockquote>
 <p>至此我们已经完成了相册的基础框架，美化等工作仅需在此基础上顺水推舟即可。</p>
 </blockquote>
-]]></content>
+<link rel="stylesheet" href="/css/spoiler.css" type="text/css"><script src="/js/spoiler.js" type="text/javascript" async></script>]]></content>
       <categories>
         <category>Next</category>
       </categories>
@@ -6356,11 +6785,11 @@ cond(no)->sub</textarea><textarea id="flowchart-0-options" style="display: none"
 <h2 id="运行图示"><a href="#运行图示" class="headerlink" title="运行图示"></a>运行图示</h2><ul>
 <li>初始相册文件夹pic</li>
 </ul>
-<p><img src="https://photos.zywvvd.com/image/20200428001615.png" alt=""></p>
+<p><img src="https://photos.zywvvd.com/image/20200428001615.png"></p>
 <ul>
 <li>相册内部</li>
 </ul>
-<p><img src="https://photos.zywvvd.com/image/20200428001650.png" alt=""></p>
+<p><img src="https://photos.zywvvd.com/image/20200428001650.png"></p>
 <ul>
 <li>每个文件夹需要有readme.json记录文件夹信息，程序会自动提取，示例如下：</li>
 </ul>
@@ -6374,35 +6803,84 @@ cond(no)->sub</textarea><textarea id="flowchart-0-options" style="display: none"
 <ul>
 <li>运行main.py</li>
 </ul>
-<p><img src="https://photos.zywvvd.com/image/20200428002036.png" alt=""></p>
+<p><img src="https://photos.zywvvd.com/image/20200428002036.png"></p>
 <ul>
 <li>临时文件夹产生压缩后的图像文件夹与json文件</li>
 </ul>
-<p><img src="https://photos.zywvvd.com/image/20200428002127.png" alt=""></p>
+<p><img src="https://photos.zywvvd.com/image/20200428002127.png"></p>
 <ul>
 <li>程序会在hexo-&gt;source-&gt; photos文件夹内写入相册文件夹层级结构与对应json文件</li>
 </ul>
-<p><img src="20200428235033.png" alt=""></p>
+<p><img src="20200428235033.png"></p>
 <ul>
 <li>文件夹内的json加入了图像的信息</li>
 </ul>
-<p><img src="https://photos.zywvvd.com/image/20200428002202.png" alt=""></p>
+<p><img src="https://photos.zywvvd.com/image/20200428002202.png"></p>
 <figure class="highlight json"><table><tr><td class="code"><pre><span class="line">&#123;</span><br><span class="line">   <span class="attr">"time"</span>: &#123;</span><br><span class="line">      <span class="attr">"year"</span>: <span class="number">2015</span>,</span><br><span class="line">      <span class="attr">"month"</span>: <span class="number">11</span>,</span><br><span class="line">      <span class="attr">"day"</span>: <span class="number">28</span></span><br><span class="line">   &#125;,</span><br><span class="line">   <span class="attr">"type"</span>: <span class="string">"风光"</span>,</span><br><span class="line">   <span class="attr">"model"</span>: <span class="string">""</span>,</span><br><span class="line">   <span class="attr">"position"</span>: &#123;</span><br><span class="line">      <span class="attr">"city"</span>: <span class="string">"合肥"</span>,</span><br><span class="line">      <span class="attr">"street"</span>: <span class="string">"ustc"</span></span><br><span class="line">   &#125;,</span><br><span class="line">   <span class="attr">"title"</span>: <span class="string">"USTC"</span>,</span><br><span class="line">   <span class="attr">"balabala"</span>: <span class="string">"关于母校。"</span>,</span><br><span class="line">   <span class="attr">"image_info"</span>: [</span><br><span class="line">      &#123;</span><br><span class="line">         <span class="attr">"Image_Model"</span>: <span class="string">"NIKON D610"</span>,</span><br><span class="line">         <span class="attr">"EXIF_FNumber"</span>: <span class="string">"f11"</span>,</span><br><span class="line">         <span class="attr">"EXIF_FocalLength"</span>: <span class="string">"35mm"</span>,</span><br><span class="line">         <span class="attr">"EXIF_ExposureMode"</span>: <span class="string">"Auto Exposure"</span>,</span><br><span class="line">         <span class="attr">"EXIF_ExposureTime"</span>: <span class="string">"6s"</span>,</span><br><span class="line">         <span class="attr">"EXIF_ISOSpeedRatings"</span>: <span class="string">"100"</span>,</span><br><span class="line">         <span class="attr">"Image_DateTime"</span>: <span class="string">"2015:11:28 00:07:05"</span>,</span><br><span class="line">         <span class="attr">"url"</span>: <span class="string">"https://photos.zywvvd.com/vvd_hexo/2015_11_28_hefei_ustc_fengjing/1.jpg"</span></span><br><span class="line">      &#125;,</span><br><span class="line">      &#123;</span><br><span class="line">         <span class="attr">"Image_Model"</span>: <span class="string">"NIKON D610"</span>,</span><br><span class="line">         <span class="attr">"EXIF_FNumber"</span>: <span class="string">"f4"</span>,</span><br><span class="line">         <span class="attr">"EXIF_FocalLength"</span>: <span class="string">"34mm"</span>,</span><br><span class="line">         <span class="attr">"EXIF_ExposureMode"</span>: <span class="string">"Manual Exposure"</span>,</span><br><span class="line">         <span class="attr">"EXIF_ExposureTime"</span>: <span class="string">"25s"</span>,</span><br><span class="line">         <span class="attr">"Image_DateTime"</span>: <span class="string">"2015:11:28 22:13:29"</span>,</span><br><span class="line">         <span class="attr">"url"</span>: <span class="string">"https://photos.zywvvd.com/vvd_hexo/2015_11_28_hefei_ustc_fengjing/2.jpg"</span></span><br><span class="line">      &#125;</span><br><span class="line">   ],</span><br><span class="line">   <span class="attr">"directory"</span>: <span class="string">"2015_11_28_hefei_ustc_fengjing"</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
 
 <ul>
 <li>图像会自动上传到七牛云</li>
 </ul>
-<p><img src="https://photos.zywvvd.com/image/20200428002346.png" alt=""></p>
+<p><img src="https://photos.zywvvd.com/image/20200428002346.png"></p>
 <h2 id="小结"><a href="#小结" class="headerlink" title="小结"></a>小结</h2><blockquote>
 <p>文中没有太先进的技术，主要提供了为静态页面自动维护相册问题的解决思路，并分享了json生成与图像上传的工程，有更好的实现方法欢迎交流。</p>
 </blockquote>
 <h2 id="参考链接"><a href="#参考链接" class="headerlink" title="参考链接"></a>参考链接</h2><p>本文启发自 <a href="https://asdfv1929.github.io/2018/05/26/next-add-photos/" target="_blank" rel="noopener">https://asdfv1929.github.io/2018/05/26/next-add-photos/</a> 感谢前辈分享</p>
-]]></content>
+<link rel="stylesheet" href="/css/spoiler.css" type="text/css"><script src="/js/spoiler.js" type="text/javascript" async></script>]]></content>
       <categories>
         <category>Next</category>
       </categories>
       <tags>
         <tag>Next</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>Kite Python代码补全工具安装</title>
+    <url>/2020/04/11/python/kite_install/kite_install/</url>
+    <content><![CDATA[<blockquote>
+<p>Kite是一款将AI机器学习应用到代码补全的工具，本文介绍其在Windows与Linux系统的安装方法。</p>
+</blockquote>
+<a id="more"></a>
+
+<p>官网：<a href="https://www.kite.com/" target="_blank" rel="noopener">https://www.kite.com/</a></p>
+<h3 id="Windows"><a href="#Windows" class="headerlink" title="Windows"></a>Windows</h3><ul>
+<li><a href="https://www.kite.com/download/" target="_blank" rel="noopener">https://www.kite.com/download/</a></li>
+</ul>
+<blockquote>
+<p>直接安装下载的 KiteSetup.exe 即可。</p>
+</blockquote>
+<p><img src="https://photos.zywvvd.com/images_matrixtime/20201029095905.png"></p>
+<h4 id="在-VS-code-中使用-kite"><a href="#在-VS-code-中使用-kite" class="headerlink" title="在 VS code 中使用 kite"></a>在 VS code 中使用 kite</h4><blockquote>
+<p>安装插件 Kite AI Code AutoComplete</p>
+</blockquote>
+<p><img src="https://photos.zywvvd.com/images_matrixtime/20201029100241.png"></p>
+<blockquote>
+<p>随后可以跟着自动弹出的教程学习使用方法。</p>
+</blockquote>
+<blockquote>
+<p>事实上写代码时仅需关注右下角是否开启了Kite即可：</p>
+</blockquote>
+<p><img src="https://photos.zywvvd.com/images_matrixtime/20201029100608.png"></p>
+<blockquote>
+<p>此时写Python代码会有kite 的自动补全：</p>
+</blockquote>
+<p><img src="https://photos.zywvvd.com/images_matrixtime/20201029101019.png"></p>
+<h3 id="Linux"><a href="#Linux" class="headerlink" title="Linux"></a>Linux</h3><ul>
+<li><a href="https://www.kite.com/download/?loc=top_nav#" target="_blank" rel="noopener">https://www.kite.com/download/?loc=top_nav#</a></li>
+</ul>
+<p>运行命令：</p>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">bash -c &quot;$(wget -q -O - https:&#x2F;&#x2F;linux.kite.com&#x2F;dls&#x2F;linux&#x2F;current)&quot;</span><br></pre></td></tr></table></figure>
+
+<blockquote>
+<p>网上有教程说不能使用root用户安装，我在docker中的情况时只能使用root用户安装。</p>
+<p>随后VS code 远程调试代码时即可使用kite自动补全。</p>
+</blockquote>
+<link rel="stylesheet" href="/css/spoiler.css" type="text/css"><script src="/js/spoiler.js" type="text/javascript" async></script>]]></content>
+      <categories>
+        <category>Python</category>
+      </categories>
+      <tags>
+        <tag>Python</tag>
       </tags>
   </entry>
   <entry>
@@ -6437,7 +6915,7 @@ cond(no)->sub</textarea><textarea id="flowchart-0-options" style="display: none"
 <p> 格式配置，核心信息为我们需要记录的<code>%(message)s</code>，此外还可以记录时间、文件名、行号、日志级别等信息</p>
 </li>
 <li><p><code>datefmt</code></p>
-<p>时间格式设置<code>&#39;%a, %Y-%m-%d %H:%M:%S&#39;</code>分别表示 -星期 -年 -月 -日 -时 -分 -秒</p>
+<p>时间格式设置<code> &#39;%a, %Y-%m-%d %H:%M:%S&#39;</code>分别表示 -星期 -年 -月 -日 -时 -分 -秒</p>
 </li>
 <li><p><code>filename</code></p>
 <p>日志文件路径</p>
@@ -6459,56 +6937,7 @@ cond(no)->sub</textarea><textarea id="flowchart-0-options" style="display: none"
 <h2 id="获取源码"><a href="#获取源码" class="headerlink" title="获取源码"></a>获取源码</h2><blockquote>
 <p>文中测试环境与所有源码可在<a href="https://github.com/zywvvd/Python_Practise" target="_blank" rel="noopener">Github</a>下载。</p>
 </blockquote>
-]]></content>
-      <categories>
-        <category>Python</category>
-      </categories>
-      <tags>
-        <tag>Python</tag>
-      </tags>
-  </entry>
-  <entry>
-    <title>Kite Python代码补全工具安装</title>
-    <url>/2020/04/11/python/kite_install/kite_install/</url>
-    <content><![CDATA[<blockquote>
-<p>Kite是一款将AI机器学习应用到代码补全的工具，本文介绍其在Windows与Linux系统的安装方法。</p>
-</blockquote>
-<a id="more"></a>
-
-<p>官网：<a href="https://www.kite.com/" target="_blank" rel="noopener">https://www.kite.com/</a></p>
-<h3 id="Windows"><a href="#Windows" class="headerlink" title="Windows"></a>Windows</h3><ul>
-<li><a href="https://www.kite.com/download/" target="_blank" rel="noopener">https://www.kite.com/download/</a></li>
-</ul>
-<blockquote>
-<p>直接安装下载的 KiteSetup.exe 即可。</p>
-</blockquote>
-<p><img src="https://photos.zywvvd.com/images_matrixtime/20201029095905.png" alt=""></p>
-<h4 id="在-VS-code-中使用-kite"><a href="#在-VS-code-中使用-kite" class="headerlink" title="在 VS code 中使用 kite"></a>在 VS code 中使用 kite</h4><blockquote>
-<p>安装插件 Kite AI Code AutoComplete</p>
-</blockquote>
-<p><img src="https://photos.zywvvd.com/images_matrixtime/20201029100241.png" alt=""></p>
-<blockquote>
-<p>随后可以跟着自动弹出的教程学习使用方法。</p>
-</blockquote>
-<blockquote>
-<p>事实上写代码时仅需关注右下角是否开启了Kite即可：</p>
-</blockquote>
-<p><img src="https://photos.zywvvd.com/images_matrixtime/20201029100608.png" alt=""></p>
-<blockquote>
-<p>此时写Python代码会有kite 的自动补全：</p>
-</blockquote>
-<p><img src="https://photos.zywvvd.com/images_matrixtime/20201029101019.png" alt=""></p>
-<h3 id="Linux"><a href="#Linux" class="headerlink" title="Linux"></a>Linux</h3><ul>
-<li><a href="https://www.kite.com/download/?loc=top_nav#" target="_blank" rel="noopener">https://www.kite.com/download/?loc=top_nav#</a></li>
-</ul>
-<p>运行命令：</p>
-<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">bash -c &quot;$(wget -q -O - https:&#x2F;&#x2F;linux.kite.com&#x2F;dls&#x2F;linux&#x2F;current)&quot;</span><br></pre></td></tr></table></figure>
-
-<blockquote>
-<p>网上有教程说不能使用root用户安装，我在docker中的情况时只能使用root用户安装。</p>
-<p>随后VS code 远程调试代码时即可使用kite自动补全。</p>
-</blockquote>
-]]></content>
+<link rel="stylesheet" href="/css/spoiler.css" type="text/css"><script src="/js/spoiler.js" type="text/javascript" async></script>]]></content>
       <categories>
         <category>Python</category>
       </categories>
@@ -6548,7 +6977,7 @@ cond(no)->sub</textarea><textarea id="flowchart-0-options" style="display: none"
 <li>期间网页会显示代码执行效果，并且在控制台有相应输出，自己也可以在控制台调试当前环境代码</li>
 </ul>
 <p><img src="https://photos.zywvvd.com/image/20200403001726.png" alt="控制台调试"></p>
-]]></content>
+<link rel="stylesheet" href="/css/spoiler.css" type="text/css"><script src="/js/spoiler.js" type="text/javascript" async></script>]]></content>
       <categories>
         <category>编程知识</category>
         <category>JavaScript</category>
@@ -6584,7 +7013,7 @@ cond(no)->sub</textarea><textarea id="flowchart-0-options" style="display: none"
 <h2 id="获取源码"><a href="#获取源码" class="headerlink" title="获取源码"></a>获取源码</h2><blockquote>
 <p>文中测试环境与所有源码可在<a href="https://github.com/zywvvd/Python_Practise" target="_blank" rel="noopener">Github</a>下载。</p>
 </blockquote>
-]]></content>
+<link rel="stylesheet" href="/css/spoiler.css" type="text/css"><script src="/js/spoiler.js" type="text/javascript" async></script>]]></content>
       <categories>
         <category>Python</category>
       </categories>
@@ -6604,7 +7033,7 @@ cond(no)->sub</textarea><textarea id="flowchart-0-options" style="display: none"
 <li>申请百度账号</li>
 </ul>
 <h2 id="申请百度AK"><a href="#申请百度AK" class="headerlink" title="申请百度AK"></a>申请百度AK</h2><ul>
-<li>到 <a href="[https://lbsyun.baidu.com/index.php?title=%E9%A6%96%E9%A1%B5](https://lbsyun.baidu.com/index.php?title=首页)">百度地图平台</a> ，进入控制台</li>
+<li>到 <a href="%5Bhttps://lbsyun.baidu.com/index.php?title=%E9%A6%96%E9%A1%B5%5D(https://lbsyun.baidu.com/index.php?title=%E9%A6%96%E9%A1%B5)">百度地图平台</a> ，进入控制台</li>
 </ul>
 <p><img src="https://photos.zywvvd.com/image/20200401221918.png" alt="百度地图平台"></p>
 <ul>
@@ -6613,10 +7042,10 @@ cond(no)->sub</textarea><textarea id="flowchart-0-options" style="display: none"
 <p><img src="https://photos.zywvvd.com/image/20200401222749.png" alt="注册"></p>
 <ul>
 <li><p>申请密钥</p>
-<p><img src="https://photos.zywvvd.com/image/20200401223600.png" alt="申请密钥">)<img src="https://photos.zywvvd.com/image/20200401223600.png" alt=""></p>
+<p><img src="https://photos.zywvvd.com/image/20200401223600.png" alt="申请密钥"><img src="https://photos.zywvvd.com/image/20200401223600.png"></p>
 </li>
 <li><p>创建应用</p>
-<p><img src="https://photos.zywvvd.com/image/20200401224843.png" alt=""></p>
+<p><img src="https://photos.zywvvd.com/image/20200401224843.png"></p>
 </li>
 <li><p>获得API Key</p>
 </li>
@@ -6636,7 +7065,7 @@ cond(no)->sub</textarea><textarea id="flowchart-0-options" style="display: none"
 </ul>
 <figure class="highlight python"><table><tr><td class="code"><pre><span class="line"><span class="keyword">import</span> requests</span><br><span class="line">baidu_map_ak = <span class="comment">#你的百度ak</span></span><br><span class="line">url = <span class="string">"https://api.map.baidu.com/reverse_geocoding/v3/?ak="</span>+baidu_map_ak+<span class="string">"&amp;output=json&amp;coordtype=wgs84ll&amp;location=31.225696563611,121.49884033194"</span></span><br><span class="line">response = requests.get(url).json()</span><br><span class="line">status = response[<span class="string">'status'</span>]</span><br><span class="line">            <span class="keyword">if</span> status == <span class="number">0</span>:</span><br><span class="line">                	address = response[<span class="string">'result'</span>][<span class="string">'formatted_address'</span>]</span><br><span class="line">            		print( <span class="string">f"拍摄地点：<span class="subst">&#123;address&#125;</span>"</span> )</span><br><span class="line"></span><br><span class="line"><span class="comment"># -&gt; 拍摄地点：上海市黄浦区中山南路187</span></span><br></pre></td></tr></table></figure>
 
-]]></content>
+<link rel="stylesheet" href="/css/spoiler.css" type="text/css"><script src="/js/spoiler.js" type="text/javascript" async></script>]]></content>
       <categories>
         <category>程序人生</category>
         <category>实用工具</category>
@@ -6916,7 +7345,7 @@ cond(no)->sub</textarea><textarea id="flowchart-0-options" style="display: none"
 <p>上传后的一张图片链接：</p>
 </blockquote>
 <p><a href="https://photos.zywvvd.com/vvd_hexo/2015_11_28_hefei_ustc_fengjing/1.jpg" target="_blank" rel="noopener">https://photos.zywvvd.com/vvd_hexo/2015_11_28_hefei_ustc_fengjing/1.jpg</a></p>
-]]></content>
+<link rel="stylesheet" href="/css/spoiler.css" type="text/css"><script src="/js/spoiler.js" type="text/javascript" async></script>]]></content>
       <categories>
         <category>Next</category>
       </categories>
@@ -7011,7 +7440,7 @@ cond(no)->sub</textarea><textarea id="flowchart-0-options" style="display: none"
 <figure class="highlight php"><table><tr><td class="code"><pre><span class="line">&#123;% block tacos %&#125;</span><br><span class="line">  <span class="comment">//...</span></span><br><span class="line">&#123;% endblock tacos %&#125;</span><br><span class="line">&#123;% block burritos %&#125;</span><br><span class="line">  &#123;% <span class="keyword">if</span> foo %&#125;</span><br><span class="line">    <span class="comment">// ...</span></span><br><span class="line">  &#123;% <span class="keyword">endif</span> %&#125; <span class="comment">//the above will render if foo == true</span></span><br><span class="line">&#123;% endblock burritos %&#125;</span><br></pre></td></tr></table></figure>
 
 <blockquote>
-<p>更多关于tag的信息，请查看<a href="https://link.jianshu.com?t=http://node-swig.github.io/swig-templates/docs/tags/" target="_blank" rel="noopener">官方文档</a>，这里挑几个重点的经常见到的说说。</p>
+<p>更多关于tag的信息，请查看<a href="https://link.jianshu.com/?t=http://node-swig.github.io/swig-templates/docs/tags/" target="_blank" rel="noopener">官方文档</a>，这里挑几个重点的经常见到的说说。</p>
 </blockquote>
 <h3 id="block标签"><a href="#block标签" class="headerlink" title="block标签"></a>block标签</h3><blockquote>
 <p>用于声明一个代码块，继承的子模板中间可以改写或者拓展父模板中同名的代码块。也可查看#继承</p>
@@ -7092,7 +7521,7 @@ cond(no)->sub</textarea><textarea id="flowchart-0-options" style="display: none"
 
 
 <h3 id="import"><a href="#import" class="headerlink" title="import"></a>import</h3><blockquote>
-<p>Source: <a href="https://link.jianshu.com?t=https://github.com/paularmstrong/swig/blob/v2.0.0/lib/tags/import.js" target="_blank" rel="noopener">lib/tags/import.js</a></p>
+<p>Source: <a href="https://link.jianshu.com/?t=https://github.com/paularmstrong/swig/blob/v2.0.0/lib/tags/import.js" target="_blank" rel="noopener">lib/tags/import.js</a></p>
 </blockquote>
 <blockquote>
 <p>允许你引入定义在别的文件当中的宏到你当前的模板文件当中。</p>
@@ -7171,7 +7600,7 @@ cond(no)->sub</textarea><textarea id="flowchart-0-options" style="display: none"
 <p>模板<code>index.html</code>继承自<code>layout.html</code>，并且改写或者实现了其中的内容。</p>
 </blockquote>
 <h3 id="参考"><a href="#参考" class="headerlink" title="参考:"></a>参考:</h3><p><a href="https://www.jianshu.com/p/c5d333e6353c" target="_blank" rel="noopener">https://www.jianshu.com/p/c5d333e6353c</a><br><a href="http://node-swig.github.io/swig-templates/docs/api/#CacheOptionshttp://node-swig.github.io/swig-templates/docs/api/#CacheOptions" target="_blank" rel="noopener">http://node-swig.github.io/swig-templates/docs/api/#CacheOptionshttp://node-swig.github.io/swig-templates/docs/api/#CacheOptions</a></p>
-]]></content>
+<link rel="stylesheet" href="/css/spoiler.css" type="text/css"><script src="/js/spoiler.js" type="text/javascript" async></script>]]></content>
       <categories>
         <category>编程知识</category>
         <category>前端</category>
@@ -7211,7 +7640,7 @@ cond(no)->sub</textarea><textarea id="flowchart-0-options" style="display: none"
 <p>从清华源安装tensorboard</p>
 </blockquote>
 <h3 id="修改配置"><a href="#修改配置" class="headerlink" title="修改配置"></a>修改配置</h3><ul>
-<li><p>Linux修改 <code>~/.pip/pip.conf</code></p>
+<li><p>Linux修改 <code>~/.pip/pip.conf </code></p>
 </li>
 <li><p>Windows 修改<code>C:\Users\pip\pip.ini</code>，即 %HOMEPATH%\pip\pip.ini</p>
 </li>
@@ -7223,7 +7652,7 @@ cond(no)->sub</textarea><textarea id="flowchart-0-options" style="display: none"
 </blockquote>
 <figure class="highlight shell"><table><tr><td class="code"><pre><span class="line">pip install pip -U    # 升级pip到最新版本</span><br><span class="line">pip config set global.index-url https://pypi.tuna.tsinghua.edu.cn/simple</span><br></pre></td></tr></table></figure>
 
-]]></content>
+<link rel="stylesheet" href="/css/spoiler.css" type="text/css"><script src="/js/spoiler.js" type="text/javascript" async></script>]]></content>
       <categories>
         <category>程序人生</category>
         <category>环境配置</category>
@@ -7268,7 +7697,7 @@ cond(no)->sub</textarea><textarea id="flowchart-0-options" style="display: none"
 <li>此时效果</li>
 </ul>
 <p><img src="https://photos.zywvvd.com/image/20200329233209.png" alt="相册"></p>
-]]></content>
+<link rel="stylesheet" href="/css/spoiler.css" type="text/css"><script src="/js/spoiler.js" type="text/javascript" async></script>]]></content>
       <categories>
         <category>Next</category>
       </categories>
@@ -7308,7 +7737,7 @@ cond(no)->sub</textarea><textarea id="flowchart-0-options" style="display: none"
 <p>配置完毕，用户只能用https访问你的站点了。</p>
 </blockquote>
 <p><img src="https://photos.zywvvd.com/image/20200329222408.png" alt="安全链接"></p>
-]]></content>
+<link rel="stylesheet" href="/css/spoiler.css" type="text/css"><script src="/js/spoiler.js" type="text/javascript" async></script>]]></content>
       <categories>
         <category>Hexo</category>
       </categories>
@@ -7345,7 +7774,7 @@ cond(no)->sub</textarea><textarea id="flowchart-0-options" style="display: none"
 <figure class="highlight yml"><table><tr><td class="code"><pre><span class="line"><span class="comment"># ---------------------------------------------------------------</span></span><br><span class="line"><span class="comment"># Site Information Settings</span></span><br><span class="line"><span class="comment"># See: https://theme-next.org/docs/getting-started/</span></span><br><span class="line"><span class="comment"># ---------------------------------------------------------------</span></span><br><span class="line"></span><br><span class="line"><span class="attr">favicon:</span></span><br><span class="line">  <span class="attr">small:</span> <span class="string">/images/logo-16.png</span></span><br><span class="line">  <span class="attr">medium:</span> <span class="string">/images/logo-32.png</span></span><br><span class="line">  <span class="attr">apple_touch_icon:</span> <span class="string">/images/logo-180.png</span></span><br><span class="line">  <span class="attr">safari_pinned_tab:</span> <span class="string">/images/logo-512.svg</span></span><br><span class="line">  <span class="comment">#android_manifest: /images/manifest.json</span></span><br><span class="line">  <span class="comment">#ms_browserconfig: /images/browserconfig.xml</span></span><br></pre></td></tr></table></figure>
 
 <h2 id="效果示例"><a href="#效果示例" class="headerlink" title="效果示例"></a>效果示例</h2><p><img src="https://photos.zywvvd.com/image/20200329220315.png" alt="logo效果"></p>
-]]></content>
+<link rel="stylesheet" href="/css/spoiler.css" type="text/css"><script src="/js/spoiler.js" type="text/javascript" async></script>]]></content>
       <categories>
         <category>Hexo</category>
       </categories>
@@ -7410,7 +7839,7 @@ cond(no)->sub</textarea><textarea id="flowchart-0-options" style="display: none"
 <p>妈耶，赶紧改回来。</p>
 <p>反正就是这么改的啦。</p>
 </blockquote>
-]]></content>
+<link rel="stylesheet" href="/css/spoiler.css" type="text/css"><script src="/js/spoiler.js" type="text/javascript" async></script>]]></content>
       <categories>
         <category>Next</category>
       </categories>
@@ -7434,7 +7863,7 @@ cond(no)->sub</textarea><textarea id="flowchart-0-options" style="display: none"
 
 
 <h2 id="示例效果"><a href="#示例效果" class="headerlink" title="示例效果"></a>示例效果</h2><p><img src="https://photos.zywvvd.com/image/20200328005031.png" alt="fancybox示例"></p>
-]]></content>
+<link rel="stylesheet" href="/css/spoiler.css" type="text/css"><script src="/js/spoiler.js" type="text/javascript" async></script>]]></content>
       <categories>
         <category>Next</category>
       </categories>
@@ -7531,7 +7960,7 @@ cond(no)->sub</textarea><textarea id="flowchart-0-options" style="display: none"
 </blockquote>
 <figure class="highlight shell"><table><tr><td class="code"><pre><span class="line">cat /usr/local/cuda/include/cudnn.h | grep CUDNN_MAJOR -A 2</span><br></pre></td></tr></table></figure>
 
-]]></content>
+<link rel="stylesheet" href="/css/spoiler.css" type="text/css"><script src="/js/spoiler.js" type="text/javascript" async></script>]]></content>
       <categories>
         <category>软件</category>
         <category>软件安装</category>
@@ -7648,7 +8077,7 @@ cond(no)->sub</textarea><textarea id="flowchart-0-options" style="display: none"
 <ul>
 <li>同时建议设置成时间戳重命名，保证图片不会重复</li>
 </ul>
-<p><img src="https://photos.zywvvd.com/image/20200326232705.png" alt=""></p>
+<p><img src="https://photos.zywvvd.com/image/20200326232705.png"></p>
 <ul>
 <li>回到上传区 -&gt; 将链接格式改为 Custom，此后每次上传图片后会复制相应格式的链接到剪贴板</li>
 </ul>
@@ -7667,7 +8096,7 @@ cond(no)->sub</textarea><textarea id="flowchart-0-options" style="display: none"
 </li>
 </ul>
 <p><strong>舒服 。。。</strong></p>
-]]></content>
+<link rel="stylesheet" href="/css/spoiler.css" type="text/css"><script src="/js/spoiler.js" type="text/javascript" async></script>]]></content>
       <categories>
         <category>Hexo</category>
       </categories>
@@ -7700,7 +8129,7 @@ cond(no)->sub</textarea><textarea id="flowchart-0-options" style="display: none"
 <p>创建二级域名，例如我的 ：photos.zywvvd.com ，并申请相应的ssl证书，具体可参考<a href="https://www.zywvvd.com/2020/03/19/hexo/7_hexo_speed_up/hexo-speed-up/#%E7%94%B3%E8%AF%B7SSL%E5%85%8D%E8%B4%B9%E8%AF%81%E4%B9%A6%EF%BC%88%E8%B2%8C%E4%BC%BC%E5%8F%AF%E9%80%89%EF%BC%89">SSL免费证书申请</a>。</p>
 <p>配置加速域名：</p>
 </blockquote>
-<p><img src="https://photos.zywvvd.com/image/20200326001555.png" alt=""></p>
+<p><img src="https://photos.zywvvd.com/image/20200326001555.png"></p>
 <blockquote>
 <p>信息设置</p>
 </blockquote>
@@ -7729,7 +8158,7 @@ cond(no)->sub</textarea><textarea id="flowchart-0-options" style="display: none"
 <h2 id="进阶"><a href="#进阶" class="headerlink" title="进阶"></a>进阶</h2><blockquote>
 <p>图床是博客图片长期管理的重要基石，但手动上传管理图像实在反人类，参考<a href="https://www.zywvvd.com/2020/03/26/hexo/10_using_picgo/using-picgo/">Hexo -10- 使用PicGo配合七牛云图床实现Markdown图像无痛管理</a>有效解决图床图片管理的问题。</p>
 </blockquote>
-]]></content>
+<link rel="stylesheet" href="/css/spoiler.css" type="text/css"><script src="/js/spoiler.js" type="text/javascript" async></script>]]></content>
       <categories>
         <category>Hexo</category>
       </categories>
@@ -7758,7 +8187,7 @@ cond(no)->sub</textarea><textarea id="flowchart-0-options" style="display: none"
 <blockquote>
 <p>复制成功后按钮会有状态变化提示。</p>
 </blockquote>
-]]></content>
+<link rel="stylesheet" href="/css/spoiler.css" type="text/css"><script src="/js/spoiler.js" type="text/javascript" async></script>]]></content>
       <categories>
         <category>Next</category>
       </categories>
@@ -7789,7 +8218,7 @@ cond(no)->sub</textarea><textarea id="flowchart-0-options" style="display: none"
 </blockquote>
 <figure class="highlight html"><table><tr><td class="code"><pre><span class="line">&#123;%- set ccIcon = '<span class="tag">&lt;<span class="name">i</span> <span class="attr">class</span>=<span class="string">"fa fa-fw fa-creative-commons"</span>&gt;</span><span class="tag">&lt;/<span class="name">i</span>&gt;</span>' %&#125;</span><br><span class="line">&#123;%- set ccText = theme.creative_commons.license | upper %&#125;</span><br><span class="line"></span><br><span class="line"><span class="tag">&lt;<span class="name">div</span>&gt;</span></span><br><span class="line"><span class="tag">&lt;<span class="name">ul</span> <span class="attr">class</span>=<span class="string">"post-copyright"</span>&gt;</span></span><br><span class="line">  <span class="tag">&lt;<span class="name">li</span> <span class="attr">class</span>=<span class="string">"post-copyright-author"</span>&gt;</span></span><br><span class="line">  <span class="tag">&lt;<span class="name">span</span>&gt;</span><span class="tag">&lt;<span class="name">strong</span>&gt;</span>本文标题&amp;nbsp:&amp;nbsp&amp;nbsp<span class="tag">&lt;/<span class="name">strong</span>&gt;</span>&#123;&#123; page.title &#125;&#125;<span class="tag">&lt;<span class="name">br</span>&gt;</span><span class="tag">&lt;/<span class="name">span</span>&gt;</span></span><br><span class="line">  <span class="tag">&lt;<span class="name">span</span>&gt;</span><span class="tag">&lt;<span class="name">strong</span>&gt;</span>文章作者&amp;nbsp:&amp;nbsp&amp;nbsp<span class="tag">&lt;/<span class="name">strong</span>&gt;</span>&#123;&#123; theme.author &#125;&#125;<span class="tag">&lt;<span class="name">br</span>&gt;</span><span class="tag">&lt;/<span class="name">span</span>&gt;</span></span><br><span class="line">  <span class="tag">&lt;<span class="name">span</span>&gt;</span><span class="tag">&lt;<span class="name">strong</span>&gt;</span>发布时间&amp;nbsp:&amp;nbsp&amp;nbsp<span class="tag">&lt;/<span class="name">strong</span>&gt;</span>&#123;&#123; page.date.format("YYYY年MM月DD日 - HH:mm:ss") &#125;&#125;<span class="tag">&lt;<span class="name">br</span>&gt;</span><span class="tag">&lt;/<span class="name">span</span>&gt;</span></span><br><span class="line">  <span class="tag">&lt;<span class="name">span</span>&gt;</span><span class="tag">&lt;<span class="name">strong</span>&gt;</span>最后更新&amp;nbsp:&amp;nbsp&amp;nbsp<span class="tag">&lt;/<span class="name">strong</span>&gt;</span>&#123;&#123; page.updated.format("YYYY年MM月DD日 - HH:mm:ss") &#125;&#125;<span class="tag">&lt;<span class="name">br</span>&gt;</span><span class="tag">&lt;/<span class="name">span</span>&gt;</span></span><br><span class="line">  <span class="tag">&lt;<span class="name">span</span>&gt;</span><span class="tag">&lt;<span class="name">strong</span>&gt;</span>原始链接&amp;nbsp:&amp;nbsp&amp;nbsp<span class="tag">&lt;/<span class="name">strong</span>&gt;</span><span class="tag">&lt;<span class="name">a</span> <span class="attr">href</span>=<span class="string">"&#123;&#123; url_for(page.path) &#125;&#125;"</span> <span class="attr">title</span>=<span class="string">"&#123;&#123; page.title &#125;&#125;"</span>&gt;</span>&#123;&#123; page.permalink &#125;&#125;<span class="tag">&lt;/<span class="name">a</span>&gt;</span><span class="tag">&lt;<span class="name">br</span>&gt;</span><span class="tag">&lt;/<span class="name">span</span>&gt;</span></span><br><span class="line">  <span class="tag">&lt;<span class="name">span</span>&gt;</span><span class="tag">&lt;<span class="name">strong</span>&gt;</span>许可协议&amp;nbsp:&amp;nbsp&amp;nbsp<span class="tag">&lt;/<span class="name">strong</span>&gt;</span><span class="tag">&lt;<span class="name">i</span> <span class="attr">class</span>=<span class="string">"fa fa-creative-commons"</span>&gt;</span><span class="tag">&lt;/<span class="name">i</span>&gt;</span> <span class="tag">&lt;<span class="name">a</span> <span class="attr">rel</span>=<span class="string">"license"</span> <span class="attr">href</span>=<span class="string">"https://creativecommons.org/licenses/by-nc-nd/4.0/"</span> <span class="attr">target</span>=<span class="string">"_blank"</span> <span class="attr">title</span>=<span class="string">"Attribution-NonCommercial-NoDerivatives 4.0 International (CC BY-NC-ND 4.0)"</span>&gt;</span>署名-非商业性使用-禁止演绎 4.0 国际<span class="tag">&lt;/<span class="name">a</span>&gt;</span> 转载请保留原文链接及作者<span class="tag">&lt;<span class="name">br</span>&gt;</span><span class="tag">&lt;/<span class="name">span</span>&gt;</span>  </span><br><span class="line">	</span><br><span class="line">   <span class="comment">&lt;!-- &lt;strong&gt;&#123;&#123; __('post.copyright.author') + __('symbol.colon') &#125;&#125; &lt;/strong&gt;</span></span><br><span class="line"><span class="comment">    &#123;&#123;- page.author or author &#125;&#125;</span></span><br><span class="line"><span class="comment">  &lt;/li&gt;</span></span><br><span class="line"><span class="comment">  &lt;li class="post-copyright-link"&gt;</span></span><br><span class="line"><span class="comment">    &lt;strong&gt;&#123;&#123; __('post.copyright.link') + __('symbol.colon') &#125;&#125;&lt;/strong&gt;</span></span><br><span class="line"><span class="comment">    &#123;&#123; next_url(page.permalink, page.permalink, &#123;title: page.title&#125;) &#125;&#125;</span></span><br><span class="line"><span class="comment">  &lt;/li&gt;</span></span><br><span class="line"><span class="comment">  &lt;li class="post-copyright-license"&gt;</span></span><br><span class="line"><span class="comment">    &lt;strong&gt;&#123;&#123; __('post.copyright.license_title') + __('symbol.colon') &#125;&#125; &lt;/strong&gt;</span></span><br><span class="line"><span class="comment">    &#123;&#123;- __('post.copyright.license_content', next_url(ccURL, ccIcon + ccText)) &#125;&#125;</span></span><br><span class="line"><span class="comment">  &lt;/li&gt;--&gt;</span></span><br><span class="line"><span class="tag">&lt;/<span class="name">ul</span>&gt;</span></span><br><span class="line"><span class="tag">&lt;/<span class="name">div</span>&gt;</span></span><br></pre></td></tr></table></figure>
 
-<h3 id="新版效果"><a href="#新版效果" class="headerlink" title="新版效果"></a>新版效果</h3><img src="/2020/03/23/next/17_next_add_copyright/add-copyright/xiaoguo2.png" class="" title="进阶版效果示例">]]></content>
+<h3 id="新版效果"><a href="#新版效果" class="headerlink" title="新版效果"></a>新版效果</h3><img src="/2020/03/23/next/17_next_add_copyright/add-copyright/xiaoguo2.png" class="" title="进阶版效果示例"><link rel="stylesheet" href="/css/spoiler.css" type="text/css"><script src="/js/spoiler.js" type="text/javascript" async></script>]]></content>
       <categories>
         <category>Next</category>
       </categories>
@@ -7837,7 +8266,7 @@ cond(no)->sub</textarea><textarea id="flowchart-0-options" style="display: none"
 <h3 id="效果"><a href="#效果" class="headerlink" title="效果"></a>效果</h3><blockquote>
 <p>成功后可以搜索站内内容：</p>
 </blockquote>
-<img src="/2020/03/21/next/16_next_add_search/next-add-search/search.png" class="" title="本地搜索">]]></content>
+<img src="/2020/03/21/next/16_next_add_search/next-add-search/search.png" class="" title="本地搜索"><link rel="stylesheet" href="/css/spoiler.css" type="text/css"><script src="/js/spoiler.js" type="text/javascript" async></script>]]></content>
       <categories>
         <category>Next</category>
       </categories>
@@ -7875,7 +8304,7 @@ cond(no)->sub</textarea><textarea id="flowchart-0-options" style="display: none"
 <blockquote>
 <p>翻译后就是现在的效果：</p>
 </blockquote>
-<center>↓↓↓</center>]]></content>
+<center>↓↓↓</center><link rel="stylesheet" href="/css/spoiler.css" type="text/css"><script src="/js/spoiler.js" type="text/javascript" async></script>]]></content>
       <categories>
         <category>Next</category>
       </categories>
@@ -8061,7 +8490,7 @@ cond(no)->sub</textarea><textarea id="flowchart-0-options" style="display: none"
 </blockquote>
 <img src="/2020/03/21/hexo/8_hexo_generate_sitemap/generate-sitemap/bdst.png" class="" title="sitemap提交">
 
-]]></content>
+<link rel="stylesheet" href="/css/spoiler.css" type="text/css"><script src="/js/spoiler.js" type="text/javascript" async></script>]]></content>
       <categories>
         <category>Hexo</category>
       </categories>
@@ -8103,14 +8532,14 @@ cond(no)->sub</textarea><textarea id="flowchart-0-options" style="display: none"
 </blockquote>
 <h2 id="在侧边栏添加RSS按钮"><a href="#在侧边栏添加RSS按钮" class="headerlink" title="在侧边栏添加RSS按钮"></a>在侧边栏添加RSS按钮</h2><blockquote>
 <p>在Hexo/themes/next/layout/_partials/sidebar文件夹，打开site-overview.swig文件</p>
-<p>在<code>- if theme.site_state</code>前加入代码：</p>
+<p>在<code>- if theme.site_state </code>前加入代码：</p>
 </blockquote>
 <figure class="highlight yml"><table><tr><td class="code"><pre><span class="line"><span class="string">&#123;%</span> <span class="string">if</span> <span class="string">theme.rss</span> <span class="string">%&#125;</span></span><br><span class="line">   <span class="string">&lt;div</span> <span class="string">class="feed-link</span> <span class="string">motion-element"&gt;</span></span><br><span class="line">     <span class="string">&lt;a</span> <span class="string">href="&#123;&#123;</span> <span class="string">url_for(theme.rss)</span> <span class="string">&#125;&#125;"</span> <span class="string">rel="alternate"&gt;</span></span><br><span class="line">       <span class="string">&lt;i</span> <span class="string">class="fa</span> <span class="string">fa-rss"&gt;&lt;/i&gt;</span></span><br><span class="line">       <span class="string">RSS</span></span><br><span class="line">     <span class="string">&lt;/a&gt;</span></span><br><span class="line">   <span class="string">&lt;/div&gt;</span></span><br><span class="line"> <span class="string">&#123;%</span> <span class="string">endif</span> <span class="string">%&#125;</span></span><br></pre></td></tr></table></figure>
 
 <blockquote>
 <p>执行hexo g &amp;&amp; hexo s 即可查看效果</p>
 </blockquote>
-<img src="/2020/03/20/next/14_add_rss/next-add-rss/xg.png" class="" title="效果示例">]]></content>
+<img src="/2020/03/20/next/14_add_rss/next-add-rss/xg.png" class="" title="效果示例"><link rel="stylesheet" href="/css/spoiler.css" type="text/css"><script src="/js/spoiler.js" type="text/javascript" async></script>]]></content>
       <categories>
         <category>Next</category>
       </categories>
@@ -8133,8 +8562,8 @@ cond(no)->sub</textarea><textarea id="flowchart-0-options" style="display: none"
 <li>已经申请了域名 zywvvd.com</li>
 <li>服务器为国外的Github</li>
 <li>正在使用Github分发的二级域名 zywvvd.github.io</li>
-<li>已经将Hexo挂载到 <a href="http://www.zywvvd.com">www.zywvvd.com</a></li>
-<li><strong>需要</strong> : 七牛云CDN加速站点，使得用户访问 <a href="http://www.zywvvd.com">www.zywvvd.com</a> 时速度快，而且顺利转到我的Hexo主页</li>
+<li>已经将Hexo挂载到 <a href="http://www.zywvvd.com/">www.zywvvd.com</a></li>
+<li><strong>需要</strong> : 七牛云CDN加速站点，使得用户访问 <a href="http://www.zywvvd.com/">www.zywvvd.com</a> 时速度快，而且顺利转到我的Hexo主页</li>
 </ul>
 <h2 id="CDN-Content-Delivery-Network-加速原理"><a href="#CDN-Content-Delivery-Network-加速原理" class="headerlink" title="CDN(Content Delivery Network)加速原理"></a>CDN(Content Delivery Network)加速原理</h2><blockquote>
 <p>访问Github Pages缓慢的原因</p>
@@ -8157,7 +8586,7 @@ cond(no)->sub</textarea><textarea id="flowchart-0-options" style="display: none"
 </li>
 <li><p>测速网站2：<a href="https://www.17ce.com/" target="_blank" rel="noopener">https://www.17ce.com/</a></p>
 </li>
-<li><p>教程1：<a href="[https://geek-space.cn/post/hexo-qiniu.html#%E4%B8%8B%E9%9D%A2%E5%B0%B1%E6%98%AF%E6%95%99%E7%A8%8B%E4%BA%86%EF%BC%88%E8%BF%99%E9%87%8C%E5%81%87%E8%AE%BE%E6%82%A8%E5%B7%B2%E7%BB%8F%E6%8E%8C%E6%8F%A1%E4%BA%86%E5%BB%BA%E7%AB%99%E7%9A%84%E6%8A%80%E6%9C%AF%EF%BC%89](https://geek-space.cn/post/hexo-qiniu.html#下面就是教程了（这里假设您已经掌握了建站的技术）)">Hexo 开启 CDN 加速访问</a></p>
+<li><p>教程1：<a href="%5Bhttps://geek-space.cn/post/hexo-qiniu.html#%E4%B8%8B%E9%9D%A2%E5%B0%B1%E6%98%AF%E6%95%99%E7%A8%8B%E4%BA%86%EF%BC%88%E8%BF%99%E9%87%8C%E5%81%87%E8%AE%BE%E6%82%A8%E5%B7%B2%E7%BB%8F%E6%8E%8C%E6%8F%A1%E4%BA%86%E5%BB%BA%E7%AB%99%E7%9A%84%E6%8A%80%E6%9C%AF%EF%BC%89%5D(https://geek-space.cn/post/hexo-qiniu.html#%E4%B8%8B%E9%9D%A2%E5%B0%B1%E6%98%AF%E6%95%99%E7%A8%8B%E4%BA%86%EF%BC%88%E8%BF%99%E9%87%8C%E5%81%87%E8%AE%BE%E6%82%A8%E5%B7%B2%E7%BB%8F%E6%8E%8C%E6%8F%A1%E4%BA%86%E5%BB%BA%E7%AB%99%E7%9A%84%E6%8A%80%E6%9C%AF%EF%BC%89)">Hexo 开启 CDN 加速访问</a></p>
 </li>
 <li><p>教程2：<a href="https://www.zhyong.cn/posts/ddf2/" target="_blank" rel="noopener">Hexo+Next 使用 CDN 加速网站以及静态文件</a></p>
 </li>
@@ -8174,7 +8603,7 @@ cond(no)->sub</textarea><textarea id="flowchart-0-options" style="display: none"
 </blockquote>
 <h3 id="重新解析站点到其他二级域名"><a href="#重新解析站点到其他二级域名" class="headerlink" title="重新解析站点到其他二级域名"></a>重新解析站点到其他二级域名</h3><blockquote>
 <p>这里的其他是相对与前缀<code>www</code>来说的。</p>
-<p>是这样的，因为我想来访者通过域名 <a href="http://www.zywvvd.com">www.zywvvd.com</a> 访问我的站点，也就是说这是我需要加速的域名，不能再把这个域名直接解析到我们的Hexo站点了，但是还是需要有一个二级域名指向他，因此需要将Hexo站点绑定到其他二级域名，我用的是 <a href="https://zzz.zywvvd.com/" target="_blank" rel="noopener">https://zzz.zywvvd.com/</a></p>
+<p>是这样的，因为我想来访者通过域名 <a href="http://www.zywvvd.com/">www.zywvvd.com</a> 访问我的站点，也就是说这是我需要加速的域名，不能再把这个域名直接解析到我们的Hexo站点了，但是还是需要有一个二级域名指向他，因此需要将Hexo站点绑定到其他二级域名，我用的是 <a href="https://zzz.zywvvd.com/" target="_blank" rel="noopener">https://zzz.zywvvd.com/</a></p>
 </blockquote>
 <img src="/2020/03/19/hexo/7_hexo_speed_up/hexo-speed-up/cname.png" class="" title="源站CNAME设置">
 
@@ -8295,7 +8724,7 @@ cond(no)->sub</textarea><textarea id="flowchart-0-options" style="display: none"
 <blockquote>
 <p>舒服。。。</p>
 </blockquote>
-]]></content>
+<link rel="stylesheet" href="/css/spoiler.css" type="text/css"><script src="/js/spoiler.js" type="text/javascript" async></script>]]></content>
       <categories>
         <category>Hexo</category>
       </categories>
@@ -8359,7 +8788,7 @@ cond(no)->sub</textarea><textarea id="flowchart-0-options" style="display: none"
 <blockquote>
 <p>开启valine方法参考<a href="http://localhost:4000/zywvvd.github.io/2020/02/28/next/6_add_valine_comments/add-valine-comments/" target="_blank" rel="noopener">Next -6- 添加Valine评论系统</a></p>
 </blockquote>
-<img src="/2020/03/09/next/13_busuanzi_fix_for_live2d/next-busuanzi-fix-live2d/fix3.png" class="" title="修复文章统计">]]></content>
+<img src="/2020/03/09/next/13_busuanzi_fix_for_live2d/next-busuanzi-fix-live2d/fix3.png" class="" title="修复文章统计"><link rel="stylesheet" href="/css/spoiler.css" type="text/css"><script src="/js/spoiler.js" type="text/javascript" async></script>]]></content>
       <categories>
         <category>Next</category>
       </categories>
@@ -8440,7 +8869,7 @@ cond(no)->sub</textarea><textarea id="flowchart-0-options" style="display: none"
 <blockquote>
 <p> 可输出 <code>家</code> 图标</p>
 </blockquote>
-]]></content>
+<link rel="stylesheet" href="/css/spoiler.css" type="text/css"><script src="/js/spoiler.js" type="text/javascript" async></script>]]></content>
       <categories>
         <category>Hexo</category>
       </categories>
@@ -8560,7 +8989,7 @@ cond(no)->sub</textarea><textarea id="flowchart-0-options" style="display: none"
 <p><a href="https://blog.csdn.net/weixin_34235371/article/details/91468588" target="_blank" rel="noopener">https://blog.csdn.net/weixin_34235371/article/details/91468588</a></p>
 <p> <a href="https://blog.csdn.net/cungudafa/article/details/104282643#_47" target="_blank" rel="noopener">https://blog.csdn.net/cungudafa/article/details/104282643#_47</a></p>
 </blockquote>
-]]></content>
+<link rel="stylesheet" href="/css/spoiler.css" type="text/css"><script src="/js/spoiler.js" type="text/javascript" async></script>]]></content>
       <categories>
         <category>Hexo</category>
       </categories>
@@ -8594,7 +9023,7 @@ cond(no)->sub</textarea><textarea id="flowchart-0-options" style="display: none"
 <p>再次写入示例公式代码，即可正常渲染。</p>
 </blockquote>
 <p>$$<br>Precision=\frac{TP}{TP+FP}<br>$$</p>
-]]></content>
+<link rel="stylesheet" href="/css/spoiler.css" type="text/css"><script src="/js/spoiler.js" type="text/javascript" async></script>]]></content>
       <categories>
         <category>Next</category>
       </categories>
@@ -8630,7 +9059,7 @@ cond(no)->sub</textarea><textarea id="flowchart-0-options" style="display: none"
 <blockquote>
 <p>效果：</p>
 </blockquote>
-<img src="/2020/03/09/next/11_article_percentage/article-percentage/processbar.png" class="" title="颜色进度条">]]></content>
+<img src="/2020/03/09/next/11_article_percentage/article-percentage/processbar.png" class="" title="颜色进度条"><link rel="stylesheet" href="/css/spoiler.css" type="text/css"><script src="/js/spoiler.js" type="text/javascript" async></script>]]></content>
       <categories>
         <category>Next</category>
       </categories>
@@ -8707,7 +9136,7 @@ cond(no)->sub</textarea><textarea id="flowchart-0-options" style="display: none"
 <blockquote>
 <p>效果：</p>
 </blockquote>
-<img src="/2020/02/29/next/10_fork_me_on_github/fork-me-on-github/shili3.png" class="" title="同时应用效果">]]></content>
+<img src="/2020/02/29/next/10_fork_me_on_github/fork-me-on-github/shili3.png" class="" title="同时应用效果"><link rel="stylesheet" href="/css/spoiler.css" type="text/css"><script src="/js/spoiler.js" type="text/javascript" async></script>]]></content>
       <categories>
         <category>Next</category>
       </categories>
@@ -8733,7 +9162,7 @@ cond(no)->sub</textarea><textarea id="flowchart-0-options" style="display: none"
 </blockquote>
 <figure class="highlight yml"><table><tr><td class="code"><pre><span class="line"><span class="comment"># Sidebar Avatar</span></span><br><span class="line"><span class="attr">avatar:</span></span><br><span class="line">  <span class="comment"># Replace the default image and set the url here.</span></span><br><span class="line">  <span class="attr">url:</span> <span class="string">/images/avatar.jpg</span></span><br><span class="line">  <span class="comment"># If true, the avatar will be dispalyed in circle.</span></span><br><span class="line">  <span class="attr">rounded:</span> <span class="literal">false</span></span><br><span class="line">  <span class="comment"># If true, the avatar will be rotated with the cursor.</span></span><br><span class="line">  <span class="attr">rotated:</span> <span class="literal">false</span></span><br></pre></td></tr></table></figure>
 
-<img src="/2020/02/28/next/9_add_avatar/add-avatar/xiaoguo.png" class="" title="主页效果">]]></content>
+<img src="/2020/02/28/next/9_add_avatar/add-avatar/xiaoguo.png" class="" title="主页效果"><link rel="stylesheet" href="/css/spoiler.css" type="text/css"><script src="/js/spoiler.js" type="text/javascript" async></script>]]></content>
       <categories>
         <category>Next</category>
       </categories>
@@ -8764,7 +9193,7 @@ cond(no)->sub</textarea><textarea id="flowchart-0-options" style="display: none"
 </blockquote>
 <figure class="highlight shell"><table><tr><td class="code"><pre><span class="line">hexo new test_post</span><br></pre></td></tr></table></figure>
 
-<img src="/2020/02/28/next/8_change_model_of_post/change-model-of-post/model.png" class="" title="模板文章">]]></content>
+<img src="/2020/02/28/next/8_change_model_of_post/change-model-of-post/model.png" class="" title="模板文章"><link rel="stylesheet" href="/css/spoiler.css" type="text/css"><script src="/js/spoiler.js" type="text/javascript" async></script>]]></content>
       <categories>
         <category>Next</category>
       </categories>
@@ -8804,7 +9233,7 @@ cond(no)->sub</textarea><textarea id="flowchart-0-options" style="display: none"
 <figure class="highlight yml"><table><tr><td class="code"><pre><span class="line"><span class="attr">auto_excerpt:</span></span><br><span class="line">  <span class="attr">enable:</span> <span class="literal">true</span></span><br><span class="line">  <span class="attr">length:</span> <span class="number">150</span></span><br></pre></td></tr></table></figure>
 
 <p>默认截取的长度为 150 字符，可以根据需要自行设定。</p>
-]]></content>
+<link rel="stylesheet" href="/css/spoiler.css" type="text/css"><script src="/js/spoiler.js" type="text/javascript" async></script>]]></content>
       <categories>
         <category>Next</category>
       </categories>
@@ -8890,7 +9319,7 @@ cond(no)->sub</textarea><textarea id="flowchart-0-options" style="display: none"
 <blockquote>
 <p>因此在zh-Hans.yml中定义post.comments.valine 变量的翻译字段</p>
 </blockquote>
-]]></content>
+<link rel="stylesheet" href="/css/spoiler.css" type="text/css"><script src="/js/spoiler.js" type="text/javascript" async></script>]]></content>
       <categories>
         <category>Next</category>
       </categories>
@@ -8911,7 +9340,7 @@ cond(no)->sub</textarea><textarea id="flowchart-0-options" style="display: none"
 </blockquote>
 <figure class="highlight yml"><table><tr><td class="code"><pre><span class="line"><span class="attr">footer:</span></span><br><span class="line">  <span class="comment"># Specify the date when the site was setup. If not defined, current year will be used.</span></span><br><span class="line">  <span class="attr">since:</span> <span class="number">2019</span></span><br></pre></td></tr></table></figure>
 
-<img src="/2020/02/28/next/5_settings/next-settings/since.png" class="" title="效果展示">]]></content>
+<img src="/2020/02/28/next/5_settings/next-settings/since.png" class="" title="效果展示"><link rel="stylesheet" href="/css/spoiler.css" type="text/css"><script src="/js/spoiler.js" type="text/javascript" async></script>]]></content>
       <categories>
         <category>Next</category>
       </categories>
@@ -8965,7 +9394,7 @@ cond(no)->sub</textarea><textarea id="flowchart-0-options" style="display: none"
 
 <img src="/2020/02/28/next/4_add_viewers/viewers/header-zh.png" class="" title="post翻译">
 
-<img src="/2020/02/28/next/4_add_viewers/viewers/footer-zh.png" class="" title="footer翻译">]]></content>
+<img src="/2020/02/28/next/4_add_viewers/viewers/footer-zh.png" class="" title="footer翻译"><link rel="stylesheet" href="/css/spoiler.css" type="text/css"><script src="/js/spoiler.js" type="text/javascript" async></script>]]></content>
       <categories>
         <category>Next</category>
       </categories>
@@ -8982,7 +9411,7 @@ cond(no)->sub</textarea><textarea id="flowchart-0-options" style="display: none"
 <a id="more"></a>
 
 <h2 id="准备工作"><a href="#准备工作" class="headerlink" title="准备工作"></a>准备工作</h2><blockquote>
-<p> 设置<code>站点配置信息</code>Site中的<code>language</code>值为 <code>zh-Hans</code>，<a href="https://www.zywvvd.com/zywvvd.github.io/2020/02/24/hexo/hexo_config/Hexo站点配置/">Hexo - 站点信息配置</a>。</p>
+<p> 设置<code>站点配置信息</code>Site中的<code>language</code>值为 <code>zh-Hans</code>，<a href="https://www.zywvvd.com/zywvvd.github.io/2020/02/24/hexo/hexo_config/Hexo%E7%AB%99%E7%82%B9%E9%85%8D%E7%BD%AE/">Hexo - 站点信息配置</a>。</p>
 </blockquote>
 <h2 id="配置翻译文件"><a href="#配置翻译文件" class="headerlink" title="配置翻译文件"></a>配置翻译文件</h2><blockquote>
 <p>在/hexo_root/themes/next/languages/文件夹中创建<code>zh-Hans.yml</code>文件</p>
@@ -9029,7 +9458,7 @@ cond(no)->sub</textarea><textarea id="flowchart-0-options" style="display: none"
 
 <img src="/2020/02/28/next/3_translate/translate/header-zh.png" class="" title="翻译后的页面">
 
-<img src="/2020/02/28/next/3_translate/translate/xiaoguo2.png" class="" title="翻译后的页面">]]></content>
+<img src="/2020/02/28/next/3_translate/translate/xiaoguo2.png" class="" title="翻译后的页面"><link rel="stylesheet" href="/css/spoiler.css" type="text/css"><script src="/js/spoiler.js" type="text/javascript" async></script>]]></content>
       <categories>
         <category>Next</category>
       </categories>
@@ -9135,7 +9564,7 @@ cond(no)->sub</textarea><textarea id="flowchart-0-options" style="display: none"
 </blockquote>
 <figure class="highlight markdown"><table><tr><td class="code"><pre><span class="line">comments: false</span><br></pre></td></tr></table></figure>
 
-]]></content>
+<link rel="stylesheet" href="/css/spoiler.css" type="text/css"><script src="/js/spoiler.js" type="text/javascript" async></script>]]></content>
       <categories>
         <category>Next</category>
       </categories>
@@ -9185,7 +9614,7 @@ cond(no)->sub</textarea><textarea id="flowchart-0-options" style="display: none"
 
 
 
-]]></content>
+<link rel="stylesheet" href="/css/spoiler.css" type="text/css"><script src="/js/spoiler.js" type="text/javascript" async></script>]]></content>
       <categories>
         <category>Hexo</category>
       </categories>
@@ -10103,7 +10532,7 @@ cond(no)->sub</textarea><textarea id="flowchart-0-options" style="display: none"
 </blockquote>
 <h2 id="AUC"><a href="#AUC" class="headerlink" title="AUC"></a>AUC</h2><blockquote>
 <ul>
-<li><p>AUC是英文 Area under Curve的缩写，表示的是ROC曲线下的面积，也就是ROC曲线在[0,1]上的积分</p>
+<li><p> AUC是英文 Area under Curve的缩写，表示的是ROC曲线下的面积，也就是ROC曲线在[0,1]上的积分</p>
 </li>
 <li><p>这是用来评价模型分类器性能的指标，对不同模型来说，AUC越大表示分类性能越好</p>
 </li>
@@ -10113,7 +10542,7 @@ cond(no)->sub</textarea><textarea id="flowchart-0-options" style="display: none"
 </li>
 </ul>
 </blockquote>
-]]></content>
+<link rel="stylesheet" href="/css/spoiler.css" type="text/css"><script src="/js/spoiler.js" type="text/javascript" async></script>]]></content>
       <categories>
         <category>机器学习</category>
         <category>基础知识</category>
@@ -10156,7 +10585,7 @@ cond(no)->sub</textarea><textarea id="flowchart-0-options" style="display: none"
 <blockquote>
 <p>具体含义和理解参考 <a href="https://www.zywvvd.com/2020/02/26/machine_learning/basic_knowledge/TP_FN_FP_TN/Evaluation-index/">机器学习-基础知识- TP、FN、FP、TN</a>。</p>
 </blockquote>
-<p><img src="https://photos.zywvvd.com/image/20200506000757.png" alt=""></p>
+<p><img src="https://photos.zywvvd.com/image/20200506000757.png"></p>
 <h2 id="示例用例"><a href="#示例用例" class="headerlink" title="示例用例"></a>示例用例</h2><blockquote>
 <p>样本信息</p>
 </blockquote>
@@ -10422,7 +10851,7 @@ cond(no)->sub</textarea><textarea id="flowchart-0-options" style="display: none"
 <p>$$<br>F_1 Score_{预测1}=2\times\frac{Precision_{预测1}\times Recall_{预测1}}{Precision_{预测1}+ Recall_{预测1}}=2\times\frac{1\times \frac{3}{7}}{1+ \frac{3}{7}}= 0.6<br>$$</p>
 <p>$$<br>F_1 Score_{预测2}=2\times\frac{Precision_{预测2}\times Recall_{预测2}}{Precision_{预测2}+ Recall_{预测2}}=2\times\frac{\frac{5}{6} \times \frac{5}{7}}{\frac{5}{6} + \frac{5}{7}}\approx 0.77<br>$$</p>
 <p>$$<br>F_1 Score_{预测3}=2\times\frac{Precision_{预测3}\times Recall_{预测3}}{Precision_{预测3}+ Recall_{预测3}}=2\times\frac{0.7 \times 1}{0.7 + 1}\approx 0.82<br>$$</p>
-]]></content>
+<link rel="stylesheet" href="/css/spoiler.css" type="text/css"><script src="/js/spoiler.js" type="text/javascript" async></script>]]></content>
       <categories>
         <category>机器学习</category>
         <category>基础知识</category>
@@ -10485,7 +10914,7 @@ cond(no)->sub</textarea><textarea id="flowchart-0-options" style="display: none"
 <li><p>FN表示把正样本误认成了负样本，表示漏警</p>
 </li>
 </ul>
-]]></content>
+<link rel="stylesheet" href="/css/spoiler.css" type="text/css"><script src="/js/spoiler.js" type="text/javascript" async></script>]]></content>
       <categories>
         <category>机器学习</category>
         <category>基础知识</category>
@@ -10685,7 +11114,7 @@ cond(no)->sub</textarea><textarea id="flowchart-0-options" style="display: none"
 <h3 id="自定义-CWD"><a href="#自定义-CWD" class="headerlink" title="自定义 CWD"></a>自定义 CWD</h3><figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">$ hexo --cwd &#x2F;path&#x2F;to&#x2F;cwd</span><br></pre></td></tr></table></figure>
 
 <p>自定义当前工作目录（Current working directory）的路径。</p>
-]]></content>
+<link rel="stylesheet" href="/css/spoiler.css" type="text/css"><script src="/js/spoiler.js" type="text/javascript" async></script>]]></content>
       <categories>
         <category>Hexo</category>
       </categories>
@@ -10763,7 +11192,7 @@ cond(no)->sub</textarea><textarea id="flowchart-0-options" style="display: none"
 <h2 id="获取源码"><a href="#获取源码" class="headerlink" title="获取源码"></a>获取源码</h2><blockquote>
 <p>文中测试环境与所有源码可在<a href="https://github.com/zywvvd/Python_Practise" target="_blank" rel="noopener">Github</a>下载。</p>
 </blockquote>
-]]></content>
+<link rel="stylesheet" href="/css/spoiler.css" type="text/css"><script src="/js/spoiler.js" type="text/javascript" async></script>]]></content>
       <categories>
         <category>Python</category>
       </categories>
@@ -10836,7 +11265,7 @@ cond(no)->sub</textarea><textarea id="flowchart-0-options" style="display: none"
 <h2 id="获取源码"><a href="#获取源码" class="headerlink" title="获取源码"></a>获取源码</h2><blockquote>
 <p>文中测试环境与所有源码可在<a href="https://github.com/zywvvd/Python_Practise" target="_blank" rel="noopener">Github</a>下载。</p>
 </blockquote>
-]]></content>
+<link rel="stylesheet" href="/css/spoiler.css" type="text/css"><script src="/js/spoiler.js" type="text/javascript" async></script>]]></content>
       <categories>
         <category>Python</category>
       </categories>
@@ -10855,7 +11284,7 @@ cond(no)->sub</textarea><textarea id="flowchart-0-options" style="display: none"
 
 <h2 id="准备工作"><a href="#准备工作" class="headerlink" title="准备工作"></a>准备工作</h2><ul>
 <li>安装Python</li>
-<li><a href="https://www.zywvvd.com/zywvvd.github.io/2020/02/24/course/words/XML/xml-教程/">XML基础知识</a></li>
+<li><a href="https://www.zywvvd.com/zywvvd.github.io/2020/02/24/course/words/XML/xml-%E6%95%99%E7%A8%8B/">XML基础知识</a></li>
 </ul>
 <h2 id="Python常用处理XML库"><a href="#Python常用处理XML库" class="headerlink" title="Python常用处理XML库"></a>Python常用处理XML库</h2><blockquote>
 <p> 常见的 XML 编程接口有 DOM 和 SAX，这两种接口处理 XML 文件的方式不同，当然使用场合也不同。Python 有三种方法解析 XML，SAX，DOM，以及 ElementTree:</p>
@@ -10976,7 +11405,7 @@ cond(no)->sub</textarea><textarea id="flowchart-0-options" style="display: none"
 <ul>
 <li>writer：文件对象</li>
 <li>indent：根节点缩进格式（一般根节点不缩进，所以一般为空）</li>
-<li>addindent：子节点缩进格式（一般为空格<code></code>或制表符<code>\t</code>）</li>
+<li>addindent：子节点缩进格式（一般为空格<code>    </code>或制表符<code>\t</code>）</li>
 <li>newl：换行格式（一般为换行回车<code>\n</code>)</li>
 <li>encoding：编码方式</li>
 </ul>
@@ -10988,7 +11417,7 @@ cond(no)->sub</textarea><textarea id="flowchart-0-options" style="display: none"
 <h2 id="获取源码"><a href="#获取源码" class="headerlink" title="获取源码"></a>获取源码</h2><blockquote>
 <p>文中测试环境与所有源码可在<a href="https://github.com/zywvvd/Python_Practise" target="_blank" rel="noopener">Github</a>下载。</p>
 </blockquote>
-]]></content>
+<link rel="stylesheet" href="/css/spoiler.css" type="text/css"><script src="/js/spoiler.js" type="text/javascript" async></script>]]></content>
       <categories>
         <category>Python</category>
       </categories>
@@ -11173,13 +11602,13 @@ cond(no)->sub</textarea><textarea id="flowchart-0-options" style="display: none"
 <li>XML 元素必须被正确的嵌套</li>
 <li>XML 属性必须加引号</li>
 </ul>
-]]></content>
+<link rel="stylesheet" href="/css/spoiler.css" type="text/css"><script src="/js/spoiler.js" type="text/javascript" async></script>]]></content>
       <categories>
         <category>文字编码</category>
       </categories>
       <tags>
-        <tag>XML</tag>
         <tag>文字编码</tag>
+        <tag>XML</tag>
       </tags>
   </entry>
   <entry>
@@ -11288,7 +11717,7 @@ cond(no)->sub</textarea><textarea id="flowchart-0-options" style="display: none"
 <h2 id="安装方法二"><a href="#安装方法二" class="headerlink" title="安装方法二"></a>安装方法二</h2><blockquote>
 <p>apt安装（未测试）</p>
 </blockquote>
-<figure class="highlight shell"><table><tr><td class="code"><pre><span class="line">sudo add-apt-repository ppa:rikmills/bionic</span><br><span class="line">sudo apt-get update</span><br><span class="line">sudo apt install flameshot</span><br></pre></td></tr></table></figure>]]></content>
+<figure class="highlight shell"><table><tr><td class="code"><pre><span class="line">sudo add-apt-repository ppa:rikmills/bionic</span><br><span class="line">sudo apt-get update</span><br><span class="line">sudo apt install flameshot</span><br></pre></td></tr></table></figure><link rel="stylesheet" href="/css/spoiler.css" type="text/css"><script src="/js/spoiler.js" type="text/javascript" async></script>]]></content>
       <categories>
         <category>软件</category>
         <category>软件推荐</category>
@@ -11677,7 +12106,7 @@ cond(no)->sub</textarea><textarea id="flowchart-0-options" style="display: none"
 </tr>
 <tr>
 <td align="left"><code>use_date_for_updated</code></td>
-<td align="left">启用以后，如果 Front Matter 中没有指定 <code>updated</code>， <a href="https://hexo.io/zh-cn/docs/variables#页面变量" target="_blank" rel="noopener"><code>post.updated</code></a> 将会使用 <code>date</code> 的值而不是文件的创建时间。在 Git 工作流中这个选项会很有用</td>
+<td align="left">启用以后，如果 Front Matter 中没有指定 <code>updated</code>， <a href="https://hexo.io/zh-cn/docs/variables#%E9%A1%B5%E9%9D%A2%E5%8F%98%E9%87%8F" target="_blank" rel="noopener"><code>post.updated</code></a> 将会使用 <code>date</code> 的值而不是文件的创建时间。在 Git 工作流中这个选项会很有用</td>
 <td align="left"><code>true</code></td>
 </tr>
 </tbody></table>
@@ -11721,7 +12150,7 @@ cond(no)->sub</textarea><textarea id="flowchart-0-options" style="display: none"
 </tr>
 <tr>
 <td align="left"><code>meta_generator</code></td>
-<td align="left"><a href="https://developer.mozilla.org/zh-CN/docs/Web/HTML/Element/meta#属性" target="_blank" rel="noopener">Meta generator</a> 标签。 值为 <code>false</code> 时 Hexo 不会在头部插入该标签</td>
+<td align="left"><a href="https://developer.mozilla.org/zh-CN/docs/Web/HTML/Element/meta#%E5%B1%9E%E6%80%A7" target="_blank" rel="noopener">Meta generator</a> 标签。 值为 <code>false</code> 时 Hexo 不会在头部插入该标签</td>
 </tr>
 </tbody></table>
 <p><font color='red' face='黑体' size=5><b>更换主题时改变theme的值为主题名称</b></font></p>
@@ -11749,7 +12178,7 @@ cond(no)->sub</textarea><textarea id="flowchart-0-options" style="display: none"
 <td align="left">Ignore files/folders</td>
 </tr>
 </tbody></table>
-]]></content>
+<link rel="stylesheet" href="/css/spoiler.css" type="text/css"><script src="/js/spoiler.js" type="text/javascript" async></script>]]></content>
       <categories>
         <category>Hexo</category>
       </categories>
@@ -11767,8 +12196,8 @@ cond(no)->sub</textarea><textarea id="flowchart-0-options" style="display: none"
 <a id="more"></a>
 
 <h2 id="准备工作"><a href="#准备工作" class="headerlink" title="准备工作"></a>准备工作</h2><ul>
-<li>安装Hexo，<a href="https://www.zywvvd.com/zywvvd.github.io/2020/02/19/hexo/hexo_build/Hexo教程/">Hexo - 博客搭建基础教程</a></li>
-<li>完成基础配置，<a href="https://www.zywvvd.com/zywvvd.github.io/2020/02/24/hexo/hexo_config/Hexo站点配置/">Hexo - 站点信息配置</a></li>
+<li>安装Hexo，<a href="https://www.zywvvd.com/zywvvd.github.io/2020/02/19/hexo/hexo_build/Hexo%E6%95%99%E7%A8%8B/">Hexo - 博客搭建基础教程</a></li>
+<li>完成基础配置，<a href="https://www.zywvvd.com/zywvvd.github.io/2020/02/24/hexo/hexo_config/Hexo%E7%AB%99%E7%82%B9%E9%85%8D%E7%BD%AE/">Hexo - 站点信息配置</a></li>
 <li>了解Hexo命令，<a href="https://www.zywvvd.com/zywvvd.github.io/2020/02/25/hexo/hexo_commands/hexo-commands/">Hexo - 常用命令汇总</a></li>
 </ul>
 <h2 id="安装Next主题"><a href="#安装Next主题" class="headerlink" title="安装Next主题"></a>安装Next主题</h2><blockquote>
@@ -11822,7 +12251,7 @@ cond(no)->sub</textarea><textarea id="flowchart-0-options" style="display: none"
 </blockquote>
 <figure class="highlight shell"><table><tr><td class="code"><pre><span class="line">cd themes/next</span><br><span class="line">git pull</span><br></pre></td></tr></table></figure>
 
-]]></content>
+<link rel="stylesheet" href="/css/spoiler.css" type="text/css"><script src="/js/spoiler.js" type="text/javascript" async></script>]]></content>
       <categories>
         <category>Next</category>
       </categories>
@@ -11906,7 +12335,7 @@ cond(no)->sub</textarea><textarea id="flowchart-0-options" style="display: none"
 </blockquote>
 <figure class="highlight shell"><table><tr><td class="code"><pre><span class="line">git clone username@host:/path/to/repository</span><br></pre></td></tr></table></figure>
 
-]]></content>
+<link rel="stylesheet" href="/css/spoiler.css" type="text/css"><script src="/js/spoiler.js" type="text/javascript" async></script>]]></content>
       <categories>
         <category>Git</category>
       </categories>
@@ -11925,15 +12354,15 @@ cond(no)->sub</textarea><textarea id="flowchart-0-options" style="display: none"
 
 
 <h2 id="准备工作"><a href="#准备工作" class="headerlink" title="准备工作"></a>准备工作</h2><ul>
-<li><p><code>github账号</code>：需要申请一个属于你的github账号，可以在<a href="https://github.com" target="_blank" rel="noopener">这里申请</a>。</p>
+<li><p><code>github账号</code>：需要申请一个属于你的github账号，可以在<a href="https://github.com/" target="_blank" rel="noopener">这里申请</a>。</p>
 </li>
-<li><p><code>git bash</code>： 需要有git bash运行环境，相关安装和使用教程请<a href="[https://www.baidu.com/s?wd=gitbash&rsv_spt=1&rsv_iqid=0xeaa75c680004abbf&issp=1&f=8&rsv_bp=1&rsv_idx=2&ie=utf-8&tn=baiduhome_pg&rsv_enter=1&rsv_dl=ib&rsv_sug3=8&rsv_sug1=7&rsv_sug7=101&rsv_sug2=0&inputT=2890&rsv_sug4=3589">询问度娘</a>。</p>
+<li><p><code>git bash</code>： 需要有git bash运行环境，相关安装和使用教程请<a href="%5Bhttps://www.baidu.com/s?wd=gitbash&rsv_spt=1&rsv_iqid=0xeaa75c680004abbf&issp=1&f=8&rsv_bp=1&rsv_idx=2&ie=utf-8&tn=baiduhome_pg&rsv_enter=1&rsv_dl=ib&rsv_sug3=8&rsv_sug1=7&rsv_sug7=101&rsv_sug2=0&inputT=2890&rsv_sug4=3589">询问度娘</a>。</p>
 </li>
 <li><p><code>Node.js</code>： 必须安装 Node.js 开发环境，建议参考<a href="https://www.simon96.online/2018/11/10/hexo-env/" target="_blank" rel="noopener">Hexo 环境搭建</a>。</p>
 </li>
 <li><p><code>个人域名</code>(可选)：申请自己的域名可以有自己专用的地址解析链接，我使用<a href="https://cloud.baidu.com/product/bcd/price.html" target="_blank" rel="noopener">百度智能云</a>申请的域名，用着还不错，也比较便宜。</p>
 </li>
-<li><p><code>markdown</code>：Hexo使用Markdown解析文章，不熟悉的同学可以移步<a href="https://www.zywvvd.com/2020/02/18/Markdown-简明教程/">Markdown 简明教程</a>。</p>
+<li><p><code>markdown</code>：Hexo使用Markdown解析文章，不熟悉的同学可以移步<a href="https://www.zywvvd.com/2020/02/18/Markdown-%E7%AE%80%E6%98%8E%E6%95%99%E7%A8%8B/">Markdown 简明教程</a>。</p>
 </li>
 <li><p><code>html\css\js基础</code>： 有最好，没有也没关系。</p>
 </li>
@@ -11968,7 +12397,7 @@ cond(no)->sub</textarea><textarea id="flowchart-0-options" style="display: none"
 <figure class="highlight shell"><table><tr><td class="code"><pre><span class="line">hexo s</span><br></pre></td></tr></table></figure>
 
 <blockquote>
-<p>会在本地搭建服务器挂载生成的本地站点，通过访问 <a href="http://localhost:4000" target="_blank" rel="noopener">http://localhost:4000</a> 浏览自己的网站。</p>
+<p>会在本地搭建服务器挂载生成的本地站点，通过访问 <a href="http://localhost:4000/" target="_blank" rel="noopener">http://localhost:4000</a> 浏览自己的网站。</p>
 </blockquote>
 <img src="/2020/02/19/hexo/1_hexo_build/Hexo/yulanyemian.png" class="" title="预览页面">
 
@@ -11979,7 +12408,7 @@ cond(no)->sub</textarea><textarea id="flowchart-0-options" style="display: none"
 <figure class="highlight shell"><table><tr><td class="code"><pre><span class="line">npm install hexo-deployer-git --save</span><br></pre></td></tr></table></figure>
 
 <h3 id="链接本地与远程仓库"><a href="#链接本地与远程仓库" class="headerlink" title="链接本地与远程仓库"></a>链接本地与远程仓库</h3><blockquote>
-<p>需要在本地建立SSh key，并添加到远程的github配置中。可参考<a href="https://www.zywvvd.com/zywvvd.github.io/2020/02/23/Git-连接-Github-远程仓库/">Git 连接 Github 远程仓库</a></p>
+<p>需要在本地建立SSh key，并添加到远程的github配置中。可参考<a href="https://www.zywvvd.com/zywvvd.github.io/2020/02/23/Git-%E8%BF%9E%E6%8E%A5-Github-%E8%BF%9C%E7%A8%8B%E4%BB%93%E5%BA%93/">Git 连接 Github 远程仓库</a></p>
 </blockquote>
 <h3 id="修改站点配置文件"><a href="#修改站点配置文件" class="headerlink" title="修改站点配置文件"></a>修改<code>站点配置文件</code></h3><blockquote>
 <p><code>站点配置文件</code>为Hexo根目录下的 _config.yml文件，编辑该文件，找到相关部分并修改。</p>
@@ -12041,7 +12470,7 @@ cond(no)->sub</textarea><textarea id="flowchart-0-options" style="display: none"
 <img src="/2020/02/19/hexo/1_hexo_build/Hexo/cname.png" class="" title="CNAME文件">
 
 <blockquote>
-<p>几分钟之后，即可通过该域名访问Hexo站点。     <a href="https://www.zywvvd.com">又见苍岚</a></p>
+<p>几分钟之后，即可通过该域名访问Hexo站点。     <a href="https://www.zywvvd.com/">又见苍岚</a></p>
 </blockquote>
 <h2 id="更换主题"><a href="#更换主题" class="headerlink" title="更换主题"></a>更换主题</h2><blockquote>
 <p> hexo主题有很多,默认主题为landscape。</p>
@@ -12061,7 +12490,7 @@ cond(no)->sub</textarea><textarea id="flowchart-0-options" style="display: none"
 <p>个人使用的是Hexo人气最高的主题Next，当前版本 V 7.7.1，具有简介大方，原生自带大量实用工具，社区活跃等优点。</p>
 <p>有喜欢类似风格的小伙伴可以到<a href="https://www.zywvvd.com/categories/Next/">Next 系列教程</a>了解一下。</p>
 </blockquote>
-]]></content>
+<link rel="stylesheet" href="/css/spoiler.css" type="text/css"><script src="/js/spoiler.js" type="text/javascript" async></script>]]></content>
       <categories>
         <category>Hexo</category>
       </categories>
@@ -12123,7 +12552,7 @@ cond(no)->sub</textarea><textarea id="flowchart-0-options" style="display: none"
 
 
 
-<h3 id="无序列表"><a href="#无序列表" class="headerlink" title="无序列表"></a>无序列表</h3><p>语法：<code>*</code>、<code>+</code>或是<code>-</code>加 <code>空格</code> 作为列表标记</p>
+<h3 id="无序列表"><a href="#无序列表" class="headerlink" title="无序列表"></a>无序列表</h3><p>语法：<code>*</code>、<code>+</code>或是<code>- </code>加 <code>空格</code> 作为列表标记</p>
 <p>示例编码：</p>
 <figure class="highlight markdown"><table><tr><td class="code"><pre><span class="line"><span class="bullet">*  </span>内容1</span><br><span class="line"><span class="bullet">*  </span>内容2</span><br><span class="line"><span class="bullet">*  </span>内容3</span><br><span class="line"></span><br><span class="line"><span class="bullet">+  </span>内容4</span><br><span class="line"><span class="bullet">+  </span>内容5</span><br><span class="line"><span class="bullet">+  </span>内容6</span><br><span class="line"></span><br><span class="line"><span class="bullet">-  </span>内容7</span><br><span class="line"><span class="bullet">- </span>内容8</span><br><span class="line"><span class="bullet">- </span>内容9</span><br></pre></td></tr></table></figure>
 
@@ -12179,7 +12608,7 @@ cond(no)->sub</textarea><textarea id="flowchart-0-options" style="display: none"
 <p>语法：</p>
 <p><code>[</code> <code>链接名称</code> <code>]</code> <code>(</code> <code>链接地址</code> <code>)</code>       或       <code>&lt;</code> <code>链接地址</code> <code>&gt;</code> （中间无空格）</p>
 <p>示例编码：</p>
-<p>​```markdown<br><a href="https://www.zywvvd.com">又见苍岚</a><br>或<br> <a href="https://www.zywvvd.com">https://www.zywvvd.com</a></p>
+<p>​```markdown<br><a href="https://www.zywvvd.com/">又见苍岚</a><br>或<br> <a href="https://www.zywvvd.com/">https://www.zywvvd.com</a></p>
 <figure class="highlight plain"><table><tr><td class="code"><pre><span class="line"></span><br><span class="line">实际效果：</span><br><span class="line"></span><br><span class="line">[又见苍岚](https:&#x2F;&#x2F;www.zywvvd.com)</span><br><span class="line">或</span><br><span class="line"> &lt;https:&#x2F;&#x2F;www.zywvvd.com&gt;</span><br><span class="line"></span><br><span class="line"></span><br><span class="line"></span><br><span class="line">## 图片</span><br><span class="line"></span><br><span class="line">语法格式：</span><br><span class="line"></span><br><span class="line">&#96;&#96;&#96;markdown</span><br><span class="line">![alt 属性](图片地址)</span><br><span class="line">![alt 属性](图片地址 &quot;可选标题&quot;)</span><br></pre></td></tr></table></figure>
 
 <p>示例编码：</p>
@@ -12221,7 +12650,7 @@ cond(no)->sub</textarea><textarea id="flowchart-0-options" style="display: none"
 <h2 id="任务列表"><a href="#任务列表" class="headerlink" title="任务列表"></a>任务列表</h2><blockquote>
 <p>简单的任务标记</p>
 </blockquote>
-<p>语法：<code>- 空格[空格]空格</code>不勾选<code>-空格[x]空格</code>勾选</p>
+<p>语法：<code>- 空格[空格]空格</code>不勾选<code> -空格[x]空格</code>勾选</p>
 <p>示例编码：</p>
 <figure class="highlight markdown"><table><tr><td class="code"><pre><span class="line"><span class="bullet">- </span>[ ] 挣他一个亿</span><br><span class="line"><span class="bullet">- </span>[x] 花个五千万</span><br><span class="line"><span class="bullet">- </span>[ ]  存个五千万</span><br><span class="line"><span class="bullet">- </span>[ ] 年利息二百万</span><br><span class="line"><span class="bullet">- </span>[ ] 实现财务自由</span><br></pre></td></tr></table></figure>
 
@@ -12238,7 +12667,7 @@ cond(no)->sub</textarea><textarea id="flowchart-0-options" style="display: none"
 <figure class="highlight markdown"><table><tr><td class="code"><pre><span class="line">你可以使用脚注像这样[^脚注]</span><br><span class="line">脚注前面需要有内容！！！</span><br><span class="line">[<span class="symbol">^脚注</span>]: <span class="link">这里写脚注的*文本*</span></span><br></pre></td></tr></table></figure>
 
 <p>实际效果：</p>
-<p>你可以使用脚注像这样<a href="这里写脚注的*文本*">^脚注</a><br>脚注前面需要有内容！！！</p>
+<p>你可以使用脚注像这样<a href="%E8%BF%99%E9%87%8C%E5%86%99%E8%84%9A%E6%B3%A8%E7%9A%84*%E6%96%87%E6%9C%AC*">^脚注</a><br>脚注前面需要有内容！！！</p>
 <h2 id="高级链接"><a href="#高级链接" class="headerlink" title="高级链接"></a>高级链接</h2><blockquote>
 <p>可以将链接地址放在变量中</p>
 </blockquote>
@@ -12247,7 +12676,7 @@ cond(no)->sub</textarea><textarea id="flowchart-0-options" style="display: none"
 <figure class="highlight markdown"><table><tr><td class="code"><pre><span class="line">加油 [<span class="string">又见苍岚</span>][<span class="symbol">a</span>]</span><br><span class="line"></span><br><span class="line">[<span class="symbol">a</span>]:<span class="link">https://www.zywvvd.com</span></span><br></pre></td></tr></table></figure>
 
 <p>实际效果：</p>
-<p>加油 <a href="https://www.zywvvd.com">又见苍岚</a></p>
+<p>加油 <a href="https://www.zywvvd.com/">又见苍岚</a></p>
 <h2 id="流程图"><a href="#流程图" class="headerlink" title="流程图"></a>流程图</h2><blockquote>
 <p>markdown支持流程图功能，这里介绍框架语法，只不过不是所有markdown编辑器、显示框架都支持</p>
 </blockquote>
@@ -12346,7 +12775,7 @@ cond(no)->sub</textarea><textarea id="flowchart-0-options" style="display: none"
 <p><font  size=10>我是10号字</font></p>
 <p><font color=red>我是红色字</font></p>
 <p><font color=red size=10 face='宋体'>我是红色10号宋体字</font></p>
-]]></content>
+<link rel="stylesheet" href="/css/spoiler.css" type="text/css"><script src="/js/spoiler.js" type="text/javascript" async></script>]]></content>
       <categories>
         <category>文字编码</category>
       </categories>
