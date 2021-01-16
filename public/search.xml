@@ -1,6 +1,191 @@
 <?xml version="1.0" encoding="utf-8"?>
 <search>
   <entry>
+    <title>SSH 命令介绍</title>
+    <url>/2021/01/15/linux/ssh/ssh-usage/ssh-usage/</url>
+    <content><![CDATA[<blockquote>
+<p>ssh命令多用于登录和文件传输，安全可靠，本文记录ssh命令用法。</p>
+</blockquote>
+<a id="more"></a>
+
+<h3 id="概述"><a href="#概述" class="headerlink" title="概述"></a>概述</h3><blockquote>
+<p> SSH(远程连接工具)连接原理：ssh服务是一个守护进程(demon)，系统后台监听客户端的连接，ssh服务端的进程名为sshd,负责实时监听客户端的请求(IP 22端口)，包括公共秘钥等交换等信息。</p>
+</blockquote>
+<ul>
+<li><p>SSH服务端由2部分组成： </p>
+<ul>
+<li><strong>openssh(提供ssh服务)</strong> </li>
+<li> <strong>openssl(提供加密的程序)</strong></li>
+</ul>
+</li>
+<li><p>SSH是安全的加密协议，用于远程连接Linux服务器        </p>
+</li>
+<li><p>SSH的默认端口是22，安全协议版本是SSH2</p>
+</li>
+<li><p>SSH服务器端主要包含2个服务功能SSH连接和SFTP服务器</p>
+</li>
+<li><p>SSH客户端包含ssh连接命令和远程拷贝scp命令等 </p>
+</li>
+</ul>
+<h3 id="工作机制"><a href="#工作机制" class="headerlink" title="工作机制"></a>工作机制</h3><ul>
+<li>服务器启动的时候自己产生一个密钥(768bit公钥)</li>
+<li>本地的ssh客户端发送连接请求到ssh服务器</li>
+<li>服务器检查连接点客户端发送的数据和IP地址，确认合法后发送密钥(768bits)给客户端</li>
+<li>此时客户端将本地私钥(256bit)和服务器的公钥(768bit)结合成密钥对key(1024bit),发回给服务器端</li>
+<li>建立连接通过key-pair数据传输。</li>
+</ul>
+<h3 id="加密技术"><a href="#加密技术" class="headerlink" title="加密技术"></a>加密技术</h3><ul>
+<li>加密技术：传输过程，数据加密。      <ul>
+<li>SSH1没有对客户端的秘钥进行校验，很容易被植入恶意代码</li>
+<li>SSH2增加了一个确认联机正确性的Diffe_Hellman机制，每次数据的传输，Server都会检查数据来源的正确性，避免黑客入侵。          </li>
+</ul>
+</li>
+<li>SSH2支持RSA和DSA密钥  <ul>
+<li>DSA(digital signature Algorithm):  数字签名</li>
+<li>RSA: 既可以数字签名又可以加密</li>
+</ul>
+</li>
+</ul>
+<h3 id="功能用法"><a href="#功能用法" class="headerlink" title="功能用法"></a>功能用法</h3><h4 id="登录"><a href="#登录" class="headerlink" title="登录"></a>登录</h4><figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">ssh -p 22 username@servername</span><br></pre></td></tr></table></figure>
+
+<blockquote>
+<p>例如：</p>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">ssh root@192.168.25.137 ls -ltr &#x2F;backup&#x2F;data</span><br></pre></td></tr></table></figure>
+</blockquote>
+<h4 id="查看已知主机"><a href="#查看已知主机" class="headerlink" title="查看已知主机"></a>查看已知主机</h4><figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">cat &#x2F;root&#x2F;.ssh&#x2F;known_hosts</span><br></pre></td></tr></table></figure>
+
+<h4 id="ssh远程执行sudo命令"><a href="#ssh远程执行sudo命令" class="headerlink" title="ssh远程执行sudo命令"></a>ssh远程执行sudo命令</h4><figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">ssh -t omd@192.168.25.137 sudo rsync hosts &#x2F;etc&#x2F;</span><br></pre></td></tr></table></figure>
+
+<h4 id="传输文件"><a href="#传输文件" class="headerlink" title="传输文件"></a>传输文件</h4><h5 id="从服务器上下载文件"><a href="#从服务器上下载文件" class="headerlink" title="从服务器上下载文件"></a>从服务器上下载文件</h5><figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">scp username@servername:&#x2F;path&#x2F;filename &#x2F;var&#x2F;www&#x2F;local_dir（本地目录）</span><br></pre></td></tr></table></figure>
+
+<blockquote>
+<p>例如: scp <a href="mailto:&#114;&#x6f;&#x6f;&#116;&#64;&#x31;&#57;&#50;&#46;&#49;&#54;&#56;&#46;&#x30;&#46;&#49;&#48;&#49;">&#114;&#x6f;&#x6f;&#116;&#64;&#x31;&#57;&#50;&#46;&#49;&#54;&#56;&#46;&#x30;&#46;&#49;&#48;&#49;</a>:/var/www/test.txt 把192.168.0.101上的/var/www/test.txt 的文件下载到/var/www/local_dir（本地目录）</p>
+</blockquote>
+<h5 id="上传本地文件到服务器"><a href="#上传本地文件到服务器" class="headerlink" title="上传本地文件到服务器"></a>上传本地文件到服务器</h5><figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">scp &#x2F;path&#x2F;filename username@servername:&#x2F;path</span><br></pre></td></tr></table></figure>
+
+<blockquote>
+<p>例如: scp /var/www/test.php <a href="mailto:&#114;&#111;&#111;&#116;&#x40;&#49;&#57;&#x32;&#46;&#x31;&#54;&#x38;&#x2e;&#x30;&#x2e;&#x31;&#48;&#49;">&#114;&#111;&#111;&#116;&#x40;&#49;&#57;&#x32;&#46;&#x31;&#54;&#x38;&#x2e;&#x30;&#x2e;&#x31;&#48;&#49;</a>:/var/www/ 把本机/var/www/目录下的test.php文件上传到192.168.0.101这台服务器上的/var/www/目录中</p>
+</blockquote>
+<h5 id="从服务器下载整个目录"><a href="#从服务器下载整个目录" class="headerlink" title="从服务器下载整个目录"></a>从服务器下载整个目录</h5><figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">scp -r username@servername:&#x2F;var&#x2F;www&#x2F;remote_dir&#x2F;（远程目录） &#x2F;var&#x2F;www&#x2F;local_dir（本地目录）</span><br></pre></td></tr></table></figure>
+
+<blockquote>
+<p>例如: scp -r <a href="mailto:&#114;&#111;&#111;&#116;&#64;&#49;&#57;&#x32;&#46;&#x31;&#x36;&#56;&#x2e;&#x30;&#x2e;&#x31;&#48;&#49;">&#114;&#111;&#111;&#116;&#64;&#49;&#57;&#x32;&#46;&#x31;&#x36;&#56;&#x2e;&#x30;&#x2e;&#x31;&#48;&#49;</a>:/var/www/test /var/www/  </p>
+</blockquote>
+<h5 id="上传目录到服务器"><a href="#上传目录到服务器" class="headerlink" title="上传目录到服务器"></a>上传目录到服务器</h5><figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">scp -r local_dir username@servername:remote_dir</span><br></pre></td></tr></table></figure>
+
+<blockquote>
+<p>例如：scp -r test  <a href="mailto:&#x72;&#x6f;&#111;&#x74;&#x40;&#49;&#x39;&#x32;&#46;&#x31;&#54;&#56;&#x2e;&#48;&#46;&#x31;&#x30;&#49;">&#x72;&#x6f;&#111;&#x74;&#x40;&#49;&#x39;&#x32;&#46;&#x31;&#54;&#56;&#x2e;&#48;&#46;&#x31;&#x30;&#49;</a>:/var/www/  把当前目录下的test目录上传到服务器的/var/www/ 目录</p>
+</blockquote>
+<h4 id="ssh自带的sftp功能"><a href="#ssh自带的sftp功能" class="headerlink" title="ssh自带的sftp功能"></a>ssh自带的sftp功能</h4><h5 id="Window和Linux的传输工具"><a href="#Window和Linux的传输工具" class="headerlink" title="Window和Linux的传输工具"></a>Window和Linux的传输工具</h5><figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">wincp  filezip          </span><br><span class="line">sftp --&gt;基于 ssh 的安全加密传输</span><br></pre></td></tr></table></figure>
+
+<h5 id="sftp客户端连接"><a href="#sftp客户端连接" class="headerlink" title="sftp客户端连接"></a>sftp客户端连接</h5><figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">sftp -oPort&#x3D;22 root@192.168.25.137                   </span><br><span class="line">put &#x2F;etc&#x2F;hosts &#x2F;tmp                   </span><br><span class="line">get &#x2F;etc&#x2F;hosts &#x2F;home&#x2F;omd</span><br></pre></td></tr></table></figure>
+
+<h5 id="sftp小结"><a href="#sftp小结" class="headerlink" title="sftp小结"></a>sftp小结</h5><ul>
+<li>linux下使用命令： sftp -oPort=22 <a href="mailto:&#x72;&#111;&#x6f;&#x74;&#64;&#x78;&#46;&#120;&#46;&#120;&#x2e;&#120;">&#x72;&#111;&#x6f;&#x74;&#64;&#x78;&#46;&#120;&#46;&#120;&#x2e;&#120;</a>                   </li>
+<li>put加客户端本地路径上传                  </li>
+<li>get下载服务器端内容到本地                   </li>
+<li>远程连接默认连接用户的家目录</li>
+</ul>
+<h3 id="参考资料"><a href="#参考资料" class="headerlink" title="参考资料"></a>参考资料</h3><ul>
+<li><p><a href="https://www.cnblogs.com/jiangyao/archive/2011/01/26/1945570.html" target="_blank" rel="noopener">https://www.cnblogs.com/jiangyao/archive/2011/01/26/1945570.html</a></p>
+</li>
+<li><p><a href="https://www.cnblogs.com/machangwei-8/p/10352725.html" target="_blank" rel="noopener">https://www.cnblogs.com/machangwei-8/p/10352725.html</a></p>
+</li>
+</ul>
+<link rel="stylesheet" href="/css/spoiler.css" type="text/css"><script src="/js/spoiler.js" type="text/javascript" async></script>]]></content>
+      <categories>
+        <category>Linux</category>
+      </categories>
+      <tags>
+        <tag>Linux</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>HTTPIE 工具使用入门</title>
+    <url>/2021/01/14/tools/httpie/httpie/</url>
+    <content><![CDATA[<blockquote>
+<p>HTTPie 是一个 HTTP 的命令行客户端，目标是让 CLI 和 web 服务之间的交互尽可能的人性化，本文介绍相关内容。</p>
+</blockquote>
+<a id="more"></a>
+
+<h3 id="简介"><a href="#简介" class="headerlink" title="简介"></a>简介</h3><blockquote>
+<p>HTTPie 工具提供了简洁的 http 命令，允许通过自然的语法发送任意 HTTP 请求数据，展示色彩化的输出。HTTPie 可用于与 HTTP 服务器做测试、调试和常规交互     ——   <a href="https://blog.mimvp.com/2017/10/httpie-gong-ju-shi-yong-ru-men/" target="_blank" rel="noopener"> 米扑博客</a></p>
+</blockquote>
+<ul>
+<li>官网 <strong>Github</strong>：<a href="https://github.com/jakubroztocil/httpie" target="_blank" rel="noopener">https://github.com/jakubroztocil/httpie</a></li>
+</ul>
+<h3 id="主要特性"><a href="#主要特性" class="headerlink" title="主要特性"></a>主要特性</h3><ul>
+<li>直观的语法</li>
+<li>格式化和色彩化的终端输出</li>
+<li>内置 JSON 支持</li>
+<li>支持上传表单和文件</li>
+<li>HTTPS、代理和认证</li>
+<li>任意请求数据</li>
+<li>自定义头部</li>
+<li>持久性会话</li>
+<li>类 Wget 下载</li>
+<li>支持 Python 2.6, 2.7 和 3.x</li>
+<li>支持 Linux, Mac OS X 和 Windows</li>
+<li>插件</li>
+<li>文档</li>
+<li>测试覆盖率</li>
+</ul>
+<h3 id="安装"><a href="#安装" class="headerlink" title="安装"></a>安装</h3><blockquote>
+<p>httpie 是跨平台命令，支持 Mac OS X、 Linux、 Windows</p>
+</blockquote>
+<h4 id="Mac-OS-X"><a href="#Mac-OS-X" class="headerlink" title="Mac OS X"></a>Mac OS X</h4><figure class="highlight shell"><table><tr><td class="code"><pre><span class="line">brew install httpie      // brew 命令安装</span><br><span class="line">port install httpie      // ports 命令安装</span><br></pre></td></tr></table></figure>
+
+<h4 id="Linux"><a href="#Linux" class="headerlink" title="Linux"></a>Linux</h4><figure class="highlight shell"><table><tr><td class="code"><pre><span class="line">easy_install httpie （CentOS 5.6/6.5/7.2 都成功）</span><br><span class="line"></span><br><span class="line"><span class="meta">#</span><span class="bash"> Debian, Ubuntu, etc.</span></span><br><span class="line">apt-get install httpie</span><br><span class="line"></span><br><span class="line"><span class="meta">#</span><span class="bash"> Fedora, CentOS, RHEL, …</span></span><br><span class="line">yum install httpie</span><br><span class="line"></span><br><span class="line"><span class="meta">#</span><span class="bash"> Arch Linux</span></span><br><span class="line">pacman -S httpie</span><br></pre></td></tr></table></figure>
+
+<h4 id="Windows"><a href="#Windows" class="headerlink" title="Windows"></a>Windows</h4><figure class="highlight shell"><table><tr><td class="code"><pre><span class="line"><span class="meta">#</span><span class="bash"> Make sure we have an up-to-date version of pip and setuptools:</span></span><br><span class="line">pip install --upgrade pip setuptools</span><br><span class="line">pip install --upgrade httpie</span><br></pre></td></tr></table></figure>
+
+<h3 id="帮助"><a href="#帮助" class="headerlink" title="帮助"></a>帮助</h3><figure class="highlight plain"><table><tr><td class="code"><pre><span class="line"># http</span><br><span class="line">usage: http [--json] [--form] [--pretty &#123;all,colors,format,none&#125;]</span><br><span class="line">            [--style STYLE] [--print WHAT] [--headers] [--body] [--verbose]</span><br><span class="line">            [--all] [--history-print WHAT] [--stream] [--output FILE]</span><br><span class="line">            [--download] [--continue]</span><br><span class="line">            [--session SESSION_NAME_OR_PATH | --session-read-only SESSION_NAME_OR_PATH]</span><br><span class="line">            [--auth USER[:PASS]] [--auth-type &#123;basic,digest&#125;]</span><br><span class="line">            [--proxy PROTOCOL:PROXY_URL] [--follow]</span><br><span class="line">            [--max-redirects MAX_REDIRECTS] [--timeout SECONDS]</span><br><span class="line">            [--check-status] [--verify VERIFY]</span><br><span class="line">            [--ssl &#123;ssl2.3,ssl3,tls1,tls1.1,tls1.2&#125;] [--cert CERT]</span><br><span class="line">            [--cert-key CERT_KEY] [--ignore-stdin] [--help] [--version]</span><br><span class="line">            [--traceback] [--default-scheme DEFAULT_SCHEME] [--debug]</span><br><span class="line">            [METHOD] URL [REQUEST_ITEM [REQUEST_ITEM ...]]</span><br><span class="line">http: error: the following arguments are required: URL</span><br></pre></td></tr></table></figure>
+
+<h3 id="命令"><a href="#命令" class="headerlink" title="命令"></a>命令</h3><h5 id="显示请求信息（包含返回头200）"><a href="#显示请求信息（包含返回头200）" class="headerlink" title="显示请求信息（包含返回头200）"></a>显示请求信息（包含返回头200）</h5><figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">http mimvp.com</span><br></pre></td></tr></table></figure>
+
+<h5 id="显示详细的请求（包含请求和返回头200）"><a href="#显示详细的请求（包含请求和返回头200）" class="headerlink" title="显示详细的请求（包含请求和返回头200）"></a>显示详细的请求（包含请求和返回头200）</h5><figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">http -v mimvp.com</span><br></pre></td></tr></table></figure>
+
+<h5 id="只显示Header"><a href="#只显示Header" class="headerlink" title="只显示Header"></a>只显示Header</h5><figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">http -h mimvp.com</span><br><span class="line">http --head mimvp.com</span><br><span class="line">http --header mimvp.com</span><br><span class="line">http --headers mimvp.com</span><br></pre></td></tr></table></figure>
+
+<h5 id="只显示Body"><a href="#只显示Body" class="headerlink" title="只显示Body"></a>只显示Body</h5><figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">http -b mimvp.com</span><br><span class="line">http --body mimvp.com</span><br></pre></td></tr></table></figure>
+
+<h5 id="下载文件"><a href="#下载文件" class="headerlink" title="下载文件"></a>下载文件</h5><figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">http -d mimvp.com</span><br></pre></td></tr></table></figure>
+
+<h5 id="模拟提交表单"><a href="#模拟提交表单" class="headerlink" title="模拟提交表单"></a>模拟提交表单</h5><figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">http -f POST mimvp.com username&#x3D;&#39;mimvp-user&#39;</span><br></pre></td></tr></table></figure>
+
+<h5 id="请求删除的方法"><a href="#请求删除的方法" class="headerlink" title="请求删除的方法"></a>请求删除的方法</h5><figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">http DELETE mimvp.com</span><br></pre></td></tr></table></figure>
+
+<h5 id="传递JSON数据请求-默认就是JSON数据请求"><a href="#传递JSON数据请求-默认就是JSON数据请求" class="headerlink" title="传递JSON数据请求(默认就是JSON数据请求)"></a>传递JSON数据请求(默认就是JSON数据请求)</h5><figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">http PUT mimvp.com username&#x3D;&#39;mimvp-user&#39; password&#x3D;&#39;mimvp-pwd&#39;</span><br></pre></td></tr></table></figure>
+
+<h5 id="如果JSON数据存在不是字符串则用-分隔，例如"><a href="#如果JSON数据存在不是字符串则用-分隔，例如" class="headerlink" title="如果JSON数据存在不是字符串则用:=分隔，例如"></a>如果JSON数据存在不是字符串则用:=分隔，例如</h5><figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">http PUT mimvp.com username&#x3D;&#39;mimvp-user&#39; password&#x3D;&#39;mimvp-pwd&#39; age:&#x3D;28 a:&#x3D;true streets:&#x3D;&#39;[&quot;a&quot;, &quot;b&quot;]&#39;</span><br></pre></td></tr></table></figure>
+
+<h5 id="模拟Form的Post请求-Content-Type-application-x-www-form-urlencoded-charset-utf-8"><a href="#模拟Form的Post请求-Content-Type-application-x-www-form-urlencoded-charset-utf-8" class="headerlink" title="模拟Form的Post请求, Content-Type: application/x-www-form-urlencoded; charset=utf-8"></a>模拟Form的Post请求, Content-Type: application/x-www-form-urlencoded; charset=utf-8</h5><figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">http --form POST mimvp.com username&#x3D;&#39;mimvp-user&#39;</span><br></pre></td></tr></table></figure>
+
+<h5 id="模拟Form的上传-Content-Type-multipart-form-data"><a href="#模拟Form的上传-Content-Type-multipart-form-data" class="headerlink" title="模拟Form的上传, Content-Type: multipart/form-data"></a>模拟Form的上传, Content-Type: multipart/form-data</h5><figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">http -f POST example.com&#x2F;jobs username&#x3D;&#39;mimvp-user&#39; file@~&#x2F;test.pdf</span><br></pre></td></tr></table></figure>
+
+<h5 id="修改请求头-使用-分隔"><a href="#修改请求头-使用-分隔" class="headerlink" title="修改请求头, 使用:分隔"></a>修改请求头, 使用:分隔</h5><figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">http mimvp.com  User-Agent:mimvp-agent&#x2F;1.0  &#39;Cookie:a&#x3D;b;b&#x3D;c&#39;  Referer:http:&#x2F;&#x2F;mimvp.com&#x2F;</span><br></pre></td></tr></table></figure>
+
+<h5 id="认证"><a href="#认证" class="headerlink" title="认证"></a>认证</h5><figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">http -a username:password mimvp.com</span><br><span class="line">http --auth-type&#x3D;digest -a username:password mimvp.com</span><br></pre></td></tr></table></figure>
+
+<h5 id="使用http代理"><a href="#使用http代理" class="headerlink" title="使用http代理"></a>使用http代理</h5><figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">http --proxy&#x3D;http:http:&#x2F;&#x2F;217.107.197.174:8081 proxy.mimvp.com</span><br><span class="line">http --proxy&#x3D;http:http:&#x2F;&#x2F;user:pass@217.107.197.174:8081 proxy.mimvp.com</span><br><span class="line">http --proxy&#x3D;https:http:&#x2F;&#x2F;112.114.96.34:8118 proxy.mimvp.com</span><br><span class="line">http --proxy&#x3D;https:http:&#x2F;&#x2F;user:pass@112.114.96.34:8118 proxy.mimvp.com</span><br></pre></td></tr></table></figure>
+
+
+
+<h3 id="参考资料"><a href="#参考资料" class="headerlink" title="参考资料"></a>参考资料</h3><ul>
+<li><a href="https://blog.mimvp.com/2017/10/httpie-gong-ju-shi-yong-ru-men/" target="_blank" rel="noopener">https://blog.mimvp.com/2017/10/httpie-gong-ju-shi-yong-ru-men/</a></li>
+<li><a href="https://www.cnblogs.com/new_2050/p/7745788.html" target="_blank" rel="noopener">https://www.cnblogs.com/new_2050/p/7745788.html</a></li>
+</ul>
+<link rel="stylesheet" href="/css/spoiler.css" type="text/css"><script src="/js/spoiler.js" type="text/javascript" async></script>]]></content>
+      <categories>
+        <category>tools</category>
+        <category>httpie</category>
+      </categories>
+      <tags>
+        <tag>tools</tag>
+        <tag>httpie</tag>
+      </tags>
+  </entry>
+  <entry>
     <title>Python Opencv 错误记录</title>
     <url>/2021/01/14/python/opencv-error/opencv-error/</url>
     <content><![CDATA[<blockquote>
@@ -3658,8 +3843,8 @@ cond(no)->sub</textarea><textarea id="flowchart-0-options" style="display: none"
         <category>VS code</category>
       </categories>
       <tags>
-        <tag>故障排除</tag>
         <tag>IDE</tag>
+        <tag>故障排除</tag>
         <tag>VS code</tag>
       </tags>
   </entry>
@@ -3988,8 +4173,8 @@ cond(no)->sub</textarea><textarea id="flowchart-0-options" style="display: none"
         <category>Git</category>
       </categories>
       <tags>
-        <tag>Git</tag>
         <tag>故障排除</tag>
+        <tag>Git</tag>
       </tags>
   </entry>
   <entry>
@@ -4026,8 +4211,8 @@ cond(no)->sub</textarea><textarea id="flowchart-0-options" style="display: none"
         <category>Git</category>
       </categories>
       <tags>
-        <tag>Git</tag>
         <tag>故障排除</tag>
+        <tag>Git</tag>
       </tags>
   </entry>
   <entry>
@@ -5687,7 +5872,7 @@ cond(no)->sub</textarea><textarea id="flowchart-0-options" style="display: none"
   </entry>
   <entry>
     <title>算法学习笔记 —— 排序</title>
-    <url>/2020/05/21/algorithm/tree/about_tree/</url>
+    <url>/2020/05/21/algorithm/sort/about_sort/</url>
     <content><![CDATA[<blockquote>
 <p>学而时习，本文记录排序操作相关算法练习笔记。</p>
 </blockquote>
@@ -5721,7 +5906,7 @@ cond(no)->sub</textarea><textarea id="flowchart-0-options" style="display: none"
   </entry>
   <entry>
     <title>算法学习笔记 —— 排序</title>
-    <url>/2020/05/21/algorithm/sort/about_sort/</url>
+    <url>/2020/05/21/algorithm/tree/about_tree/</url>
     <content><![CDATA[<blockquote>
 <p>学而时习，本文记录排序操作相关算法练习笔记。</p>
 </blockquote>
