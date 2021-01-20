@@ -7,7 +7,7 @@ photo ={
     offset: 20,
     init: function () {
         var that = this;
-        $.getJSON("readme.json", function (data) {
+        $.getJSON("readme.json_", function (data) {
             that.render(that.page, data);
             //that.scroll(data);
         });
