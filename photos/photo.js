@@ -3,7 +3,7 @@ console.log('Photos js Hello World')
 photo ={
     init: function () {
         var that = this;
-        $.getJSON("album.json", function (data) {
+        $.getJSON("album.json_", function (data) {
             that.render(that.page, data);
             //that.scroll(data);
         });
