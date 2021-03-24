@@ -1,6 +1,1314 @@
 <?xml version="1.0" encoding="utf-8"?>
 <search>
   <entry>
+    <title>SVM 的推导</title>
+    <url>/2021/03/24/machine_learning/about-svm/about-svm/</url>
+    <content><![CDATA[<blockquote>
+<p>SVM（Support Vector Machine，支持向量机）是一个线性分类器，是最经典的分类算法，其核心目标就是找到最大间隔超平面。本文记录SVM的推导过程。</p>
+</blockquote>
+<a id="more"></a>
+
+<h3 id="概述"><a href="#概述" class="headerlink" title="概述"></a>概述</h3><blockquote>
+<p>SVM就是一个分类器，只是相对于传统的线性分类器，它添加了一个支持向量的概念。</p>
+</blockquote>
+<ul>
+<li>考虑一个分类任务</li>
+</ul>
+<p><img src="https://photos.zywvvd.com/images_matrixtime/20210324120914.gif"></p>
+<blockquote>
+<p>从图片上解释，对于一组数据，SVM在使用直线的同时要求数据点距离这条直线的最小距离最大，也就是说分类器和数据之间要有足够大的“间隔”。这样做的好处是很明显的，越大的“间隔”代表了更大的转圜空间，在得到新的数据之后更容易将其正确分类。</p>
+<p>而SVM的工作就是求解这个最大间隔，也就是最优化问题。对于线性可分的数据，可以直接套用线性规划的知识进行推导，但如果数据线性不可分，就需要核函数进行数据升维，进行超平面分类。</p>
+</blockquote>
+<h3 id="目标函数"><a href="#目标函数" class="headerlink" title="目标函数"></a>目标函数</h3><blockquote>
+<p>SVM是一个线性分类器，SVM的目标就是找到最大间隔超平面。</p>
+</blockquote>
+<ul>
+<li>定义任意的超平面函数为：</li>
+</ul>
+<p>$$<br>\bf{w}^{T} \bf{x}+b=0<br>$$</p>
+<ul>
+<li>二维空间点$(x,y)$到直线$Ax+By+C=0$的距离为：</li>
+</ul>
+<p>$$<br>\frac{|A x+B y+C|}{\sqrt{A^{2}+B^{2}}}<br>$$</p>
+<ul>
+<li>扩展到$k$维空间后，点$X=(x_1,x_2,\dots,x_k)$到超平面$w^{T} x+b=0$距离为：</li>
+</ul>
+<p>$$<br>\frac{\left|\bf{w}^{T} \bf{x}+b\right|}{|\bf{w}|}<br>$$</p>
+<ul>
+<li>其中：</li>
+</ul>
+<p>$$<br>|\bf{w}|=\sqrt{w_{1}^{2}+\ldots w_{n}^{2}}<br>$$</p>
+<ul>
+<li>我们希望这个超平面可以区分不同两类数据特征，这个分类决策函数就是：</li>
+</ul>
+<p>$$<br>f(x)=\operatorname{sign}\left(\bf{w}^T\bf{x}+b\right)<br>$$</p>
+<ul>
+<li>我们的数据为$({{\bf{x}}_i},{y_i}),i \in \{ 1,2, \ldots ,n\},y_i \in \{1,-1\} $，定义点$({{\bf{x}}_i},{y_i}) $到超平面的函数距离$\hat{\gamma}_{i}$：</li>
+</ul>
+
+$$
+\hat{\gamma}_{i}=y_{i}\left(\bf{w} \cdot \bf{x}_{i}+b\right)
+$$
+
+
+<ul>
+<li>而我们的目标是找到可以最大化数据到点几何距离的超平面，将几何距离用${\gamma}_{i}$表示，为：</li>
+</ul>
+
+$$
+\gamma_{i}=\frac{\bf{w}}{\|\bf{w}\|} \cdot \bf{x}_{i}+\frac{b}{\|\bf{w}\|}=\frac{\bf{w}^T\bf{x}_i+b}{\|\bf{w}\|}=\frac{y_{i}\left(\bf{w} \cdot \bf{x}_{i}+b\right)}{\|\bf{w}\|}=\frac{\hat{\gamma}_{i}}{\|\bf{w}\|}
+$$
+
+
+<ul>
+<li>因此优化函数为：</li>
+</ul>
+
+$$
+\begin{array}{*{20}{l}}
+{\mathop {\max }\limits_{{\bf{w}},b} }&\gamma \\
+{{\rm{ s}}{\rm{.t}}{\rm{. }}}&{{y_i}\left( {\frac{{\bf{w}}}{{{||\bf{w}||}}} \cdot {x_i} + \frac{b}{{{||\bf{w}||}}}} \right) \ge \gamma ,\quad i = 1,2, \cdots ,n}
+\end{array}
+$$
+
+
+<ul>
+<li>根据已有结论可以将优化函数转化为：</li>
+</ul>
+
+$$
+\begin{array}{*{20}{l}}
+{\mathop {\max }\limits_{{\bf{w}},b} }&{\frac{{{{\hat \gamma }_i}}}{{{||\bf{w}||}}}}\\
+{{\rm{s}}.{\rm{t}}.}&{{y_i}\left( {{\bf{w}} \cdot {x_i} + b} \right) \ge {{\hat \gamma }_i},\quad i = 1,2, \cdots ,n}
+\end{array}
+$$
+
+
+<ul>
+<li>事实上函数间隔${\hat \gamma }$并不影响最优化问题的解，假设将$\bf{w}$和$b$成倍的改变为$a\bf{w}，ab$，那么函数间隔也会相应变成$a{\hat \gamma }$，因此为简便，我们取 ${\hat \gamma }=1$，因此优化函数为最大化$1/||\bf{w}||$，这等价于最小化$||\bf{w}||$，考虑到求导方便，我们最小化$1/2||\bf{w}||^2$</li>
+<li>优化函数最终为：</li>
+</ul>
+
+$$
+\begin{array}{*{20}{l}}
+{\mathop {\min }\limits_{{\bf{w}},b} }&{\frac{1}{2}||{\bf{w}}|{|^2}}\\
+{{\rm{s}}.{\rm{t}}.}&{{y_i}\left( {{\bf{w}} \cdot {{\bf{x}}_i} + b} \right) - 1 \ge 0,\quad i = 1,2, \cdots ,n}
+\end{array}
+$$
+
+
+<h3 id="拉格朗日对偶求极值"><a href="#拉格朗日对偶求极值" class="headerlink" title="拉格朗日对偶求极值"></a>拉格朗日对偶求极值</h3><ul>
+<li>写成拉格朗日优化的格式：</li>
+</ul>
+
+$$
+\begin{array}{*{20}{l}}
+{\mathop {\min }\limits_{{\bf{w}},b} }&{\frac{1}{2}||{\bf{w}}|{|^2}}\\
+{{\rm{s}}.{\rm{t}}.}&1-{{y_i}\left( {{\bf{w}} \cdot {{\bf{x}}_i} + b} \right) \le 0,\quad i = 1,2, \cdots ,n}
+\end{array}
+$$
+
+
+<ul>
+<li>拉格朗日方程：</li>
+</ul>
+
+$$
+L({\bf{w}},b,{\bf{\alpha }}) = \frac{1}{2}||{\bf{w}}|{|^2} + \sum\limits_{i = 1}^n {{\alpha _i}(1 - {y_i}\left( {{\bf{w}} \cdot {{\bf{x}}_i} + b} \right)} )
+$$
+
+
+<ul>
+<li>原始问题为凸优化问题，我们按照KKT条件求解该问题的对偶问题，即可根据强对偶条件获得原始问题的解</li>
+<li>对偶问题为：</li>
+</ul>
+
+$$
+\mathop {max}\limits_{\bf{\alpha }} D({\bf{\alpha }}) = \mathop {max}\limits_{\bf{\alpha }} \mathop {\min }\limits_{{\bf{w}},b} L({\bf{w}},b,{\bf{\alpha }})
+$$
+
+
+
+
+<ul>
+<li>先求最小化极值问题 $\mathop {\min }\limits_{{\bf{w}},b} L({\bf{w}},b,{\bf{\alpha }})$：</li>
+</ul>
+
+$$
+\left\{ {\begin{array}{*{20}{c}}
+{\frac{{\partial {\rm{L}}}}{{\partial {\bf{w}}}} = 0}\\
+{\frac{{\partial {\rm{L}}}}{{\partial b}} = 0}
+\end{array}} \right.
+$$
+
+
+<ul>
+<li>解得：</li>
+</ul>
+
+$$
+\left\{ {\begin{array}{*{20}{c}}
+{{\bf{w}} = \sum\limits_{i = 1}^n {{\alpha _i}{y_i}{{\bf{x}}_i}} }\\
+{\sum\limits_{i = 1}^n {{\alpha _i}{y_i} = 0} }
+\end{array}} \right.
+$$
+
+
+<ul>
+<li>带入$L({\bf{w}},b,{\bf{\alpha }})$得：</li>
+</ul>
+
+$$
+\begin{aligned}
+L(\bf{w}, b, \bf{\alpha}) &=\frac{1}{2}\|\bf{w}\|^{2}+\sum_{i=1}^{n} \alpha_{i}\left[1-y_{i}\left(\bf{w}^{T} x_{i}+b\right)\right] \\
+&=\frac{1}{2} \bf{w}^{T} \bf{w}-\bf{w}^{T} \sum_{i=1}^{n} \alpha_{i} y_{i} x_{i}-b \sum_{i=1}^{n} \alpha_{i} y_{i}+\sum_{i=1}^{n} \alpha_{i} \\
+&=\frac{1}{2} \bf{w}^{T} \sum_{i=1}^{n} \alpha_{i} y_{i} x_{i}-\bf{w}^{T^{\prime}} \sum_{i=1}^{n} \alpha_{i} x_{i} y_{i}-b * 0+\sum_{i=1}^{n} \alpha_{i} \\
+&=\sum_{i=1}^{n} \alpha_{i}-\frac{1}{2}\left(\sum_{i=1}^{n} \alpha_{i} y_{i} x_{i}\right)^{T} \sum_{i=1}^{n} \alpha_{i} y_{i} x_{i} \\
+&=\sum_{i=1}^{n} \alpha_{i}-\frac{1}{2} \sum_{i, j=1}^{n} \alpha_{i} \alpha_{j} y_{i} y_{j} x_{i}^{T} x_{j}
+\end{aligned}
+$$
+
+
+<ul>
+<li>此时我们需要解决的优化问题是：</li>
+</ul>
+
+$$
+\begin{array}{*{20}{c}}
+{\mathop {\max }\limits_{\bf{\alpha }} \sum\limits_{i = 1}^n {{\alpha _i}}  - \frac{1}{2}\sum\limits_{i,j = 1}^n {{\alpha _i}} {\alpha _j}{y_i}{y_j}{\bf{x}}_i^T{{\bf{x}}_j}}\\
+{\qquad \begin{array}{*{20}{c}}
+{{\rm{ s}}{\rm{.t}}{\rm{. }}{\alpha _i} \ge 0,\quad i = 1,2, \ldots ,n}\\
+{\sum\limits_{i = 1}^n {{\alpha _i}} {y_i} = 0}
+\end{array}}
+\end{array}
+$$
+
+
+<ul>
+<li><p>可以看到通过拉格朗日对偶，我们将原始拉格朗日方程$k+1+n$个未知数、$n$个复杂不等式约束条件的优化问题转换为了$n$个未知数，1个等式约束的问题，当然满足KKT条件是前提</p>
+</li>
+<li><p>对于这个问题，我们有更高效的优化算法，即序列最小优化（SMO）算法。我们通过这个优化算法能得到$\bf{α}$，再根据$\bf{α}$，我们就可以求解出$\bf{w}$和$b$，进而求得我们最初的目的：找到超平面，即”决策平面”。</p>
+</li>
+</ul>
+<h3 id="参考资料"><a href="#参考资料" class="headerlink" title="参考资料"></a>参考资料</h3><ul>
+<li><p><a href="https://www.jianshu.com/p/0f8f9d52abcf" target="_blank" rel="noopener">https://www.jianshu.com/p/0f8f9d52abcf</a></p>
+</li>
+<li><p><a href="https://www.pianshen.com/article/15821257925/" target="_blank" rel="noopener">https://www.pianshen.com/article/15821257925/</a></p>
+</li>
+<li><p><a href="https://blog.csdn.net/qq_40778406/article/details/79879434" target="_blank" rel="noopener">https://blog.csdn.net/qq_40778406/article/details/79879434</a></p>
+</li>
+</ul>
+<link rel="stylesheet" href="/css/spoiler.css" type="text/css"><script src="/js/spoiler.js" type="text/javascript" async></script>]]></content>
+      <categories>
+        <category>机器学习</category>
+        <category>优化方法</category>
+      </categories>
+      <tags>
+        <tag>机器学习</tag>
+        <tag>优化方法</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>从服务器映射 jupyter 到本机应用</title>
+    <url>/2021/03/22/python/jupyter-map/jupyter-map/</url>
+    <content><![CDATA[<blockquote>
+<p>Jupyter Notebook是基于网页的用于交互计算的应用程序，方便易用，本文记录将远程jupyter环境映射到本机的方法。</p>
+</blockquote>
+<a id="more"></a>
+
+<h3 id="简介"><a href="#简介" class="headerlink" title="简介"></a>简介</h3><blockquote>
+<p>Jupyter Notebook是基于网页的用于交互计算的应用程序。其可被应用于全过程计算：开发、文档编写、运行代码和展示结果。——<a href="https://link.jianshu.com/?t=https://jupyter-notebook.readthedocs.io/en/stable/notebook.html" target="_blank" rel="noopener">Jupyter Notebook官方介绍</a></p>
+</blockquote>
+<p>简而言之，Jupyter Notebook是以网页的形式打开，可以在网页页面中<strong>直接</strong>编写代码和运行代码，代码的运行结果也会直接在代码块下显示。如在编程过程中需要编写说明文档，可在同一个页面中直接编写，便于作及时的说明和解释。</p>
+<h3 id="任务"><a href="#任务" class="headerlink" title="任务"></a>任务</h3><ul>
+<li>在服务器启动docker</li>
+<li>在docker容器中启动jupyter服务</li>
+<li>映射到本机浏览器实际使用</li>
+</ul>
+<h3 id="思路"><a href="#思路" class="headerlink" title="思路"></a>思路</h3><blockquote>
+<p>本质其实仅仅是端口映射</p>
+</blockquote>
+<ul>
+<li>将docker端口映射到服务器指定端口</li>
+<li>从本机访问服务器的指定端口并填入token即可</li>
+</ul>
+<h3 id="具体方法"><a href="#具体方法" class="headerlink" title="具体方法"></a>具体方法</h3><h4 id="创建docker时映射端口"><a href="#创建docker时映射端口" class="headerlink" title="创建docker时映射端口"></a>创建docker时映射端口</h4><figure class="highlight shell"><table><tr><td class="code"><pre><span class="line">nvidia-docker run -it --name vvd --shm-size=15g -p 4832:4832 -v /home:/workspace vvd_image bash</span><br></pre></td></tr></table></figure>
+
+<h4 id="在docker启动jupyter服务"><a href="#在docker启动jupyter服务" class="headerlink" title="在docker启动jupyter服务"></a>在docker启动jupyter服务</h4><figure class="highlight shell"><table><tr><td class="code"><pre><span class="line">jupyter notebook --allow-root --no-browser --ip 0.0.0.0 --port 4832 --notebook-dir /workspace/nfs/vvd_jupyter_lab/</span><br></pre></td></tr></table></figure>
+
+<ul>
+<li><p>返回访问地址：</p>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">http:&#x2F;&#x2F;127.0.0.1:4832&#x2F;?token&#x3D;34d2fd23fxxxx3241cb6519ccab7d66cad355ee2xxxxxxx</span><br></pre></td></tr></table></figure>
+
+</li>
+</ul>
+<h4 id="在本机访问地址"><a href="#在本机访问地址" class="headerlink" title="在本机访问地址"></a>在本机访问地址</h4><figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">http:&#x2F;&#x2F;&#123;remote ip&#125;:4832&#x2F;?token&#x3D;34d2fd23fxxxx3241cb6519ccab7d66cad355ee2xxxxxxx</span><br></pre></td></tr></table></figure>
+
+
+
+<h3 id="参考资料"><a href="#参考资料" class="headerlink" title="参考资料"></a>参考资料</h3><ul>
+<li><a href="https://www.jianshu.com/p/91365f343585" target="_blank" rel="noopener">https://www.jianshu.com/p/91365f343585</a></li>
+</ul>
+<link rel="stylesheet" href="/css/spoiler.css" type="text/css"><script src="/js/spoiler.js" type="text/javascript" async></script>]]></content>
+      <categories>
+        <category>python</category>
+        <category>jupyter</category>
+      </categories>
+      <tags>
+        <tag>python</tag>
+        <tag>jupyter</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>拉格朗日对偶问题</title>
+    <url>/2021/03/19/machine_learning/lagrangian-duality/lagrangian-duality/</url>
+    <content><![CDATA[<blockquote>
+<p>在前文了解过拉格朗日乘数法后，进一步介绍拉格朗日对偶。</p>
+</blockquote>
+<a id="more"></a>
+
+<h3 id="背景信息"><a href="#背景信息" class="headerlink" title="背景信息"></a>背景信息</h3><blockquote>
+<p>在约束最优化问题中，常常利用拉格朗日对偶性（Lagrange duality）将原始问题转换为对偶问题，通过解对偶问题而得到原始问题的解。</p>
+</blockquote>
+<ul>
+<li>拉格朗日对偶是在<a href="https://www.zywvvd.com/2021/03/13/machine_learning/lagrange-multiplier/lagrange-multiplier/">拉格朗日乘数法</a>基础之上，通过变换原始问题的求解形式得到的相对于原始优化问题的另一个优化问题</li>
+</ul>
+<h4 id="原始优化问题"><a href="#原始优化问题" class="headerlink" title="原始优化问题"></a>原始优化问题</h4><blockquote>
+<p>假设$f(x)$, $c_i(x)$, $h_j(x)$ 是定义在$\mathbf{R}^{n}$上的连续可微函数，考虑约束最优化问题：</p>
+</blockquote>
+
+$$
+\begin{array}{c}
+\min _{x \in \mathbf{R}^{n}} f(x)  \\
+\text { s.t. } \quad h_{i}(x) \leq 0, i=1,2, \ldots, k \\
+g_{j}(x)=0, j=1,2, \ldots, l
+\end{array}\tag{1} \label{eq1}
+$$
+
+
+
+<ul>
+<li>定义此问题为原始优化问题</li>
+</ul>
+<h4 id="广义拉格朗日函数"><a href="#广义拉格朗日函数" class="headerlink" title="广义拉格朗日函数"></a>广义拉格朗日函数</h4><blockquote>
+<p>来源见 ：<a href="https://www.zywvvd.com/2021/03/13/machine_learning/lagrange-multiplier/lagrange-multiplier/">拉格朗日乘数法</a></p>
+</blockquote>
+<p>$$<br>L(x, \alpha, \beta)=f(x)+\sum_{i=1}^{k} \alpha_{i} h_{i}(x)+\sum_{j=1}^{l} \beta_{j} g_{j}(x)\tag{2} \label{eq2}<br>$$</p>
+<ul>
+<li>其中 $x=\left(x_1, x_2, \ldots, x_n\right)^{T} \in \mathbf{R}^{n} , \alpha_{i}, \beta_{j}$是拉格朗日乘子，且$\alpha_{i} \geq 0$</li>
+</ul>
+<h3 id="拉格朗日对偶的来源"><a href="#拉格朗日对偶的来源" class="headerlink" title="拉格朗日对偶的来源"></a>拉格朗日对偶的来源</h3><blockquote>
+<p>考虑原始优化问题$\eqref{eq1}$</p>
+</blockquote>
+<ul>
+<li>想要求得$f(x)$的最小值，也就是要求$f(x)$的最大下界</li>
+<li>对于方程组：</li>
+</ul>
+<p>$$<br>\begin{array}{l}<br>f(\mathbf{x})&lt;v \\<br>h_{i}(\mathbf{x}) \leq 0, i=1,2, \ldots, k<br>\end{array} \tag{3} \label{eq3}<br>$$</p>
+<ul>
+<li>若方程组$\eqref{eq3}$无解，则$v$是$f(x)$的一个下界，也就是说如果有渠道可以利用到方程组$\eqref{eq3}$无解，则可以利用其限制$f(x)$的下界</li>
+<li>注意到若方程组$\eqref{eq3}$有解，可以推出对于任意$\lambda \ge 0$：</li>
+</ul>
+<p>$$<br>f(\mathbf{x})+\sum_{i=1}^{k} \lambda_{i} h_{i}(\mathbf{x})&lt;v   \tag{4}   \label{eq4}<br>$$</p>
+<ul>
+<li>方程$\eqref{eq4}$有解</li>
+<li>即命题：**<em>if</em> 方程组$\eqref{eq3}$有解 <em>then</em> 方程$\eqref{eq4}$有解** 成立</li>
+<li>则其逆否命题 **<em>if</em> 方程$\eqref{eq4}$无解 <em>then</em>  方程组$\eqref{eq3}$无解 ** 成立</li>
+<li>而 <strong>方程$\eqref{eq4}$无解</strong> 的充要（等价）条件是：</li>
+</ul>
+
+$$
+\min _{ \mathbf{x} } f ( \mathbf {x} ) + \sum _ { i=1 } ^ {k} \lambda_{i} g_{i} ( \mathbf {x}) \geq v \tag{5} \label{eq5}
+$$
+
+
+
+<ul>
+<li>方程$\eqref{eq5}$的自变量为$\lambda_i$，我们的目标是要找到其上界$v_{max}$，因此有：</li>
+</ul>
+
+$$
+v_{max}=\max _{\boldsymbol{\lambda} \geq \mathbf{0}} \min _{\mathbf{x}} f(\mathbf{x})+\sum_{i=1}^{k} \lambda_{i} g_{i}(\mathbf{x}) \tag{6} \label{eq6}
+$$
+
+
+
+<ul>
+<li>方程$\eqref{eq6}$即为拉格朗日对偶问题的核心，延续原始问题的标记，记为：</li>
+</ul>
+
+$$
+\mathop {\max }\limits_{\alpha  \cdot \beta ;{\alpha _i} \ge 0}D(\alpha ,\beta ) = \mathop {\max }\limits_{\alpha  \cdot \beta ;{\alpha _i} \ge 0} \mathop {\min }\limits_x L(x,\alpha ,\beta )\tag{7} \label{eq7}
+$$
+
+
+
+<blockquote>
+<p>可以说对偶问题就是从另一个方向逼近$f(x)$最小值的问题</p>
+</blockquote>
+<p><img src="https://photos.zywvvd.com/images_matrixtime/20210324150300.gif"></p>
+<h3 id="对偶问题的性质"><a href="#对偶问题的性质" class="headerlink" title="对偶问题的性质"></a>对偶问题的性质</h3><blockquote>
+<p>之所以引入另一个优化问题是因为对偶问题之间有着良好的性质</p>
+</blockquote>
+<ul>
+<li>对偶问题的对偶是原问题；</li>
+<li>无论原始问题是否是凸的，对偶问题都是凸优化问题；</li>
+<li>对偶问题可以给出原始问题一个下界；</li>
+<li>当满足一定条件时，原始问题与对偶问题的解是完全等价的；</li>
+</ul>
+<h3 id="拉格朗日对偶问题的凹函数性质证明"><a href="#拉格朗日对偶问题的凹函数性质证明" class="headerlink" title="拉格朗日对偶问题的凹函数性质证明"></a>拉格朗日对偶问题的凹函数性质证明</h3><h4 id="按照定义"><a href="#按照定义" class="headerlink" title="按照定义"></a>按照定义</h4><blockquote>
+<p>对偶问题有一个很好的性质是对偶函数为凹函数，证明如下</p>
+</blockquote>
+<ul>
+<li>命题 <strong>拉格朗日对偶函数一定是凹函数，且其凹性与最优化函数和约束函数无关。</strong></li>
+<li>考虑对偶问题$\eqref{eq7}$，按照凹函数定义，往证：</li>
+</ul>
+<p>$$<br>D(\theta {\alpha _1} + (1 - \theta ){\alpha _2},\theta {\beta _1} + (1 - \theta ){\beta _2}) \ge \theta D({\alpha _1},{\beta _1}) + (1 - \theta )D({\alpha _2},{\beta _2}) \tag{8} \label{eq8}<br>$$</p>
+<ul>
+<li>有：</li>
+</ul>
+
+$$
+\begin{array}{l}
+&D(\theta {\alpha _1} + (1 - \theta ){\alpha _2},\theta {\beta _1} + (1 - \theta ){\beta _2}) \\
+&= \mathop {\min }\limits_x L(x,\theta {\alpha _1} + (1 - \theta ){\alpha _2},\theta {\beta _1} + (1 - \theta ){\beta _2})\\
+ &= \mathop {\min }\limits_x (f(x) + \sum\limits_{i = 1}^k {(\theta {\alpha _{1,i}} + (1 - \theta ){\alpha _{2,i}})} {h_i}(x) + \sum\limits_{j = 1}^l {(\theta {\beta _{1,j}} + (1 - \theta ){\beta _{2,j}})} {g_j}(x)\\
+ &= \mathop {\min }\limits_x (\theta (f(x) + \sum\limits_{i = 1}^k {{\alpha _{1,i}}} {h_i}(x) + \sum\limits_{j = 1}^l {{\beta _{1,j}}} {g_j}(x)) + (1 - \theta )(f(x) + \sum\limits_{i = 1}^k {{\alpha _{2,i}}} {h_i}(x) + \sum\limits_{j = 1}^l {{\beta _{2,j}}} {g_j}(x)))\\
+ &\ge \theta \mathop {\min }\limits_x (f(x) + \sum\limits_{i = 1}^k {{\alpha _{1,i}}} {h_i}(x) + \sum\limits_{j = 1}^l {{\beta _{1,j}}} {g_j}(x)) + (1 - \theta )\mathop {\min }\limits_x (f(x) + \sum\limits_{i = 1}^k {{\alpha _{2,i}}} {h_i}(x) + \sum\limits_{j = 1}^l {{\beta _{2,j}}} {g_j}(x))\\
+ &= \theta D({\alpha _1},{\beta _1}) + (1 - \theta )D({\alpha _2},{\beta _2})
+\end{array} \tag{9} \label{eq9}
+$$
+
+
+
+<ul>
+<li><p>其中$\eqref{eq9}$的不等式来源于：</p>
+<ul>
+<li>对于实数集合$\bf{a},\bf{b}$：</li>
+</ul>
+
+  $$
+  \begin{array}{l}
+  a=\left\{a_{1}, a_{2}, \cdots, a_{n}\right\} \\
+  b=\left\{b_{1}, b_{2}, \cdots, b_{n}\right\}
+  \end{array} \tag{10}
+  $$
+
+  
+
+<ul>
+<li>对于任意$i$，有：</li>
+</ul>
+
+  $$
+  \mathop {\min }\limits_i \left\{ {{a_i} + {b_i}} \right\} \ge \min \{ {\bf{a}}\}  + \min \{ {\bf{b}}\} ,\quad i \in {N^ + } \tag{11}
+  $$
+  
+</li>
+<li><p>原命题得证。</p>
+</li>
+</ul>
+<h4 id="仿射函数"><a href="#仿射函数" class="headerlink" title="仿射函数"></a>仿射函数</h4><blockquote>
+<p>另一种思路是讨论$\eqref{eq2}$的后两项内容</p>
+</blockquote>
+<ul>
+<li>因为对偶问题中$x$视作常数，$\alpha,\beta$为自变量，可以视作：</li>
+</ul>
+
+$$
+\begin{array}{l}
+D(\alpha ,\beta {\rm{|x}}) &= f(x) + \sum\limits_{i = 1}^k {{\alpha _i}} {h_i}(x) + \sum\limits_{j = 1}^l {{\beta _j}} {g_j}(x)\\
+ &= A + \sum\limits_{i = 1}^k {{\alpha _i}} {B_i} + \sum\limits_{j = 1}^l {{\beta _j}} {C_j}
+ \end{array} \tag{12}
+$$
+
+
+
+<ul>
+<li>因此$D(\alpha, \beta)$是调整常数$A,B,C$的仿射函数，仿射函数<strong>既凸且凹</strong>，因此拉格朗日对偶问题具有凹函数性质</li>
+</ul>
+<h3 id="拉格朗日对偶"><a href="#拉格朗日对偶" class="headerlink" title="拉格朗日对偶"></a>拉格朗日对偶</h3><h4 id="原始问题"><a href="#原始问题" class="headerlink" title="原始问题"></a>原始问题</h4><ul>
+<li>考虑$x$的函数：</li>
+</ul>
+
+$$
+P(x)=\max _{\alpha, \beta ; \alpha_{i} \geq 0} L(x, \alpha, \beta) \tag{13}
+$$
+
+
+
+<blockquote>
+<p>这里，$P$表示原始问题。将上式看做$x$ 的函数。</p>
+<p>等式右边可以看做固定$x$ 的情况下，求关于$\alpha, \beta$的函数 $L $的最大值的问题。</p>
+</blockquote>
+<ul>
+<li>可以推出：</li>
+</ul>
+
+$$
+P(x)=\left\{\begin{array}{l}
+f(x), x \text { 满足原始问题约束 } \\
++\infty, \text { otherwise }
+\end{array}\right. \tag{14}
+$$
+
+
+
+<ul>
+<li>考虑极小化问题：</li>
+</ul>
+<p>$$<br>\min _{x} P(x)=\min _{x} \max _{\alpha, \beta ; \alpha \geq 0} L(x, \alpha, \beta) \tag{15} \label{eq15}<br>$$</p>
+<ul>
+<li>式$\eqref{eq15}$与$\eqref{eq7}$等价，因为固定$x$时剩余两项在约束范围内最大值为0，相当于在约束范围内求解$f(x)$的最小值。</li>
+<li>定义原始问题的值为：</li>
+</ul>
+<p>$$<br>p^{*}=\min _{x} P(x) \tag{16}<br>$$</p>
+<h4 id="对偶问题"><a href="#对偶问题" class="headerlink" title="对偶问题"></a>对偶问题</h4><ul>
+<li>延续上文的对偶问题$\eqref{eq7}$</li>
+<li>可以看到事实上对偶问题与原问题为极大极小的求解顺序问题</li>
+<li>定义对偶问题的值：</li>
+</ul>
+
+$$
+d^{*}=\max _{\alpha, \beta ; \alpha_{i} \geq 0} D(\alpha, \beta) \tag{17}
+$$
+
+
+
+<h4 id="原始问题与对偶问题的关系"><a href="#原始问题与对偶问题的关系" class="headerlink" title="原始问题与对偶问题的关系"></a>原始问题与对偶问题的关系</h4><ul>
+<li>因为$\eqref{eq2}$的后两项和不大于0，因此：</li>
+</ul>
+<p>$$<br>d ^ { * } \le p ^ { * } \tag{18}<br>$$</p>
+<ul>
+<li>该性质为弱对偶性（weak duality），该性质在任何情况下都成立</li>
+<li>也因为弱对偶的存在，使得 <strong>对偶问题可以给出原始问题的下界</strong></li>
+<li>与弱对偶性相对应的是强对偶性（strong duality），即：</li>
+</ul>
+<p>$$<br>d^{* } = p^{* } \tag{19}<br>$$</p>
+<ul>
+<li>若强对偶性成立，即原始问题与对偶问题的最优值相等，则可以通过求解对偶问题来得到原始问题的解</li>
+</ul>
+<h3 id="强对偶成立条件"><a href="#强对偶成立条件" class="headerlink" title="强对偶成立条件"></a>强对偶成立条件</h3><blockquote>
+<p>强对偶的性质太过于美妙，如果我们的问题满足强对偶条件，直接求对偶问题就好了</p>
+<p>这里列出两个常见的条件</p>
+</blockquote>
+<h4 id="Convex-Slater"><a href="#Convex-Slater" class="headerlink" title="Convex + Slater"></a>Convex + Slater</h4><ul>
+<li>原问题是凸优化<ul>
+<li>$f(x)$和$g(x)$是凸函数</li>
+<li>$h(x)$是放射函数</li>
+</ul>
+</li>
+<li>存在$x$使得不等式约束严格成立（严格成立不等号）</li>
+</ul>
+<h4 id="KKT-条件"><a href="#KKT-条件" class="headerlink" title="KKT 条件"></a>KKT 条件</h4><blockquote>
+<p>原问题是否为凸函数的两种情况下，KKT的用法不同</p>
+</blockquote>
+<h5 id="原问题非凸"><a href="#原问题非凸" class="headerlink" title="原问题非凸"></a>原问题非凸</h5><blockquote>
+<p>当原问题并非凸优化(或者不清楚、不关心是不是凸优化)时，KKT 条件是一种用来<strong>描述强对偶情况下最优解性质</strong>的条件<br>换而言之，若强对偶性质成立，那么满足最优解的<strong>点</strong>一定满足 KKT 条件；KKT 条件是强对偶一个<strong>必要条件</strong>，但无法作为充分条件来使用</p>
+</blockquote>
+<h5 id="原问题为凸函数"><a href="#原问题为凸函数" class="headerlink" title="原问题为凸函数"></a>原问题为凸函数</h5><blockquote>
+<p>当原问题为凸优化时，KKT 条件在非凸的基础上有多了找到最优点的功能<br>在这种情况下，那么满足 KKT 条件的点一定是原问题和对偶问题的最优解；KKT 条件成了强对偶和最优解的充要条件</p>
+</blockquote>
+<h3 id="参考资料"><a href="#参考资料" class="headerlink" title="参考资料"></a>参考资料</h3><ul>
+<li><a href="https://blog.csdn.net/qq_32742009/article/details/81413068" target="_blank" rel="noopener">https://blog.csdn.net/qq_32742009/article/details/81413068</a></li>
+<li><a href="https://blog.csdn.net/u014540876/article/details/79153913" target="_blank" rel="noopener">https://blog.csdn.net/u014540876/article/details/79153913</a></li>
+<li><a href="https://zhuanlan.zhihu.com/p/45431511" target="_blank" rel="noopener">https://zhuanlan.zhihu.com/p/45431511</a></li>
+<li><a href="https://www.zhihu.com/question/58584814" target="_blank" rel="noopener">https://www.zhihu.com/question/58584814</a></li>
+<li><a href="https://blog.csdn.net/frostime/article/details/90291392" target="_blank" rel="noopener">https://blog.csdn.net/frostime/article/details/90291392</a></li>
+</ul>
+<link rel="stylesheet" href="/css/spoiler.css" type="text/css"><script src="/js/spoiler.js" type="text/javascript" async></script>]]></content>
+      <categories>
+        <category>机器学习</category>
+        <category>优化方法</category>
+      </categories>
+      <tags>
+        <tag>机器学习</tag>
+        <tag>优化方法</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>将训练好的 mmdetection 模型转为 tensorrt 模型</title>
+    <url>/2021/03/17/deep_learning/tensorrt-model-gen-mmdection/tensorrt-model-gen/</url>
+    <content><![CDATA[<blockquote>
+<p>mmdetection 是商汤科技（2018 COCO 目标检测挑战赛冠军）和香港中文大学开源的基于Pytorch实现的深度学习目标检测工具箱，性能强大，运算效率高，配置化编程，比较容易训练、测试。但pytorch模型不易于部署，运算速度还有进一步提升的空间，当前比较有效的方法是将模型转换为行为相同的tensorrt模型，本文记录转换流程。</p>
+</blockquote>
+<a id="more"></a>
+
+<h3 id="任务思路"><a href="#任务思路" class="headerlink" title="任务思路"></a>任务思路</h3><blockquote>
+<p>转换mmdetection 的 pytorch模型到tensorrt模型有多种方法，本文使用 <a href="https://github.com/grimoire/mmdetection-to-tensorrt" target="_blank" rel="noopener">mmdetection-to-tensorrt</a> 库作为核心，完成直接的模型转换。</p>
+<p>该库跳过了通常的 pth -&gt; onnx -&gt; tensorrt 的转换步骤，直接从pth转成tensorrt模型，并且已经成功支持了很多mmdetection 的模型转换。</p>
+</blockquote>
+<details>
+    <summary>Support Model/Module </summary>
+
+<ul>
+<li><input checked="" disabled="" type="checkbox"> Faster R-CNN</li>
+<li><input checked="" disabled="" type="checkbox"> Cascade R-CNN</li>
+<li><input checked="" disabled="" type="checkbox"> Double-Head R-CNN</li>
+<li><input checked="" disabled="" type="checkbox"> Group Normalization</li>
+<li><input checked="" disabled="" type="checkbox"> Weight Standardization</li>
+<li><input checked="" disabled="" type="checkbox"> DCN</li>
+<li><input checked="" disabled="" type="checkbox"> SSD</li>
+<li><input checked="" disabled="" type="checkbox"> RetinaNet</li>
+<li><input checked="" disabled="" type="checkbox"> Libra R-CNN</li>
+<li><input checked="" disabled="" type="checkbox"> FCOS</li>
+<li><input checked="" disabled="" type="checkbox"> Fovea</li>
+<li><input checked="" disabled="" type="checkbox"> CARAFE</li>
+<li><input checked="" disabled="" type="checkbox"> FreeAnchor</li>
+<li><input checked="" disabled="" type="checkbox"> RepPoints</li>
+<li><input checked="" disabled="" type="checkbox"> NAS-FPN</li>
+<li><input checked="" disabled="" type="checkbox"> ATSS</li>
+<li><input checked="" disabled="" type="checkbox"> PAFPN</li>
+<li><input checked="" disabled="" type="checkbox"> FSAF</li>
+<li><input checked="" disabled="" type="checkbox"> GCNet</li>
+<li><input checked="" disabled="" type="checkbox"> Guided Anchoring</li>
+<li><input checked="" disabled="" type="checkbox"> Generalized Attention</li>
+<li><input checked="" disabled="" type="checkbox"> Dynamic R-CNN</li>
+<li><input checked="" disabled="" type="checkbox"> Hybrid Task Cascade</li>
+<li><input checked="" disabled="" type="checkbox"> DetectoRS</li>
+<li><input checked="" disabled="" type="checkbox"> Side-Aware Boundary Localization</li>
+<li><input checked="" disabled="" type="checkbox"> YOLOv3</li>
+<li><input checked="" disabled="" type="checkbox"> PAA</li>
+<li><input disabled="" type="checkbox"> CornerNet(WIP)</li>
+<li><input checked="" disabled="" type="checkbox"> Generalized Focal Loss</li>
+<li><input checked="" disabled="" type="checkbox"> Grid RCNN</li>
+<li><input checked="" disabled="" type="checkbox"> VFNet</li>
+<li><input checked="" disabled="" type="checkbox"> GROIE</li>
+<li><input checked="" disabled="" type="checkbox"> Mask R-CNN(experiment)</li>
+<li><input checked="" disabled="" type="checkbox"> Cascade Mask R-CNN(experiment)</li>
+<li><input checked="" disabled="" type="checkbox"> Cascade RPN</li>
+</ul>
+</details>
+
+<h4 id="完成步骤"><a href="#完成步骤" class="headerlink" title="完成步骤"></a>完成步骤</h4><ul>
+<li>配置环境</li>
+<li>安装tensorrt 7.2.3.4</li>
+<li>安装 mmdetection-to-tensorrt 库并安装依赖</li>
+<li>使用 mmdetection-to-tensorrt 转换模型</li>
+<li>结果测试</li>
+</ul>
+<h3 id="配置环境"><a href="#配置环境" class="headerlink" title="配置环境"></a>配置环境</h3><blockquote>
+<p>本机 gpu Nvidia GTX 1080 服务器</p>
+<p>时间 2021.03</p>
+</blockquote>
+<ul>
+<li><p>操作系统 Ubuntu 16.04</p>
+</li>
+<li><p>Nvidia 显卡驱动 460.39</p>
+</li>
+<li><p>Cuda 版本 11.1</p>
+</li>
+<li><p>Cudnn 版本 8.1.1</p>
+</li>
+</ul>
+<blockquote>
+<p>具体配置方法教程很多，在此不再赘述，需要根据个人具体情况配置</p>
+</blockquote>
+<h3 id="安装-tensorrt并配置环境"><a href="#安装-tensorrt并配置环境" class="headerlink" title="安装 tensorrt并配置环境"></a>安装 tensorrt并配置环境</h3><blockquote>
+<p>选择的版本是 tensorrt 7.2.3.4</p>
+<p>建议Python环境安装 Anaconda</p>
+</blockquote>
+<h4 id="安装-PyCuda"><a href="#安装-PyCuda" class="headerlink" title="安装 PyCuda"></a>安装 PyCuda</h4><figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">pip install pycuda</span><br></pre></td></tr></table></figure>
+
+<h4 id="安装tensorrt"><a href="#安装tensorrt" class="headerlink" title="安装tensorrt"></a>安装tensorrt</h4><ul>
+<li><p>下载tensorrt </p>
+<ul>
+<li><p>链接 <a href="https://developer.nvidia.com/zh-cn/tensorrt" target="_blank" rel="noopener">https://developer.nvidia.com/zh-cn/tensorrt</a></p>
+</li>
+<li><p>选择 TensorRT-7.2.3.4.Ubuntu-16.04.x86_64-gnu.cuda-11.1.cudnn8.1.tar.gz</p>
+</li>
+</ul>
+</li>
+<li><p>解压</p>
+</li>
+</ul>
+<figure class="highlight shell"><table><tr><td class="code"><pre><span class="line">tar zxfv TensorRT-7.2.3.4.Ubuntu-16.04.x86_64-gnu.cuda-11.1.cudnn8.1.tar.gz</span><br></pre></td></tr></table></figure>
+
+<blockquote>
+<p>解压后文件夹内文件：</p>
+<figure class="highlight shell"><table><tr><td class="code"><pre><span class="line"><span class="meta">#</span><span class="bash"> ls</span></span><br><span class="line">TensorRT-Release-Notes.pdf  bin  data  doc  graphsurgeon  include  lib  onnx_graphsurgeon  python  samples  targets  uff</span><br></pre></td></tr></table></figure>
+</blockquote>
+<ul>
+<li>安装tensorrt</li>
+</ul>
+<blockquote>
+<p>根据自己的 Python 版本选择合适的包进行安装</p>
+</blockquote>
+<figure class="highlight shell"><table><tr><td class="code"><pre><span class="line">cd TensorRT-7.2.3.4/python</span><br><span class="line">pip install tensorrt-7.2.3.4-cp37-none-linux_x86_64.whl</span><br></pre></td></tr></table></figure>
+
+<ul>
+<li>安装graphsurgeon wheel</li>
+</ul>
+<figure class="highlight shell"><table><tr><td class="code"><pre><span class="line">cd TensorRT-7.2.3.4/graphsurgeon</span><br><span class="line">pip install graphsurgeon-0.4.5-py2.py3-none-any.whl</span><br></pre></td></tr></table></figure>
+
+<ul>
+<li>配置环境变量</li>
+</ul>
+<figure class="highlight shell"><table><tr><td class="code"><pre><span class="line">export PATH=$PATH:/usr/local/cuda/bin</span><br><span class="line">export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/usr/local/cuda/lib64</span><br><span class="line">export LIBRARY_PATH=$LIBRARY_PATH:/usr/local/cuda/lib64</span><br><span class="line"></span><br><span class="line">export PATH=$PATH:"your_path_to_TensorRT-7.2.3.4"</span><br><span class="line">export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:"your_path_to_TensorRT-7.2.3.4/lib"</span><br></pre></td></tr></table></figure>
+
+<ul>
+<li>测试</li>
+</ul>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">python</span><br><span class="line">import tensorrt</span><br><span class="line">tensorrt.__version__</span><br><span class="line"></span><br><span class="line">--&gt; &#39;7.2.3.4&#39;</span><br></pre></td></tr></table></figure>
+
+<h3 id="安装-mmdetection"><a href="#安装-mmdetection" class="headerlink" title="安装 mmdetection"></a>安装 mmdetection</h3><ul>
+<li>链接 <a href="https://github.com/open-mmlab/mmdetection" target="_blank" rel="noopener">https://github.com/open-mmlab/mmdetection</a></li>
+<li>安装文档 <a href="https://github.com/open-mmlab/mmdetection/blob/master/docs/get_started.md" target="_blank" rel="noopener">https://github.com/open-mmlab/mmdetection/blob/master/docs/get_started.md</a></li>
+</ul>
+<h4 id="安装-mmcv"><a href="#安装-mmcv" class="headerlink" title="安装 mmcv"></a>安装 mmcv</h4><figure class="highlight shell"><table><tr><td class="code"><pre><span class="line">pip install mmcv-full -f https://download.openmmlab.com/mmcv/dist/&#123;cu_version&#125;/&#123;torch_version&#125;/index.html</span><br></pre></td></tr></table></figure>
+
+<h4 id="下载并安装-mmdetection"><a href="#下载并安装-mmdetection" class="headerlink" title="下载并安装 mmdetection"></a>下载并安装 mmdetection</h4><ul>
+<li>下载</li>
+</ul>
+<figure class="highlight shell"><table><tr><td class="code"><pre><span class="line">git clone git@git.zhlh6.cn:open-mmlab/mmdetection.git</span><br></pre></td></tr></table></figure>
+
+<ul>
+<li>配置环境并安装</li>
+</ul>
+<figure class="highlight shell"><table><tr><td class="code"><pre><span class="line">cd mmdetection</span><br><span class="line">pip install -r requirements/build.txt</span><br><span class="line">pip install -v -e .  # or "python setup.py develop"</span><br></pre></td></tr></table></figure>
+
+<h3 id="安装-mmdetection-to-tensorrt"><a href="#安装-mmdetection-to-tensorrt" class="headerlink" title="安装 mmdetection-to-tensorrt"></a>安装 mmdetection-to-tensorrt</h3><ul>
+<li>链接 <a href="https://github.com/grimoire/mmdetection-to-tensorrt" target="_blank" rel="noopener">https://github.com/grimoire/mmdetection-to-tensorrt</a></li>
+</ul>
+<h4 id="安装-torch2trt-dynamic"><a href="#安装-torch2trt-dynamic" class="headerlink" title="安装 torch2trt_dynamic"></a>安装 <a href="https://github.com/grimoire/torch2trt_dynamic" target="_blank" rel="noopener">torch2trt_dynamic</a></h4><figure class="highlight shell"><table><tr><td class="code"><pre><span class="line">git clone git@git.zhlh6.cn:grimoire/torch2trt_dynamic.git</span><br><span class="line">cd torch2trt_dynamic</span><br><span class="line">python setup.py develop</span><br></pre></td></tr></table></figure>
+
+<h4 id="安装-amirstan-plugin"><a href="#安装-amirstan-plugin" class="headerlink" title="安装 amirstan_plugin"></a>安装 <a href="https://github.com/grimoire/amirstan_plugin" target="_blank" rel="noopener">amirstan_plugin</a></h4><figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">git clone --depth&#x3D;1 git@git.zhlh6.cn:grimoire&#x2F;amirstan_plugin.git</span><br><span class="line">cd amirstan_plugin</span><br></pre></td></tr></table></figure>
+
+<ul>
+<li>更新子模块</li>
+</ul>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">git submodule update --init --progress --depth&#x3D;1</span><br></pre></td></tr></table></figure>
+
+<p>讲道理一句话就可以了，不过我在执行这句命令时报错，如果没报错继续下面的步骤</p>
+<details>
+    <summary> 子模块更新报错解决方案 </summary>
+
+
+<blockquote>
+<p>http协议不好用，需要改成git</p>
+</blockquote>
+<ul>
+<li>修改 <code>amirstan_plugin/.gitmodules</code> 文件</li>
+</ul>
+<blockquote>
+<p>将第三行地址改为 <code>git@github.com:NVIDIA/cub.git</code></p>
+</blockquote>
+<figure class="highlight shell"><table><tr><td class="code"><pre><span class="line">[submodule "third_party/cub"]</span><br><span class="line">	path = third_party/cub</span><br><span class="line">	url = git@github.com:NVIDIA/cub.git </span><br><span class="line">	branch = 1.8.0</span><br></pre></td></tr></table></figure>
+
+<ul>
+<li>修改 <code>amirstan_plugin/.git/modules/third_party/cub/config</code></li>
+</ul>
+<blockquote>
+<p>将 <code>remote &quot;origin&quot;</code> 地址改为 <code>git@github.com:NVIDIA/cub.git</code></p>
+</blockquote>
+<figure class="highlight shell"><table><tr><td class="code"><pre><span class="line">[core]</span><br><span class="line">	repositoryformatversion = 0</span><br><span class="line">	filemode = true</span><br><span class="line">	bare = false</span><br><span class="line">	logallrefupdates = true</span><br><span class="line">	worktree = ../../../../third_party/cub</span><br><span class="line">[remote "origin"]</span><br><span class="line">	url = git@github.com:NVIDIA/cub.git </span><br><span class="line">	fetch = +refs/heads/main:refs/remotes/origin/main</span><br><span class="line">[branch "main"]</span><br><span class="line">	remote = origin</span><br><span class="line">	merge = refs/heads/main</span><br></pre></td></tr></table></figure>
+
+<ul>
+<li>再次执行</li>
+</ul>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">git submodule update --init --progress --depth&#x3D;1</span><br></pre></td></tr></table></figure>
+
+</details>
+
+<ul>
+<li>新建build文件夹</li>
+</ul>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">mkdir build</span><br><span class="line">cd build</span><br></pre></td></tr></table></figure>
+
+<ul>
+<li>生成 makefile</li>
+</ul>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">cmake -DTENSORRT_DIR&#x3D;$&#123;your_path_to_tensorrt&#125; ..</span><br></pre></td></tr></table></figure>
+
+<blockquote>
+<p>若输出：</p>
+</blockquote>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">-- Found TensorRT headers at ..&#x2F;TensorRT-7.2.3.4&#x2F;include</span><br><span class="line">-- Find TensorRT libs at  ..&#x2F;TensorRT-7.2.3.4&#x2F;lib&#x2F;libnvinfer.so; ..&#x2F;TensorRT-7.2.3.4&#x2F;lib&#x2F;libnvparsers.so; ..&#x2F;TensorRT-7.2.3.4&#x2F;lib&#x2F;libnvinfer_plugin.so</span><br><span class="line">-- Found TENSORRT:  ..&#x2F;TensorRT-7.2.3.4&#x2F;include  </span><br><span class="line">-- WITH_DEEPSTREAM: false</span><br><span class="line">-- GPU_ARCHS is not defined. Generating CUDA code for default SMs: 35;53;61;70;75;80</span><br><span class="line">-- Configuring done</span><br><span class="line">-- Generating done</span><br><span class="line">-- Build files have been written to:  ..&#x2F;amirstan_plugin&#x2F;build</span><br></pre></td></tr></table></figure>
+
+<blockquote>
+<p>则说明 makefile 生成成功，保存在 <code>build</code> 文件夹下</p>
+</blockquote>
+<ul>
+<li>编译</li>
+</ul>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">make -j10</span><br></pre></td></tr></table></figure>
+
+<p>此时在<code>build/lib</code>文件夹下生成了很多文件</p>
+<figure class="highlight shell"><table><tr><td class="code"><pre><span class="line"><span class="meta">#</span><span class="bash"> ls</span></span><br><span class="line">libadaptivePoolPlugin_static.a  libcarafeFeatureReassemblePlugin_static.a  libexViewPlugin_static.a             liblayerNormPlugin_static.a     libroiPoolPlugin_static.a         libtorchEmbeddingPlugin_static.a </span><br><span class="line">libamir_cuda_util.a             libdeformableConvPlugin_static.a           libgridAnchorDynamicPlugin_static.a  libmeshGridPlugin_static.a      libtorchBmmPlugin_static.a        libtorchFlipPlugin_static.a</span><br><span class="line">libamirstan_plugin.so           libdeformablePoolPlugin_static.a           libgridSamplePlugin_static.a         librepeatDimsPlugin_static.a    libtorchCumMaxMinPlugin_static.a  libtorchGatherPlugin_static.a</span><br><span class="line">libbatchedNMSPlugin_static.a    libdelta2bboxPlugin_static.a               libgroupNormPlugin_static.a          libroiExtractorPlugin_static.a  libtorchCumPlugin_static.a        libtorchNMSPlugin_static.a</span><br></pre></td></tr></table></figure>
+
+<ul>
+<li>配置环境变量</li>
+</ul>
+<figure class="highlight shell"><table><tr><td class="code"><pre><span class="line">export AMIRSTAN_LIBRARY_PATH=&lt;amirstan_plugin_root&gt;/build/lib</span><br></pre></td></tr></table></figure>
+
+<h4 id="安装-mmdetection-to-tensorrt-1"><a href="#安装-mmdetection-to-tensorrt-1" class="headerlink" title="安装 mmdetection-to-tensorrt"></a>安装 mmdetection-to-tensorrt</h4><blockquote>
+<p>进入 <code>mmdetection-to-tensorrt</code> 根目录</p>
+</blockquote>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">python setup.py develop</span><br></pre></td></tr></table></figure>
+
+<ul>
+<li>测试是否成功</li>
+</ul>
+<figure class="highlight shell"><table><tr><td class="code"><pre><span class="line"><span class="meta">#</span><span class="bash"> pip show mmdet2trt</span></span><br><span class="line"></span><br><span class="line"><span class="meta">--&gt;</span></span><br><span class="line">Name: mmdet2trt</span><br><span class="line">Version: 0.3.0</span><br><span class="line">Summary: mmdetection to tensorrt converter</span><br><span class="line">Home-page: UNKNOWN</span><br><span class="line">Author: UNKNOWN</span><br><span class="line">Author-email: UNKNOWN</span><br><span class="line">License: UNKNOWN</span><br><span class="line">Location: /workspace/nfs/tensorrt_test/mmdetection-to-tensorrt</span><br><span class="line">Requires: </span><br><span class="line">Required-by:</span><br></pre></td></tr></table></figure>
+
+
+
+<h3 id="测试"><a href="#测试" class="headerlink" title="测试"></a>测试</h3><ul>
+<li><p>在 <code>mmdetection-to-tensorrt</code> 项目中，运行 <code>demo</code> 文件夹下的 <code>inference.py</code> 文件</p>
+</li>
+<li><p>修改<code>inference.py</code> 文件中的 parser 参数 ：</p>
+<ul>
+<li>img：测试图像路径</li>
+<li>config：mmdetection 的模型配置文件</li>
+<li>checkpoint：模型 pth 文件路径</li>
+<li>save_path：tensorrt 模型存放路径</li>
+<li>score-thr：检测有效阈值</li>
+</ul>
+</li>
+<li><p>配置好后运行该文件即可以生成模型在测试图像上的检测结果</p>
+</li>
+</ul>
+<h3 id="参考资料"><a href="#参考资料" class="headerlink" title="参考资料"></a>参考资料</h3><ul>
+<li><p><a href="https://github.com/grimoire/mmdetection-to-tensorrt" target="_blank" rel="noopener">https://github.com/grimoire/mmdetection-to-tensorrt</a></p>
+</li>
+<li><p><a href="https://zhuanlan.zhihu.com/p/165359425" target="_blank" rel="noopener">https://zhuanlan.zhihu.com/p/165359425</a></p>
+</li>
+</ul>
+<link rel="stylesheet" href="/css/spoiler.css" type="text/css"><script src="/js/spoiler.js" type="text/javascript" async></script>]]></content>
+      <categories>
+        <category>深度学习</category>
+        <category>pytorch</category>
+        <category>tensorrt</category>
+      </categories>
+      <tags>
+        <tag>深度学习</tag>
+        <tag>pytorch</tag>
+        <tag>tensorrt</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>拉格朗日乘数法</title>
+    <url>/2021/03/13/machine_learning/lagrange-multiplier/lagrange-multiplier/</url>
+    <content><![CDATA[<blockquote>
+<p>在数学最优<a href="https://baike.baidu.com/item/%E9%97%AE%E9%A2%98/1067365" target="_blank" rel="noopener">问题</a>中，拉格朗日乘数法（以数学家<a href="https://baike.baidu.com/item/%E7%BA%A6%E7%91%9F%E5%A4%AB%C2%B7%E8%B7%AF%E6%98%93%E6%96%AF%C2%B7%E6%8B%89%E6%A0%BC%E6%9C%97%E6%97%A5/7070424" target="_blank" rel="noopener">约瑟夫·路易斯·拉格朗日</a>命名）是一种寻找变量受一个或多个条件所限制的<a href="https://baike.baidu.com/item/%E5%A4%9A%E5%85%83%E5%87%BD%E6%95%B0/2498728" target="_blank" rel="noopener">多元函数</a>的<a href="https://baike.baidu.com/item/%E6%9E%81%E5%80%BC/5330918" target="_blank" rel="noopener">极值</a>的方法。这种方法将一个有n 个变量与k 个<a href="https://baike.baidu.com/item/%E7%BA%A6%E6%9D%9F%E6%9D%A1%E4%BB%B6/1046571" target="_blank" rel="noopener">约束条件</a>的<a href="https://baike.baidu.com/item/%E6%9C%80%E4%BC%98%E5%8C%96%E9%97%AE%E9%A2%98/9632567" target="_blank" rel="noopener">最优化问题</a>转换为一个有n + k个变量的方程组的极值问题，其变量不受任何约束。本文介绍拉格朗日乘数法（Lagrange multiplier）。</p>
+</blockquote>
+<a id="more"></a>
+
+<h3 id="概述"><a href="#概述" class="headerlink" title="概述"></a>概述</h3><ul>
+<li><p>我们擅长解决的是无约束极值求解问题，这类问题仅需对所有变量求偏导，使得所有偏导数为0，即可找到所有极值点和鞍点。我们解决带约束条件的问题时便会尝试将其转化为无约束优化问题</p>
+</li>
+<li><p>事实上如果我们可以通过g得到某个变量的表示，例如$x_1 = h(x_2, …, x_n)$，将该式带入$y$即可抓换为无约束优化（初高中就是这么做的，所谓消元法是也），但有的时候我们无法得到这样的表示，便需要借助拉格朗日乘数法来避免消元法的困境。</p>
+</li>
+</ul>
+<blockquote>
+<p>作为一种优化算法，拉格朗日乘数法主要用于解决约束优化问题，它的基本思想就是通过引入拉格朗日乘子来将含有$n$个变量和$k个$约束条件的约束优化问题转化为含有$（n+k）$个变量的无约束优化问题。拉格朗日乘子背后的数学意义是其为约束方程梯度线性组合中每个向量的系数。</p>
+</blockquote>
+<h3 id="思想"><a href="#思想" class="headerlink" title="思想"></a>思想</h3><ul>
+<li>考虑二元函数$f(x,y)$，在约束$g(x,y)=c$下的极值</li>
+<li>首先我们可以绘制出$f(x,y)$的一层层等高线，当等高线与$g(x,y)=c$相切时即可能是该问题的极值点</li>
+</ul>
+<p><img src="https://photos.zywvvd.com/images_matrixtime/20210324141929.jpg" alt="拉格朗日乘数法示意图（转自知乎）"></p>
+<h3 id="拉格朗日乘数法"><a href="#拉格朗日乘数法" class="headerlink" title="拉格朗日乘数法"></a>拉格朗日乘数法</h3><h4 id="单个等式约束"><a href="#单个等式约束" class="headerlink" title="单个等式约束"></a>单个等式约束</h4><blockquote>
+<p>考虑$n$元函数$y=f(x_1, x_2,…,x_n)$，在等式约束$g(x_1, x_2,…,x_n)=0$ 下的极值点求解问题</p>
+</blockquote>
+<ul>
+<li>在极值点，必有$y$和$g$法向量平行</li>
+<li>$y$的法向量为：</li>
+</ul>
+
+$$
+[\frac{{\partial y}}{{\partial {x_1}}},\frac{{\partial y}}{{\partial {x_2}}},...,\frac{{\partial y}}{{\partial {x_n}}}]
+$$
+
+
+<ul>
+<li>$g$的法向量为：</li>
+</ul>
+
+$$
+[\frac{{\partial g}}{{\partial {x_1}}},\frac{{\partial g}}{{\partial {x_2}}},...,\frac{{\partial g}}{{\partial {x_n}}}]
+$$
+
+
+<ul>
+<li>二者平行，则存在常数$\lambda$使得：</li>
+</ul>
+
+$$
+[\frac{{\partial y}}{{\partial {x_1}}},\frac{{\partial y}}{{\partial {x_2}}},...,\frac{{\partial y}}{{\partial {x_n}}}] + \lambda [\frac{{\partial g}}{{\partial {x_1}}},\frac{{\partial g}}{{\partial {x_2}}},...,\frac{{\partial g}}{{\partial {x_n}}}] = 0
+$$
+
+
+<ul>
+<li>即：</li>
+</ul>
+
+$$
+\frac{{\partial y}}{{\partial {x_i}}} + \lambda \frac{{\partial g}}{{\partial {x_i}}} = 0,1 \le i \le n
+$$
+
+
+<ul>
+<li>这样我们就得到了$n$个等式方程，再加上$g(x_1, x_2,…,x_n)=0$一起构成$n+1$个方程的方程组，未知数为$[x_1,x_2,…,x_n,\lambda]$共$n+1$个，方程组的解即为所有极值点和鞍点的集合，每组解中的$\lambda$即为两个平行法向量的倍数，该值在等式约束轨迹穿过$y$的极值点时为0。</li>
+</ul>
+<h4 id="多个等式约束"><a href="#多个等式约束" class="headerlink" title="多个等式约束"></a>多个等式约束</h4><blockquote>
+<p>原理与单个等式约束情况类似</p>
+<p>考虑$n$元函数$y=f(x_1, x_2,…,x_n)$，在$m$个等式约束($g_i(x_1, x_2,…,x_n)=0, 1 \le i \le m$) 下的极值点求解问题</p>
+</blockquote>
+<ul>
+<li>$n$维空间由$m$个条件约束，会确定一个$n-m$维的曲面，我们讨论$y$在这个曲面上的极值问题</li>
+<li>这个曲面由$m$个$n-1$维曲面交织而成，存在$m$个法向量，这$m$个法向量构成了$n-m$维曲面的法空间</li>
+<li>在问题的极值点，$y$的法向量必然落在$n-m$维曲面的法空间之内，也就是说$y$的法向量可以由$n-m$维曲面的$m$个法向量的线性组合表示：</li>
+</ul>
+
+$$
+[\frac{{\partial y}}{{\partial {x_1}}},\frac{{\partial y}}{{\partial {x_2}}},...,\frac{{\partial y}}{{\partial {x_n}}}] + \sum\limits_{i = 1}^m {{\lambda _i}[\frac{{\partial {g_i}}}{{\partial {x_1}}},\frac{{\partial {g_i}}}{{\partial {x_2}}},...,\frac{{\partial {g_i}}}{{\partial {x_n}}}]}  = 0
+$$
+
+
+<ul>
+<li>即：</li>
+</ul>
+
+$$
+\frac{{\partial y}}{{\partial {x_j}}} + \sum\limits_{i = 1}^m {{\lambda _i}\frac{{\partial {g_i}}}{{\partial {x_j}}}}  = 0,1 \le j \le n
+$$
+
+
+<ul>
+<li>此时我们得到了$n$个等式方程，再加上$m$个等式约束($g_i(x_1, x_2,…,x_n)=0, 1 \le i \le m$) 一起构成$n+m$个方程的方程组，未知数为$[x_1,x_2,…,x_n,\lambda_1,\lambda_2,…,\lambda_m]$共$n+m$个，方程组的解即为所有极值点和鞍点的集合，每组解中的$\lambda_i$的值即为$y$的法向量在$n-m$维曲面的法空间中的线性组合系数。</li>
+</ul>
+<h4 id="单个不等式约束"><a href="#单个不等式约束" class="headerlink" title="单个不等式约束"></a>单个不等式约束</h4><blockquote>
+<p>不等式约束其实是等式约束的扩展，等式约束表示一组确定的等高线（面），不等式约束则表示等高线（面）的某一边区域</p>
+<p>考虑$n$元函数$y=f(x_1, x_2,…,x_n)$，在不等式约束$g(x_1, x_2,…,x_n) \le 0$ 下的极值点求解问题</p>
+</blockquote>
+<ul>
+<li>若该问题有解，那么有两种情况</li>
+</ul>
+<ol>
+<li>解在 $g(x_1, x_2,…,x_n) = 0$ 曲面上</li>
+<li>解在$g(x_1, x_2,…,x_n) &lt; 0$ 范围内</li>
+</ol>
+<ul>
+<li>当解在 $g(x_1, x_2,…,x_n) = 0$ 曲面上时，说明该不等式对$y$取最小值的区域进行了限制，最终解落在了$y$和约束相切的位置，那么此时二者的法向量方向必然相反（否则$y$会在$g(x_1, x_2,…,x_n) &lt; 0$ 范围内找到更小的值），按照等式情况构建方程：</li>
+</ul>
+
+$$
+\frac{{\partial y}}{{\partial {x_i}}} + \lambda \frac{{\partial g}}{{\partial {x_i}}} = 0,1 \le i \le n
+$$
+
+
+<ul>
+<li><p>便有结论：$\lambda \ge 0$</p>
+</li>
+<li><p>当解在$g(x_1, x_2,…,x_n) &lt; 0$ 范围内时，事实上这个不等式没有对$y$的求解起到约束作用，此时相当于$\lambda = 0$</p>
+</li>
+<li><p>而且两种情况下分别有 $g(x_1, x_2,…,x_n) = 0$和$\lambda = 0$，也就是二者必有一方为0</p>
+</li>
+<li><p>因此对于单个不等式约束的拉格朗日乘数法，仅需增加限制条件： $\lambda \ge 0$和$\lambda g(x_1, x_2,…,x_n) = 0$</p>
+</li>
+</ul>
+<h4 id="多个不等式约束"><a href="#多个不等式约束" class="headerlink" title="多个不等式约束"></a>多个不等式约束</h4><blockquote>
+<p>考虑$n$元函数$y=f(x_1, x_2,…,x_n)$，在$m$个不等式约束($g_i(x_1, x_2,…,x_n)\le0, 1 \le i \le m$) 下的极值点求解问题</p>
+</blockquote>
+<ul>
+<li>本质上与单个不等式约束相同，只是数量变多了</li>
+<li>此情况下需要在等式拉格朗日乘数法基础上增加条件：</li>
+</ul>
+
+$$
+\begin{aligned}
+\lambda_i &\ge 0,1 \le i \le m\\
+\lambda_ig_i &= 0,1 \le i \le m
+\end{aligned}
+$$
+
+
+<h3 id="算法描述"><a href="#算法描述" class="headerlink" title="算法描述"></a>算法描述</h3><ul>
+<li>基于上述原理，提出了拉格朗日乘数法：</li>
+</ul>
+<ol start="0">
+<li><p>考虑$n$元函数$y=f(x_1, x_2,…,x_n)$，在$m_1$个等式约束($g_i(x_1, x_2,…,x_n)=0, 1 \le i \le m_1$) 、$m_2$个不等式约束($h_j(x_1, x_2,…,x_n)\le0, 1 \le j \le m_2$) 下的极值点求解问题</p>
+</li>
+<li><p>加入常数$\lambda,\mu$构造方程：</p>
+</li>
+</ol>
+
+$$
+z = f({x_1},{x_2},...,{x_n}) + \sum\limits_{i = 1}^{{m_1}} {{\lambda _i}{g_i}({x_1},{x_2},...,{x_n})}  + \sum\limits_{j = 1}^{{m_2}} {{\mu _j}{h_j}({x_1},{x_2},...,{x_n})}
+$$
+
+
+<ol start="2">
+<li>对所有变量求偏导，并令导数为0：</li>
+</ol>
+
+$$
+\begin{aligned}
+\frac{{\partial z}}{{\partial {x_i}}} &= 0\\
+\frac{{\partial y}}{{\partial {x_k}}} + \sum\limits_{i = 1}^{{m_1}} {{\lambda _i}\frac{{\partial g}}{{\partial {x_k}}}}  + \sum\limits_{j = 1}^{{m_1}} {{\mu _j}\frac{{\partial h}}{{\partial {x_k}}}} {\rm{ }} &= 0
+\end{aligned}
+$$
+
+
+<blockquote>
+<p>其中：$1 \le k \le n$</p>
+</blockquote>
+<ol start="3">
+<li>将上述$n$个方程与$m_1$个等式约束方程$g_i(x_1, x_2,…,x_n)=0, 1 \le i \le m_1$ 联立</li>
+<li>将上述$n+m_1$个方程与$\mu_j h_j=0, 1 \le j \le m_2$联立，得到$n+m_1+m_2$个方程</li>
+<li>加上限制条件$\mu_j \ge 0$，$h_j \le 0$$, 1 \le j \le m_2$</li>
+<li>在限制条件下解$n+m_1+m_2$元方程即可得到极值点与鞍点集合</li>
+<li>从所有解中筛选出极值点</li>
+</ol>
+<h3 id="KKT条件"><a href="#KKT条件" class="headerlink" title="KKT条件"></a>KKT条件</h3><ul>
+<li>上述$n+m_1+m_2$元方程与限制条件即为<code>KKT条件</code></li>
+<li><code>KKT</code>条件是拉格朗日函数取极值时的必要条件</li>
+</ul>
+
+$$
+\left\{\begin{array}{l}
+\nabla f+\sum_{i}^{m_1} \lambda_{i} \nabla g_{i}+\sum_{j}^{m_2} \mu_{j} \nabla h_{j}=0 \\
+g_{i}=0,  \\
+h_{j} \leq 0,  \\
+
+\mu_{j} \geq 0, \\
+\mu_{j} h_{j}=0\\
+\end{array}\right.
+$$
+
+
+<blockquote>
+<p>其中 $i \in { 1,2, \cdots, m_1}$ ，$j \in { 1,2, \cdots, m_2}$</p>
+</blockquote>
+<ul>
+<li>总结一下所有条件的含义：</li>
+</ul>
+<table>
+<thead>
+<tr>
+<th>内容</th>
+<th>含义</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>$\nabla f+\sum_{i}^{m_1} \lambda_{i} \nabla g_{i}+\sum_{j}^{m_2} \mu_{j} \nabla h_{j}=0$</td>
+<td>求解极值需要在各个自变量方向上导数为0</td>
+</tr>
+<tr>
+<td>$g_{i}=0$</td>
+<td>等式约束</td>
+</tr>
+<tr>
+<td>$h_{j} \le 0$</td>
+<td>不等式约束</td>
+</tr>
+<tr>
+<td>$\mu_{j} \geq 0$</td>
+<td>不等式约束时的两种情况： <br />1. 不等式约束无效($\mu_{j} = 0$) <br />2. 不等式分界面法向量与原函数法向量方向相反($\mu_{j} &gt; 0$)</td>
+</tr>
+<tr>
+<td>$\mu_{j} h_{j}=0$</td>
+<td>不等式约束时的两种情况： <br />1. 不等式约束无效，极值点在$h_{j} &lt; 0$范围内 ($\mu_{j} = 0$) <br />2. 不等式约束有效，极值点在$h_{j} = 0$曲面上($h_{j} = 0$)</td>
+</tr>
+</tbody></table>
+<h3 id="参考资料"><a href="#参考资料" class="headerlink" title="参考资料"></a>参考资料</h3><ul>
+<li><p><a href="https://baike.baidu.com/item/%E6%8B%89%E6%A0%BC%E6%9C%97%E6%97%A5%E4%B9%98%E6%95%B0%E6%B3%95/8550443?fr=aladdin" target="_blank" rel="noopener">https://baike.baidu.com/item/%E6%8B%89%E6%A0%BC%E6%9C%97%E6%97%A5%E4%B9%98%E6%95%B0%E6%B3%95/8550443?fr=aladdin</a></p>
+</li>
+<li><p><a href="https://www.zhihu.com/question/38586401" target="_blank" rel="noopener">https://www.zhihu.com/question/38586401</a></p>
+</li>
+<li><p><a href="https://www.zhihu.com/question/359162625" target="_blank" rel="noopener">https://www.zhihu.com/question/359162625</a></p>
+</li>
+<li><p><a href="https://www.zhihu.com/question/23311674/answer/468804362" target="_blank" rel="noopener">https://www.zhihu.com/question/23311674/answer/468804362</a></p>
+</li>
+<li><p><a href="https://blog.csdn.net/johnnyconstantine/article/details/46335763" target="_blank" rel="noopener">https://blog.csdn.net/johnnyconstantine/article/details/46335763</a></p>
+</li>
+</ul>
+<link rel="stylesheet" href="/css/spoiler.css" type="text/css"><script src="/js/spoiler.js" type="text/javascript" async></script>]]></content>
+      <categories>
+        <category>机器学习</category>
+        <category>优化方法</category>
+      </categories>
+      <tags>
+        <tag>机器学习</tag>
+        <tag>优化方法</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>正定，半正定矩阵</title>
+    <url>/2021/03/13/math/linear_algebra/cov-pos-sem/cov-pos-sem/</url>
+    <content><![CDATA[<blockquote>
+<p>本文介绍正定矩阵和半正定矩阵。</p>
+</blockquote>
+<a id="more"></a>
+
+<h3 id="定义"><a href="#定义" class="headerlink" title="定义"></a>定义</h3><blockquote>
+<p>正定和半正定这两个词的英文分别是positive definite和positive semi-definite，其中，definite是一个形容词，表示“明确的、确定的”等意思。</p>
+</blockquote>
+<h4 id="正定"><a href="#正定" class="headerlink" title="正定"></a>正定</h4><ul>
+<li>给定一个大小为$n \times n$ 的实方阵$A$ ，若对于任意长度为$n$的非零向量$x$ ，有$x^TAx&gt;0$ 恒成立，则矩阵$A$是一个正定矩阵。</li>
+<li>此时，若$A$为对称方阵，则称$A$为对称正定矩阵。</li>
+</ul>
+<h4 id="半正定"><a href="#半正定" class="headerlink" title="半正定"></a>半正定</h4><ul>
+<li>给定一个大小为$n \times n$ 的实方阵$A$ ，若对于任意长度为$n$的非零向量$x$ ，有$x^TAx  \ge  0$ 恒成立，则矩阵$A$是一个半正定矩阵。</li>
+<li>此时，若$A$为对称方阵，则称$A$为对称半正定矩阵。</li>
+</ul>
+<blockquote>
+<p>可以看到半正定矩阵包含了正定矩阵，仅多出了等于零的一种情况，类似于正数和非负数的关系。</p>
+</blockquote>
+<h3 id="性质"><a href="#性质" class="headerlink" title="性质"></a>性质</h3><blockquote>
+<p>以正定矩阵为例，半正定矩阵仅多了等于零的情况。</p>
+</blockquote>
+<ul>
+<li><p>正定矩阵的行列式恒为正；</p>
+</li>
+<li><p><a href="https://baike.baidu.com/item/%E5%AE%9E%E5%AF%B9%E7%A7%B0%E7%9F%A9%E9%98%B5/4773879" target="_blank" rel="noopener">实对称矩阵</a>A正定当且仅当A与单位矩阵合同；</p>
+</li>
+<li><p>若A是正定矩阵，则A的逆矩阵也是正定矩阵；</p>
+</li>
+<li><p>两个正定矩阵的和是正定矩阵；</p>
+</li>
+<li><p>正实数与正定矩阵的乘积是正定矩阵。</p>
+</li>
+</ul>
+<h3 id="等价命题"><a href="#等价命题" class="headerlink" title="等价命题"></a>等价命题</h3><blockquote>
+<p>对于n阶实对称矩阵A，下列条件是等价的（以正定矩阵为例）：</p>
+</blockquote>
+<ul>
+<li><p>A是正定矩阵；</p>
+</li>
+<li><p>A的一切<a href="https://baike.baidu.com/item/%E9%A1%BA%E5%BA%8F%E4%B8%BB%E5%AD%90%E5%BC%8F/3167642" target="_blank" rel="noopener">顺序主子式</a>均为正；</p>
+</li>
+<li><p>A的一切主子式均为正；</p>
+</li>
+<li><p>A的特征值均为正；</p>
+</li>
+<li><p>存在实可逆矩阵C，使A=C′C；</p>
+</li>
+<li><p>存在秩为n的m×n实矩阵B，使A=B′B；</p>
+</li>
+<li><p>存在主对角线元素全为正的实三角矩阵R，使A=R′R 。</p>
+</li>
+</ul>
+<h3 id="协方差矩阵半正定"><a href="#协方差矩阵半正定" class="headerlink" title="协方差矩阵半正定"></a>协方差矩阵半正定</h3><ul>
+<li>在概率统计中，多维变量的协方差矩阵是对称矩阵，事实上同时它也是半正定矩阵：</li>
+</ul>
+<h4 id="推导"><a href="#推导" class="headerlink" title="推导"></a>推导</h4><ul>
+<li>考虑一个由$n$个$m$维向量刻画的分布，即共$n$条数据，每条数据由一个$m$维向量表示：</li>
+</ul>
+
+$$
+X = \left[ {\begin{array}{*{20}{c}}
+{{x_{11}}}&{{x_{12}}}& \cdots &{{x_{1n}}}\\
+{{x_{21}}}&{{x_{22}}}&{}&{{x_{2n}}}\\
+\vdots &{}& \ddots & \vdots \\
+{{x_{m1}}}&{{x_{m2}}}& \cdots &{{x_{mn}}}
+\end{array}} \right]
+$$
+
+
+<ul>
+<li>$X$的均值为${\mu _X}$</li>
+<li>$X$的协方差矩阵为:</li>
+</ul>
+<p>$$<br>\sum\nolimits_X  =  \frac{1}{n}(X - {\mu _X}){(X - {\mu _X})^T}<br>$$</p>
+<ul>
+<li>协方差矩阵 $\Sigma_{X}$，对其进行SVD分解：</li>
+</ul>
+<p>$$<br>{\Sigma_X} = U \Sigma {V ^ T }<br>$$</p>
+<ul>
+<li>由于 $\Sigma_{X}$ 是对称矩阵，可以得到：</li>
+</ul>
+<p>$$<br>U=V<br>$$</p>
+<ul>
+<li>而且$U$是正交矩阵，有：</li>
+</ul>
+
+$$
+U^T{\Sigma _X}U = \Sigma
+$$
+
+$$
+\Sigma  = {U^T}(X - {\mu _X}){(X - {\mu _X})^T}U
+$$
+
+$$
+\Sigma  = ({U^T}X - {U^T}{\mu _X}){({U^T}X - {U^T}{\mu _X})^T}
+$$
+
+
+
+<ul>
+<li>令$Y = {U^T}X - {U^T}{\mu _X}$：</li>
+</ul>
+<p>$$<br>\Sigma  = Y{Y^T}<br>$$</p>
+<ul>
+<li><p>由于$\Sigma$是特征值为对角线元素的对角阵，因此对角线外元素为0，表示$Y$中向量相互之间不相关。</p>
+</li>
+<li><p>对于任意一个$\Sigma$中的特征值$\lambda_i$，计算公式为：</p>
+</li>
+</ul>
+<p>$$<br>{\lambda _ i } = { Y _ i } { Y _ i } ^ T = \sum \limits_ {j = 1} ^n { {Y_{ij} } ^ 2}  \ge 0<br>$$</p>
+<ul>
+<li>因此协方差矩阵的特征值非负，是半正定矩阵。</li>
+</ul>
+<h3 id="参考资料"><a href="#参考资料" class="headerlink" title="参考资料"></a>参考资料</h3><ul>
+<li><p><a href="https://zhuanlan.zhihu.com/p/44860862" target="_blank" rel="noopener">https://zhuanlan.zhihu.com/p/44860862</a></p>
+</li>
+<li><p><a href="https://baike.baidu.com/item/%E6%AD%A3%E5%AE%9A%E7%9F%A9%E9%98%B5/11030459?fr=aladdin" target="_blank" rel="noopener">https://baike.baidu.com/item/%E6%AD%A3%E5%AE%9A%E7%9F%A9%E9%98%B5/11030459?fr=aladdin</a></p>
+</li>
+</ul>
+<link rel="stylesheet" href="/css/spoiler.css" type="text/css"><script src="/js/spoiler.js" type="text/javascript" async></script>]]></content>
+      <categories>
+        <category>math</category>
+        <category>linear_algebra</category>
+      </categories>
+      <tags>
+        <tag>math</tag>
+        <tag>linear_algebra</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>正交-不相关-独立</title>
+    <url>/2021/03/12/math/probability/orthogonal-independent-uncorrelation/orthogonal-independent-uncorrelation/</url>
+    <content><![CDATA[<blockquote>
+<p>本文介绍随机变量中正交、不相关、独立的区别和联系。</p>
+</blockquote>
+<a id="more"></a>
+
+<h3 id="概述"><a href="#概述" class="headerlink" title="概述"></a>概述</h3><blockquote>
+<p>三者均是描述随机变量之间关系的概念，看似都可以表示两个随机变量的疏远关系，但定义和约束均有不同。</p>
+</blockquote>
+<ul>
+<li>考察$m$维随机变量$X,Y$之间的关系。</li>
+</ul>
+<h3 id="定义"><a href="#定义" class="headerlink" title="定义"></a>定义</h3><h4 id="正交"><a href="#正交" class="headerlink" title="正交"></a>正交</h4><blockquote>
+<p>定义$R(X, Y) = E[XY]$为相关函数：若$R(X, Y)=0$，称$X,Y$正交</p>
+</blockquote>
+<h4 id="不相关"><a href="#不相关" class="headerlink" title="不相关"></a>不相关</h4><blockquote>
+<p>定义 $E[XY] = E[X]E[Y]$，则$X,Y$不相关</p>
+</blockquote>
+<ul>
+<li>$X,Y$的协方差：</li>
+</ul>
+<p>$$<br>Cov(X,Y)=E[XY]- E[X]E[Y]<br>$$</p>
+<blockquote>
+<p> 不相关也可以用协方差为0表示</p>
+</blockquote>
+<ul>
+<li>$X,Y$的相关系数：</li>
+</ul>
+<p>$$<br>r(X, Y)=\frac{\operatorname{Cov}(X, Y)}{\sqrt{\operatorname{Var}[X] \operatorname{Var}[Y]}}<br>$$</p>
+<blockquote>
+<p>不相关也可以用相关系数为0表示</p>
+</blockquote>
+<h4 id="独立"><a href="#独立" class="headerlink" title="独立"></a>独立</h4><blockquote>
+<p>独立一般用他们的概率密度函数来表示。联合分布等于他们各自的独立边缘分布的乘积，则称为独立：</p>
+</blockquote>
+<p>$$<br>p(X,Y) = p(X)p(Y)<br>$$</p>
+<h3 id="关系"><a href="#关系" class="headerlink" title="关系"></a>关系</h3><h4 id="独立-gt-不相关"><a href="#独立-gt-不相关" class="headerlink" title="独立 -&gt; 不相关"></a>独立 -&gt; 不相关</h4><blockquote>
+<p>独立是对变量更严苛的要求，如果两个随机变量独立，则必定不相关，也就是说独立是不相关的充分不必要条件。</p>
+</blockquote>
+<ul>
+<li>若已知$X,Y$联合概率密度$f(x, y)$等于二者边缘密度函数$g(x), h(y)$的乘积，则有：</li>
+</ul>
+
+$$
+E (X,Y)=\iint x y f(x, y) d x d y=\iint x y g(x) h(y) d x d y=\int x g(x) d x \int y h(y) d y=E (X) E(Y)
+$$
+
+
+
+<ul>
+<li>因此独立变量不相关，而相反不相关无法直接推导出独立</li>
+</ul>
+<h4 id="不相关-–高斯分布–-gt-独立"><a href="#不相关-–高斯分布–-gt-独立" class="headerlink" title="不相关 –高斯分布–&gt; 独立"></a>不相关 –高斯分布–&gt; 独立</h4><blockquote>
+<p>在随机变量服从高斯分布时，不相关可以推导出独立：</p>
+</blockquote>
+<ul>
+<li>我们此时考虑稍复杂一些的情况，$X$为$n$维随机变量：</li>
+</ul>
+<p>$$<br>X^T=[x_1,x_2,…,x_n]<br>$$</p>
+<ul>
+<li>随机变量之间两两不相关，并且服从高斯分布：</li>
+</ul>
+
+$$
+Cov(x_i,x_j)=0,i \ne j
+$$
+
+$$
+x_i \sim N\left(\mu_i, \sigma_i^{2}\right)
+$$
+
+
+
+<ul>
+<li>那么此时$X$的联合概率密度函数为：</li>
+</ul>
+
+$$
+f\left( {{x_1},{x_x} \ldots ,{x_n}} \right) = \frac{1}{{\sqrt {{{\left( {2\pi } \right)}^n}} {{\left| {\bf{\Sigma }} \right|}^{\frac{1}{2}}}}}{e^{ - \frac{1}{2}{{({\bf{X}} - {\bf{\mu }})}^T}{{\bf{\Sigma }}^{ - 1}}({\bf{X}} - {\bf{\mu }})}}
+$$
+
+
+<ul>
+<li>其中${\bf{\Sigma } }$为协方差矩阵，因为随机变量之间两两不相关：</li>
+</ul>
+
+$$
+{\bf{\Sigma }} = \left( {\begin{array}{*{20}{c}}
+{\sigma _1^2}&{}&{}&{}\\
+{}&{\sigma _2^2}&{}&{}\\
+{}&{}& \ddots &{}\\
+{}&{}&{}&{\sigma _n^2}
+\end{array}} \right)
+$$
+
+
+<ul>
+<li>其中$\sigma_i $为$x_i$的标准差，那么联合概率密度函数可以写为：</li>
+</ul>
+
+$$
+\begin{aligned}
+f\left( {{x_1},{x_x} \ldots ,{x_n}} \right) &= \frac{1}{{\sqrt {{{\left( {2\pi } \right)}^n}} \prod\limits_{i = 1}^n {{\sigma _i}} }}{e^{ - \frac{1}{2}{{({\bf{X}} - {\bf{\mu }})}^T}\left( {\begin{array}{*{20}{c}}
+{\frac{1}{{\sigma _1^2}}}&{}&{}&{}\\
+{}&{\frac{1}{{\sigma _2^2}}}&{}&{}\\
+{}&{}& \ddots &{}\\
+{}&{}&{}&{\frac{1}{{\sigma _n^2}}}\\
+\end{array}} \right)({\bf{X}} - {\bf{\mu }})}}\\
+ &= \frac{1}{{\sqrt {{{\left( {2\pi } \right)}^n}} \prod\limits_{i = 1}^n {{\sigma _i}} }}{e^{ - \frac{1}{2}[\frac{{{x_1} - {\mu _1}}}{{\sigma _1^2}},\frac{{{x_2} - {\mu _2}}}{{\sigma _2^2}},...,\frac{{{x_n} - {\mu _n}}}{{\sigma _n^2}}]({\bf{X}} - {\bf{\mu }})}}\\
+ & = \frac{1}{{\sqrt {{{\left( {2\pi } \right)}^n}} \prod\limits_{i = 1}^n {{\sigma _i}} }}{e^{ - \frac{1}{2}\sum\limits_{i = 1}^n {\frac{{{{({x_n} - {\mu _n})}^2}}}{{\sigma _n^2}}} }}\\
+ & = \prod\limits_{i = 1}^n {\frac{1}{{\sqrt {2\pi } {\sigma _i}}}} {e^{ - \frac{1}{2}\frac{{{{({x_i} - {\mu _i})}^2}}}{{\sigma _i^2}}}}	\\
+ & = \prod\limits_{i = 1}^n {f({x_i})} 
+ \end{aligned}
+$$
+
+
+<ul>
+<li>因此在随机变量服从高斯分布时，不相关与独立等价，互为充要条件。</li>
+</ul>
+<h4 id="正交-–-不相关"><a href="#正交-–-不相关" class="headerlink" title="正交 – 不相关"></a>正交 – 不相关</h4><ul>
+<li>根据定义可以得知： 当$E[X]，E[Y]$至少有一个为0时正交等价于不相关。</li>
+</ul>
+<h3 id="参考资料"><a href="#参考资料" class="headerlink" title="参考资料"></a>参考资料</h3><ul>
+<li><a href="http://blog.sciencenet.cn/blog-812827-1096465.html" target="_blank" rel="noopener">http://blog.sciencenet.cn/blog-812827-1096465.html</a></li>
+<li><a href="https://blog.csdn.net/wjj5881005/article/details/53320403/" target="_blank" rel="noopener">https://blog.csdn.net/wjj5881005/article/details/53320403/</a></li>
+<li><a href="https://www.zhihu.com/question/26583332/answer/33327497" target="_blank" rel="noopener">https://www.zhihu.com/question/26583332/answer/33327497</a></li>
+<li><a href="https://baike.baidu.com/item/%E4%B8%8D%E7%9B%B8%E5%85%B3%E9%9A%8F%E6%9C%BA%E5%8F%98%E9%87%8F/19126995?fr=aladdin" target="_blank" rel="noopener">https://baike.baidu.com/item/%E4%B8%8D%E7%9B%B8%E5%85%B3%E9%9A%8F%E6%9C%BA%E5%8F%98%E9%87%8F/19126995?fr=aladdin</a></li>
+</ul>
+<link rel="stylesheet" href="/css/spoiler.css" type="text/css"><script src="/js/spoiler.js" type="text/javascript" async></script>]]></content>
+      <categories>
+        <category>math</category>
+        <category>probability</category>
+      </categories>
+      <tags>
+        <tag>math</tag>
+        <tag>probability</tag>
+      </tags>
+  </entry>
+  <entry>
     <title>python PCV 库的安装与使用</title>
     <url>/2021/03/11/python/PCV-install-for-python/PCV-install-for-python/</url>
     <content><![CDATA[<blockquote>
@@ -132,34 +1440,13 @@ $$
 </li>
 <li><p>$\Sigma_{Y}$的对角线元素含义为$Y$中每个向量的方差，因此均为非负值，从这个角度可以说明协方差矩阵的特征值为非负值。</p>
 </li>
-<li><p>协方差矩阵的特征值非负还有一种证明思路：</p>
-<p>协方差矩阵 $\Sigma_{X}$，对其进行SVD分解：<br>$$<br>{\Sigma_X} = U \Sigma {V ^ T }<br>$$<br>由于 $\Sigma_{X}$ 是对称矩阵，可以得到：<br>$$<br>U=V<br>$$</p>
+<li><p>而且事实上<a href="https://www.zywvvd.com/2021/03/13/math/linear_algebra/cov-pos-sem/cov-pos-sem/#%E5%8D%8F%E6%96%B9%E5%B7%AE%E7%9F%A9%E9%98%B5%E5%8D%8A%E6%AD%A3%E5%AE%9A">协方差矩阵本身就是半正定的</a>，特征值均非负</p>
 </li>
-</ul>
-<p>  而且$U$是正交矩阵，有：</p>
-  
-  $$
-  U^T{\Sigma _X}U = \Sigma
-  $$
-
-  $$
-  \Sigma  = {U^T}(X - {\mu _X}){(X - {\mu _X})^T}U
-  $$
-
-  $$
-  \Sigma  = ({U^T}X - {U^T}{\mu _X}){({U^T}X - {U^T}{\mu _X})^T}
-  $$
-
-  
-
-<p>  令$Y = {U^T}X - {U^T}{\mu _X}$：<br>  $$<br>  \Sigma  = Y{Y^T}<br>  $$<br>  由于$\Sigma$是特征值为对角线元素的对角阵，因此对角线外元素为0，表示$Y$中向量相互之间不相关。</p>
-<p>  对于任意一个$\Sigma$中的特征值$\lambda_i$，计算公式为：</p>
-<p>  $$<br>  {\lambda _ i } = { Y _ i } { Y _ i } ^ T = \sum \limits_ {j = 1} ^n { {Y_{ij} } ^ 2}  \ge 0<br>  $$<br>  因此协方差矩阵实时上是半正定矩阵。</p>
+<li><p>不相关与独立的问题：</p>
 <ul>
-<li>不相关与独立的问题：<ul>
 <li>此处我们说明了变换后的向量之间相关系数为0，也就是向量之间不相关</li>
 <li>而事实上独立是比不相关更强的约束，不相关往往不能推出独立</li>
-<li>但在高斯分布下，不相关和独立是等价的</li>
+<li>但在<a href="https://www.zywvvd.com/2021/03/12/math/probability/orthogonal-independent-uncorrelation/orthogonal-independent-uncorrelation/">高斯分布下，不相关和独立是等价的</a></li>
 </ul>
 </li>
 </ul>
@@ -192,11 +1479,11 @@ $$
 
 $$
 \begin{array}{l}
-{D_M}(x) & =
-\sqrt {{z^T}z}  \\&= \sqrt {{{\left( {x - {u_X}} \right)}^T}Q{{\left( {{Q^T}{\Sigma _X}Q} \right)}^{ - \frac{1}{2}}}{{\left( {{Q^T}{\Sigma _X}Q} \right)}^{ - \frac{1}{2}}}{Q^T}\left( {x - {u_X}} \right)} \\
- &= \sqrt {{{\left( {x - {u_X}} \right)}^T}Q{{\left( {{Q^T}{\Sigma _X}Q} \right)}^{ - 1}}{Q^T}\left( {x - {u_X}} \right)} \\
- &= \sqrt {{{\left( {x - {u_X}} \right)}^T}Q{Q^{ - 1}}\Sigma _X^{ - 1}Q{Q^T}\left( {x - {u_X}} \right)} \\
- &= \sqrt {{{\left( {x - {u_X}} \right)}^T}\Sigma _X^{-1}\left( {x - {u_X}} \right)} \\
+{D_M}(X) & =
+\sqrt {{Z^T}Z}  \\&= \sqrt {{{\left( {X - {u_X}} \right)}^T}Q{{\left( {{Q^T}{\Sigma _X}Q} \right)}^{ - \frac{1}{2}}}{{\left( {{Q^T}{\Sigma _X}Q} \right)}^{ - \frac{1}{2}}}{Q^T}\left( {X - {u_X}} \right)} \\
+ &= \sqrt {{{\left( {X - {u_X}} \right)}^T}Q{{\left( {{Q^T}{\Sigma _X}Q} \right)}^{ - 1}}{Q^T}\left( {X - {u_X}} \right)} \\
+ &= \sqrt {{{\left( {X - {u_X}} \right)}^T}Q{Q^{ - 1}}\Sigma _X^{ - 1}Q{Q^T}\left( {X - {u_X}} \right)} \\
+ &= \sqrt {{{\left( {X - {u_X}} \right)}^T}\Sigma _X^{-1}\left( {X - {u_X}} \right)} \\
 
 \end{array}
 $$
@@ -247,8 +1534,8 @@ $$
         <category>pytorch</category>
       </categories>
       <tags>
-        <tag>Deep Learning</tag>
         <tag>pytorch</tag>
+        <tag>Deep Learning</tag>
       </tags>
   </entry>
   <entry>
@@ -1718,29 +3005,29 @@ $$
 <h4 id="传输文件"><a href="#传输文件" class="headerlink" title="传输文件"></a>传输文件</h4><h5 id="从服务器上下载文件"><a href="#从服务器上下载文件" class="headerlink" title="从服务器上下载文件"></a>从服务器上下载文件</h5><figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">scp username@servername:&#x2F;path&#x2F;filename &#x2F;var&#x2F;www&#x2F;local_dir（本地目录）</span><br></pre></td></tr></table></figure>
 
 <blockquote>
-<p>例如: scp <a href="mailto:&#x72;&#111;&#x6f;&#x74;&#64;&#49;&#57;&#x32;&#x2e;&#x31;&#x36;&#x38;&#x2e;&#x30;&#x2e;&#49;&#48;&#x31;">&#x72;&#111;&#x6f;&#x74;&#64;&#49;&#57;&#x32;&#x2e;&#x31;&#x36;&#x38;&#x2e;&#x30;&#x2e;&#49;&#48;&#x31;</a>:/var/www/test.txt 把192.168.0.101上的/var/www/test.txt 的文件下载到/var/www/local_dir（本地目录）</p>
+<p>例如: scp <a href="mailto:&#x72;&#x6f;&#x6f;&#116;&#64;&#x31;&#57;&#50;&#46;&#x31;&#54;&#56;&#46;&#x30;&#x2e;&#x31;&#x30;&#49;">&#x72;&#x6f;&#x6f;&#116;&#64;&#x31;&#57;&#50;&#46;&#x31;&#54;&#56;&#46;&#x30;&#x2e;&#x31;&#x30;&#49;</a>:/var/www/test.txt 把192.168.0.101上的/var/www/test.txt 的文件下载到/var/www/local_dir（本地目录）</p>
 </blockquote>
 <h5 id="上传本地文件到服务器"><a href="#上传本地文件到服务器" class="headerlink" title="上传本地文件到服务器"></a>上传本地文件到服务器</h5><figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">scp &#x2F;path&#x2F;filename username@servername:&#x2F;path</span><br></pre></td></tr></table></figure>
 
 <blockquote>
-<p>例如: scp /var/www/test.php <a href="mailto:&#114;&#x6f;&#111;&#116;&#x40;&#x31;&#57;&#x32;&#x2e;&#49;&#x36;&#x38;&#46;&#48;&#x2e;&#49;&#48;&#49;">&#114;&#x6f;&#111;&#116;&#x40;&#x31;&#57;&#x32;&#x2e;&#49;&#x36;&#x38;&#46;&#48;&#x2e;&#49;&#48;&#49;</a>:/var/www/ 把本机/var/www/目录下的test.php文件上传到192.168.0.101这台服务器上的/var/www/目录中</p>
+<p>例如: scp /var/www/test.php <a href="mailto:&#114;&#111;&#111;&#116;&#x40;&#49;&#57;&#50;&#46;&#49;&#54;&#56;&#x2e;&#x30;&#x2e;&#x31;&#48;&#x31;">&#114;&#111;&#111;&#116;&#x40;&#49;&#57;&#50;&#46;&#49;&#54;&#56;&#x2e;&#x30;&#x2e;&#x31;&#48;&#x31;</a>:/var/www/ 把本机/var/www/目录下的test.php文件上传到192.168.0.101这台服务器上的/var/www/目录中</p>
 </blockquote>
 <h5 id="从服务器下载整个目录"><a href="#从服务器下载整个目录" class="headerlink" title="从服务器下载整个目录"></a>从服务器下载整个目录</h5><figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">scp -r username@servername:&#x2F;var&#x2F;www&#x2F;remote_dir&#x2F;（远程目录） &#x2F;var&#x2F;www&#x2F;local_dir（本地目录）</span><br></pre></td></tr></table></figure>
 
 <blockquote>
-<p>例如: scp -r <a href="mailto:&#114;&#111;&#x6f;&#x74;&#64;&#x31;&#x39;&#50;&#x2e;&#x31;&#x36;&#56;&#x2e;&#x30;&#46;&#49;&#x30;&#49;">&#114;&#111;&#x6f;&#x74;&#64;&#x31;&#x39;&#50;&#x2e;&#x31;&#x36;&#56;&#x2e;&#x30;&#46;&#49;&#x30;&#49;</a>:/var/www/test /var/www/  </p>
+<p>例如: scp -r <a href="mailto:&#x72;&#x6f;&#111;&#116;&#x40;&#x31;&#57;&#50;&#46;&#49;&#x36;&#x38;&#x2e;&#48;&#x2e;&#x31;&#x30;&#x31;">&#x72;&#x6f;&#111;&#116;&#x40;&#x31;&#57;&#50;&#46;&#49;&#x36;&#x38;&#x2e;&#48;&#x2e;&#x31;&#x30;&#x31;</a>:/var/www/test /var/www/  </p>
 </blockquote>
 <h5 id="上传目录到服务器"><a href="#上传目录到服务器" class="headerlink" title="上传目录到服务器"></a>上传目录到服务器</h5><figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">scp -r local_dir username@servername:remote_dir</span><br></pre></td></tr></table></figure>
 
 <blockquote>
-<p>例如：scp -r test  <a href="mailto:&#114;&#111;&#x6f;&#116;&#x40;&#49;&#57;&#x32;&#x2e;&#49;&#54;&#x38;&#x2e;&#x30;&#46;&#x31;&#48;&#x31;">&#114;&#111;&#x6f;&#116;&#x40;&#49;&#57;&#x32;&#x2e;&#49;&#54;&#x38;&#x2e;&#x30;&#46;&#x31;&#48;&#x31;</a>:/var/www/  把当前目录下的test目录上传到服务器的/var/www/ 目录</p>
+<p>例如：scp -r test  <a href="mailto:&#x72;&#x6f;&#x6f;&#116;&#64;&#x31;&#57;&#x32;&#46;&#x31;&#54;&#x38;&#46;&#48;&#46;&#x31;&#48;&#x31;">&#x72;&#x6f;&#x6f;&#116;&#64;&#x31;&#57;&#x32;&#46;&#x31;&#54;&#x38;&#46;&#48;&#46;&#x31;&#48;&#x31;</a>:/var/www/  把当前目录下的test目录上传到服务器的/var/www/ 目录</p>
 </blockquote>
 <h4 id="ssh自带的sftp功能"><a href="#ssh自带的sftp功能" class="headerlink" title="ssh自带的sftp功能"></a>ssh自带的sftp功能</h4><h5 id="Window和Linux的传输工具"><a href="#Window和Linux的传输工具" class="headerlink" title="Window和Linux的传输工具"></a>Window和Linux的传输工具</h5><figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">wincp  filezip          </span><br><span class="line">sftp --&gt;基于 ssh 的安全加密传输</span><br></pre></td></tr></table></figure>
 
 <h5 id="sftp客户端连接"><a href="#sftp客户端连接" class="headerlink" title="sftp客户端连接"></a>sftp客户端连接</h5><figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">sftp -oPort&#x3D;22 root@192.168.25.137                   </span><br><span class="line">put &#x2F;etc&#x2F;hosts &#x2F;tmp                   </span><br><span class="line">get &#x2F;etc&#x2F;hosts &#x2F;home&#x2F;omd</span><br></pre></td></tr></table></figure>
 
 <h5 id="sftp小结"><a href="#sftp小结" class="headerlink" title="sftp小结"></a>sftp小结</h5><ul>
-<li>linux下使用命令： sftp -oPort=22 <a href="mailto:&#x72;&#111;&#111;&#116;&#x40;&#x78;&#46;&#120;&#x2e;&#x78;&#x2e;&#x78;">&#x72;&#111;&#111;&#116;&#x40;&#x78;&#46;&#120;&#x2e;&#x78;&#x2e;&#x78;</a>                   </li>
+<li>linux下使用命令： sftp -oPort=22 <a href="mailto:&#x72;&#111;&#x6f;&#x74;&#64;&#x78;&#46;&#x78;&#x2e;&#120;&#46;&#120;">&#x72;&#111;&#x6f;&#x74;&#64;&#x78;&#46;&#x78;&#x2e;&#120;&#46;&#120;</a>                   </li>
 <li>put加客户端本地路径上传                  </li>
 <li>get下载服务器端内容到本地                   </li>
 <li>远程连接默认连接用户的家目录</li>
@@ -2006,7 +3293,7 @@ ssh omd@192.168.1.100 -t &quot;sh /home/omd/ftl.sh&quot;  # 当前服务器A远�
   </entry>
   <entry>
     <title>矩阵对变化的敏感程度评价指标 Condition Number</title>
-    <url>/2021/01/06/math/matrix/condition-num/condition-num/</url>
+    <url>/2021/01/06/math/linear_algebra/condition-num/condition-num/</url>
     <content><![CDATA[<blockquote>
 <p>矩阵对变化的敏感程度可以用Condition Number来评估，本文对其进行简略介绍。</p>
 </blockquote>
@@ -2141,11 +3428,11 @@ $$
 <link rel="stylesheet" href="/css/spoiler.css" type="text/css"><script src="/js/spoiler.js" type="text/javascript" async></script>]]></content>
       <categories>
         <category>math</category>
-        <category>matrix</category>
+        <category>linear_algebra</category>
       </categories>
       <tags>
         <tag>math</tag>
-        <tag>matrix</tag>
+        <tag>linear_algebra</tag>
       </tags>
   </entry>
   <entry>
@@ -4716,8 +6003,8 @@ applet.setPreviewImage('data:image/gif;base64,R0lGODlhAQABAAAAADs=','https://www
       </categories>
       <tags>
         <tag>故障排除</tag>
-        <tag>python</tag>
         <tag>pytorch</tag>
+        <tag>python</tag>
       </tags>
   </entry>
   <entry>
@@ -5288,7 +6575,7 @@ cond(no)->sub</textarea><textarea id="flowchart-0-options" style="display: none"
 <p>$$<br>f({x_1},{x_2},{x_3},…,{ x_n}) = f({\bf{x}}) = {\bf{x^T} }\bf{A}{\bf{x} } + { {\bf{b} }^T}{\bf{x} } + c<br>$$</p>
 <blockquote>
 <p>转化过程中$\bf{A},\bf{b}$满足：</p>
-<p>${\bf{A} }$ 为$n$阶对称方阵，${ {\bf{A} }<em>{i,j} } = {a</em>{i,j} }$</p>
+<p>${\bf{A} }$ 为$n$阶对称方阵，${ { \bf { A } } _ { i , j } } = { a _ { i , j } }$</p>
 <p>因为$\exists a_{i,j} \ne 0$，$\bf{A}$不为零矩阵</p>
 <p>$\bf{b}_i=b_i$</p>
 </blockquote>
@@ -6650,6 +7937,11 @@ cond(no)->sub</textarea><textarea id="flowchart-0-options" style="display: none"
 </blockquote>
 <figure class="highlight plain"><table><tr><td class="code"><pre><span class="line"># github</span><br><span class="line">140.82.112.4 github.com</span><br><span class="line">199.232.69.194 github.global.ssl.fastly.net</span><br></pre></td></tr></table></figure>
 
+<p>或</p>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line"># github</span><br><span class="line">192.30.253.112 github.com </span><br><span class="line">151.101.185.194 github.global.ssl.fastly.net</span><br></pre></td></tr></table></figure>
+
+
+
 <ul>
 <li>Linux</li>
 </ul>
@@ -6657,6 +7949,11 @@ cond(no)->sub</textarea><textarea id="flowchart-0-options" style="display: none"
 <p>打开<code>\etc\hosts</code></p>
 </blockquote>
 <figure class="highlight plain"><table><tr><td class="code"><pre><span class="line"># github </span><br><span class="line">140.82.112.4 github.com</span><br><span class="line">199.232.69.194 github.global.ssl.fastly.net</span><br></pre></td></tr></table></figure>
+
+<p>或</p>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line"># github</span><br><span class="line">192.30.253.112 github.com </span><br><span class="line">151.101.185.194 github.global.ssl.fastly.net</span><br></pre></td></tr></table></figure>
+
+
 
 <h3 id="刷新DNS"><a href="#刷新DNS" class="headerlink" title="刷新DNS"></a>刷新DNS</h3><ul>
 <li>Windows </li>
@@ -8267,9 +9564,14 @@ cond(no)->sub</textarea><textarea id="flowchart-0-options" style="display: none"
 <p><code>docker container kill</code>命令终止容器运行，相当于向容器里面的主进程发出 SIGKILL 信号。<code>docker container stop</code>命令相当于向容器里面的主进程发出 SIGTERM 信号，然后过一段时间再发出 SIGKILL 信号。</p>
 </blockquote>
 <ul>
-<li>重启停止的容器</li>
+<li>启动停止的容器</li>
 </ul>
 <figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">docker start [containerID]</span><br></pre></td></tr></table></figure>
+
+<ul>
+<li>重启运行的容器</li>
+</ul>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">docker restart [containerID]</span><br></pre></td></tr></table></figure>
 
 <ul>
 <li>删除指定的容器文件（仅在停止运行时可用）</li>
@@ -8330,6 +9632,23 @@ cond(no)->sub</textarea><textarea id="flowchart-0-options" style="display: none"
 <p>-m: 提交时的说明文字</p>
 <p>-p: 在commit时，将容器暂停</p>
 </blockquote>
+<ul>
+<li>删除镜像</li>
+</ul>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">docker rmi [image]</span><br></pre></td></tr></table></figure>
+
+<blockquote>
+<p>或</p>
+</blockquote>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">docker image rm [image]</span><br></pre></td></tr></table></figure>
+
+<blockquote>
+<p>支持的子命令如下：</p>
+</blockquote>
+<ul>
+<li><code>-f, -force</code>: 强制删除镜像，即便有容器引用该镜像；</li>
+<li><code>-no-prune</code>: 不要删除未带标签的父镜像；</li>
+</ul>
 <h3 id="参考资料"><a href="#参考资料" class="headerlink" title="参考资料"></a>参考资料</h3><ul>
 <li><p><a href="http://www.ruanyifeng.com/blog/2018/02/docker-tutorial.html" target="_blank" rel="noopener">http://www.ruanyifeng.com/blog/2018/02/docker-tutorial.html</a></p>
 </li>
@@ -10420,10 +11739,15 @@ cond(no)->sub</textarea><textarea id="flowchart-0-options" style="display: none"
 <blockquote>
 <p>得到名为cuda的文件夹，在当前目录（不要进入cuda）运行：</p>
 </blockquote>
-<figure class="highlight shell"><table><tr><td class="code"><pre><span class="line">sudo cp cuda/include/cudnn.h /usr/local/cuda/include/</span><br><span class="line">sudo cp cuda/lib64/libcudnn* /usr/local/cuda/lib64/</span><br><span class="line">sudo chmod a+r /usr/local/cuda/include/cudnn.h</span><br><span class="line">sudo chmod a+r /usr/local/cuda/lib64/libcudnn*</span><br></pre></td></tr></table></figure>
+<h4 id="Cudnn-version-lt-8-0"><a href="#Cudnn-version-lt-8-0" class="headerlink" title="Cudnn version &lt; 8.0"></a>Cudnn version &lt; 8.0</h4><figure class="highlight shell"><table><tr><td class="code"><pre><span class="line">sudo cp cuda/include/cudnn.h /usr/local/cuda/include/</span><br><span class="line">sudo cp cuda/lib64/libcudnn* /usr/local/cuda/lib64/</span><br><span class="line">sudo chmod a+r /usr/local/cuda/include/cudnn.h</span><br><span class="line">sudo chmod a+r /usr/local/cuda/lib64/libcudnn*</span><br></pre></td></tr></table></figure>
 
 <blockquote>
 <p>输入<code>cat /usr/local/cuda/include/cudnn.h | grep CUDNN_MAJOR -A 2</code>可查看版本</p>
+</blockquote>
+<h4 id="Cudnn-version-≥-8-0"><a href="#Cudnn-version-≥-8-0" class="headerlink" title="Cudnn version ≥ 8.0"></a>Cudnn version ≥ 8.0</h4><figure class="highlight shell"><table><tr><td class="code"><pre><span class="line">sudo cp cuda/include/* /usr/local/cuda/include/</span><br><span class="line">sudo cp cuda/lib64/* /usr/local/cuda/lib64/</span><br><span class="line">sudo chmod +x /usr/local/cuda/include/cudnn.h</span><br><span class="line">sudo chmod +x /usr/local/cuda/lib64/libcudnn*</span><br></pre></td></tr></table></figure>
+
+<blockquote>
+<p>输入<code>cat /usr/local/cuda/include/cudnn_version.h | grep CUDNN_MAJOR -A 2</code>可以查看版本</p>
 </blockquote>
 <h3 id="安装测试"><a href="#安装测试" class="headerlink" title="安装测试"></a>安装测试</h3><blockquote>
 <p>查看显卡信息：</p>
@@ -10438,7 +11762,11 @@ cond(no)->sub</textarea><textarea id="flowchart-0-options" style="display: none"
 <blockquote>
 <p>查看Cudnn版本</p>
 </blockquote>
+<p>cudnn version &lt; 8.0</p>
 <figure class="highlight shell"><table><tr><td class="code"><pre><span class="line">cat /usr/local/cuda/include/cudnn.h | grep CUDNN_MAJOR -A 2</span><br></pre></td></tr></table></figure>
+
+<p>cudnn version ≥ 8.0</p>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">cat &#x2F;usr&#x2F;local&#x2F;cuda&#x2F;include&#x2F;cudnn_version.h | grep CUDNN_MAJOR -A 2</span><br></pre></td></tr></table></figure>
 
 <link rel="stylesheet" href="/css/spoiler.css" type="text/css"><script src="/js/spoiler.js" type="text/javascript" async></script>]]></content>
       <categories>
