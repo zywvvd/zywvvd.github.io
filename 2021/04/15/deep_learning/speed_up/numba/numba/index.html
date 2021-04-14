@@ -1,0 +1,743 @@
+<!DOCTYPE html>
+<html lang="zh-Hans">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 4.2.1">
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/logo-180.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/logo-32.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/logo-16.png">
+  <link rel="mask-icon" href="/images/logo-512.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+<link rel="stylesheet" href="/lib/font-awesome/css/font-awesome.min.css">
+  <link rel="stylesheet" href="//cdn.jsdelivr.net/gh/fancyapps/fancybox@3/dist/jquery.fancybox.min.css">
+
+<script id="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"www.zywvvd.com","root":"/","scheme":"Gemini","version":"7.7.1","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":true,"show_result":"default","style":null},"back2top":{"enable":true,"sidebar":true,"scrollpercent":true},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":true,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},"path":"./public/search.xml"};
+  </script>
+
+  <meta name="description" content="基于CPU和GPU的异构计算已经逐步发展成为高性能计算的主流模式。CUDA作为GPU高性能计算的主要开发工具之一，已经在各个领域取得广泛应用。">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Python CUDA 编程 - 1 - 基础概念">
+<meta property="og:url" content="https://www.zywvvd.com/2021/04/15/deep_learning/speed_up/numba/numba/index.html">
+<meta property="og:site_name" content="又见苍岚">
+<meta property="og:description" content="基于CPU和GPU的异构计算已经逐步发展成为高性能计算的主流模式。CUDA作为GPU高性能计算的主要开发工具之一，已经在各个领域取得广泛应用。">
+<meta property="og:image" content="https://photos.zywvvd.com/image_canglan/20210415014639.png">
+<meta property="og:image" content="https://photos.zywvvd.com/image_canglan/20210415015000.png">
+<meta property="article:published_time" content="2021-04-14T17:01:32.000Z">
+<meta property="article:modified_time" content="2021-04-14T17:54:43.331Z">
+<meta property="article:author" content="Yiwei Zhang">
+<meta property="article:tag" content="Deep Learning">
+<meta property="article:tag" content="CUDA">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://photos.zywvvd.com/image_canglan/20210415014639.png">
+
+<link rel="canonical" href="https://www.zywvvd.com/2021/04/15/deep_learning/speed_up/numba/numba/">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome: false,
+    isPost: true
+  };
+</script>
+
+  <title>Python CUDA 编程 - 1 - 基础概念 | 又见苍岚</title>
+  
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+<link rel="alternate" href="/atom.xml" title="又见苍岚" type="application/atom+xml">
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    	<a href="https://github.com/zywvvd" target="_blank" rel="noopener" >
+    		<img width="149" height="149"  style="position:absolute; right:-2px; top:2px;" src="https://photos.zywvvd.com/image/20200328192440.png" class="attachment-full size-full" alt="Fork me on GitHub" data-recalc-dims="1">
+    	</a>
+
+    	<a href="https://github.com/zywvvd" target="_blank" rel="noopener" class="github-corner" aria-label="View source on GitHub"><svg width="80" height="80" viewBox="0 0 250 250" style="fill:#222222; color:#fff; position: absolute; top: 0; border: 0; right: 0;" aria-hidden="true"><path d="M0,0 L115,115 L130,115 L142,142 L250,250 L250,0 Z"></path><path d="M128.3,109.0 C113.8,99.7 119.0,89.6 119.0,89.6 C122.0,82.7 120.5,78.6 120.5,78.6 C119.2,72.0 123.4,76.3 123.4,76.3 C127.3,80.9 125.5,87.3 125.5,87.3 C122.9,97.6 130.6,101.9 134.4,103.2" fill="currentColor" style="transform-origin: 130px 106px;" class="octo-arm"></path><path d="M115.0,115.0 C114.9,115.1 118.7,116.5 119.8,115.4 L133.7,101.6 C136.9,99.2 139.9,98.4 142.2,98.6 C133.8,88.0 127.5,74.4 143.8,58.0 C148.5,53.4 154.0,51.2 159.7,51.0 C160.3,49.4 163.2,43.6 171.4,40.1 C171.4,40.1 176.1,42.5 178.8,56.2 C183.1,58.6 187.2,61.8 190.9,65.4 C194.5,69.0 197.7,73.2 200.1,77.6 C213.8,80.2 216.3,84.9 216.3,84.9 C212.7,93.1 206.9,96.0 205.4,96.6 C205.1,102.4 203.0,107.8 198.3,112.5 C181.9,128.9 168.3,122.5 157.7,114.1 C157.9,116.9 156.7,120.9 152.7,124.9 L141.0,136.5 C139.8,137.7 141.6,141.9 141.8,141.8 Z" fill="currentColor" class="octo-body"></path></svg></a><style>.github-corner:hover .octo-arm{animation:octocat-wave 560ms ease-in-out}@keyframes octocat-wave{0%,100%{transform:rotate(0)}20%,60%{transform:rotate(-25deg)}40%,80%{transform:rotate(10deg)}}@media (max-width:500px){.github-corner:hover .octo-arm{animation:none}.github-corner .octo-arm{animation:octocat-wave 560ms ease-in-out}}</style>
+
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="Toggle navigation bar">
+      <span class="toggle-line toggle-line-first"></span>
+      <span class="toggle-line toggle-line-middle"></span>
+      <span class="toggle-line toggle-line-last"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <div>
+      <a href="/" class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">又见苍岚</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+        <p class="site-subtitle">www.zywvvd.com</p>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+        <i class="fa fa-search fa-fw fa-lg"></i>
+    </div>
+  </div>
+</div>
+
+
+<nav class="site-nav">
+  
+  <ul id="menu" class="menu">
+        <li class="menu-item menu-item-home">
+
+    <a href="/" rel="section"><i class="fa fa-fw fa-home"></i>首页</a>
+
+  </li>
+        <li class="menu-item menu-item-about">
+
+    <a href="/about/" rel="section"><i class="fa fa-fw fa-user"></i>关于</a>
+
+  </li>
+        <li class="menu-item menu-item-tags">
+
+    <a href="/tags/" rel="section"><i class="fa fa-fw fa-tags"></i>标签</a>
+
+  </li>
+        <li class="menu-item menu-item-categories">
+
+    <a href="/categories/" rel="section"><i class="fa fa-fw fa-th"></i>分类</a>
+
+  </li>
+        <li class="menu-item menu-item-archives">
+
+    <a href="/archives/" rel="section"><i class="fa fa-fw fa-archive"></i>归档</a>
+
+  </li>
+        <li class="menu-item menu-item-photos">
+
+    <a href="/photos/" rel="section"><i class="fa fa-fw fa-image"></i>相册</a>
+
+  </li>
+        <li class="menu-item menu-item-sitemap">
+
+    <a href="/sitemap.xml" rel="section"><i class="fa fa-fw fa-sitemap"></i>站点地图</a>
+
+  </li>
+      <li class="menu-item menu-item-search">
+        <a role="button" class="popup-trigger"><i class="fa fa-search fa-fw"></i>搜索
+        </a>
+      </li>
+  </ul>
+
+</nav>
+  <div class="site-search">
+    <div class="popup search-popup">
+    <div class="search-header">
+  <span class="search-icon">
+    <i class="fa fa-search"></i>
+  </span>
+  <div class="search-input-container">
+    <input autocomplete="off" autocorrect="off" autocapitalize="off"
+           placeholder="Searching..." spellcheck="false"
+           type="search" class="search-input">
+  </div>
+  <span class="popup-btn-close">
+    <i class="fa fa-times-circle"></i>
+  </span>
+</div>
+<div id="search-result"></div>
+
+</div>
+<div class="search-pop-overlay"></div>
+
+  </div>
+</div>
+    </header>
+
+    
+  <div class="reading-progress-bar"></div>
+
+
+    <main class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+
+          <div class="content">
+            
+
+  <div class="posts-expand">
+      
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block " lang="zh-Hans">
+    <link itemprop="mainEntityOfPage" href="https://www.zywvvd.com/2021/04/15/deep_learning/speed_up/numba/numba/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.png">
+      <meta itemprop="name" content="Yiwei Zhang">
+      <meta itemprop="description" content="Stay hungury ! Stay foolish ！">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="又见苍岚">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          Python CUDA 编程 - 1 - 基础概念
+        </h1>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+              
+
+              <time title="Created: 2021-04-15 01:01:32 / Modified: 01:54:43" itemprop="dateCreated datePublished" datetime="2021-04-15T01:01:32+08:00">2021-04-15</time>
+            </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              <span class="post-meta-item-text">类别</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/Deep-Learning/" itemprop="url" rel="index"><span itemprop="name">Deep Learning</span></a>
+                </span>
+                  , 
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/Deep-Learning/CUDA/" itemprop="url" rel="index"><span itemprop="name">CUDA</span></a>
+                </span>
+            </span>
+
+          
+            <span id="/2021/04/15/deep_learning/speed_up/numba/numba/" class="post-meta-item leancloud_visitors" data-flag-title="Python CUDA 编程 - 1 - 基础概念" title="阅读次数">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-eye"></i>
+              </span>
+              <span class="post-meta-item-text">阅读次数: </span>
+              <span class="leancloud-visitors-count"></span>
+            </span>
+            <span class="post-meta-item" title="阅读次数" id="busuanzi_container_page_pv" style="display: none;">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-eye"></i>
+              </span>
+              <span class="post-meta-item-text">阅读次数: </span>
+              <span id="busuanzi_value_page_pv"></span>
+            </span>
+  
+  <span class="post-meta-item">
+    
+      <span class="post-meta-item-icon">
+        <i class="fa fa-comment-o"></i>
+      </span>
+      <span class="post-meta-item-text">评论次数: </span>
+    
+    <a title="valine" href="/2021/04/15/deep_learning/speed_up/numba/numba/#valine-comments" itemprop="discussionUrl">
+      <span class="post-comments-count valine-comment-count" data-xid="/2021/04/15/deep_learning/speed_up/numba/numba/" itemprop="commentCount"></span>
+    </a>
+  </span>
+  
+  <br>
+            <span class="post-meta-item" title="本文字数">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-file-word-o"></i>
+              </span>
+                <span class="post-meta-item-text">本文字数: </span>
+              <span>2.4k</span>
+            </span>
+            <span class="post-meta-item" title="阅读时长">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-clock-o"></i>
+              </span>
+                <span class="post-meta-item-text">阅读时长 &asymp;</span>
+              <span>2 mins.</span>
+            </span>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <blockquote>
+<p>基于CPU和GPU的异构计算已经逐步发展成为高性能计算的主流模式。CUDA作为GPU高性能计算的主要开发工具之一，已经在各个领域取得广泛应用。</p>
+</blockquote>
+<a id="more"></a>
+
+<h3 id="什么是GPU"><a href="#什么是GPU" class="headerlink" title="什么是GPU"></a>什么是GPU</h3><blockquote>
+<p>GPU全名为Graphics Processing Unit，又称视觉处理器、图形显示卡。GPU负责渲染出2D、3D、VR效果，主要专注于计算机图形图像领域。后来人们发现，GPU非常适合并行计算，可以加速现代科学计算，GPU也因此不再局限于游戏和视频领域。</p>
+</blockquote>
+<h3 id="加速原理"><a href="#加速原理" class="headerlink" title="加速原理"></a>加速原理</h3><blockquote>
+<p>为了同时并行地处理更多任务，芯片公司开发出了多核架构，只要相互之间没有依赖，每个核心做自己的事情，多核之间互不干扰，就可以达到<strong>并行计算</strong>的效果，极大缩短计算时间。</p>
+</blockquote>
+<h3 id="CPU与GPU"><a href="#CPU与GPU" class="headerlink" title="CPU与GPU"></a>CPU与GPU</h3><p><img src="https://photos.zywvvd.com/image_canglan/20210415014639.png"></p>
+<blockquote>
+<p>CPU主要从主存（Main Memory）中读写数据，并通过总线（Bus）与GPU交互。GPU除了有超多计算核心外，也有自己独立的存储，被称之为显存。一台服务器上可以安装多块GPU卡，但GPU卡的发热量极大，普通的空调系统难以给大量GPU卡降温，所以大型数据中心通常使用水冷散热，并且选址在温度较低的地方。</p>
+</blockquote>
+<h3 id="主机与设备"><a href="#主机与设备" class="headerlink" title="主机与设备"></a>主机与设备</h3><blockquote>
+<p>由于CPU和GPU是分开的，在英伟达的设计理念里，CPU和主存被称为<strong>主机（Host）</strong>，GPU被称为<strong>设备（Device）</strong>。Host和Device概念会贯穿整个英伟达GPU编程，甚至包括OpenCL等其他平台。</p>
+<p>以上结构也被称为<strong>异构计算</strong>：使用CPU+GPU组合来加速计算。绝大多数的高性能计算中心会使用上图所示的结构，比如一台服务器上有2至4块Intel Xeon CPU和1至8块英伟达GPU显卡，多台机器之间通过InfiniBand高速网络互联。</p>
+</blockquote>
+<h3 id="英伟达GPU硬件架构"><a href="#英伟达GPU硬件架构" class="headerlink" title="英伟达GPU硬件架构"></a>英伟达GPU硬件架构</h3><blockquote>
+<p>在英伟达的设计里，多个核心组成一个Streaming Multiprocessor（<strong>SM</strong>），一张GPU卡有多个SM。从“Multiprocessor”这个名字上也可以看出SM包含了多个处理器。实际上，英伟达主要以SM为运算和调度的基本单元。</p>
+</blockquote>
+<p><img src="https://photos.zywvvd.com/image_canglan/20210415015000.png"></p>
+<p>英伟达不同时代产品的芯片设计不同，每代产品背后有一个微架构代号，微架构均以著名的物理学家为名，以向先贤致敬。当前比较火热的架构有：</p>
+<ul>
+<li>Ampere 安培<ul>
+<li>2020年5月发布</li>
+<li>专业显卡：Telsa A100</li>
+</ul>
+</li>
+<li>Turing 图灵<ul>
+<li>2018年发布</li>
+<li>消费显卡：GeForce RTX 2080 Ti、Titan RTX</li>
+</ul>
+</li>
+<li>Volta 伏特<ul>
+<li>2017年末发布</li>
+<li>专业显卡：Telsa V100 (16或32GB显存 5120个CUDA核心)</li>
+</ul>
+</li>
+<li>Pascal 帕斯卡<ul>
+<li>2016年发布</li>
+<li>专业显卡：Telsa P100(12或16GB显存 3584个CUDA核心)</li>
+</ul>
+</li>
+</ul>
+<h3 id="软件生态"><a href="#软件生态" class="headerlink" title="软件生态"></a>软件生态</h3><blockquote>
+<p>英伟达能够在人工智能时代成功，除了他们在长期深耕显卡芯片领域，更重要的是他们率先提供了可编程的软件架构，确切地说，软硬件一体方案帮他们赢得了市场。2007年，英伟达发布了CUDA（Compute Unified Device Architecture）编程模型，软件开发人员从此可以使用CUDA在英伟达的GPU上进行并行编程。在此之前，GPU编程并不友好。CUDA简单到什么程度？有经验的程序员经过半天的培训，掌握一些基础概念后，能在半小时内将一份CPU程序修改成为GPU并行程序。</p>
+</blockquote>
+<blockquote>
+<p>继CUDA之后，英伟达不断丰富其软件技术栈，提供了科学计算所必需的cuBLAS线性代数库，cuFFT快速傅里叶变换库等，当深度学习大潮到来时，英伟达提供了cuDNN深度神经网络加速库，目前常用的TensorFlow、PyTorch深度学习框架的底层大多基于cuDNN库。</p>
+</blockquote>
+<p>关于英伟达的软件栈，可以总结为：</p>
+<ul>
+<li>最底层是GPU硬件，包括各类GPU显卡，DGX工作站等。</li>
+<li>操作系统是基于硬件的第一层软件，在操作系统上我们需要安装GPU驱动。</li>
+<li>CUDA在GPU驱动之上，有了CUDA，我们可以进行一些GPU编程。</li>
+<li>英伟达对相似计算进一步抽象，进而有了cuBLAS、cuFFT、cuDNN等库，这些库基于CUDA提供常见的计算。</li>
+<li>最顶层是应用，包括TensorFlow和PyTorch的模型训练和推理过程。</li>
+</ul>
+<h3 id="CUDA"><a href="#CUDA" class="headerlink" title="CUDA"></a>CUDA</h3><blockquote>
+<p>英伟达能在人工智能时代击败Intel、AMD等强大对手，很大一部分是因为它丰富的软件体系。这些软件工具库使研发人员专注于自己的研发领域，不用再去花大量时间学习GPU底层知识。CUDA对于GPU就像个人电脑上的Windows、手机上的安卓系统，一旦建立好生态，吸引了开发者，用户非常依赖这套软件生态体系。</p>
+</blockquote>
+<ul>
+<li>GPU编程可以直接使用CUDA的C/C++版本进行编程，也可以使用其他语言包装好的库，比如Python可使用Numba库调用CUDA。CUDA的编程思想在不同语言上都很相似。</li>
+</ul>
+<p>CUDA及其软件栈的优势是方便易用，缺点也显而易见：</p>
+<ol>
+<li>软件环境复杂，库以及版本很多，顶层应用又严重依赖底层工具库，入门者很难快速配置好一整套环境；多环境配置困难。</li>
+<li>用户只能使用英伟达的显卡，成本高，个人用户几乎负担不起。</li>
+</ol>
+<h3 id="英伟达之外的选项"><a href="#英伟达之外的选项" class="headerlink" title="英伟达之外的选项"></a>英伟达之外的选项</h3><ul>
+<li><p>前文对GPU的描述主要基于英伟达旗下产品。在GPU领域，AMD也提供了独立显卡产品，价格较低。历史上，AMD的显卡产品线是收购ATI而获得的。相对来说，AMD的显卡在人工智能和超级计算领域并没有英伟达强势。为了与CUDA对抗，AMD提供的软件开发平台名为ROCm（Radeon Open Compute platforM ）。</p>
+</li>
+<li><p>与相对封闭的CUDA不同，OpenCL（Open Computing Language)也是当前重要的计算加速平台，可以兼容英伟达和AMD的GPU，以及一些FPGA等硬件。一些上层软件为了兼容性，在计算加速部分并没有使用CUDA，而是使用了OpenCL。比如，决策树算法框架LightGBM主要基于OpenCL进行GPU加速。</p>
+</li>
+</ul>
+<blockquote>
+<p>无论是ROCm还是OpenCL，其编程思想与CUDA都非常相似，如果掌握了CUDA，那上手OpenCL也会很容易。</p>
+</blockquote>
+<h3 id="参考资料"><a href="#参考资料" class="headerlink" title="参考资料"></a>参考资料</h3><ul>
+<li><a href="https://lulaoshi.info/gpu/gpu-basic/gpu.html" target="_blank" rel="noopener">https://lulaoshi.info/gpu/gpu-basic/gpu.html</a></li>
+</ul>
+<link rel="stylesheet" href="/css/spoiler.css" type="text/css"><script src="/js/spoiler.js" type="text/javascript" async></script>
+    </div>
+
+    
+    
+    
+        <div class="reward-container">
+  <div>您的支持是我前进的最大动力！</div>
+  <button onclick="var qr = document.getElementById('qr'); qr.style.display = (qr.style.display === 'none') ? 'block' : 'none';">
+    赏
+  </button>
+  <div id="qr" style="display: none;">
+      
+      <div style="display: inline-block;">
+        <img src="/images/wechatpay.png" alt="Yiwei Zhang 微 信">
+        <p>微 信</p>
+      </div>
+      
+      <div style="display: inline-block;">
+        <img src="/images/alipay.png" alt="Yiwei Zhang 支付宝">
+        <p>支付宝</p>
+      </div>
+
+  </div>
+</div>
+
+        
+
+<div>
+<ul class="post-copyright">
+  <li class="post-copyright-author">
+  <span><strong>本文标题&nbsp:&nbsp&nbsp</strong>Python CUDA 编程 - 1 - 基础概念<br></span>
+  <span><strong>文章作者&nbsp:&nbsp&nbsp</strong>Yiwei Zhang<br></span>
+  <span><strong>发布时间&nbsp:&nbsp&nbsp</strong>2021年04月15日 - 01:01:32<br></span>
+  <span><strong>最后更新&nbsp:&nbsp&nbsp</strong>2021年04月15日 - 01:54:43<br></span>
+  <span><strong>原始链接&nbsp:&nbsp&nbsp</strong><a href="/2021/04/15/deep_learning/speed_up/numba/numba/" title="Python CUDA 编程 - 1 - 基础概念">https://www.zywvvd.com/2021/04/15/deep_learning/speed_up/numba/numba/</a><br></span>
+  <span><strong>许可协议&nbsp:&nbsp&nbsp</strong><i class="fa fa-creative-commons"></i> <a rel="license" href="https://creativecommons.org/licenses/by-nc-nd/4.0/" target="_blank" title="Attribution-NonCommercial-NoDerivatives 4.0 International (CC BY-NC-ND 4.0)">署名-非商业性使用-禁止演绎 4.0 国际</a> 转载请保留原文链接及作者<br></span>  
+	
+   <!-- <strong>Post author:  </strong>Yiwei Zhang
+  </li>
+  <li class="post-copyright-link">
+    <strong>Post link: </strong>
+    <a href="https://www.zywvvd.com/2021/04/15/deep_learning/speed_up/numba/numba/" title="Python CUDA 编程 - 1 - 基础概念">https://www.zywvvd.com/2021/04/15/deep_learning/speed_up/numba/numba/</a>
+  </li>
+  <li class="post-copyright-license">
+    <strong>Copyright Notice:  </strong>All articles in this blog are licensed under <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/deed.zh" rel="noopener" target="_blank"><i class="fa fa-fw fa-creative-commons"></i>BY-NC-SA</a> unless stating additionally.
+  </li>-->
+</ul>
+</div>
+
+
+      <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/tags/Deep-Learning/" rel="tag"># Deep Learning</a>
+              <a href="/tags/CUDA/" rel="tag"># CUDA</a>
+          </div>
+
+        
+
+
+        
+    <div class="post-nav">
+      <div class="post-nav-item">
+    <a href="/2021/04/14/math/probability/distributions/distributions/" rel="prev" title="概率论基础 - 10 - 常见概率分布">
+      <i class="fa fa-chevron-left"></i> 概率论基础 - 10 - 常见概率分布
+    </a></div>
+      <div class="post-nav-item"></div>
+    </div>
+      </footer>
+    
+  </article>
+  
+  
+  
+
+  </div>
+
+
+          </div>
+          
+    <div class="comments" id="valine-comments"></div>
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let activeClass = CONFIG.comments.activeClass;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      let activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      let commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+        </div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          小站概览
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-3"><a class="nav-link" href="#什么是GPU"><span class="nav-number">1.</span> <span class="nav-text">什么是GPU</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#加速原理"><span class="nav-number">2.</span> <span class="nav-text">加速原理</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#CPU与GPU"><span class="nav-number">3.</span> <span class="nav-text">CPU与GPU</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#主机与设备"><span class="nav-number">4.</span> <span class="nav-text">主机与设备</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#英伟达GPU硬件架构"><span class="nav-number">5.</span> <span class="nav-text">英伟达GPU硬件架构</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#软件生态"><span class="nav-number">6.</span> <span class="nav-text">软件生态</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#CUDA"><span class="nav-number">7.</span> <span class="nav-text">CUDA</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#英伟达之外的选项"><span class="nav-number">8.</span> <span class="nav-text">英伟达之外的选项</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#参考资料"><span class="nav-number">9.</span> <span class="nav-text">参考资料</span></a></li></ol></div>
+      </div>
+      <!--/noindex-->
+
+
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+    <img class="site-author-image" itemprop="image" alt="Yiwei Zhang"
+      src="/images/avatar.png">
+  <p class="site-author-name" itemprop="name">Yiwei Zhang</p>
+  <div class="site-description" itemprop="description">Stay hungury ! Stay foolish ！</div>
+</div>
+
+
+         
+            <div class="feed-link motion-element">
+              <a href="/atom.xml" rel="alternate">
+                <i class="fa fa-rss"></i>
+                RSS
+              </a>
+            </div>
+          
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/archives/">
+        
+          <span class="site-state-item-count">174</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+            <a href="/categories/">
+          
+        <span class="site-state-item-count">79</span>
+        <span class="site-state-item-name">分类</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+            <a href="/tags/">
+          
+        <span class="site-state-item-count">69</span>
+        <span class="site-state-item-name">标签</span></a>
+      </div>
+  </nav>
+</div>
+  <div class="links-of-author motion-element">
+      <span class="links-of-author-item">
+        <a href="https://github.com/zywvvd" title="GitHub → https:&#x2F;&#x2F;github.com&#x2F;zywvvd" rel="noopener" target="_blank"><i class="fa fa-fw fa-github"></i>GitHub</a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="mailto:zywvvd@mail.ustc.edu.cn" title="E-Mail → mailto:zywvvd@mail.ustc.edu.cn" rel="noopener" target="_blank"><i class="fa fa-fw fa-envelope"></i>E-Mail</a>
+      </span>
+  </div>
+
+
+
+      </div>
+        <div class="back-to-top motion-element">
+          <i class="fa fa-arrow-up"></i>
+          <span>0%</span>
+        </div>
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        
+
+<div class="copyright">
+  
+  &copy; 2020 – 
+  <span itemprop="copyrightYear">2021</span>
+  <span class="with-love">
+    <i class="fa fa-user"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">Yiwei Zhang</span>
+    <span class="post-meta-divider">|</span>
+    <span class="post-meta-item-icon">
+      <i class="fa fa-area-chart"></i>
+    </span>
+      <span class="post-meta-item-text">站点总字数: </span>
+    <span title="站点总字数">427k</span>
+    <span class="post-meta-divider">|</span>
+    <span class="post-meta-item-icon">
+      <i class="fa fa-coffee"></i>
+    </span>
+      <span class="post-meta-item-text">站点阅读时长 &asymp;</span>
+    <span title="站点阅读时长">6:28</span>
+</div>
+  <div class="powered-by">技术支持 v4.2.1
+  </div>
+  <span class="post-meta-divider">|</span>
+  <div class="theme-info">主题方案 – <a href="https://theme-next.org/" class="theme-link" rel="noopener" target="_blank">NexT.Gemini</a> v7.7.1
+  </div>
+
+<script async src="//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+<span><br></span>	
+
+<span class="post-meta-item-icon">
+      <i class="fa fa-group"></i>
+</span>
+<span>总访客&nbsp<span id="busuanzi_value_site_uv"></span>&nbsp人</span>
+<span class="post-meta-divider">|</span>
+<span class="post-meta-item-icon">
+      <i class="fa fa-eye"></i>
+</span>
+<span>访问总量&nbsp<span id="busuanzi_value_site_pv"></span>&nbsp次</span>
+
+        
+
+
+
+
+
+
+
+
+      </div>
+    </footer>
+  </div>
+
+  
+  <script src="/lib/anime.min.js"></script>
+  <script src="//cdn.jsdelivr.net/npm/jquery@3/dist/jquery.min.js"></script>
+  <script src="//cdn.jsdelivr.net/gh/fancyapps/fancybox@3/dist/jquery.fancybox.min.js"></script>
+  <script src="/lib/velocity/velocity.min.js"></script>
+  <script src="/lib/velocity/velocity.ui.min.js"></script>
+
+<script src="/js/utils.js"></script>
+
+<script src="/js/motion.js"></script>
+
+
+<script src="/js/schemes/pisces.js"></script>
+
+
+<script src="/js/next-boot.js"></script>
+
+
+
+
+  
+  <script>
+    (function(){
+      var bp = document.createElement('script');
+      var curProtocol = window.location.protocol.split(':')[0];
+      bp.src = (curProtocol === 'https') ? 'https://zz.bdstatic.com/linksubmit/push.js' : 'http://push.zhanzhang.baidu.com/push.js';
+      var s = document.getElementsByTagName("script")[0];
+      s.parentNode.insertBefore(bp, s);
+    })();
+  </script>
+
+
+
+
+  
+<script src="/js/local-search.js"></script>
+
+
+
+
+
+
+
+
+
+
+
+<script>
+if (document.querySelectorAll('pre.mermaid').length) {
+  NexT.utils.getScript('//cdn.jsdelivr.net/npm/mermaid@8/dist/mermaid.min.js', () => {
+    mermaid.initialize({
+      theme    : 'default',
+      logLevel : 3,
+      flowchart: { curve     : 'linear' },
+      gantt    : { axisFormat: '%m/%d/%Y' },
+      sequence : { actorMargin: 50 }
+    });
+  }, window.mermaid);
+}
+</script>
+
+
+  
+
+  
+
+  
+
+
+<script>
+NexT.utils.loadComments(document.querySelector('#valine-comments'), () => {
+  NexT.utils.getScript('//unpkg.com/valine/dist/Valine.min.js', () => {
+    var GUEST = ['nick', 'mail', 'link'];
+    var guest = 'nick,mail,link';
+    guest = guest.split(',').filter(item => {
+      return GUEST.includes(item);
+    });
+    new Valine({
+      el         : '#valine-comments',
+      verify     : true,
+      notify     : true,
+      appId      : 'OLRteWxoct1JkWm3Pe9BDYEK-gzGzoHsz',
+      appKey     : 'YBKiC6SE5hpWUmy0WIyegCrM',
+      placeholder: "遗憾莫过于难忘你的背影，却找不到你来过的痕迹 ...",
+      avatar     : 'mm',
+      meta       : guest,
+      pageSize   : '10' || 10,
+      visitor    : true,
+      lang       : '' || 'zh-cn',
+      path       : location.pathname,
+      recordIP   : false,
+      serverURLs : ''
+    });
+  }, window.Valine);
+});
+</script>
+
+
+
+<script src="/live2dw/lib/L2Dwidget.min.js?094cbace49a39548bed64abff5988b05"></script><script>L2Dwidget.init({"pluginRootPath":"live2dw/","pluginJsPath":"lib/","pluginModelPath":"assets/","tagMode":false,"log":false,"model":{"jsonPath":"/live2dw/assets/z16.model.json"},"display":{"position":"right","width":220,"height":440},"mobile":{"show":false},"react":{"opacity":0.7}});</script></body>
+</html>
