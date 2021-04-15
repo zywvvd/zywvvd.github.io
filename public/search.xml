@@ -1,6 +1,118 @@
 <?xml version="1.0" encoding="utf-8"?>
 <search>
   <entry>
+    <title>Python CUDA 编程 - 2 - Numba 简介</title>
+    <url>/2021/04/15/deep_learning/speed_up/numba-intro/numba-intro/</url>
+    <content><![CDATA[<blockquote>
+<p>Numba是一个针对Python的开源JIT编译器，由Anaconda公司主导开发，可以对Python原生代码进行CPU和GPU加速。Numba对NumPy数组和函数非常友好。</p>
+</blockquote>
+<a id="more"></a>
+
+<h3 id="Numba简介"><a href="#Numba简介" class="headerlink" title="Numba简介"></a>Numba简介</h3><blockquote>
+<p>计算机只能执行二进制的机器码，C、C++等编译型语言依靠编译器将源代码转化为可执行文件后才能运行，Python、Java等解释型语言使用解释器将源代码翻译后在虚拟机上执行。对于Python，由于解释器的存在，其执行效率比C语言慢几倍甚至几十倍。</p>
+</blockquote>
+<p><img src="https://photos.zywvvd.com/image_canglan/20210416001939.png" alt="以C语言为基准，不同编程语言性能测试比较"></p>
+<blockquote>
+<p>C语言经过几十年的发展，优化已经达到了极致。以C语言为基准，大多数解释语言，如Python、R会慢十倍甚至一百倍。Julia这个解释语言是个“奇葩”，因为它采用了JIT编译技术。</p>
+</blockquote>
+<ul>
+<li>我们平时研发深度学习重度依赖 python，除了numpy矩阵运算速度快以外执行效率并不够高</li>
+<li>解决Python执行效率低的问题，一种解决办法是使用C/C++语言重写Python函数，但是这要求程序员对C/C++语言熟悉，且调试速度慢</li>
+<li>另外一种非常方便快捷的解决办法就是使用<code>Just-In-Time（JIT）</code>技术</li>
+</ul>
+<h3 id="Python解释器工作原理"><a href="#Python解释器工作原理" class="headerlink" title="Python解释器工作原理"></a>Python解释器工作原理</h3><blockquote>
+<p>Python是一门解释语言，Python为我们提供了基于硬件和操作系统的一个虚拟机，并使用解释器将源代码转化为虚拟机可执行的字节码。字节码在虚拟机上执行，得到结果。</p>
+</blockquote>
+<p><img src="https://photos.zywvvd.com/image_canglan/20210416002635.png" alt="Python解释器工作原理"></p>
+<ul>
+<li>我们使用<code>python example.py</code>来执行一份源代码时，Python解释器会在后台启动一个字节码编译器（Bytecode Compiler），将源代码转换为字节码</li>
+<li>字节码是一种只能运行在虚拟机上的文件，Python的字节码默认后缀为<code>.pyc</code></li>
+<li>Python生成<code>.pyc</code>后一般放在内存中继续使用，并不是每次都将<code>.pyc</code>文件保存到磁盘上</li>
+<li>pyc字节码通过Python虚拟机与硬件交互</li>
+<li>虚拟机的出现导致程序和硬件之间增加了中间层，运行效率大打折扣</li>
+<li>在虚拟机上再运行一个其他系统，经常感觉速度下降，体验变差，这与Python虚拟机导致程序运行慢是一个原理</li>
+</ul>
+<h3 id="Just-In-Time（JIT）"><a href="#Just-In-Time（JIT）" class="headerlink" title="Just-In-Time（JIT）"></a>Just-In-Time（JIT）</h3><blockquote>
+<p>Just-In-Time（JIT）技术为解释语言提供了一种优化，它能克服上述效率问题，极大提升代码执行速度，同时保留Python语言的易用性。</p>
+<p>使用JIT技术时，JIT编译器将Python源代码编译成机器直接可以执行的机器语言，并可以直接在CPU等硬件上运行。这样就跳过了原来的虚拟机，执行速度几乎与用C语言编程速度并无二致。</p>
+</blockquote>
+<h3 id="Python-Numba"><a href="#Python-Numba" class="headerlink" title="Python Numba"></a>Python Numba</h3><blockquote>
+<p>Numba是一个针对Python的开源JIT编译器，由Anaconda公司主导开发，可以对Python原生代码进行CPU和GPU加速。Numba对NumPy数组和函数非常友好。</p>
+</blockquote>
+<h4 id="简介"><a href="#简介" class="headerlink" title="简介"></a>简介</h4><p>官方文档：<a href="http://numba.pydata.org/numba-doc/latest/reference/pysupported.html" target="_blank" rel="noopener">http://numba.pydata.org/numba-doc/latest/reference/pysupported.html</a></p>
+<p>使用Numba非常方便，只需要在Python原生函数上增加一个装饰器（Decorator）。Numba会将这些函数使用即时编译JIT方式编译成机器码，这些代码将以近乎机器码的速度运行。</p>
+<p>目前，Numba对以下环境进行了支持：</p>
+<ul>
+<li>操作系统：Windows（32位和64位），macOS，Linux（32位和64位）</li>
+<li>CPU微架构：x86，x86_64，ppc64，armv7l和armv8l</li>
+<li>GPU：NVIDIA CUDA和AMD ROCm</li>
+<li>CPython</li>
+<li>NumPy 1.15以后的版本</li>
+</ul>
+<h4 id="安装方法"><a href="#安装方法" class="headerlink" title="安装方法"></a>安装方法</h4><p>使用<code>conda</code>安装Numba：</p>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">$ conda install numba</span><br></pre></td></tr></table></figure>
+
+<p>或者使用<code>pip</code>安装：</p>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">$ pip install numba</span><br></pre></td></tr></table></figure>
+
+<h4 id="使用方法"><a href="#使用方法" class="headerlink" title="使用方法"></a>使用方法</h4><blockquote>
+<p>使用时，只需要在原来的函数上添加一行”注释”：</p>
+</blockquote>
+<figure class="highlight python"><table><tr><td class="code"><pre><span class="line"><span class="keyword">from</span> numba <span class="keyword">import</span> jit</span><br><span class="line"><span class="keyword">import</span> numpy <span class="keyword">as</span> np</span><br><span class="line"></span><br><span class="line">SIZE = <span class="number">2000</span></span><br><span class="line">x = np.random.random((SIZE, SIZE))</span><br><span class="line"></span><br><span class="line"><span class="string">"""</span></span><br><span class="line"><span class="string">给定n*n矩阵，对矩阵每个元素计算tanh值，然后求和。</span></span><br><span class="line"><span class="string">因为要循环矩阵中的每个元素，计算复杂度为 n*n。</span></span><br><span class="line"><span class="string">"""</span></span><br><span class="line"><span class="meta">@jit</span></span><br><span class="line"><span class="function"><span class="keyword">def</span> <span class="title">jit_tan_sum</span><span class="params">(a)</span>:</span>   <span class="comment"># 函数在被调用时编译成机器语言</span></span><br><span class="line">    tan_sum = <span class="number">0</span></span><br><span class="line">    <span class="keyword">for</span> i <span class="keyword">in</span> range(SIZE):   <span class="comment"># Numba 支持循环</span></span><br><span class="line">        <span class="keyword">for</span> j <span class="keyword">in</span> range(SIZE):</span><br><span class="line">            tan_sum += np.tanh(a[i, j])   <span class="comment"># Numba 支持绝大多数NumPy函数</span></span><br><span class="line">    <span class="keyword">return</span> tan_sum</span><br><span class="line"></span><br><span class="line">print(jit_tan_sum(x))</span><br></pre></td></tr></table></figure>
+
+<blockquote>
+<p>我们只需要在原来的代码上添加一行<code>@jit</code>，即可将一个函数编译成机器码，其他地方都不需要更改。<code>@</code>符号装饰了原来的代码，所以称类似写法为<strong>装饰器</strong>。</p>
+</blockquote>
+<h4 id="使用场景"><a href="#使用场景" class="headerlink" title="使用场景"></a>使用场景</h4><blockquote>
+<p>Numba简单到只需要在函数上加一个装饰就能加速程序，但也有缺点。目前Numba只支持了Python原生函数和部分NumPy函数，其他一些场景可能不适用。</p>
+</blockquote>
+<ul>
+<li>比如类似pandas这样的库是更高层次的封装，Numba其实不能理解它里面做了什么，所以无法对其加速。一些大家经常用的机器学习框架，如<code>scikit-learn</code>，<code>tensorflow</code>，<code>pytorch</code>等，已经做了大量的优化，不适合再使用Numba做加速。</li>
+<li>此外，Numba不支持：<ul>
+<li><code>try...except</code> 异常处理</li>
+<li><code>with</code> 语句</li>
+<li>类定义<code>class</code></li>
+<li><code>yield from</code></li>
+</ul>
+</li>
+</ul>
+<h4 id="Numba-工作模式"><a href="#Numba-工作模式" class="headerlink" title="Numba 工作模式"></a>Numba 工作模式</h4><ul>
+<li>Numba的<code>@jit</code>装饰器就像自动驾驶，用户不需要关注到底是如何优化的，Numba去尝试进行优化，如果发现不支持，那么Numba会继续用Python原来的方法去执行该函数，即<em>图 Python解释器工作原理</em>中左侧部分。这种模式被称为<code>object</code>模式。前文提到的pandas的例子，Numba发现无法理解里面的内容，于是自动进入了<code>object</code>模式。<code>object</code>模式还是和原生的Python一样慢，还有可能比原来更慢。</li>
+<li>Numba真正优秀之处在于其<code>nopython</code>模式。将装饰器改为<code>@jit(nopython=True)</code>或者<code>@njit</code>，Numba会假设你已经对所加速的函数非常了解，强制使用加速的方式，不会进入<code>object</code>模式，如编译不成功，则直接抛出异常。<code>nopython</code>的名字会有点歧义，我们可以理解为不使用很慢的Python，强制进入<em>图 Python解释器工作原理</em>中右侧部分。</li>
+</ul>
+<blockquote>
+<p>实践上，一般推荐将代码中计算密集的部分作为单独的函数提出来，并使用<code>nopython</code>方式优化，这样可以保证我们能使用到Numba的加速功能。其余部分还是使用Python原生代码，在计算加速的前提下，避免过长的编译时间。Numba可以与NumPy紧密结合，两者一起，常常能够得到近乎C语言的速度。尽管Numba不能直接优化pandas，但是我们可以将pandas中处理数据的<code>for</code>循环作为单独的函数提出来，再使用Numba加速。</p>
+</blockquote>
+<h3 id="编译开销"><a href="#编译开销" class="headerlink" title="编译开销"></a>编译开销</h3><blockquote>
+<p>编译源代码需要一定的时间。C/C++等编译型语言要提前把整个程序先编译好，再执行可执行文件。Numba库提供的是一种懒编译（Lazy Compilation）技术，即在运行过程中第一次发现代码中有<code>@jit</code>，才将该代码块编译。用到的时候才编译，看起来比较懒，所以叫懒编译。</p>
+</blockquote>
+<p>使用Numba时，总时间 = 编译时间 + 运行时间。相比所能节省的计算时间，编译的时间开销很小，所以物有所值。对于一个需要多次调用的Numba函数，只需要编译一次，后面再调用时就不需要编译了。</p>
+<figure class="highlight python"><table><tr><td class="code"><pre><span class="line"><span class="keyword">from</span> numba <span class="keyword">import</span> jit</span><br><span class="line"><span class="keyword">import</span> numpy <span class="keyword">as</span> np</span><br><span class="line"><span class="keyword">import</span> time</span><br><span class="line"></span><br><span class="line">SIZE = <span class="number">2000</span></span><br><span class="line">x = np.random.random((SIZE, SIZE))</span><br><span class="line"></span><br><span class="line"><span class="string">"""</span></span><br><span class="line"><span class="string">给定n*n矩阵，对矩阵每个元素计算tanh值，然后求和。</span></span><br><span class="line"><span class="string">因为要循环矩阵中的每个元素，计算复杂度为 n*n。</span></span><br><span class="line"><span class="string">"""</span></span><br><span class="line"><span class="meta">@jit</span></span><br><span class="line"><span class="function"><span class="keyword">def</span> <span class="title">jit_tan_sum</span><span class="params">(a)</span>:</span>   <span class="comment"># 函数在被调用时编译成机器语言</span></span><br><span class="line">    tan_sum = <span class="number">0</span></span><br><span class="line">    <span class="keyword">for</span> i <span class="keyword">in</span> range(SIZE):   <span class="comment"># Numba 支持循环</span></span><br><span class="line">        <span class="keyword">for</span> j <span class="keyword">in</span> range(SIZE):</span><br><span class="line">            tan_sum += np.tanh(a[i, j])   <span class="comment"># Numba 支持绝大多数NumPy函数</span></span><br><span class="line">    <span class="keyword">return</span> tan_sum</span><br><span class="line"></span><br><span class="line"><span class="comment"># 总时间 = 编译时间 + 运行时间</span></span><br><span class="line">start = time.time()</span><br><span class="line">jit_tan_sum(x)</span><br><span class="line">end = time.time()</span><br><span class="line">print(<span class="string">"Elapsed (with compilation) = %s"</span> % (end - start))</span><br><span class="line"></span><br><span class="line"><span class="comment"># Numba将加速的代码缓存下来</span></span><br><span class="line"><span class="comment"># 总时间 = 运行时间</span></span><br><span class="line">start = time.time()</span><br><span class="line">jit_tan_sum(x)</span><br><span class="line">end = time.time()</span><br><span class="line">print(<span class="string">"Elapsed (after compilation) = %s"</span> % (end - start))</span><br></pre></td></tr></table></figure>
+
+<p>代码中两次调用Numba优化函数，第一次执行时需要编译，第二次使用缓存的代码，运行时间将大大缩短：</p>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">Elapsed (with compilation) &#x3D; 0.49199914932250977</span><br><span class="line">Elapsed (after compilation) &#x3D; 0.0364077091217041</span><br></pre></td></tr></table></figure>
+
+<h3 id="类型推断编译加速"><a href="#类型推断编译加速" class="headerlink" title="类型推断编译加速"></a>类型推断编译加速</h3><blockquote>
+<p>原生Python速度慢的另一个重要原因是变量类型不确定。声明一个变量的语法很简单，如<code>a = 1</code>，但没有指定<code>a</code>到底是一个整数和一个浮点小数。Python解释器要进行大量的类型推断，会非常耗时。</p>
+<p>引入Numba后，Numba也要推断输入输出的类型，才能转化为机器码。针对这个问题，Numba给出了名为Eager Compilation的优化方式。</p>
+</blockquote>
+<figure class="highlight python"><table><tr><td class="code"><pre><span class="line"><span class="keyword">from</span> numba <span class="keyword">import</span> jit, int32</span><br><span class="line"></span><br><span class="line"><span class="meta">@jit("int32(int32, int32)", nopython=True)</span></span><br><span class="line"><span class="function"><span class="keyword">def</span> <span class="title">f2</span><span class="params">(x, y)</span>:</span></span><br><span class="line">    <span class="keyword">return</span> x + y</span><br></pre></td></tr></table></figure>
+
+<p><code>@jit(int32(int32, int32))</code>告知Numba你的函数在使用什么样的输入和输出，括号内是输入，括号左侧是输出。这样不会加快执行速度，但是会加快编译速度，可以更快将函数编译到机器码上。</p>
+<h3 id="参考资料"><a href="#参考资料" class="headerlink" title="参考资料"></a>参考资料</h3><ul>
+<li><a href="https://lulaoshi.info/gpu/python-cuda/numba.html" target="_blank" rel="noopener">https://lulaoshi.info/gpu/python-cuda/numba.html</a></li>
+</ul>
+<link rel="stylesheet" href="/css/spoiler.css" type="text/css"><script src="/js/spoiler.js" type="text/javascript" async></script>]]></content>
+      <categories>
+        <category>Deep Learning</category>
+        <category>CUDA</category>
+      </categories>
+      <tags>
+        <tag>Deep Learning</tag>
+        <tag>CUDA</tag>
+      </tags>
+  </entry>
+  <entry>
     <title>使用 pip 离线复制 python 运行环境</title>
     <url>/2021/04/15/coding/environment/pip-env-install-off-line/pip-env-install-off-line/</url>
     <content><![CDATA[<blockquote>
@@ -5248,29 +5360,29 @@ $$
 <h4 id="传输文件"><a href="#传输文件" class="headerlink" title="传输文件"></a>传输文件</h4><h5 id="从服务器上下载文件"><a href="#从服务器上下载文件" class="headerlink" title="从服务器上下载文件"></a>从服务器上下载文件</h5><figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">scp username@servername:&#x2F;path&#x2F;filename &#x2F;var&#x2F;www&#x2F;local_dir（本地目录）</span><br></pre></td></tr></table></figure>
 
 <blockquote>
-<p>例如: scp <a href="mailto:&#114;&#x6f;&#x6f;&#116;&#64;&#49;&#x39;&#x32;&#46;&#49;&#x36;&#x38;&#x2e;&#x30;&#x2e;&#x31;&#48;&#49;">&#114;&#x6f;&#x6f;&#116;&#64;&#49;&#x39;&#x32;&#46;&#49;&#x36;&#x38;&#x2e;&#x30;&#x2e;&#x31;&#48;&#49;</a>:/var/www/test.txt 把192.168.0.101上的/var/www/test.txt 的文件下载到/var/www/local_dir（本地目录）</p>
+<p>例如: scp <a href="mailto:&#114;&#111;&#x6f;&#116;&#64;&#x31;&#57;&#x32;&#x2e;&#x31;&#54;&#56;&#x2e;&#48;&#x2e;&#x31;&#x30;&#49;">&#114;&#111;&#x6f;&#116;&#64;&#x31;&#57;&#x32;&#x2e;&#x31;&#54;&#56;&#x2e;&#48;&#x2e;&#x31;&#x30;&#49;</a>:/var/www/test.txt 把192.168.0.101上的/var/www/test.txt 的文件下载到/var/www/local_dir（本地目录）</p>
 </blockquote>
 <h5 id="上传本地文件到服务器"><a href="#上传本地文件到服务器" class="headerlink" title="上传本地文件到服务器"></a>上传本地文件到服务器</h5><figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">scp &#x2F;path&#x2F;filename username@servername:&#x2F;path</span><br></pre></td></tr></table></figure>
 
 <blockquote>
-<p>例如: scp /var/www/test.php <a href="mailto:&#x72;&#x6f;&#x6f;&#x74;&#64;&#49;&#57;&#50;&#x2e;&#49;&#54;&#x38;&#46;&#x30;&#46;&#x31;&#x30;&#49;">&#x72;&#x6f;&#x6f;&#x74;&#64;&#49;&#57;&#50;&#x2e;&#49;&#54;&#x38;&#46;&#x30;&#46;&#x31;&#x30;&#49;</a>:/var/www/ 把本机/var/www/目录下的test.php文件上传到192.168.0.101这台服务器上的/var/www/目录中</p>
+<p>例如: scp /var/www/test.php <a href="mailto:&#114;&#111;&#111;&#x74;&#x40;&#x31;&#x39;&#50;&#x2e;&#x31;&#x36;&#x38;&#x2e;&#48;&#x2e;&#49;&#48;&#49;">&#114;&#111;&#111;&#x74;&#x40;&#x31;&#x39;&#50;&#x2e;&#x31;&#x36;&#x38;&#x2e;&#48;&#x2e;&#49;&#48;&#49;</a>:/var/www/ 把本机/var/www/目录下的test.php文件上传到192.168.0.101这台服务器上的/var/www/目录中</p>
 </blockquote>
 <h5 id="从服务器下载整个目录"><a href="#从服务器下载整个目录" class="headerlink" title="从服务器下载整个目录"></a>从服务器下载整个目录</h5><figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">scp -r username@servername:&#x2F;var&#x2F;www&#x2F;remote_dir&#x2F;（远程目录） &#x2F;var&#x2F;www&#x2F;local_dir（本地目录）</span><br></pre></td></tr></table></figure>
 
 <blockquote>
-<p>例如: scp -r <a href="mailto:&#x72;&#111;&#111;&#116;&#x40;&#49;&#57;&#x32;&#46;&#x31;&#54;&#x38;&#x2e;&#48;&#46;&#x31;&#48;&#x31;">&#x72;&#111;&#111;&#116;&#x40;&#49;&#57;&#x32;&#46;&#x31;&#54;&#x38;&#x2e;&#48;&#46;&#x31;&#48;&#x31;</a>:/var/www/test /var/www/  </p>
+<p>例如: scp -r <a href="mailto:&#114;&#x6f;&#x6f;&#x74;&#x40;&#49;&#x39;&#x32;&#46;&#x31;&#x36;&#56;&#x2e;&#48;&#46;&#x31;&#x30;&#x31;">&#114;&#x6f;&#x6f;&#x74;&#x40;&#49;&#x39;&#x32;&#46;&#x31;&#x36;&#56;&#x2e;&#48;&#46;&#x31;&#x30;&#x31;</a>:/var/www/test /var/www/  </p>
 </blockquote>
 <h5 id="上传目录到服务器"><a href="#上传目录到服务器" class="headerlink" title="上传目录到服务器"></a>上传目录到服务器</h5><figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">scp -r local_dir username@servername:remote_dir</span><br></pre></td></tr></table></figure>
 
 <blockquote>
-<p>例如：scp -r test  <a href="mailto:&#114;&#111;&#111;&#116;&#64;&#49;&#57;&#x32;&#46;&#49;&#54;&#x38;&#46;&#48;&#x2e;&#x31;&#x30;&#x31;">&#114;&#111;&#111;&#116;&#64;&#49;&#57;&#x32;&#46;&#49;&#54;&#x38;&#46;&#48;&#x2e;&#x31;&#x30;&#x31;</a>:/var/www/  把当前目录下的test目录上传到服务器的/var/www/ 目录</p>
+<p>例如：scp -r test  <a href="mailto:&#114;&#111;&#x6f;&#x74;&#x40;&#49;&#57;&#x32;&#x2e;&#x31;&#x36;&#56;&#46;&#x30;&#x2e;&#x31;&#48;&#49;">&#114;&#111;&#x6f;&#x74;&#x40;&#49;&#57;&#x32;&#x2e;&#x31;&#x36;&#56;&#46;&#x30;&#x2e;&#x31;&#48;&#49;</a>:/var/www/  把当前目录下的test目录上传到服务器的/var/www/ 目录</p>
 </blockquote>
 <h4 id="ssh自带的sftp功能"><a href="#ssh自带的sftp功能" class="headerlink" title="ssh自带的sftp功能"></a>ssh自带的sftp功能</h4><h5 id="Window和Linux的传输工具"><a href="#Window和Linux的传输工具" class="headerlink" title="Window和Linux的传输工具"></a>Window和Linux的传输工具</h5><figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">wincp  filezip          </span><br><span class="line">sftp --&gt;基于 ssh 的安全加密传输</span><br></pre></td></tr></table></figure>
 
 <h5 id="sftp客户端连接"><a href="#sftp客户端连接" class="headerlink" title="sftp客户端连接"></a>sftp客户端连接</h5><figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">sftp -oPort&#x3D;22 root@192.168.25.137                   </span><br><span class="line">put &#x2F;etc&#x2F;hosts &#x2F;tmp                   </span><br><span class="line">get &#x2F;etc&#x2F;hosts &#x2F;home&#x2F;omd</span><br></pre></td></tr></table></figure>
 
 <h5 id="sftp小结"><a href="#sftp小结" class="headerlink" title="sftp小结"></a>sftp小结</h5><ul>
-<li>linux下使用命令： sftp -oPort=22 <a href="mailto:&#x72;&#111;&#x6f;&#x74;&#x40;&#x78;&#x2e;&#x78;&#x2e;&#x78;&#x2e;&#120;">&#x72;&#111;&#x6f;&#x74;&#x40;&#x78;&#x2e;&#x78;&#x2e;&#x78;&#x2e;&#120;</a>                   </li>
+<li>linux下使用命令： sftp -oPort=22 <a href="mailto:&#x72;&#x6f;&#x6f;&#116;&#64;&#120;&#46;&#x78;&#x2e;&#120;&#46;&#x78;">&#x72;&#x6f;&#x6f;&#116;&#64;&#120;&#46;&#x78;&#x2e;&#120;&#46;&#x78;</a>                   </li>
 <li>put加客户端本地路径上传                  </li>
 <li>get下载服务器端内容到本地                   </li>
 <li>远程连接默认连接用户的家目录</li>
