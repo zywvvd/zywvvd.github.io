@@ -1,20 +1,122 @@
 <?xml version="1.0" encoding="utf-8"?>
 <search>
   <entry>
-    <title>泊松编辑 poisson editing</title>
-    <url>/2021/06/08/image_processing/poisson-editing/poisson-editing/</url>
+    <title>Win 10 安装NVIDIA CUDA 11.1 Nsight Visual Studio Edition 安装失败</title>
+    <url>/2021/06/15/deep_learning/environment/cuda-install-error/cuda-install-error/</url>
     <content><![CDATA[<blockquote>
-<p>本文。</p>
+<p>在Win 10 安装 CUDA 11.1 时出现安装失败的提示，经检查发现是<code>Nsight Visual Studio Edition</code>安装失败，本文记录跳过安装的方法。</p>
 </blockquote>
 <span id="more"></span>
 
-<h3 id="正文"><a href="#正文" class="headerlink" title="正文"></a>正文</h3><blockquote>
+<h3 id="错误信息"><a href="#错误信息" class="headerlink" title="错误信息"></a>错误信息</h3><p><img src="https://photos.zywvvd.com/images_matrixtime/20210615165319.png"></p>
+<h3 id="解决方案"><a href="#解决方案" class="headerlink" title="解决方案"></a>解决方案</h3><ul>
+<li>在安装时选择自定义</li>
+<li>关闭 <code>Nsight VSE</code> 安装选项即可</li>
+</ul>
+<p><img src="https://photos.zywvvd.com/images_matrixtime/20210615165547.png"></p>
+<blockquote>
+<p>目前没发现什么副作用</p>
+</blockquote>
+<h3 id="参考资料"><a href="#参考资料" class="headerlink" title="参考资料"></a>参考资料</h3><ul>
+<li><a href="https://bbs.csdn.net/topics/398305834">https://bbs.csdn.net/topics/398305834</a></li>
+</ul>
+<link rel="stylesheet" href="/css/spoiler.css" type="text/css"><script src="/js/spoiler.js" type="text/javascript" async></script>]]></content>
+      <categories>
+        <category>Deep Learning</category>
+      </categories>
+      <tags>
+        <tag>Deep Learning</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>泊松编辑 poisson image editing</title>
+    <url>/2021/06/08/image_processing/poisson-editing/poisson-editing/</url>
+    <content><![CDATA[<blockquote>
+<p>图像融合是图像处理领域的热点应用之一，传统图像融合算法中效果拔群，对之后融合领域启发最大的就是泊松图像融合。</p>
+</blockquote>
+<span id="more"></span>
+
+<h3 id="简介"><a href="#简介" class="headerlink" title="简介"></a>简介</h3><ul>
+<li>泊松编辑的目标是自然地融合来源不同的图像</li>
+<li>将源图像粘贴到目标图像上</li>
+<li>为了保持过渡平滑，顾及了源图像粘贴区域的梯度信息与目标图像的边缘信息</li>
+<li>结合已知信息求解方程组得到泊松编辑图像的结果</li>
+</ul>
+<h3 id="理论介绍"><a href="#理论介绍" class="headerlink" title="理论介绍"></a>理论介绍</h3><h3 id=""><a href="#" class="headerlink" title=""></a><img src="https://photos.zywvvd.com/icey-mate-book/20210612170823.png"></h3><h4 id="符号定义"><a href="#符号定义" class="headerlink" title="符号定义"></a>符号定义</h4><blockquote>
+<p>如上图所示：</p>
+</blockquote>
+<ul>
+<li>图像融合是要把源图像$g$的指定区域$\Omega$融合到目标图像$S$中，边缘区域为$ \partial \Omega $，源图像区域函数$f^*$，目标图像区域函数$f$。</li>
+<li>这里面$g$，$\Omega$，$S$，$ \partial \Omega $，$f^*$都是已知量，需要求的是$f$</li>
+</ul>
+<h4 id="理论"><a href="#理论" class="headerlink" title="理论"></a>理论</h4><blockquote>
+<p>泊松图像编辑的目的是保留源图像的纹理，无缝融入到新图像中。</p>
+<p>实现的思路就是将源图像的梯度保留，应用到目标图像的边界中，解出同时满足梯度和边缘约束条件的方程，得到目标区域像素。</p>
+</blockquote>
+
+$$
+\min _{f} \iint_{\Omega}|\nabla f-\mathbf{v}|^{2} \quad 
+with  \left.\quad f\right|_{\partial \Omega}=\left.f^{*}\right|_{\partial \Omega}
+$$
+
+
+
+<ul>
+<li>$∇f$ 指的是图像函数 $f$ 的梯度</li>
+</ul>
+<p>$$<br>\nabla .=\left[\frac{\partial_{.}}{\partial x}, \frac{\partial}{\partial y}\right]<br>$$</p>
+<ul>
+<li>$v$ 在原论文中是指一个<strong>引导向量场（guidance field）</strong>，当用于图像合成时，它指的就是源图像的梯度。</li>
+<li>这意味着上面的变分方程是指在$Ω$ 的区域内，$f$的梯度和源图像的梯度一致，而在$Ω$ 的边缘处f的值则和源图像$f^*$的值一致。这个变分方程的解是如下<strong>泊松方程</strong>在Dirichlet边界条件时的解，这也是为什么我们的融合方式叫做<strong>泊松融合</strong>。</li>
+</ul>
+
+$$
+\Delta f=\operatorname{div} \mathbf{v}\text{ }  over \text{ } \Omega , \text{ }with  \left.f\right|_{\partial \Omega}=\left.f^{*}\right|_{\partial \Omega}
+$$
+
+
+
+<h3 id="参考代码"><a href="#参考代码" class="headerlink" title="参考代码"></a>参考代码</h3><ul>
+<li>参考了一份github上星星最多的<a href="https://github.com/willemmanuel/poisson-image-editing">泊松图像编辑代码</a>，改成了python3并封装成类方法，供大家参考。</li>
+</ul>
+<blockquote>
+<p>核心类函数为<code>channel_process</code>，输入图像为单通道，<code>mask</code>为0-1的浮点数</p>
+</blockquote>
+<figure class="highlight python"><table><tr><td class="code"><pre><span class="line"><span class="string">&quot;&quot;&quot;</span></span><br><span class="line"><span class="string">Poisson Image Editing</span></span><br><span class="line"><span class="string">William Emmanuel</span></span><br><span class="line"><span class="string">wemmanuel3@gatech.edu</span></span><br><span class="line"><span class="string">CS 6745 Final Project Fall 2017</span></span><br><span class="line"><span class="string">&quot;&quot;&quot;</span></span><br><span class="line"></span><br><span class="line"><span class="keyword">import</span> numpy <span class="keyword">as</span> np</span><br><span class="line"><span class="keyword">from</span> scipy.sparse <span class="keyword">import</span> linalg <span class="keyword">as</span> linalg</span><br><span class="line"><span class="keyword">from</span> scipy.sparse <span class="keyword">import</span> lil_matrix <span class="keyword">as</span> lil_matrix</span><br><span class="line"></span><br><span class="line"><span class="keyword">import</span> cv2</span><br><span class="line"></span><br><span class="line"></span><br><span class="line"><span class="class"><span class="keyword">class</span> <span class="title">Poission</span>:</span></span><br><span class="line">    <span class="comment"># Helper enum</span></span><br><span class="line">    OMEGA = <span class="number">0</span></span><br><span class="line">    DEL_OMEGA = <span class="number">1</span></span><br><span class="line">    OUTSIDE = <span class="number">2</span></span><br><span class="line"></span><br><span class="line">    <span class="comment"># Determine if a given index is inside omega, on the boundary (del omega),</span></span><br><span class="line">    <span class="comment"># or outside the omega region</span></span><br><span class="line"><span class="meta">    @classmethod</span></span><br><span class="line">    <span class="function"><span class="keyword">def</span> <span class="title">point_location</span>(<span class="params">cls, index, mask</span>):</span></span><br><span class="line">        <span class="keyword">if</span> cls.in_omega(index, mask) == <span class="literal">False</span>:</span><br><span class="line">            <span class="keyword">return</span> cls.OUTSIDE</span><br><span class="line">        <span class="keyword">if</span> cls.edge(index, mask) == <span class="literal">True</span>:</span><br><span class="line">            <span class="keyword">return</span> cls.DEL_OMEGA</span><br><span class="line">        <span class="keyword">return</span> cls.OMEGA</span><br><span class="line"></span><br><span class="line">    <span class="comment"># Determine if a given index is either outside or inside omega</span></span><br><span class="line"><span class="meta">    @staticmethod</span></span><br><span class="line">    <span class="function"><span class="keyword">def</span> <span class="title">in_omega</span>(<span class="params">index, mask</span>):</span></span><br><span class="line">        <span class="keyword">return</span> mask[index] == <span class="number">1</span></span><br><span class="line"></span><br><span class="line">    <span class="comment"># Deterimine if a given index is on del omega (boundary)</span></span><br><span class="line"><span class="meta">    @classmethod</span></span><br><span class="line">    <span class="function"><span class="keyword">def</span> <span class="title">edge</span>(<span class="params">cls, index, mask</span>):</span></span><br><span class="line">        <span class="keyword">if</span> cls.in_omega(index, mask) == <span class="literal">False</span>:</span><br><span class="line">            <span class="keyword">return</span> <span class="literal">False</span></span><br><span class="line">        <span class="keyword">for</span> pt <span class="keyword">in</span> cls.get_surrounding(index):</span><br><span class="line">            <span class="comment"># If the point is inside omega, and a surrounding point is not,</span></span><br><span class="line">            <span class="comment"># then we must be on an edge</span></span><br><span class="line">            <span class="keyword">if</span> cls.in_omega(pt, mask) == <span class="literal">False</span>:</span><br><span class="line">                <span class="keyword">return</span> <span class="literal">True</span></span><br><span class="line">        <span class="keyword">return</span> <span class="literal">False</span></span><br><span class="line"></span><br><span class="line">    <span class="comment"># Apply the Laplacian operator at a given index</span></span><br><span class="line"><span class="meta">    @staticmethod</span></span><br><span class="line">    <span class="function"><span class="keyword">def</span> <span class="title">lapl_at_index</span>(<span class="params">source, index</span>):</span></span><br><span class="line"></span><br><span class="line">        i, j = index</span><br><span class="line">        edge_num = <span class="number">0</span></span><br><span class="line">        minus_data = <span class="number">0</span></span><br><span class="line"></span><br><span class="line">        <span class="keyword">try</span>:</span><br><span class="line">            temp = source[i+<span class="number">1</span>, j]</span><br><span class="line">            edge_num += <span class="number">1</span></span><br><span class="line">            minus_data += temp</span><br><span class="line">        <span class="keyword">except</span> Exception <span class="keyword">as</span> e:</span><br><span class="line">            <span class="keyword">pass</span></span><br><span class="line"></span><br><span class="line">        <span class="keyword">try</span>:</span><br><span class="line">            temp = source[i-<span class="number">1</span>, j]</span><br><span class="line">            edge_num += <span class="number">1</span></span><br><span class="line">            minus_data += temp</span><br><span class="line">        <span class="keyword">except</span> Exception <span class="keyword">as</span> e:</span><br><span class="line">            <span class="keyword">pass</span></span><br><span class="line"></span><br><span class="line">        <span class="keyword">try</span>:</span><br><span class="line">            temp = source[i, j+<span class="number">1</span>]</span><br><span class="line">            edge_num += <span class="number">1</span></span><br><span class="line">            minus_data += temp</span><br><span class="line">        <span class="keyword">except</span> Exception <span class="keyword">as</span> e:</span><br><span class="line">            <span class="keyword">pass</span></span><br><span class="line"></span><br><span class="line">        <span class="keyword">try</span>:</span><br><span class="line">            temp = source[i, j-<span class="number">1</span>]</span><br><span class="line">            edge_num += <span class="number">1</span></span><br><span class="line">            minus_data += temp</span><br><span class="line">        <span class="keyword">except</span> Exception <span class="keyword">as</span> e:</span><br><span class="line">            <span class="keyword">pass</span></span><br><span class="line"></span><br><span class="line">        val = source[i, j] * edge_num - minus_data</span><br><span class="line"></span><br><span class="line">        <span class="comment"># val = (4 * source[i, j])    \</span></span><br><span class="line">        <span class="comment">#     - (1 * source[i+1, j]) \</span></span><br><span class="line">        <span class="comment">#     - (1 * source[i-1, j]) \</span></span><br><span class="line">        <span class="comment">#     - (1 * source[i, j+1]) \</span></span><br><span class="line">        <span class="comment">#     - (1 * source[i, j-1])</span></span><br><span class="line">        <span class="keyword">return</span> val</span><br><span class="line"></span><br><span class="line">    <span class="comment"># Find the indicies of omega, or where the mask is 1</span></span><br><span class="line"><span class="meta">    @staticmethod</span></span><br><span class="line">    <span class="function"><span class="keyword">def</span> <span class="title">mask_indicies</span>(<span class="params">mask</span>):</span></span><br><span class="line">        nonzero = np.nonzero(mask)</span><br><span class="line">        <span class="keyword">return</span> nonzero[<span class="number">0</span>], nonzero[<span class="number">1</span>]</span><br><span class="line"></span><br><span class="line">    <span class="comment"># Get indicies above, below, to the left and right</span></span><br><span class="line"><span class="meta">    @staticmethod</span></span><br><span class="line">    <span class="function"><span class="keyword">def</span> <span class="title">get_surrounding</span>(<span class="params">index</span>):</span></span><br><span class="line">        i, j = index</span><br><span class="line">        <span class="keyword">return</span> [(i + <span class="number">1</span>, j), (i - <span class="number">1</span>, j), (i, j + <span class="number">1</span>), (i, j - <span class="number">1</span>)]</span><br><span class="line"></span><br><span class="line">    <span class="comment"># Create the A sparse matrix</span></span><br><span class="line"><span class="meta">    @classmethod</span></span><br><span class="line">    <span class="function"><span class="keyword">def</span> <span class="title">poisson_sparse_matrix</span>(<span class="params">cls, rows, cols</span>):</span></span><br><span class="line">        <span class="comment"># N = number of points in mask</span></span><br><span class="line">        N = <span class="built_in">len</span>(<span class="built_in">list</span>(rows))</span><br><span class="line">        A = lil_matrix((N, N))</span><br><span class="line">        <span class="comment"># Set up row for each point in mask</span></span><br><span class="line"></span><br><span class="line">        points = <span class="built_in">list</span>(<span class="built_in">zip</span>(rows, cols))</span><br><span class="line">        <span class="keyword">for</span> i, index <span class="keyword">in</span> <span class="built_in">enumerate</span>(points):</span><br><span class="line">            <span class="comment"># Should have 4&#x27;s diagonal</span></span><br><span class="line">            A[i, i] = <span class="number">4</span></span><br><span class="line">            <span class="comment"># Get all surrounding points</span></span><br><span class="line">            <span class="keyword">for</span> x <span class="keyword">in</span> cls.get_surrounding(index):</span><br><span class="line">                <span class="comment"># If a surrounding point is in the mask, add -1 to index&#x27;s</span></span><br><span class="line">                <span class="comment"># row at correct position</span></span><br><span class="line">                <span class="keyword">if</span> x <span class="keyword">not</span> <span class="keyword">in</span> points:</span><br><span class="line">                    <span class="keyword">continue</span></span><br><span class="line">                j = points.index(x)</span><br><span class="line">                A[i, j] = -<span class="number">1</span></span><br><span class="line">        <span class="keyword">return</span> A</span><br><span class="line"></span><br><span class="line">    <span class="comment"># Main method</span></span><br><span class="line">    <span class="comment"># Does Poisson image editing on one channel given a source, target, and mask</span></span><br><span class="line"><span class="meta">    @classmethod</span></span><br><span class="line">    <span class="function"><span class="keyword">def</span> <span class="title">channel_process</span>(<span class="params">cls, source, target, mask</span>):</span></span><br><span class="line">        rows, cols = cls.mask_indicies(mask)</span><br><span class="line"></span><br><span class="line">        <span class="keyword">assert</span> <span class="built_in">len</span>(rows) == <span class="built_in">len</span>(cols)</span><br><span class="line">        N = <span class="built_in">len</span>(rows)</span><br><span class="line">        <span class="comment"># Create poisson A matrix. Contains mostly 0&#x27;s, some 4&#x27;s and -1&#x27;s</span></span><br><span class="line">        A = cls.poisson_sparse_matrix(rows, cols)</span><br><span class="line">        <span class="comment"># Create B matrix</span></span><br><span class="line">        b = np.zeros(N)</span><br><span class="line">        points = <span class="built_in">list</span>(<span class="built_in">zip</span>(rows, cols))</span><br><span class="line">        <span class="keyword">for</span> i, index <span class="keyword">in</span> <span class="built_in">enumerate</span>(points):</span><br><span class="line">            <span class="comment"># Start with left hand side of discrete equation</span></span><br><span class="line">            b[i] = cls.lapl_at_index(source, index)</span><br><span class="line">            <span class="comment"># If on boundry, add in target intensity</span></span><br><span class="line">            <span class="comment"># Creates constraint lapl source = target at boundary</span></span><br><span class="line">            <span class="keyword">if</span> cls.point_location(index, mask) == cls.DEL_OMEGA:</span><br><span class="line">                <span class="keyword">for</span> pt <span class="keyword">in</span> cls.get_surrounding(index):</span><br><span class="line">                    <span class="keyword">if</span> cls.in_omega(pt, mask) == <span class="literal">False</span>:</span><br><span class="line">                        b[i] += target[pt]</span><br><span class="line"></span><br><span class="line">        <span class="comment"># Solve for x, unknown intensities</span></span><br><span class="line">        x = linalg.cg(A, b)</span><br><span class="line">        <span class="comment"># Copy target photo, make sure as int</span></span><br><span class="line">        composite = np.copy(target).astype(<span class="built_in">int</span>)</span><br><span class="line">        <span class="comment"># Place new intensity on target at given index</span></span><br><span class="line">        <span class="keyword">for</span> i, index <span class="keyword">in</span> <span class="built_in">enumerate</span>(points):</span><br><span class="line">            composite[index] = x[<span class="number">0</span>][i]</span><br><span class="line"></span><br><span class="line">        composite = np.clip(composite, <span class="number">0</span>, <span class="number">255</span>)</span><br><span class="line">        <span class="keyword">return</span> composite.astype(<span class="string">&#x27;uint8&#x27;</span>)</span><br><span class="line"></span><br><span class="line"><span class="meta">    @staticmethod</span></span><br><span class="line">    <span class="function"><span class="keyword">def</span> <span class="title">gray_channel_3_image</span>(<span class="params">image</span>):</span></span><br><span class="line">        <span class="keyword">assert</span> image.ndim == <span class="number">3</span></span><br><span class="line">        <span class="keyword">if</span> (image[:, :, <span class="number">0</span>] == image[:, :, <span class="number">1</span>]).<span class="built_in">all</span>() <span class="keyword">and</span> (image[:, :, <span class="number">0</span>] == image[:, :, <span class="number">2</span>]).<span class="built_in">all</span>():</span><br><span class="line">            <span class="keyword">return</span> <span class="literal">True</span></span><br><span class="line">        <span class="keyword">else</span>:</span><br><span class="line">            <span class="keyword">return</span> <span class="literal">False</span></span><br><span class="line"></span><br><span class="line"><span class="meta">    @staticmethod</span></span><br><span class="line">    <span class="function"><span class="keyword">def</span> <span class="title">image_resize</span>(<span class="params">img_source, shape=<span class="literal">None</span>, factor=<span class="literal">None</span></span>):</span></span><br><span class="line">        image_H, image_W = img_source.shape[:<span class="number">2</span>]</span><br><span class="line">        <span class="keyword">if</span> shape <span class="keyword">is</span> <span class="keyword">not</span> <span class="literal">None</span>:</span><br><span class="line">            <span class="keyword">return</span> cv2.resize(img_source, shape)</span><br><span class="line"></span><br><span class="line">        <span class="keyword">if</span> factor <span class="keyword">is</span> <span class="keyword">not</span> <span class="literal">None</span>:</span><br><span class="line">            resized_H = <span class="built_in">int</span>(<span class="built_in">round</span>(image_H * factor))</span><br><span class="line">            resized_W = <span class="built_in">int</span>(<span class="built_in">round</span>(image_W * factor))</span><br><span class="line">            <span class="keyword">return</span> cv2.resize(img_source, [resized_W, resized_H])</span><br><span class="line"></span><br><span class="line">        <span class="keyword">else</span>:</span><br><span class="line">            <span class="keyword">return</span> img_source</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+<h3 id="效果示例"><a href="#效果示例" class="headerlink" title="效果示例"></a>效果示例</h3><table>
+    <tr>
+        <td ><center><img src="https://photos.zywvvd.com/icey-mate-book/20210612151903.png"  height="240" width="360"> </center></td>
+        <td ><center><img src="https://photos.zywvvd.com/icey-mate-book/20210612164021.png"  height="240" width="360"> </center></td>
+    </tr>
+    <tr>
+        <td ><center> 源图像  </center></td>
+        <td ><center> 融合区域 </center></td>
+    </tr>
+      <tr>
+        <td ><center><img src="https://photos.zywvvd.com/icey-mate-book/20210612164055.png"  height="240" width="360"> </center></td>
+        <td ><center><img src="https://photos.zywvvd.com/icey-mate-book/20210612164155.png"  height="240" width="360"> </center></td>
+    </tr>
+    <tr>
+        <td ><center> 目标图像  </center></td>
+        <td ><center> 融合结果</center></td>
+    </tr>
+</table>
+
+<blockquote>
+<p>源图像的指定区域融合到目标图像中，纵享丝滑。</p>
 </blockquote>
 <h3 id="参考资料"><a href="#参考资料" class="headerlink" title="参考资料"></a>参考资料</h3><ul>
 <li><a href="https://github.com/willemmanuel/poisson-image-editing">https://github.com/willemmanuel/poisson-image-editing</a></li>
+<li><a href="https://zhuanlan.zhihu.com/p/58867397">https://zhuanlan.zhihu.com/p/58867397</a></li>
 <li>Poisson Image Editing - 2003</li>
 </ul>
 <link rel="stylesheet" href="/css/spoiler.css" type="text/css"><script src="/js/spoiler.js" type="text/javascript" async></script>]]></content>
+      <categories>
+        <category>image_processing</category>
+      </categories>
+      <tags>
+        <tag>image_processing</tag>
+      </tags>
   </entry>
   <entry>
     <title>Python - 性能分析 profile 使用方法</title>
@@ -420,8 +522,24 @@
   <entry>
     <title>傅里叶变换</title>
     <url>/2021/05/29/math/fourier-transform/fourier-transform/</url>
-    <content><![CDATA[<blockquote>
+    <content><![CDATA[<p>&lt;&lt;&lt;&lt;&lt;&lt;&lt; HEAD</p>
+<blockquote>
+<h1 id="傅立叶变换，表示能将满足一定条件的某个函数表示成三角函数-正弦和-或余弦函数-或者它们的积分的线性组合。在不同的研究领域，傅立叶变换具有多种不同的变体形式，如连续傅立叶变换和离散傅立叶变换。本文梳理基本知识。"><a href="#傅立叶变换，表示能将满足一定条件的某个函数表示成三角函数-正弦和-或余弦函数-或者它们的积分的线性组合。在不同的研究领域，傅立叶变换具有多种不同的变体形式，如连续傅立叶变换和离散傅立叶变换。本文梳理基本知识。" class="headerlink" title="傅立叶变换，表示能将满足一定条件的某个函数表示成三角函数(正弦和/或余弦函数)或者它们的积分的线性组合。在不同的研究领域，傅立叶变换具有多种不同的变体形式，如连续傅立叶变换和离散傅立叶变换。本文梳理基本知识。"></a>傅立叶变换，表示能将满足一定条件的某个函数表示成三角函数(正弦和/或余弦函数)或者它们的积分的线性组合。在不同的研究领域，傅立叶变换具有多种不同的变体形式，如连续傅立叶变换和离散傅立叶变换。本文梳理基本知识。</h1></blockquote>
+<blockquote>
 <p>傅立叶变换，表示能将满足一定条件的某个函数表示成三角函数（正弦和/或余弦函数）或者它们的积分的线性组合。在不同的研究领域，傅立叶变换具有多种不同的变体形式，如连续傅立叶变换和离散傅立叶变换。本文梳理基本知识。</p>
+<blockquote>
+<blockquote>
+<blockquote>
+<blockquote>
+<blockquote>
+<blockquote>
+<p>371a89da281ce6f4cb0686569a940159930e1935</p>
+</blockquote>
+</blockquote>
+</blockquote>
+</blockquote>
+</blockquote>
+</blockquote>
 </blockquote>
 <span id="more"></span>
 
@@ -432,13 +550,41 @@
 <li>傅立叶变换是一种分析信号的方法，它可分析信号的成分，也可用这些成分合成信号。所谓信号，从狭义上说可以认为是自然界中作为信息载体的各类波，一般来说简谐震动产生的正弦波是最常见的研究对象。许多波形可作为信号的成分，比如正弦波、方波、锯齿波等，傅立叶变换用正弦波作为信号的成分。</li>
 <li>对于自然界存在的所有波，我们可以利用所谓的傅立叶级数展开法将它们分解为有限或无限个不同频率不同振幅的正弦、余弦波的集合</li>
 </ul>
-<h3 id="定义"><a href="#定义" class="headerlink" title="定义"></a>定义</h3><h4 id="连续傅里叶变换"><a href="#连续傅里叶变换" class="headerlink" title="连续傅里叶变换"></a>连续傅里叶变换</h4><ul>
+<h3 id="定义"><a href="#定义" class="headerlink" title="定义"></a>定义</h3><p>&lt;&lt;&lt;&lt;&lt;&lt;&lt; HEAD</p>
+<ul>
+<li><p>$f(t)$是$t$的周期函数，如果$t$满足<strong>狄里赫莱条件</strong>：在一个以 $2T$ 为周期内$f(X)$连续或只有有限个第一类间断点，附$f(x)$单调或可划分成有限个单调区间，则$F(x)$以$2T$为周期的傅里叶级数收敛，和函数$S(x)$也是以$2T$为周期的周期函数，且在这些间断点上，函数是有限值；在一个周期内具有有限个极值点；绝对可积。</p>
+</li>
+<li><h1 id="则有下式成立，称为积分运算-f-t-的傅立叶变换"><a href="#则有下式成立，称为积分运算-f-t-的傅立叶变换" class="headerlink" title="则有下式成立，称为积分运算$f(t)$的傅立叶变换:"></a>则有下式成立，称为积分运算$f(t)$的傅立叶变换:</h1><h4 id="连续傅里叶变换"><a href="#连续傅里叶变换" class="headerlink" title="连续傅里叶变换"></a>连续傅里叶变换</h4></li>
 <li><p>$f(t)$是$t$的周期函数，如果$t$满足<strong>狄里赫莱条件</strong>：在一个以$2T$为周期内$f(X)$连续或只有有限个第一类间断点，附$f(x)$单调或可划分成有限个单调区间, 则$F ( \mathrm{x} )$ 以$2T$为周期的傅里叶级数收玫, 和函数$S (\mathrm{x})$ 也是以$2T$为周期的周期函数，且在这些间断点上，函数是有限值；在一个周期内具有有限个极值点；绝对可积。</p>
 </li>
 <li><p>则有傅里叶变换成立：</p>
+<blockquote>
+<blockquote>
+<blockquote>
+<blockquote>
+<blockquote>
+<blockquote>
+<blockquote>
+<p>371a89da281ce6f4cb0686569a940159930e1935</p>
+</blockquote>
+</blockquote>
+</blockquote>
+</blockquote>
+</blockquote>
+</blockquote>
+</blockquote>
 </li>
 </ul>
 <p>$$<br>F(\omega)=\mathcal{F}[f(t)]=\int_{-\infty}^{\infty} f(t) e^{-i w t} d t<br>$$</p>
+<p>&lt;&lt;&lt;&lt;&lt;&lt;&lt; HEAD</p>
+<blockquote>
+<p>$ F(\omega) $ 叫做 $ {f}(\mathrm{t}) $ 的象函数， $ {f}({t}) $ 叫做$ {F}(\omega) $ 的象原函数。</p>
+<p>$ F (\omega) $ 是 $ {f}(\mathrm{t}) $ 的象， $ \mathrm{f}({t}) $ 是$F(\omega)$原象。</p>
+</blockquote>
+<ul>
+<li>傅里叶变换可以通过逆变换将象函数变换为象原函数</li>
+</ul>
+<p>$$<br>f(t)=\mathcal{F}^{-1}[F(\omega)]=\frac{1}{2 \pi} \int_{-\infty}^{\infty} F(\omega) e^{i w t} d \omega<br>$$<br>=======</p>
 <blockquote>
 <p>其中$F(ω)$叫做$f(t)$的象函数，$f(t)$叫做$F(\omega)$ 的象原函数。 $\mathrm{F}(\omega)$ 是 $f(\mathrm{t})$ 的象。 ${f}({t})$ 是 $\mathrm{F}(\omega)$ 原象。</p>
 </blockquote>
@@ -493,9 +639,21 @@
 </ul>
 <p><img src="https://img-blog.csdnimg.cn/img_convert/3b66d94e81f89cde5cd16de1167bd4b7.png"></p>
 <h4 id="参考代码"><a href="#参考代码" class="headerlink" title="参考代码"></a>参考代码</h4><figure class="highlight python"><table><tr><td class="code"><pre><span class="line"><span class="keyword">import</span> matplotlib.pyplot <span class="keyword">as</span> plt</span><br><span class="line"><span class="keyword">import</span> cv2</span><br><span class="line"><span class="keyword">import</span> numpy <span class="keyword">as</span> np</span><br><span class="line"><span class="keyword">from</span> scipy.fftpack <span class="keyword">import</span> fft</span><br><span class="line"></span><br><span class="line"></span><br><span class="line"><span class="keyword">if</span> __name__ == <span class="string">&#x27;__main__&#x27;</span>:</span><br><span class="line"></span><br><span class="line">    image_path = <span class="string">&#x27;test.png&#x27;</span></span><br><span class="line">    image = cv2.imread(image_path)</span><br><span class="line"></span><br><span class="line">    center = (np.array(image.shape[:<span class="number">2</span>]) / <span class="number">2</span>).astype(<span class="string">&#x27;int&#x27;</span>)[::-<span class="number">1</span>].tolist()</span><br><span class="line">    <span class="keyword">assert</span> center[<span class="number">0</span>] == center[<span class="number">1</span>]</span><br><span class="line">    radius = center[<span class="number">0</span>]</span><br><span class="line"></span><br><span class="line">    size_x = <span class="number">200</span></span><br><span class="line">    size_y = <span class="number">200</span></span><br><span class="line"></span><br><span class="line">    output_img = cv2.warpPolar(image, (size_x, size_y), <span class="built_in">tuple</span>(center), radius, <span class="number">12</span>)</span><br><span class="line"></span><br><span class="line">    output_img = output_img[:, :, <span class="number">0</span>]</span><br><span class="line"></span><br><span class="line">    signal = np.<span class="built_in">sum</span>(output_img, axis=<span class="number">1</span>)</span><br><span class="line"></span><br><span class="line">    signal = signal - signal.mean()</span><br><span class="line"></span><br><span class="line">    scipy_fft_y = fft(signal)</span><br><span class="line"></span><br><span class="line">    scipy_fft_y = scipy_fft_y[:<span class="built_in">len</span>(scipy_fft_y)//<span class="number">2</span>]</span><br><span class="line"></span><br><span class="line">    <span class="comment"># energy_fft</span></span><br><span class="line">    abs_y = np.<span class="built_in">abs</span>(scipy_fft_y)</span><br><span class="line"></span><br><span class="line">    <span class="comment"># phase_fft</span></span><br><span class="line">    angle_y = np.angle(scipy_fft_y)</span><br><span class="line"></span><br><span class="line">    cycle_num = np.argmax(abs_y)</span><br><span class="line">    <span class="comment"># cycle angle</span></span><br><span class="line">    cycle_angle = <span class="number">360</span> / cycle_num</span><br><span class="line">    <span class="comment"># phase</span></span><br><span class="line">    phase = cycle_angle / <span class="number">2</span> / np.pi * angle_y[cycle_num]</span><br><span class="line"></span><br><span class="line">    print(<span class="string">f&quot;周期 : <span class="subst">&#123;cycle_num&#125;</span>&quot;</span>)</span><br><span class="line">    print(<span class="string">f&quot;角度 : <span class="subst">&#123;cycle_angle&#125;</span>&quot;</span>)</span><br><span class="line">    print(<span class="string">f&quot;相位 : <span class="subst">&#123;phase&#125;</span>&quot;</span>)</span><br><span class="line"></span><br><span class="line">    plt.plot(abs_y)</span><br><span class="line">    plt.show()</span><br><span class="line"></span><br><span class="line">    <span class="keyword">pass</span></span><br></pre></td></tr></table></figure>
-
-
-
+<blockquote>
+<blockquote>
+<blockquote>
+<blockquote>
+<blockquote>
+<blockquote>
+<blockquote>
+<p>371a89da281ce6f4cb0686569a940159930e1935</p>
+</blockquote>
+</blockquote>
+</blockquote>
+</blockquote>
+</blockquote>
+</blockquote>
+</blockquote>
 <h3 id="参考资料"><a href="#参考资料" class="headerlink" title="参考资料"></a>参考资料</h3><ul>
 <li><p><a href="https://baike.baidu.com/item/%E5%82%85%E9%87%8C%E5%8F%B6%E5%8F%98%E6%8D%A2/7119029?fr=aladdin">https://baike.baidu.com/item/%E5%82%85%E9%87%8C%E5%8F%B6%E5%8F%98%E6%8D%A2/7119029?fr=aladdin</a></p>
 </li>
@@ -9339,8 +9497,6 @@ $$
 </ul>
 <h3 id="命令参数"><a href="#命令参数" class="headerlink" title="命令参数"></a>命令参数</h3><figure class="highlight shell"><table><tr><td class="code"><pre><span class="line">ssh        [-1246AaCfgKkMNnqsTtVvXxYy] [-b bind_address] [-c cipher_spec]</span><br><span class="line">           [-D [bind_address:]port] [-e escape_char] [-F configfile]</span><br><span class="line">           [-i identity_file] [-L [bind_address:]port:host:hostport]</span><br><span class="line">           [-l login_name] [-m mac_spec] [-O ctl_cmd] [-o option] [-p port]</span><br><span class="line">           [-R [bind_address:]port:host:hostport] [-S ctl_path]</span><br><span class="line">           [-W host:port] [-w local_tun[:remote_tun]]</span><br><span class="line">           [user@]hostname [command]</span><br></pre></td></tr></table></figure>
 
-
-
 <h3 id="功能用法"><a href="#功能用法" class="headerlink" title="功能用法"></a>功能用法</h3><h4 id="登录"><a href="#登录" class="headerlink" title="登录"></a>登录</h4><figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">ssh -p 22 username@servername</span><br></pre></td></tr></table></figure>
 
 <blockquote>
@@ -9354,29 +9510,29 @@ $$
 <h4 id="传输文件"><a href="#传输文件" class="headerlink" title="传输文件"></a>传输文件</h4><h5 id="从服务器上下载文件"><a href="#从服务器上下载文件" class="headerlink" title="从服务器上下载文件"></a>从服务器上下载文件</h5><figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">scp username@servername:&#x2F;path&#x2F;filename &#x2F;var&#x2F;www&#x2F;local_dir（本地目录）</span><br></pre></td></tr></table></figure>
 
 <blockquote>
-<p>例如: scp <a href="mailto:&#114;&#x6f;&#111;&#116;&#x40;&#49;&#x39;&#50;&#46;&#x31;&#54;&#x38;&#46;&#48;&#46;&#x31;&#48;&#x31;">&#114;&#x6f;&#111;&#116;&#x40;&#49;&#x39;&#50;&#46;&#x31;&#54;&#x38;&#46;&#48;&#46;&#x31;&#48;&#x31;</a>:/var/www/test.txt 把192.168.0.101上的/var/www/test.txt 的文件下载到/var/www/local_dir（本地目录）</p>
+<p>例如: scp <a href="mailto:&#114;&#x6f;&#x6f;&#116;&#64;&#x31;&#57;&#50;&#46;&#x31;&#54;&#x38;&#x2e;&#x30;&#x2e;&#x31;&#48;&#x31;">&#114;&#x6f;&#x6f;&#116;&#64;&#x31;&#57;&#50;&#46;&#x31;&#54;&#x38;&#x2e;&#x30;&#x2e;&#x31;&#48;&#x31;</a>:/var/www/test.txt 把192.168.0.101上的/var/www/test.txt 的文件下载到/var/www/local_dir（本地目录）</p>
 </blockquote>
 <h5 id="上传本地文件到服务器"><a href="#上传本地文件到服务器" class="headerlink" title="上传本地文件到服务器"></a>上传本地文件到服务器</h5><figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">scp &#x2F;path&#x2F;filename username@servername:&#x2F;path  </span><br></pre></td></tr></table></figure>
 
 <blockquote>
-<p>例如: scp /var/www/test.php <a href="mailto:&#114;&#111;&#111;&#116;&#x40;&#x31;&#57;&#x32;&#46;&#x31;&#54;&#x38;&#46;&#48;&#x2e;&#49;&#x30;&#49;">&#114;&#111;&#111;&#116;&#x40;&#x31;&#57;&#x32;&#46;&#x31;&#54;&#x38;&#46;&#48;&#x2e;&#49;&#x30;&#49;</a>:/var/www/ 把本机/var/www/目录下的test.php文件上传到192.168.0.101这台服务器上的/var/www/目录中</p>
+<p>例如: scp /var/www/test.php <a href="mailto:&#114;&#x6f;&#x6f;&#x74;&#64;&#x31;&#x39;&#50;&#x2e;&#49;&#54;&#56;&#x2e;&#x30;&#x2e;&#49;&#48;&#49;">&#114;&#x6f;&#x6f;&#x74;&#64;&#x31;&#x39;&#50;&#x2e;&#49;&#54;&#56;&#x2e;&#x30;&#x2e;&#49;&#48;&#49;</a>:/var/www/ 把本机/var/www/目录下的test.php文件上传到192.168.0.101这台服务器上的/var/www/目录中</p>
 </blockquote>
 <h5 id="从服务器下载整个目录"><a href="#从服务器下载整个目录" class="headerlink" title="从服务器下载整个目录"></a>从服务器下载整个目录</h5><figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">scp -r username@servername:&#x2F;var&#x2F;www&#x2F;remote_dir&#x2F;（远程目录） &#x2F;var&#x2F;www&#x2F;local_dir（本地目录）</span><br></pre></td></tr></table></figure>
 
 <blockquote>
-<p>例如: scp -r <a href="mailto:&#x72;&#x6f;&#111;&#116;&#64;&#x31;&#x39;&#x32;&#x2e;&#49;&#54;&#56;&#x2e;&#x30;&#x2e;&#x31;&#48;&#x31;">&#x72;&#x6f;&#111;&#116;&#64;&#x31;&#x39;&#x32;&#x2e;&#49;&#54;&#56;&#x2e;&#x30;&#x2e;&#x31;&#48;&#x31;</a>:/var/www/test /var/www/  </p>
+<p>例如: scp -r <a href="mailto:&#x72;&#111;&#111;&#x74;&#64;&#49;&#x39;&#x32;&#x2e;&#49;&#54;&#x38;&#x2e;&#48;&#x2e;&#49;&#x30;&#49;">&#x72;&#111;&#111;&#x74;&#64;&#49;&#x39;&#x32;&#x2e;&#49;&#54;&#x38;&#x2e;&#48;&#x2e;&#49;&#x30;&#49;</a>:/var/www/test /var/www/  </p>
 </blockquote>
 <h5 id="上传目录到服务器"><a href="#上传目录到服务器" class="headerlink" title="上传目录到服务器"></a>上传目录到服务器</h5><figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">scp -r local_dir username@servername:remote_dir</span><br></pre></td></tr></table></figure>
 
 <blockquote>
-<p>例如：scp -r test  <a href="mailto:&#114;&#111;&#x6f;&#116;&#x40;&#49;&#57;&#50;&#46;&#x31;&#x36;&#56;&#46;&#48;&#x2e;&#49;&#x30;&#x31;">&#114;&#111;&#x6f;&#116;&#x40;&#49;&#57;&#50;&#46;&#x31;&#x36;&#56;&#46;&#48;&#x2e;&#49;&#x30;&#x31;</a>:/var/www/  把当前目录下的test目录上传到服务器的/var/www/ 目录</p>
+<p>例如：scp -r test  <a href="mailto:&#x72;&#111;&#111;&#116;&#64;&#x31;&#57;&#x32;&#46;&#x31;&#54;&#x38;&#x2e;&#x30;&#x2e;&#x31;&#48;&#49;">&#x72;&#111;&#111;&#116;&#64;&#x31;&#57;&#x32;&#46;&#x31;&#54;&#x38;&#x2e;&#x30;&#x2e;&#x31;&#48;&#49;</a>:/var/www/  把当前目录下的test目录上传到服务器的/var/www/ 目录</p>
 </blockquote>
 <h4 id="ssh自带的sftp功能"><a href="#ssh自带的sftp功能" class="headerlink" title="ssh自带的sftp功能"></a>ssh自带的sftp功能</h4><h5 id="Window和Linux的传输工具"><a href="#Window和Linux的传输工具" class="headerlink" title="Window和Linux的传输工具"></a>Window和Linux的传输工具</h5><figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">wincp  filezip          </span><br><span class="line">sftp --&gt;基于 ssh 的安全加密传输</span><br></pre></td></tr></table></figure>
 
 <h5 id="sftp客户端连接"><a href="#sftp客户端连接" class="headerlink" title="sftp客户端连接"></a>sftp客户端连接</h5><figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">sftp -oPort&#x3D;22 root@192.168.25.137                   </span><br><span class="line">put &#x2F;etc&#x2F;hosts &#x2F;tmp                   </span><br><span class="line">get &#x2F;etc&#x2F;hosts &#x2F;home&#x2F;omd </span><br></pre></td></tr></table></figure>
 
 <h5 id="sftp小结"><a href="#sftp小结" class="headerlink" title="sftp小结"></a>sftp小结</h5><ul>
-<li>linux下使用命令： sftp -oPort=22 <a href="mailto:&#114;&#111;&#111;&#x74;&#64;&#x78;&#46;&#120;&#x2e;&#x78;&#x2e;&#x78;">&#114;&#111;&#111;&#x74;&#64;&#x78;&#46;&#120;&#x2e;&#x78;&#x2e;&#x78;</a>                   </li>
+<li>linux下使用命令： sftp -oPort=22 <a href="mailto:&#x72;&#111;&#x6f;&#x74;&#x40;&#x78;&#x2e;&#x78;&#x2e;&#x78;&#x2e;&#120;">&#x72;&#111;&#x6f;&#x74;&#x40;&#x78;&#x2e;&#x78;&#x2e;&#x78;&#x2e;&#120;</a>                   </li>
 <li>put加客户端本地路径上传                  </li>
 <li>get下载服务器端内容到本地                   </li>
 <li>远程连接默认连接用户的家目录</li>
@@ -9392,6 +9548,11 @@ netstat -a | grep ssh(记住这个)
 netstat -lnt | grep 22    ==&gt;  查看22端口有没有开/ssh服务有没有开启
 技巧： netstat -lnt | grep ssh | wc -l --&gt;只要大于2个就是ssh服务就是好的
 </code></pre>
+<blockquote>
+<p>如果没有 <code>netstat</code> 这个命令，需要安装 <code>net-tools</code></p>
+</blockquote>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">apt-get install net-tools</span><br></pre></td></tr></table></figure>
+
 <h4 id="查看ssh的秘钥目录"><a href="#查看ssh的秘钥目录" class="headerlink" title="查看ssh的秘钥目录"></a>查看ssh的秘钥目录</h4><pre><code>ll /root/.ssh/known_hosts  # 当前用户家目录的.ssh目录下
 </code></pre>
 <h4 id="ssh的配置文件"><a href="#ssh的配置文件" class="headerlink" title="ssh的配置文件"></a>ssh的配置文件</h4><pre><code>cat /etc/ssh/sshd_config   
@@ -15272,7 +15433,7 @@ cond(no)->sub</textarea><textarea id="flowchart-0-options" style="display: none"
   </entry>
   <entry>
     <title>算法学习笔记 —— 排序</title>
-    <url>/2020/05/21/algorithm/sort/about_sort/</url>
+    <url>/2020/05/21/algorithm/tree/about_tree/</url>
     <content><![CDATA[<blockquote>
 <p>学而时习，本文记录排序操作相关算法练习笔记。</p>
 </blockquote>
@@ -15306,7 +15467,7 @@ cond(no)->sub</textarea><textarea id="flowchart-0-options" style="display: none"
   </entry>
   <entry>
     <title>算法学习笔记 —— 排序</title>
-    <url>/2020/05/21/algorithm/tree/about_tree/</url>
+    <url>/2020/05/21/algorithm/sort/about_sort/</url>
     <content><![CDATA[<blockquote>
 <p>学而时习，本文记录排序操作相关算法练习笔记。</p>
 </blockquote>
