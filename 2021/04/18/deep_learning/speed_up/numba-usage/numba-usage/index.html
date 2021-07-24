@@ -311,7 +311,7 @@
         <blockquote>
 <p>本文介绍GPU编程的一些重要概念。</p>
 </blockquote>
-<a id="more"></a>
+<span id="more"></span>
 
 <h3 id="GPU编程"><a href="#GPU编程" class="headerlink" title="GPU编程"></a>GPU编程</h3><blockquote>
 <p>GPU编程与CPU编程的思考角度不尽相同，举皮皮鲁老师的一个例子：</p>
@@ -357,21 +357,21 @@
 <p>这几个变量比较容易混淆，再次明确一下：<code>blockDim</code>是Block中Thread的个数，一个Block中的<code>threadIdx</code>最大不超过<code>blockDim</code>；<code>gridDim</code>是Grid中Block的个数，一个Grid中的<code>blockIdx</code>最大不超过<code>gridDim</code>。</p>
 <p>以上讨论中，Block和Grid大小均是一维，实际编程使用的执行配置常常更复杂，Block和Grid的大小可以设置为二维甚至三维：</p>
 <p><img src="https://photos.zywvvd.com/image_canglan/20210418013021.png" alt="*二维Block和Grid设置*"></p>
-<p>一个二维的执行配置如上图所示，其中，每个Block有(3 * 4)个Thread，每个Grid有(2 * 3)个Block。 二维块大小为 <em>(Dx, Dy)*，某个线程号 *(x, y)</em> 的公式为 *<em>(x + y Dx)**；三维块大小为 *(Dx, Dy, Dz)*，某个线程号</em>(x, y, z)* 的公式为 **(x + y Dx + z Dx Dy)**。各个内置变量中<code>.x</code> <code>.y</code>和<code>.z</code>为不同维度下的值。</p>
+<p>一个二维的执行配置如上图所示，其中，每个Block有(3 * 4)个Thread，每个Grid有(2 * 3)个Block。 二维块大小为 *(Dx, Dy)*，某个线程号 <em>(x, y)</em> 的公式为 **(x + y Dx)**；三维块大小为 <em>(Dx, Dy, Dz)<em>，某个线程号</em>(x, y, z)</em> 的公式为 **(x + y Dx + z Dx Dy)**。各个内置变量中<code>.x</code> <code>.y</code>和<code>.z</code>为不同维度下的值。</p>
 <p>例如，一个二维配置，某个线程在矩阵中的位置可以表示为：</p>
-<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">col &#x3D; cuda.threadIdx.y + cuda.blockDim.y * cuda.blockIdx.y</span><br><span class="line">row &#x3D; cuda.threadIdx.x + cuda.blockDim.x * cuda.blockIdx.x</span><br></pre></td></tr></table></figure>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">col = cuda.threadIdx.y + cuda.blockDim.y * cuda.blockIdx.y</span><br><span class="line">row = cuda.threadIdx.x + cuda.blockDim.x * cuda.blockIdx.x</span><br></pre></td></tr></table></figure>
 
 <p>如何将二维Block映射到自己的数据上并没有固定的映射方法，一般情况将<code>.x</code>映射为矩阵的行，将<code>.y</code>映射为矩阵的列。Numba提供了一个更简单的方法帮我们计算线程的编号：</p>
-<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">row, col &#x3D; cuda.grid(2)</span><br></pre></td></tr></table></figure>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">row, col = cuda.grid(2)</span><br></pre></td></tr></table></figure>
 
 <p>其中，参数2表示这是一个2维的执行配置。1维或3维的时候，可以将参数改为1或3。</p>
 <p>对应的执行配置也要改为二维：</p>
-<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">threads_per_block &#x3D; (16, 16)</span><br><span class="line">blocks_per_grid &#x3D; (32, 32)</span><br><span class="line">gpu_kernel[blocks_per_grid, threads_per_block]</span><br></pre></td></tr></table></figure>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">threads_per_block = (16, 16)</span><br><span class="line">blocks_per_grid = (32, 32)</span><br><span class="line">gpu_kernel[blocks_per_grid, threads_per_block]</span><br></pre></td></tr></table></figure>
 
 <p><code>(16, 16)</code>的二维Block是一个常用的配置，共256个线程。之前也曾提到过，每个Block的Thread个数最好是128、256或512，这与GPU的硬件架构高度相关。</p>
 <h3 id="内存分配"><a href="#内存分配" class="headerlink" title="内存分配"></a>内存分配</h3><p>前文提到，GPU计算时直接从显存中读取数据，因此每当计算时要将数据从主存拷贝到显存上，用CUDA的术语来说就是要把数据从主机端拷贝到设备端。用小学生计算的例子来解释，大学教授需要将计算任务写在纸上，分发给各组小学生。CUDA强大之处在于它能自动将数据从主机和设备间相互拷贝，不需要程序员在代码中写明。这种方法对编程者来说非常方便，不必对原有的CPU代码做大量改动。</p>
 <h3 id="参考资料"><a href="#参考资料" class="headerlink" title="参考资料"></a>参考资料</h3><ul>
-<li><a href="https://lulaoshi.info/gpu/python-cuda/cuda-intro.html" target="_blank" rel="noopener">https://lulaoshi.info/gpu/python-cuda/cuda-intro.html</a></li>
+<li><a target="_blank" rel="noopener" href="https://lulaoshi.info/gpu/python-cuda/cuda-intro.html">https://lulaoshi.info/gpu/python-cuda/cuda-intro.html</a></li>
 </ul>
 <link rel="stylesheet" href="/css/spoiler.css" type="text/css"><script src="/js/spoiler.js" type="text/javascript" async></script>
     </div>
@@ -531,7 +531,7 @@
       <div class="site-state-item site-state-posts">
           <a href="/archives/">
         
-          <span class="site-state-item-count">236</span>
+          <span class="site-state-item-count">235</span>
           <span class="site-state-item-name">日志</span>
         </a>
       </div>
@@ -594,13 +594,13 @@
       <i class="fa fa-area-chart"></i>
     </span>
       <span class="post-meta-item-text">站点总字数: </span>
-    <span title="站点总字数">572k</span>
+    <span title="站点总字数">571k</span>
     <span class="post-meta-divider">|</span>
     <span class="post-meta-item-icon">
       <i class="fa fa-coffee"></i>
     </span>
       <span class="post-meta-item-text">站点阅读时长 &asymp;</span>
-    <span title="站点阅读时长">8:40</span>
+    <span title="站点阅读时长">8:39</span>
 </div>
   <div class="powered-by">技术支持 v5.4.0
   </div>
