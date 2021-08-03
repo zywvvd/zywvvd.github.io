@@ -1,318 +1,237 @@
+
+
 <!DOCTYPE html>
-<html lang="zh-Hans">
+<html lang="zh-CN" data-default-color-scheme=&#34;auto&#34;>
+
+
+
 <head>
   <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
-<meta name="theme-color" content="#222">
-<meta name="generator" content="Hexo 5.4.0">
-  <link rel="apple-touch-icon" sizes="180x180" href="/images/logo-180.png">
-  <link rel="icon" type="image/png" sizes="32x32" href="/images/logo-32.png">
-  <link rel="icon" type="image/png" sizes="16x16" href="/images/logo-16.png">
-  <link rel="mask-icon" href="/images/logo-512.svg" color="#222">
+  <link rel="apple-touch-icon" sizes="76x76" href="/img/favicon.png">
+  <link rel="icon" href="/img/favicon.png">
+  <meta name="viewport"
+        content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, shrink-to-fit=no">
+  <meta http-equiv="x-ua-compatible" content="ie=edge">
+  
+  <meta name="theme-color" content="#2f4154">
+  <meta name="description" content="
+在Keras网络训练过程中，fit-generator为我们提供了很多便利。调用fit-generator时，每个epoch训练结束后会使用验证数据检测模型性能，Keras使用model.evaluate_generator提供该功能。然而我遇到了需要提取验证集y_pred的需求，在网上没有找到现有的功能实现方法，于是自己对源码进行了微调，实现了可配置提取验证集模型预测结果的功能，记录如下。
+">
+  <meta name="author" content="Yiwei Zhang">
+  <meta name="keywords" content="人工智能, 深度学习, 个人博客, 机器学习">
+  
+  <title>Keras 在fit-generator中获取验证数据的y_true和y_preds - 又见苍岚</title>
 
-<link rel="stylesheet" href="/css/main.css">
-
-
-<link rel="stylesheet" href="/lib/font-awesome/css/font-awesome.min.css">
-  <link rel="stylesheet" href="//cdn.jsdelivr.net/gh/fancyapps/fancybox@3/dist/jquery.fancybox.min.css">
-
-<script id="hexo-configurations">
-    var NexT = window.NexT || {};
-    var CONFIG = {"hostname":"www.zywvvd.com","root":"/","scheme":"Pisces","version":"7.7.1","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":true,"show_result":"default","style":null},"back2top":{"enable":true,"sidebar":true,"scrollpercent":true},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":true,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},"path":"./public/search.xml"};
-  </script>
-
-  <meta name="description" content="在Keras网络训练过程中，fit-generator为我们提供了很多便利。调用fit-generator时，每个epoch训练结束后会使用验证数据检测模型性能，Keras使用model.evaluate_generator提供该功能。然而我遇到了需要提取验证集y_pred的需求，在网上没有找到现有的功能实现方法，于是自己对源码进行了微调，实现了可配置提取验证集模型预测结果的功能，记录如下。">
-<meta property="og:type" content="article">
-<meta property="og:title" content="Keras 在fit-generator中获取验证数据的y_true和y_preds">
-<meta property="og:url" content="https://www.zywvvd.com/2020/06/10/deep_learning/keras/get-gts-and-preds-from-evaluator/get-gts-and-preds-from-evaluator/index.html">
-<meta property="og:site_name" content="又见苍岚">
-<meta property="og:description" content="在Keras网络训练过程中，fit-generator为我们提供了很多便利。调用fit-generator时，每个epoch训练结束后会使用验证数据检测模型性能，Keras使用model.evaluate_generator提供该功能。然而我遇到了需要提取验证集y_pred的需求，在网上没有找到现有的功能实现方法，于是自己对源码进行了微调，实现了可配置提取验证集模型预测结果的功能，记录如下。">
-<meta property="og:locale">
-<meta property="og:image" content="https://photos.zywvvd.com/matrixtime/20200610154931.png">
-<meta property="og:image" content="https://photos.zywvvd.com/matrixtime/20200610155253.png">
-<meta property="og:image" content="https://photos.zywvvd.com/matrixtime/20200610155915.png">
-<meta property="og:image" content="https://photos.zywvvd.com/matrixtime/20200610163145.png">
-<meta property="og:image" content="https://photos.zywvvd.com/matrixtime/20200610163226.png">
-<meta property="article:published_time" content="2020-06-10T07:19:50.000Z">
-<meta property="article:modified_time" content="2020-07-07T15:43:15.520Z">
-<meta property="article:author" content="Yiwei Zhang">
-<meta property="article:tag" content="深度学习">
-<meta property="article:tag" content="Keras">
-<meta name="twitter:card" content="summary">
-<meta name="twitter:image" content="https://photos.zywvvd.com/matrixtime/20200610154931.png">
-
-<link rel="canonical" href="https://www.zywvvd.com/2020/06/10/deep_learning/keras/get-gts-and-preds-from-evaluator/get-gts-and-preds-from-evaluator/">
+  <link  rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@4.6.0/dist/css/bootstrap.min.css" />
 
 
-<script id="page-configurations">
-  // https://hexo.io/docs/variables.html
-  CONFIG.page = {
-    sidebar: "",
-    isHome: false,
-    isPost: true
-  };
-</script>
+  <link  rel="stylesheet" href="https://cdn.jsdelivr.net/npm/github-markdown-css@4.0.0/github-markdown.min.css" />
+  <link  rel="stylesheet" href="/lib/hint/hint.min.css" />
 
-  <title>Keras 在fit-generator中获取验证数据的y_true和y_preds | 又见苍岚</title>
+  
+    
+    
+      
+      <link  rel="stylesheet" href="https://cdn.jsdelivr.net/npm/highlight.js@10.7.2/styles/github-gist.min.css" />
+    
+  
+
+  
+    <link  rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fancyapps/fancybox@3.5.7/dist/jquery.fancybox.min.css" />
   
 
 
 
+<!-- 主题依赖的图标库，不要自行修改 -->
+
+<link rel="stylesheet" href="//at.alicdn.com/t/font_1749284_ba1fz6golrf.css">
 
 
 
-  <noscript>
-  <style>
-  .use-motion .brand,
-  .use-motion .menu-item,
-  .sidebar-inner,
-  .use-motion .post-block,
-  .use-motion .pagination,
-  .use-motion .comments,
-  .use-motion .post-header,
-  .use-motion .post-body,
-  .use-motion .collection-header { opacity: initial; }
+<link rel="stylesheet" href="//at.alicdn.com/t/font_1736178_kmeydafke9r.css">
 
-  .use-motion .site-title,
-  .use-motion .site-subtitle {
-    opacity: initial;
-    top: initial;
-  }
 
-  .use-motion .logo-line-before i { left: initial; }
-  .use-motion .logo-line-after i { right: initial; }
-  </style>
-</noscript>
+<link  rel="stylesheet" href="/css/main.css" />
 
-<link rel="alternate" href="/atom.xml" title="又见苍岚" type="application/atom+xml">
+<!-- 自定义样式保持在最底部 -->
+
+
+  <script id="fluid-configs">
+    var Fluid = window.Fluid || {};
+    var CONFIG = {"hostname":"www.zywvvd.com","root":"/","version":"1.8.11","typing":{"enable":true,"typeSpeed":70,"cursorChar":"_","loop":false},"anchorjs":{"enable":true,"element":"h1,h2,h3,h4,h5,h6","placement":"right","visible":"hover","icon":""},"progressbar":{"enable":true,"height_px":3,"color":"#29d","options":{"showSpinner":false,"trickleSpeed":100}},"copy_btn":true,"image_zoom":{"enable":true,"img_url_replace":["",""]},"toc":{"enable":true,"headingSelector":"h1,h2,h3,h4,h5,h6","collapseDepth":0},"lazyload":{"enable":true,"loading_img":"/img/loading.gif","onlypost":false,"offset_factor":2},"web_analytics":{"enable":false,"baidu":null,"google":null,"gtag":null,"tencent":{"sid":null,"cid":null},"woyaola":null,"cnzz":null,"leancloud":{"app_id":null,"app_key":null,"server_url":null}},"search_path":"/local-search.xml"};
+  </script>
+  <script  src="/js/utils.js" ></script>
+  <script  src="/js/color-schema.js" ></script>
+<meta name="generator" content="Hexo 5.4.0"><link rel="alternate" href="/atom.xml" title="又见苍岚" type="application/atom+xml">
 </head>
 
-<body itemscope itemtype="http://schema.org/WebPage">
-  <div class="container use-motion">
-    <div class="headband"></div>
 
-    	<a target="_blank" rel="noopener" href="https://github.com/zywvvd" >
-    		<img width="149" height="149"  style="position:absolute; right:-2px; top:2px;" src="https://photos.zywvvd.com/image/20200328192440.png" class="attachment-full size-full" alt="Fork me on GitHub" data-recalc-dims="1">
-    	</a>
+<body>
+  <header style="height: 70vh;">
+    <nav id="navbar" class="navbar fixed-top  navbar-expand-lg navbar-dark scrolling-navbar">
+  <div class="container">
+    <a class="navbar-brand"
+       href="/">&nbsp;<strong>Fluid</strong>&nbsp;</a>
 
-    	<a target="_blank" rel="noopener" href="https://github.com/zywvvd" class="github-corner" aria-label="View source on GitHub"><svg width="80" height="80" viewBox="0 0 250 250" style="fill:#222222; color:#fff; position: absolute; top: 0; border: 0; right: 0;" aria-hidden="true"><path d="M0,0 L115,115 L130,115 L142,142 L250,250 L250,0 Z"></path><path d="M128.3,109.0 C113.8,99.7 119.0,89.6 119.0,89.6 C122.0,82.7 120.5,78.6 120.5,78.6 C119.2,72.0 123.4,76.3 123.4,76.3 C127.3,80.9 125.5,87.3 125.5,87.3 C122.9,97.6 130.6,101.9 134.4,103.2" fill="currentColor" style="transform-origin: 130px 106px;" class="octo-arm"></path><path d="M115.0,115.0 C114.9,115.1 118.7,116.5 119.8,115.4 L133.7,101.6 C136.9,99.2 139.9,98.4 142.2,98.6 C133.8,88.0 127.5,74.4 143.8,58.0 C148.5,53.4 154.0,51.2 159.7,51.0 C160.3,49.4 163.2,43.6 171.4,40.1 C171.4,40.1 176.1,42.5 178.8,56.2 C183.1,58.6 187.2,61.8 190.9,65.4 C194.5,69.0 197.7,73.2 200.1,77.6 C213.8,80.2 216.3,84.9 216.3,84.9 C212.7,93.1 206.9,96.0 205.4,96.6 C205.1,102.4 203.0,107.8 198.3,112.5 C181.9,128.9 168.3,122.5 157.7,114.1 C157.9,116.9 156.7,120.9 152.7,124.9 L141.0,136.5 C139.8,137.7 141.6,141.9 141.8,141.8 Z" fill="currentColor" class="octo-body"></path></svg></a><style>.github-corner:hover .octo-arm{animation:octocat-wave 560ms ease-in-out}@keyframes octocat-wave{0%,100%{transform:rotate(0)}20%,60%{transform:rotate(-25deg)}40%,80%{transform:rotate(10deg)}}@media (max-width:500px){.github-corner:hover .octo-arm{animation:none}.github-corner .octo-arm{animation:octocat-wave 560ms ease-in-out}}</style>
+    <button id="navbar-toggler-btn" class="navbar-toggler" type="button" data-toggle="collapse"
+            data-target="#navbarSupportedContent"
+            aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
+      <div class="animated-icon"><span></span><span></span><span></span></div>
+    </button>
 
-    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
-      <div class="header-inner"><div class="site-brand-container">
-  <div class="site-nav-toggle">
-    <div class="toggle" aria-label="Navigationsleiste an/ausschalten">
-      <span class="toggle-line toggle-line-first"></span>
-      <span class="toggle-line toggle-line-middle"></span>
-      <span class="toggle-line toggle-line-last"></span>
+    <!-- Collapsible content -->
+    <div class="collapse navbar-collapse" id="navbarSupportedContent">
+      <ul class="navbar-nav ml-auto text-center">
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/">
+                <i class="iconfont icon-home-fill"></i>
+                首页
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/archives/">
+                <i class="iconfont icon-archive-fill"></i>
+                归档
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/categories/">
+                <i class="iconfont icon-category-fill"></i>
+                分类
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/tags/">
+                <i class="iconfont icon-tags-fill"></i>
+                标签
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/about/">
+                <i class="iconfont icon-user-fill"></i>
+                关于
+              </a>
+            </li>
+          
+        
+        
+          <li class="nav-item" id="search-btn">
+            <a class="nav-link" target="_self" data-toggle="modal" data-target="#modalSearch">&nbsp;<i
+                class="iconfont icon-search"></i>&nbsp;</a>
+          </li>
+        
+        
+          <li class="nav-item" id="color-toggle-btn">
+            <a class="nav-link" target="_self">&nbsp;<i
+                class="iconfont icon-dark" id="color-toggle-icon"></i>&nbsp;</a>
+          </li>
+        
+      </ul>
     </div>
   </div>
-
-  <div class="site-meta">
-
-    <div>
-      <a href="/" class="brand" rel="start">
-        <span class="logo-line-before"><i></i></span>
-        <span class="site-title">又见苍岚</span>
-        <span class="logo-line-after"><i></i></span>
-      </a>
-    </div>
-        <p class="site-subtitle">www.zywvvd.com</p>
-  </div>
-
-  <div class="site-nav-right">
-    <div class="toggle popup-trigger">
-        <i class="fa fa-search fa-fw fa-lg"></i>
-    </div>
-  </div>
-</div>
-
-
-<nav class="site-nav">
-  
-  <ul id="menu" class="menu">
-        <li class="menu-item menu-item-home">
-
-    <a href="/" rel="section"><i class="fa fa-fw fa-home"></i>首页</a>
-
-  </li>
-        <li class="menu-item menu-item-about">
-
-    <a href="/about/" rel="section"><i class="fa fa-fw fa-user"></i>关于</a>
-
-  </li>
-        <li class="menu-item menu-item-tags">
-
-    <a href="/tags/" rel="section"><i class="fa fa-fw fa-tags"></i>标签</a>
-
-  </li>
-        <li class="menu-item menu-item-categories">
-
-    <a href="/categories/" rel="section"><i class="fa fa-fw fa-th"></i>分类</a>
-
-  </li>
-        <li class="menu-item menu-item-archives">
-
-    <a href="/archives/" rel="section"><i class="fa fa-fw fa-archive"></i>归档</a>
-
-  </li>
-        <li class="menu-item menu-item-photos">
-
-    <a href="/photos/" rel="section"><i class="fa fa-fw fa-image"></i>相册</a>
-
-  </li>
-        <li class="menu-item menu-item-sitemap">
-
-    <a href="/sitemap.xml" rel="section"><i class="fa fa-fw fa-sitemap"></i>站点地图</a>
-
-  </li>
-      <li class="menu-item menu-item-search">
-        <a role="button" class="popup-trigger"><i class="fa fa-search fa-fw"></i>搜索
-        </a>
-      </li>
-  </ul>
-
 </nav>
-  <div class="site-search">
-    <div class="popup search-popup">
-    <div class="search-header">
-  <span class="search-icon">
-    <i class="fa fa-search"></i>
-  </span>
-  <div class="search-input-container">
-    <input autocomplete="off" autocorrect="off" autocapitalize="off"
-           placeholder="Suche..." spellcheck="false"
-           type="search" class="search-input">
-  </div>
-  <span class="popup-btn-close">
-    <i class="fa fa-times-circle"></i>
-  </span>
-</div>
-<div id="search-result"></div>
 
-</div>
-<div class="search-pop-overlay"></div>
+    <div class="banner" id="banner" parallax=true
+         style="background: url('/img/default.png') no-repeat center center;
+           background-size: cover;">
+      <div class="full-bg-img">
+        <div class="mask flex-center" style="background-color: rgba(0, 0, 0, 0.3)">
+          <div class="page-header text-center fade-in-up">
+            <span class="h2" id="subtitle" title="Keras 在fit-generator中获取验证数据的y_true和y_preds">
+              
+            </span>
 
-  </div>
-</div>
-    </header>
-
-    
-  <div class="reading-progress-bar"></div>
-
-
-    <main class="main">
-      <div class="main-inner">
-        <div class="content-wrap">
-          
-
-          <div class="content">
             
+              <div class="mt-3">
+  
+  
+    <span class="post-meta">
+      <i class="iconfont icon-date-fill" aria-hidden="true"></i>
+      <time datetime="2020-06-10 15:19" pubdate>
+        2020年6月10日 下午
+      </time>
+    </span>
+  
+</div>
 
-  <div class="posts-expand">
+<div class="mt-1">
+  
+    
+    <span class="post-meta mr-2">
+      <i class="iconfont icon-chart"></i>
+      1.6k 字
+    </span>
+  
+
+  
+    
+    <span class="post-meta mr-2">
+      <i class="iconfont icon-clock-fill"></i>
       
+      
+      24
+       分钟
+    </span>
+  
+
   
   
-  <article itemscope itemtype="http://schema.org/Article" class="post-block " lang="zh-Hans">
-    <link itemprop="mainEntityOfPage" href="https://www.zywvvd.com/2020/06/10/deep_learning/keras/get-gts-and-preds-from-evaluator/get-gts-and-preds-from-evaluator/">
+</div>
 
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.png">
-      <meta itemprop="name" content="Yiwei Zhang">
-      <meta itemprop="description" content="Stay hungury ! Stay foolish ！">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="又见苍岚">
-    </span>
-      <header class="post-header">
-        <h1 class="post-title" itemprop="name headline">
-          Keras 在fit-generator中获取验证数据的y_true和y_preds
-        </h1>
-
-        <div class="post-meta">
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="fa fa-calendar-o"></i>
-              </span>
-              <span class="post-meta-item-text">发表于</span>
-
-              <time title="Erstellt: 2020-06-10 15:19:50" itemprop="dateCreated datePublished" datetime="2020-06-10T15:19:50+08:00">2020-06-10</time>
-            </span>
-              <span class="post-meta-item">
-                <span class="post-meta-item-icon">
-                  <i class="fa fa-calendar-check-o"></i>
-                </span>
-                <span class="post-meta-item-text">编辑于</span>
-                <time title="Geändert am: 2020-07-07 23:43:15" itemprop="dateModified" datetime="2020-07-07T23:43:15+08:00">2020-07-07</time>
-              </span>
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="fa fa-folder-o"></i>
-              </span>
-              <span class="post-meta-item-text">类别</span>
-                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-                  <a href="/categories/%E6%B7%B1%E5%BA%A6%E5%AD%A6%E4%B9%A0/" itemprop="url" rel="index"><span itemprop="name">深度学习</span></a>
-                </span>
-                  . 
-                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-                  <a href="/categories/%E6%B7%B1%E5%BA%A6%E5%AD%A6%E4%B9%A0/Keras/" itemprop="url" rel="index"><span itemprop="name">Keras</span></a>
-                </span>
-            </span>
+            
+          </div>
 
           
-            <span id="/2020/06/10/deep_learning/keras/get-gts-and-preds-from-evaluator/get-gts-and-preds-from-evaluator/" class="post-meta-item leancloud_visitors" data-flag-title="Keras 在fit-generator中获取验证数据的y_true和y_preds" title="阅读次数">
-              <span class="post-meta-item-icon">
-                <i class="fa fa-eye"></i>
-              </span>
-              <span class="post-meta-item-text">阅读次数: </span>
-              <span class="leancloud-visitors-count"></span>
-            </span>
-            <span class="post-meta-item" title="阅读次数" id="busuanzi_container_page_pv" style="display: none;">
-              <span class="post-meta-item-icon">
-                <i class="fa fa-eye"></i>
-              </span>
-              <span class="post-meta-item-text">阅读次数: </span>
-              <span id="busuanzi_value_page_pv"></span>
-            </span>
-  
-  <span class="post-meta-item">
-    
-      <span class="post-meta-item-icon">
-        <i class="fa fa-comment-o"></i>
-      </span>
-      <span class="post-meta-item-text">评论次数: </span>
-    
-    <a title="valine" href="/2020/06/10/deep_learning/keras/get-gts-and-preds-from-evaluator/get-gts-and-preds-from-evaluator/#valine-comments" itemprop="discussionUrl">
-      <span class="post-comments-count valine-comment-count" data-xid="/2020/06/10/deep_learning/keras/get-gts-and-preds-from-evaluator/get-gts-and-preds-from-evaluator/" itemprop="commentCount"></span>
-    </a>
-  </span>
-  
-  <br>
-            <span class="post-meta-item" title="本文字数">
-              <span class="post-meta-item-icon">
-                <i class="fa fa-file-word-o"></i>
-              </span>
-                <span class="post-meta-item-text">本文字数: </span>
-              <span>7.9k</span>
-            </span>
-            <span class="post-meta-item" title="阅读时长">
-              <span class="post-meta-item-icon">
-                <i class="fa fa-clock-o"></i>
-              </span>
-                <span class="post-meta-item-text">阅读时长 &asymp;</span>
-              <span>7 minuten.</span>
-            </span>
-
         </div>
-      </header>
+      </div>
+    </div>
+  </header>
 
+  <main>
     
-    
-    
-    <div class="post-body" itemprop="articleBody">
-
       
-        <blockquote>
+
+<div class="container-fluid nopadding-x">
+  <div class="row nomargin-x">
+    <div class="d-none d-lg-block col-lg-2"></div>
+    <div class="col-lg-8 nopadding-x-md">
+      <div class="container nopadding-x-md" id="board-ctn">
+        <div class="py-5" id="board">
+          <article class="post-content mx-auto">
+            <!-- SEO header -->
+            <h1 style="display: none">Keras 在fit-generator中获取验证数据的y_true和y_preds</h1>
+            
+            <div class="markdown-body">
+              <blockquote>
 <p>在Keras网络训练过程中，<code>fit-generator</code>为我们提供了很多便利。调用<code>fit-generator</code>时，每个epoch训练结束后会使用验证数据检测模型性能，Keras使用<code>model.evaluate_generator</code>提供该功能。然而我遇到了需要提取验证集y_pred的需求，在网上没有找到现有的功能实现方法，于是自己对源码进行了微调，实现了可配置提取验证集模型预测结果的功能，记录如下。</p>
 </blockquote>
 <span id="more"></span>
@@ -324,59 +243,59 @@
 <h2 id="代码修改"><a href="#代码修改" class="headerlink" title="代码修改"></a>代码修改</h2><ul>
 <li>Keras版本 2.2.4 其他版本不保证一定使用相同的方法，但大体思路不变</li>
 </ul>
-<h3 id="model-fit-generator"><a href="#model-fit-generator" class="headerlink" title="model.fit_generator"></a>model.fit_generator</h3><p><img src="https://photos.zywvvd.com/matrixtime/20200610154931.png"></p>
+<h3 id="model-fit-generator"><a href="#model-fit-generator" class="headerlink" title="model.fit_generator"></a>model.fit_generator</h3><p><img src="https://photos.zywvvd.com/matrixtime/20200610154931.png" srcset="/img/loading.gif" lazyload></p>
 <blockquote>
 <p>找到<code>fit_generator</code>函数定义位置，加入控制参数<code>get_predict</code>：</p>
 </blockquote>
-<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">def</span> <span class="title">fit_generator</span>(<span class="params">self, generator,</span></span></span><br><span class="line"><span class="params"><span class="function">                      steps_per_epoch=<span class="literal">None</span>,</span></span></span><br><span class="line"><span class="params"><span class="function">                      epochs=<span class="number">1</span>,</span></span></span><br><span class="line"><span class="params"><span class="function">                      verbose=<span class="number">1</span>,</span></span></span><br><span class="line"><span class="params"><span class="function">                      callbacks=<span class="literal">None</span>,</span></span></span><br><span class="line"><span class="params"><span class="function">                      validation_data=<span class="literal">None</span>,</span></span></span><br><span class="line"><span class="params"><span class="function">                      validation_steps=<span class="literal">None</span>,</span></span></span><br><span class="line"><span class="params"><span class="function">                      class_weight=<span class="literal">None</span>,</span></span></span><br><span class="line"><span class="params"><span class="function">                      max_queue_size=<span class="number">10</span>,</span></span></span><br><span class="line"><span class="params"><span class="function">                      workers=<span class="number">1</span>,</span></span></span><br><span class="line"><span class="params"><span class="function">                      use_multiprocessing=<span class="literal">False</span>,</span></span></span><br><span class="line"><span class="params"><span class="function">                      shuffle=<span class="literal">True</span>,</span></span></span><br><span class="line"><span class="params"><span class="function">                      initial_epoch=<span class="number">0</span>,</span></span></span><br><span class="line"><span class="params"><span class="function">                      get_predict = <span class="literal">False</span></span>):</span>    <span class="comment"># 加入 get_predict</span></span><br></pre></td></tr></table></figure>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><code class="hljs python"><span class="hljs-function"><span class="hljs-keyword">def</span> <span class="hljs-title">fit_generator</span>(<span class="hljs-params">self, generator,</span></span><br><span class="hljs-params"><span class="hljs-function">                      steps_per_epoch=<span class="hljs-literal">None</span>,</span></span><br><span class="hljs-params"><span class="hljs-function">                      epochs=<span class="hljs-number">1</span>,</span></span><br><span class="hljs-params"><span class="hljs-function">                      verbose=<span class="hljs-number">1</span>,</span></span><br><span class="hljs-params"><span class="hljs-function">                      callbacks=<span class="hljs-literal">None</span>,</span></span><br><span class="hljs-params"><span class="hljs-function">                      validation_data=<span class="hljs-literal">None</span>,</span></span><br><span class="hljs-params"><span class="hljs-function">                      validation_steps=<span class="hljs-literal">None</span>,</span></span><br><span class="hljs-params"><span class="hljs-function">                      class_weight=<span class="hljs-literal">None</span>,</span></span><br><span class="hljs-params"><span class="hljs-function">                      max_queue_size=<span class="hljs-number">10</span>,</span></span><br><span class="hljs-params"><span class="hljs-function">                      workers=<span class="hljs-number">1</span>,</span></span><br><span class="hljs-params"><span class="hljs-function">                      use_multiprocessing=<span class="hljs-literal">False</span>,</span></span><br><span class="hljs-params"><span class="hljs-function">                      shuffle=<span class="hljs-literal">True</span>,</span></span><br><span class="hljs-params"><span class="hljs-function">                      initial_epoch=<span class="hljs-number">0</span>,</span></span><br><span class="hljs-params"><span class="hljs-function">                      get_predict = <span class="hljs-literal">False</span></span>):</span>    <span class="hljs-comment"># 加入 get_predict</span><br></code></pre></td></tr></table></figure>
 
-<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">return</span> training_generator.fit_generator(</span><br><span class="line">            self, generator,</span><br><span class="line">            steps_per_epoch=steps_per_epoch,</span><br><span class="line">            epochs=epochs,</span><br><span class="line">            verbose=verbose,</span><br><span class="line">            callbacks=callbacks,</span><br><span class="line">            validation_data=validation_data,</span><br><span class="line">            validation_steps=validation_steps,</span><br><span class="line">            class_weight=class_weight,</span><br><span class="line">            max_queue_size=max_queue_size,</span><br><span class="line">            workers=workers,</span><br><span class="line">            use_multiprocessing=use_multiprocessing,</span><br><span class="line">            shuffle=shuffle,</span><br><span class="line">            initial_epoch=initial_epoch,</span><br><span class="line">            get_predict = get_predict) <span class="comment"># 加入 get_predict</span></span><br></pre></td></tr></table></figure>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><code class="hljs python"><span class="hljs-keyword">return</span> training_generator.fit_generator(<br>            self, generator,<br>            steps_per_epoch=steps_per_epoch,<br>            epochs=epochs,<br>            verbose=verbose,<br>            callbacks=callbacks,<br>            validation_data=validation_data,<br>            validation_steps=validation_steps,<br>            class_weight=class_weight,<br>            max_queue_size=max_queue_size,<br>            workers=workers,<br>            use_multiprocessing=use_multiprocessing,<br>            shuffle=shuffle,<br>            initial_epoch=initial_epoch,<br>            get_predict = get_predict) <span class="hljs-comment"># 加入 get_predict</span><br></code></pre></td></tr></table></figure>
 
-<h3 id="training-generator-fit-generator"><a href="#training-generator-fit-generator" class="headerlink" title="training_generator.fit_generator"></a>training_generator.fit_generator</h3><p><img src="https://photos.zywvvd.com/matrixtime/20200610155253.png"></p>
+<h3 id="training-generator-fit-generator"><a href="#training-generator-fit-generator" class="headerlink" title="training_generator.fit_generator"></a>training_generator.fit_generator</h3><p><img src="https://photos.zywvvd.com/matrixtime/20200610155253.png" srcset="/img/loading.gif" lazyload></p>
 <blockquote>
 <p>找到<code>training_generator.fit_generator</code>定义位置，加入<code>get_predict</code>:</p>
 </blockquote>
-<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">def</span> <span class="title">fit_generator</span>(<span class="params">model,</span></span></span><br><span class="line"><span class="params"><span class="function">                  generator,</span></span></span><br><span class="line"><span class="params"><span class="function">                  steps_per_epoch=<span class="literal">None</span>,</span></span></span><br><span class="line"><span class="params"><span class="function">                  epochs=<span class="number">1</span>,</span></span></span><br><span class="line"><span class="params"><span class="function">                  verbose=<span class="number">1</span>,</span></span></span><br><span class="line"><span class="params"><span class="function">                  callbacks=<span class="literal">None</span>,</span></span></span><br><span class="line"><span class="params"><span class="function">                  validation_data=<span class="literal">None</span>,</span></span></span><br><span class="line"><span class="params"><span class="function">                  validation_steps=<span class="literal">None</span>,</span></span></span><br><span class="line"><span class="params"><span class="function">                  class_weight=<span class="literal">None</span>,</span></span></span><br><span class="line"><span class="params"><span class="function">                  max_queue_size=<span class="number">10</span>,</span></span></span><br><span class="line"><span class="params"><span class="function">                  workers=<span class="number">1</span>,</span></span></span><br><span class="line"><span class="params"><span class="function">                  use_multiprocessing=<span class="literal">False</span>,</span></span></span><br><span class="line"><span class="params"><span class="function">                  shuffle=<span class="literal">True</span>,</span></span></span><br><span class="line"><span class="params"><span class="function">                  initial_epoch=<span class="number">0</span>,</span></span></span><br><span class="line"><span class="params"><span class="function">                  get_predict = <span class="literal">False</span></span>):</span> <span class="comment"># 加入 get_predict</span></span><br></pre></td></tr></table></figure>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><code class="hljs python"><span class="hljs-function"><span class="hljs-keyword">def</span> <span class="hljs-title">fit_generator</span>(<span class="hljs-params">model,</span></span><br><span class="hljs-params"><span class="hljs-function">                  generator,</span></span><br><span class="hljs-params"><span class="hljs-function">                  steps_per_epoch=<span class="hljs-literal">None</span>,</span></span><br><span class="hljs-params"><span class="hljs-function">                  epochs=<span class="hljs-number">1</span>,</span></span><br><span class="hljs-params"><span class="hljs-function">                  verbose=<span class="hljs-number">1</span>,</span></span><br><span class="hljs-params"><span class="hljs-function">                  callbacks=<span class="hljs-literal">None</span>,</span></span><br><span class="hljs-params"><span class="hljs-function">                  validation_data=<span class="hljs-literal">None</span>,</span></span><br><span class="hljs-params"><span class="hljs-function">                  validation_steps=<span class="hljs-literal">None</span>,</span></span><br><span class="hljs-params"><span class="hljs-function">                  class_weight=<span class="hljs-literal">None</span>,</span></span><br><span class="hljs-params"><span class="hljs-function">                  max_queue_size=<span class="hljs-number">10</span>,</span></span><br><span class="hljs-params"><span class="hljs-function">                  workers=<span class="hljs-number">1</span>,</span></span><br><span class="hljs-params"><span class="hljs-function">                  use_multiprocessing=<span class="hljs-literal">False</span>,</span></span><br><span class="hljs-params"><span class="hljs-function">                  shuffle=<span class="hljs-literal">True</span>,</span></span><br><span class="hljs-params"><span class="hljs-function">                  initial_epoch=<span class="hljs-number">0</span>,</span></span><br><span class="hljs-params"><span class="hljs-function">                  get_predict = <span class="hljs-literal">False</span></span>):</span> <span class="hljs-comment"># 加入 get_predict</span><br></code></pre></td></tr></table></figure>
 
 <blockquote>
 <p>修改 # Epoch finished. 注释后的模块，可以看到Keras中<code>fit_generator</code>就是用<code>model.evaluate_generator</code>对验证集评估的：</p>
 </blockquote>
-<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># Epoch finished.</span></span><br><span class="line"><span class="keyword">if</span> steps_done &gt;= steps_per_epoch <span class="keyword">and</span> do_validation:</span><br><span class="line">    <span class="keyword">if</span> val_gen:</span><br><span class="line">        </span><br><span class="line">        <span class="keyword">if</span> get_predict:</span><br><span class="line">            <span class="comment">## 如果启动获取预测结果功能，那么将get_predict设置为True</span></span><br><span class="line">            <span class="comment">## 返回值会包括 gts_and_preds </span></span><br><span class="line">            val_outs, gts_and_preds = model.evaluate_generator(</span><br><span class="line">                val_enqueuer_gen,</span><br><span class="line">                validation_steps,</span><br><span class="line">                workers=<span class="number">0</span>,</span><br><span class="line">                get_predict=get_predict)</span><br><span class="line">        <span class="keyword">else</span>:</span><br><span class="line">            val_outs = model.evaluate_generator(</span><br><span class="line">                val_enqueuer_gen,</span><br><span class="line">                validation_steps,</span><br><span class="line">                workers=<span class="number">0</span>)                            </span><br><span class="line">    <span class="keyword">else</span>:</span><br><span class="line">        <span class="comment"># No need for try/except because</span></span><br><span class="line">        <span class="comment"># data has already been validated.</span></span><br><span class="line">        val_outs = model.evaluate(</span><br><span class="line">            val_x, val_y,</span><br><span class="line">            batch_size=batch_size,</span><br><span class="line">            sample_weight=val_sample_weights,</span><br><span class="line">            verbose=<span class="number">0</span>)</span><br><span class="line">    val_outs = to_list(val_outs)</span><br><span class="line">    <span class="comment"># Same labels assumed.</span></span><br><span class="line">    <span class="keyword">for</span> l, o <span class="keyword">in</span> <span class="built_in">zip</span>(out_labels, val_outs):</span><br><span class="line">        epoch_logs[<span class="string">&#x27;val_&#x27;</span> + l] = o</span><br><span class="line">    </span><br><span class="line">    <span class="comment">## 将返回值 gts_and_preds 保存到 log 中</span></span><br><span class="line">    <span class="keyword">if</span> get_predict:</span><br><span class="line">        epoch_logs[<span class="string">&#x27;val_gts_and_preds&#x27;</span>] = gts_and_preds</span><br><span class="line">        </span><br><span class="line"><span class="keyword">if</span> callback_model.stop_training:</span><br><span class="line">    <span class="keyword">break</span></span><br><span class="line"></span><br></pre></td></tr></table></figure>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br></pre></td><td class="code"><pre><code class="hljs python"><span class="hljs-comment"># Epoch finished.</span><br><span class="hljs-keyword">if</span> steps_done &gt;= steps_per_epoch <span class="hljs-keyword">and</span> do_validation:<br>    <span class="hljs-keyword">if</span> val_gen:<br>        <br>        <span class="hljs-keyword">if</span> get_predict:<br>            <span class="hljs-comment">## 如果启动获取预测结果功能，那么将get_predict设置为True</span><br>            <span class="hljs-comment">## 返回值会包括 gts_and_preds </span><br>            val_outs, gts_and_preds = model.evaluate_generator(<br>                val_enqueuer_gen,<br>                validation_steps,<br>                workers=<span class="hljs-number">0</span>,<br>                get_predict=get_predict)<br>        <span class="hljs-keyword">else</span>:<br>            val_outs = model.evaluate_generator(<br>                val_enqueuer_gen,<br>                validation_steps,<br>                workers=<span class="hljs-number">0</span>)                            <br>    <span class="hljs-keyword">else</span>:<br>        <span class="hljs-comment"># No need for try/except because</span><br>        <span class="hljs-comment"># data has already been validated.</span><br>        val_outs = model.evaluate(<br>            val_x, val_y,<br>            batch_size=batch_size,<br>            sample_weight=val_sample_weights,<br>            verbose=<span class="hljs-number">0</span>)<br>    val_outs = to_list(val_outs)<br>    <span class="hljs-comment"># Same labels assumed.</span><br>    <span class="hljs-keyword">for</span> l, o <span class="hljs-keyword">in</span> <span class="hljs-built_in">zip</span>(out_labels, val_outs):<br>        epoch_logs[<span class="hljs-string">&#x27;val_&#x27;</span> + l] = o<br>    <br>    <span class="hljs-comment">## 将返回值 gts_and_preds 保存到 log 中</span><br>    <span class="hljs-keyword">if</span> get_predict:<br>        epoch_logs[<span class="hljs-string">&#x27;val_gts_and_preds&#x27;</span>] = gts_and_preds<br>        <br><span class="hljs-keyword">if</span> callback_model.stop_training:<br>    <span class="hljs-keyword">break</span><br><br></code></pre></td></tr></table></figure>
 
-<h3 id="model-evaluate-generator"><a href="#model-evaluate-generator" class="headerlink" title="model.evaluate_generator"></a>model.evaluate_generator</h3><p><img src="https://photos.zywvvd.com/matrixtime/20200610155915.png"></p>
+<h3 id="model-evaluate-generator"><a href="#model-evaluate-generator" class="headerlink" title="model.evaluate_generator"></a>model.evaluate_generator</h3><p><img src="https://photos.zywvvd.com/matrixtime/20200610155915.png" srcset="/img/loading.gif" lazyload></p>
 <blockquote>
 <p>进入<code>model.evaluate_generator</code>函数，加入<code>get_predict</code>变量：</p>
 </blockquote>
-<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">def</span> <span class="title">evaluate_generator</span>(<span class="params">self, generator,</span></span></span><br><span class="line"><span class="params"><span class="function">                       steps=<span class="literal">None</span>,</span></span></span><br><span class="line"><span class="params"><span class="function">                       max_queue_size=<span class="number">10</span>,</span></span></span><br><span class="line"><span class="params"><span class="function">                       workers=<span class="number">1</span>,</span></span></span><br><span class="line"><span class="params"><span class="function">                       use_multiprocessing=<span class="literal">False</span>,</span></span></span><br><span class="line"><span class="params"><span class="function">                       verbose=<span class="number">0</span>,</span></span></span><br><span class="line"><span class="params"><span class="function">                       get_predict=<span class="literal">False</span></span>):</span> <span class="comment"># 加入get_predict变量</span></span><br></pre></td></tr></table></figure>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><code class="hljs python"><span class="hljs-function"><span class="hljs-keyword">def</span> <span class="hljs-title">evaluate_generator</span>(<span class="hljs-params">self, generator,</span></span><br><span class="hljs-params"><span class="hljs-function">                       steps=<span class="hljs-literal">None</span>,</span></span><br><span class="hljs-params"><span class="hljs-function">                       max_queue_size=<span class="hljs-number">10</span>,</span></span><br><span class="hljs-params"><span class="hljs-function">                       workers=<span class="hljs-number">1</span>,</span></span><br><span class="hljs-params"><span class="hljs-function">                       use_multiprocessing=<span class="hljs-literal">False</span>,</span></span><br><span class="hljs-params"><span class="hljs-function">                       verbose=<span class="hljs-number">0</span>,</span></span><br><span class="hljs-params"><span class="hljs-function">                       get_predict=<span class="hljs-literal">False</span></span>):</span> <span class="hljs-comment"># 加入get_predict变量</span><br></code></pre></td></tr></table></figure>
 
-<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">return</span> training_generator.evaluate_generator(</span><br><span class="line">            self, generator,</span><br><span class="line">            steps=steps,</span><br><span class="line">            max_queue_size=max_queue_size,</span><br><span class="line">            workers=workers,</span><br><span class="line">            use_multiprocessing=use_multiprocessing,</span><br><span class="line">            verbose=verbose,</span><br><span class="line">            get_predict=get_predict) <span class="comment"># 加入get_predict变量</span></span><br></pre></td></tr></table></figure>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><code class="hljs python"><span class="hljs-keyword">return</span> training_generator.evaluate_generator(<br>            self, generator,<br>            steps=steps,<br>            max_queue_size=max_queue_size,<br>            workers=workers,<br>            use_multiprocessing=use_multiprocessing,<br>            verbose=verbose,<br>            get_predict=get_predict) <span class="hljs-comment"># 加入get_predict变量</span><br></code></pre></td></tr></table></figure>
 
 
 
-<h3 id="training-generator-evaluate-generator"><a href="#training-generator-evaluate-generator" class="headerlink" title="training_generator.evaluate_generator"></a>training_generator.evaluate_generator</h3><p><img src="https://photos.zywvvd.com/matrixtime/20200610163145.png"></p>
+<h3 id="training-generator-evaluate-generator"><a href="#training-generator-evaluate-generator" class="headerlink" title="training_generator.evaluate_generator"></a>training_generator.evaluate_generator</h3><p><img src="https://photos.zywvvd.com/matrixtime/20200610163145.png" srcset="/img/loading.gif" lazyload></p>
 <blockquote>
 <p>进入<code>training_generator.evaluate_generator</code>，添加<code>get_predict</code>变量，新建三个变量：</p>
 </blockquote>
-<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">def</span> <span class="title">evaluate_generator</span>(<span class="params">model, generator,</span></span></span><br><span class="line"><span class="params"><span class="function">                       steps=<span class="literal">None</span>,</span></span></span><br><span class="line"><span class="params"><span class="function">                       max_queue_size=<span class="number">10</span>,</span></span></span><br><span class="line"><span class="params"><span class="function">                       workers=<span class="number">1</span>,</span></span></span><br><span class="line"><span class="params"><span class="function">                       use_multiprocessing=<span class="literal">False</span>,</span></span></span><br><span class="line"><span class="params"><span class="function">                       verbose=<span class="number">0</span>,</span></span></span><br><span class="line"><span class="params"><span class="function">                       get_predict=<span class="literal">False</span></span>):</span>  <span class="comment"># 加入get_predict变量</span></span><br><span class="line">    <span class="string">&quot;&quot;&quot;See docstring for `Model.evaluate_generator`.&quot;&quot;&quot;</span></span><br><span class="line">    model._make_test_function()</span><br><span class="line"></span><br><span class="line">    <span class="keyword">if</span> <span class="built_in">hasattr</span>(model, <span class="string">&#x27;metrics&#x27;</span>):</span><br><span class="line">        <span class="keyword">for</span> m <span class="keyword">in</span> model.stateful_metric_functions:</span><br><span class="line">            m.reset_states()</span><br><span class="line">        stateful_metric_indices = [</span><br><span class="line">            i <span class="keyword">for</span> i, name <span class="keyword">in</span> <span class="built_in">enumerate</span>(model.metrics_names)</span><br><span class="line">            <span class="keyword">if</span> <span class="built_in">str</span>(name) <span class="keyword">in</span> model.stateful_metric_names]</span><br><span class="line">    <span class="keyword">else</span>:</span><br><span class="line">        stateful_metric_indices = []</span><br><span class="line"></span><br><span class="line">    steps_done = <span class="number">0</span></span><br><span class="line">    wait_time = <span class="number">0.01</span></span><br><span class="line">    outs_per_batch = []</span><br><span class="line">    batch_sizes = []</span><br><span class="line">      </span><br><span class="line">    <span class="keyword">if</span> get_predict:</span><br><span class="line">        preds_dict=&#123;&#125; <span class="comment"># 新建保存结果的dict</span></span><br><span class="line">        gt_per_batch = [] <span class="comment"># 新建 y_true 的 list</span></span><br><span class="line">        pr_per_batch = [] <span class="comment"># 新建 y_pred 的 list</span></span><br></pre></td></tr></table></figure>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br></pre></td><td class="code"><pre><code class="hljs python"><span class="hljs-function"><span class="hljs-keyword">def</span> <span class="hljs-title">evaluate_generator</span>(<span class="hljs-params">model, generator,</span></span><br><span class="hljs-params"><span class="hljs-function">                       steps=<span class="hljs-literal">None</span>,</span></span><br><span class="hljs-params"><span class="hljs-function">                       max_queue_size=<span class="hljs-number">10</span>,</span></span><br><span class="hljs-params"><span class="hljs-function">                       workers=<span class="hljs-number">1</span>,</span></span><br><span class="hljs-params"><span class="hljs-function">                       use_multiprocessing=<span class="hljs-literal">False</span>,</span></span><br><span class="hljs-params"><span class="hljs-function">                       verbose=<span class="hljs-number">0</span>,</span></span><br><span class="hljs-params"><span class="hljs-function">                       get_predict=<span class="hljs-literal">False</span></span>):</span>  <span class="hljs-comment"># 加入get_predict变量</span><br>    <span class="hljs-string">&quot;&quot;&quot;See docstring for `Model.evaluate_generator`.&quot;&quot;&quot;</span><br>    model._make_test_function()<br><br>    <span class="hljs-keyword">if</span> <span class="hljs-built_in">hasattr</span>(model, <span class="hljs-string">&#x27;metrics&#x27;</span>):<br>        <span class="hljs-keyword">for</span> m <span class="hljs-keyword">in</span> model.stateful_metric_functions:<br>            m.reset_states()<br>        stateful_metric_indices = [<br>            i <span class="hljs-keyword">for</span> i, name <span class="hljs-keyword">in</span> <span class="hljs-built_in">enumerate</span>(model.metrics_names)<br>            <span class="hljs-keyword">if</span> <span class="hljs-built_in">str</span>(name) <span class="hljs-keyword">in</span> model.stateful_metric_names]<br>    <span class="hljs-keyword">else</span>:<br>        stateful_metric_indices = []<br><br>    steps_done = <span class="hljs-number">0</span><br>    wait_time = <span class="hljs-number">0.01</span><br>    outs_per_batch = []<br>    batch_sizes = []<br>      <br>    <span class="hljs-keyword">if</span> get_predict:<br>        preds_dict=&#123;&#125; <span class="hljs-comment"># 新建保存结果的dict</span><br>        gt_per_batch = [] <span class="hljs-comment"># 新建 y_true 的 list</span><br>        pr_per_batch = [] <span class="hljs-comment"># 新建 y_pred 的 list</span><br></code></pre></td></tr></table></figure>
 
 <blockquote>
 <p>在核心循环<code>while steps_done &lt; steps:</code>中加入预测变量的内容：</p>
 </blockquote>
-<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">while</span> steps_done &lt; steps:</span><br><span class="line">            generator_output = <span class="built_in">next</span>(output_generator)</span><br><span class="line">            <span class="keyword">if</span> <span class="keyword">not</span> <span class="built_in">hasattr</span>(generator_output, <span class="string">&#x27;__len__&#x27;</span>):</span><br><span class="line">                <span class="keyword">raise</span> ValueError(<span class="string">&#x27;Output of generator should be a tuple &#x27;</span></span><br><span class="line">                                 <span class="string">&#x27;(x, y, sample_weight) &#x27;</span></span><br><span class="line">                                 <span class="string">&#x27;or (x, y). Found: &#x27;</span> +</span><br><span class="line">                                 <span class="built_in">str</span>(generator_output))</span><br><span class="line">            <span class="keyword">if</span> <span class="built_in">len</span>(generator_output) == <span class="number">2</span>:</span><br><span class="line">                x, y = generator_output</span><br><span class="line">                sample_weight = <span class="literal">None</span></span><br><span class="line">            <span class="keyword">elif</span> <span class="built_in">len</span>(generator_output) == <span class="number">3</span>:</span><br><span class="line">                x, y, sample_weight = generator_output</span><br><span class="line">            <span class="keyword">else</span>:</span><br><span class="line">                <span class="keyword">raise</span> ValueError(<span class="string">&#x27;Output of generator should be a tuple &#x27;</span></span><br><span class="line">                                 <span class="string">&#x27;(x, y, sample_weight) &#x27;</span></span><br><span class="line">                                 <span class="string">&#x27;or (x, y). Found: &#x27;</span> +</span><br><span class="line">                                 <span class="built_in">str</span>(generator_output))</span><br><span class="line">            outs = model.test_on_batch(x, y, sample_weight=sample_weight)</span><br><span class="line">            outs = to_list(outs)</span><br><span class="line">            outs_per_batch.append(outs)</span><br><span class="line">            </span><br><span class="line">            <span class="comment">## 加入预测功能，保存preds和y_true</span></span><br><span class="line">            <span class="keyword">if</span> get_predict:</span><br><span class="line">                preds = model.predict_on_batch(x)</span><br><span class="line">                gt_per_batch.append(y.tolist())</span><br><span class="line">                pr_per_batch.append(preds.tolist())</span><br><span class="line"></span><br><span class="line">            <span class="keyword">if</span> x <span class="keyword">is</span> <span class="literal">None</span> <span class="keyword">or</span> <span class="built_in">len</span>(x) == <span class="number">0</span>:</span><br><span class="line">                <span class="comment"># Handle data tensors support when no input given</span></span><br><span class="line">                <span class="comment"># step-size = 1 for data tensors</span></span><br><span class="line">                batch_size = <span class="number">1</span></span><br><span class="line">            <span class="keyword">elif</span> <span class="built_in">isinstance</span>(x, <span class="built_in">list</span>):</span><br><span class="line">                batch_size = x[<span class="number">0</span>].shape[<span class="number">0</span>]</span><br><span class="line">            <span class="keyword">elif</span> <span class="built_in">isinstance</span>(x, <span class="built_in">dict</span>):</span><br><span class="line">                batch_size = <span class="built_in">list</span>(x.values())[<span class="number">0</span>].shape[<span class="number">0</span>]</span><br><span class="line">            <span class="keyword">else</span>:</span><br><span class="line">                batch_size = x.shape[<span class="number">0</span>]</span><br><span class="line">            <span class="keyword">if</span> batch_size == <span class="number">0</span>:</span><br><span class="line">                <span class="keyword">raise</span> ValueError(<span class="string">&#x27;Received an empty batch. &#x27;</span></span><br><span class="line">                                 <span class="string">&#x27;Batches should contain &#x27;</span></span><br><span class="line">                                 <span class="string">&#x27;at least one item.&#x27;</span>)</span><br><span class="line">            steps_done += <span class="number">1</span></span><br><span class="line">            batch_sizes.append(batch_size)</span><br><span class="line">            <span class="keyword">if</span> verbose == <span class="number">1</span>:</span><br><span class="line">                progbar.update(steps_done)</span><br><span class="line">        <span class="comment">## 将结果保存到dict中</span></span><br><span class="line">        <span class="keyword">if</span> get_predict:</span><br><span class="line">            preds_dict[<span class="string">&#x27;y_true&#x27;</span>] = gt_per_batch</span><br><span class="line">            preds_dict[<span class="string">&#x27;y_pred&#x27;</span>] = pr_per_batch</span><br></pre></td></tr></table></figure>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br></pre></td><td class="code"><pre><code class="hljs python"><span class="hljs-keyword">while</span> steps_done &lt; steps:<br>            generator_output = <span class="hljs-built_in">next</span>(output_generator)<br>            <span class="hljs-keyword">if</span> <span class="hljs-keyword">not</span> <span class="hljs-built_in">hasattr</span>(generator_output, <span class="hljs-string">&#x27;__len__&#x27;</span>):<br>                <span class="hljs-keyword">raise</span> ValueError(<span class="hljs-string">&#x27;Output of generator should be a tuple &#x27;</span><br>                                 <span class="hljs-string">&#x27;(x, y, sample_weight) &#x27;</span><br>                                 <span class="hljs-string">&#x27;or (x, y). Found: &#x27;</span> +<br>                                 <span class="hljs-built_in">str</span>(generator_output))<br>            <span class="hljs-keyword">if</span> <span class="hljs-built_in">len</span>(generator_output) == <span class="hljs-number">2</span>:<br>                x, y = generator_output<br>                sample_weight = <span class="hljs-literal">None</span><br>            <span class="hljs-keyword">elif</span> <span class="hljs-built_in">len</span>(generator_output) == <span class="hljs-number">3</span>:<br>                x, y, sample_weight = generator_output<br>            <span class="hljs-keyword">else</span>:<br>                <span class="hljs-keyword">raise</span> ValueError(<span class="hljs-string">&#x27;Output of generator should be a tuple &#x27;</span><br>                                 <span class="hljs-string">&#x27;(x, y, sample_weight) &#x27;</span><br>                                 <span class="hljs-string">&#x27;or (x, y). Found: &#x27;</span> +<br>                                 <span class="hljs-built_in">str</span>(generator_output))<br>            outs = model.test_on_batch(x, y, sample_weight=sample_weight)<br>            outs = to_list(outs)<br>            outs_per_batch.append(outs)<br>            <br>            <span class="hljs-comment">## 加入预测功能，保存preds和y_true</span><br>            <span class="hljs-keyword">if</span> get_predict:<br>                preds = model.predict_on_batch(x)<br>                gt_per_batch.append(y.tolist())<br>                pr_per_batch.append(preds.tolist())<br><br>            <span class="hljs-keyword">if</span> x <span class="hljs-keyword">is</span> <span class="hljs-literal">None</span> <span class="hljs-keyword">or</span> <span class="hljs-built_in">len</span>(x) == <span class="hljs-number">0</span>:<br>                <span class="hljs-comment"># Handle data tensors support when no input given</span><br>                <span class="hljs-comment"># step-size = 1 for data tensors</span><br>                batch_size = <span class="hljs-number">1</span><br>            <span class="hljs-keyword">elif</span> <span class="hljs-built_in">isinstance</span>(x, <span class="hljs-built_in">list</span>):<br>                batch_size = x[<span class="hljs-number">0</span>].shape[<span class="hljs-number">0</span>]<br>            <span class="hljs-keyword">elif</span> <span class="hljs-built_in">isinstance</span>(x, <span class="hljs-built_in">dict</span>):<br>                batch_size = <span class="hljs-built_in">list</span>(x.values())[<span class="hljs-number">0</span>].shape[<span class="hljs-number">0</span>]<br>            <span class="hljs-keyword">else</span>:<br>                batch_size = x.shape[<span class="hljs-number">0</span>]<br>            <span class="hljs-keyword">if</span> batch_size == <span class="hljs-number">0</span>:<br>                <span class="hljs-keyword">raise</span> ValueError(<span class="hljs-string">&#x27;Received an empty batch. &#x27;</span><br>                                 <span class="hljs-string">&#x27;Batches should contain &#x27;</span><br>                                 <span class="hljs-string">&#x27;at least one item.&#x27;</span>)<br>            steps_done += <span class="hljs-number">1</span><br>            batch_sizes.append(batch_size)<br>            <span class="hljs-keyword">if</span> verbose == <span class="hljs-number">1</span>:<br>                progbar.update(steps_done)<br>        <span class="hljs-comment">## 将结果保存到dict中</span><br>        <span class="hljs-keyword">if</span> get_predict:<br>            preds_dict[<span class="hljs-string">&#x27;y_true&#x27;</span>] = gt_per_batch<br>            preds_dict[<span class="hljs-string">&#x27;y_pred&#x27;</span>] = pr_per_batch<br></code></pre></td></tr></table></figure>
 
 <blockquote>
 <p>修改返回值：</p>
 </blockquote>
-<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">if</span> get_predict:</span><br><span class="line">    <span class="keyword">return</span> unpack_singleton(averages), preds_dict</span><br><span class="line"></span><br><span class="line"><span class="keyword">else</span>:</span><br><span class="line">    <span class="keyword">return</span> unpack_singleton(averages)</span><br></pre></td></tr></table></figure>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><code class="hljs python"><span class="hljs-keyword">if</span> get_predict:<br>    <span class="hljs-keyword">return</span> unpack_singleton(averages), preds_dict<br><br><span class="hljs-keyword">else</span>:<br>    <span class="hljs-keyword">return</span> unpack_singleton(averages)<br></code></pre></td></tr></table></figure>
 
 <blockquote>
 <p>至此核心的功能已经实现，但还有一个小问题。</p>
 </blockquote>
-<h3 id="keras-callbacks-TensorBoard-write-logs"><a href="#keras-callbacks-TensorBoard-write-logs" class="headerlink" title="keras.callbacks.TensorBoard._write_logs"></a>keras.callbacks.TensorBoard._write_logs</h3><p><img src="https://photos.zywvvd.com/matrixtime/20200610163226.png"></p>
+<h3 id="keras-callbacks-TensorBoard-write-logs"><a href="#keras-callbacks-TensorBoard-write-logs" class="headerlink" title="keras.callbacks.TensorBoard._write_logs"></a>keras.callbacks.TensorBoard._write_logs</h3><p><img src="https://photos.zywvvd.com/matrixtime/20200610163226.png" srcset="/img/loading.gif" lazyload></p>
 <blockquote>
 <p>Keras的Tensorboard会记录logs中的内容，但是他只认识 int, float 等数值格式，我们保存在log中的复杂字典他没办法写入tesnorboard，需要对<code>_write_logs</code>做微小的调整：</p>
 </blockquote>
-<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">def</span> <span class="title">_write_logs</span>(<span class="params">self, logs, index</span>):</span></span><br><span class="line">        <span class="keyword">for</span> name, value <span class="keyword">in</span> logs.items():</span><br><span class="line">            <span class="keyword">if</span> name <span class="keyword">in</span> [<span class="string">&#x27;batch&#x27;</span>, <span class="string">&#x27;size&#x27;</span>]:</span><br><span class="line">                <span class="keyword">continue</span></span><br><span class="line">            summary = tf.Summary()</span><br><span class="line">            summary_value = summary.value.add()</span><br><span class="line">            <span class="keyword">if</span> <span class="built_in">isinstance</span>(value, np.ndarray):</span><br><span class="line">                summary_value.simple_value = value.item()</span><br><span class="line">            <span class="comment">## 跳过我们生成的字典</span></span><br><span class="line">            <span class="keyword">elif</span> <span class="built_in">isinstance</span>(value, <span class="built_in">dict</span>):</span><br><span class="line">                <span class="keyword">pass</span></span><br><span class="line">            <span class="keyword">else</span>:</span><br><span class="line">                summary_value.simple_value = value</span><br><span class="line">            summary_value.tag = name</span><br><span class="line">            self.writer.add_summary(summary, index)</span><br><span class="line">        self.writer.flush()</span><br></pre></td></tr></table></figure>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br></pre></td><td class="code"><pre><code class="hljs python"><span class="hljs-function"><span class="hljs-keyword">def</span> <span class="hljs-title">_write_logs</span>(<span class="hljs-params">self, logs, index</span>):</span><br>        <span class="hljs-keyword">for</span> name, value <span class="hljs-keyword">in</span> logs.items():<br>            <span class="hljs-keyword">if</span> name <span class="hljs-keyword">in</span> [<span class="hljs-string">&#x27;batch&#x27;</span>, <span class="hljs-string">&#x27;size&#x27;</span>]:<br>                <span class="hljs-keyword">continue</span><br>            summary = tf.Summary()<br>            summary_value = summary.value.add()<br>            <span class="hljs-keyword">if</span> <span class="hljs-built_in">isinstance</span>(value, np.ndarray):<br>                summary_value.simple_value = value.item()<br>            <span class="hljs-comment">## 跳过我们生成的字典</span><br>            <span class="hljs-keyword">elif</span> <span class="hljs-built_in">isinstance</span>(value, <span class="hljs-built_in">dict</span>):<br>                <span class="hljs-keyword">pass</span><br>            <span class="hljs-keyword">else</span>:<br>                summary_value.simple_value = value<br>            summary_value.tag = name<br>            self.writer.add_summary(summary, index)<br>        self.writer.flush()<br></code></pre></td></tr></table></figure>
 
 <blockquote>
 <p>大功告成！</p>
@@ -384,12 +303,12 @@
 <h2 id="测试"><a href="#测试" class="headerlink" title="测试"></a>测试</h2><blockquote>
 <p>随便写个带<code>on_epoch_end</code>的回调函数，将<code>get_predict</code>设置为True，测试logs中是否有我们想要的数据：</p>
 </blockquote>
-<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line">model.fit_generator(</span><br><span class="line">       generator = train_data_generator,</span><br><span class="line">       steps_per_epoch = <span class="number">10</span>,</span><br><span class="line">       epochs = config.Epochs,</span><br><span class="line">       verbose = <span class="number">1</span>,</span><br><span class="line">       use_multiprocessing=<span class="literal">False</span>,</span><br><span class="line">       validation_data=val_data_generator,</span><br><span class="line">       validation_steps=<span class="number">10</span>,</span><br><span class="line">       callbacks = callbacks,</span><br><span class="line">       get_predict= <span class="literal">True</span></span><br><span class="line">   )      </span><br></pre></td></tr></table></figure>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><code class="hljs python">model.fit_generator(<br>       generator = train_data_generator,<br>       steps_per_epoch = <span class="hljs-number">10</span>,<br>       epochs = config.Epochs,<br>       verbose = <span class="hljs-number">1</span>,<br>       use_multiprocessing=<span class="hljs-literal">False</span>,<br>       validation_data=val_data_generator,<br>       validation_steps=<span class="hljs-number">10</span>,<br>       callbacks = callbacks,<br>       get_predict= <span class="hljs-literal">True</span><br>   )      <br></code></pre></td></tr></table></figure>
 
 <blockquote>
 <p>回调函数设断点，输出logs：</p>
 </blockquote>
-<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br></pre></td><td class="code"><pre><span class="line">logs[<span class="string">&#x27;val_gts_and_preds&#x27;</span>]</span><br><span class="line">&#123;<span class="string">&#x27;y_pred&#x27;</span>: [[[<span class="number">2.5419962184969336e-05</span>, <span class="number">0.9999746084213257</span>],</span><br><span class="line">             [<span class="number">0.6694663763046265</span>, <span class="number">0.33053362369537354</span>],</span><br><span class="line">             [<span class="number">0.3561754524707794</span>, <span class="number">0.643824577331543</span>]],</span><br><span class="line">            [[<span class="number">5.548826155499231e-12</span>, <span class="number">1.0</span>],</span><br><span class="line">             [<span class="number">2.701560219975363e-08</span>, <span class="number">1.0</span>],</span><br><span class="line">             [<span class="number">4.0011427699937485e-06</span>, <span class="number">0.9999959468841553</span>]],</span><br><span class="line">            [[<span class="number">7.97858723533551e-11</span>, <span class="number">1.0</span>],</span><br><span class="line">             [<span class="number">2.3924835659272503e-06</span>, <span class="number">0.999997615814209</span>],</span><br><span class="line">             [<span class="number">3.359668880875688e-07</span>, <span class="number">0.9999996423721313</span>]],</span><br><span class="line">            [[<span class="number">0.06622887402772903</span>, <span class="number">0.9337711930274963</span>],</span><br><span class="line">             [<span class="number">4.1211248458239425e-07</span>, <span class="number">0.9999996423721313</span>],</span><br><span class="line">             [<span class="number">8.561290087527595e-06</span>, <span class="number">0.9999914169311523</span>]],</span><br><span class="line">            [[<span class="number">9.313887403550325e-07</span>, <span class="number">0.9999990463256836</span>],</span><br><span class="line">             [<span class="number">2.614793537247806e-08</span>, <span class="number">1.0</span>],</span><br><span class="line">             [<span class="number">8.66139725985704e-06</span>, <span class="number">0.9999912977218628</span>]],</span><br><span class="line">            [[<span class="number">7.047830763440288e-09</span>, <span class="number">1.0</span>],</span><br><span class="line">             [<span class="number">0.010548637248575687</span>, <span class="number">0.9894513487815857</span>],</span><br><span class="line">             [<span class="number">1.8744471252940542e-10</span>, <span class="number">1.0</span>]],</span><br><span class="line">            [[<span class="number">8.760089875714527e-11</span>, <span class="number">1.0</span>],</span><br><span class="line">             [<span class="number">0.0015734446933493018</span>, <span class="number">0.9984265565872192</span>],</span><br><span class="line">             [<span class="number">1.5642463040421717e-06</span>, <span class="number">0.9999984502792358</span>]],</span><br><span class="line">            [[<span class="number">0.004750440828502178</span>, <span class="number">0.9952495098114014</span>],</span><br><span class="line">             [<span class="number">6.984401466070267e-07</span>, <span class="number">0.9999992847442627</span>],</span><br><span class="line">             [<span class="number">0.00013592069444712251</span>, <span class="number">0.9998641014099121</span>]],</span><br><span class="line">            [[<span class="number">7.22906318140204e-11</span>, <span class="number">1.0</span>],</span><br><span class="line">             [<span class="number">2.402198795437016e-08</span>, <span class="number">1.0</span>],</span><br><span class="line">             [<span class="number">9.673745138272238e-10</span>, <span class="number">1.0</span>]],</span><br><span class="line">            [[<span class="number">3.1848256298872e-07</span>, <span class="number">0.9999996423721313</span>],</span><br><span class="line">             [<span class="number">0.0035940599627792835</span>, <span class="number">0.9964058995246887</span>],</span><br><span class="line">             [<span class="number">1.9458911912351162e-11</span>, <span class="number">1.0</span>]]],</span><br><span class="line"> <span class="string">&#x27;y_true&#x27;</span>: [[[<span class="number">0.0</span>, <span class="number">1.0</span>], [<span class="number">0.0</span>, <span class="number">1.0</span>], [<span class="number">0.0</span>, <span class="number">1.0</span>]],</span><br><span class="line">            [[<span class="number">0.0</span>, <span class="number">1.0</span>], [<span class="number">0.0</span>, <span class="number">1.0</span>], [<span class="number">0.0</span>, <span class="number">1.0</span>]],</span><br><span class="line">            [[<span class="number">0.0</span>, <span class="number">1.0</span>], [<span class="number">0.0</span>, <span class="number">1.0</span>], [<span class="number">0.0</span>, <span class="number">1.0</span>]],</span><br><span class="line">            [[<span class="number">0.0</span>, <span class="number">1.0</span>], [<span class="number">0.0</span>, <span class="number">1.0</span>], [<span class="number">0.0</span>, <span class="number">1.0</span>]],</span><br><span class="line">            [[<span class="number">0.0</span>, <span class="number">1.0</span>], [<span class="number">0.0</span>, <span class="number">1.0</span>], [<span class="number">0.0</span>, <span class="number">1.0</span>]],</span><br><span class="line">            [[<span class="number">0.0</span>, <span class="number">1.0</span>], [<span class="number">0.0</span>, <span class="number">1.0</span>], [<span class="number">0.0</span>, <span class="number">1.0</span>]],</span><br><span class="line">            [[<span class="number">0.0</span>, <span class="number">1.0</span>], [<span class="number">0.0</span>, <span class="number">1.0</span>], [<span class="number">0.0</span>, <span class="number">1.0</span>]],</span><br><span class="line">            [[<span class="number">0.0</span>, <span class="number">1.0</span>], [<span class="number">0.0</span>, <span class="number">1.0</span>], [<span class="number">0.0</span>, <span class="number">1.0</span>]],</span><br><span class="line">            [[<span class="number">0.0</span>, <span class="number">1.0</span>], [<span class="number">0.0</span>, <span class="number">1.0</span>], [<span class="number">0.0</span>, <span class="number">1.0</span>]],</span><br><span class="line">            [[<span class="number">0.0</span>, <span class="number">1.0</span>], [<span class="number">0.0</span>, <span class="number">1.0</span>], [<span class="number">0.0</span>, <span class="number">1.0</span>]]]&#125;</span><br></pre></td></tr></table></figure>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br></pre></td><td class="code"><pre><code class="hljs python">logs[<span class="hljs-string">&#x27;val_gts_and_preds&#x27;</span>]<br>&#123;<span class="hljs-string">&#x27;y_pred&#x27;</span>: [[[<span class="hljs-number">2.5419962184969336e-05</span>, <span class="hljs-number">0.9999746084213257</span>],<br>             [<span class="hljs-number">0.6694663763046265</span>, <span class="hljs-number">0.33053362369537354</span>],<br>             [<span class="hljs-number">0.3561754524707794</span>, <span class="hljs-number">0.643824577331543</span>]],<br>            [[<span class="hljs-number">5.548826155499231e-12</span>, <span class="hljs-number">1.0</span>],<br>             [<span class="hljs-number">2.701560219975363e-08</span>, <span class="hljs-number">1.0</span>],<br>             [<span class="hljs-number">4.0011427699937485e-06</span>, <span class="hljs-number">0.9999959468841553</span>]],<br>            [[<span class="hljs-number">7.97858723533551e-11</span>, <span class="hljs-number">1.0</span>],<br>             [<span class="hljs-number">2.3924835659272503e-06</span>, <span class="hljs-number">0.999997615814209</span>],<br>             [<span class="hljs-number">3.359668880875688e-07</span>, <span class="hljs-number">0.9999996423721313</span>]],<br>            [[<span class="hljs-number">0.06622887402772903</span>, <span class="hljs-number">0.9337711930274963</span>],<br>             [<span class="hljs-number">4.1211248458239425e-07</span>, <span class="hljs-number">0.9999996423721313</span>],<br>             [<span class="hljs-number">8.561290087527595e-06</span>, <span class="hljs-number">0.9999914169311523</span>]],<br>            [[<span class="hljs-number">9.313887403550325e-07</span>, <span class="hljs-number">0.9999990463256836</span>],<br>             [<span class="hljs-number">2.614793537247806e-08</span>, <span class="hljs-number">1.0</span>],<br>             [<span class="hljs-number">8.66139725985704e-06</span>, <span class="hljs-number">0.9999912977218628</span>]],<br>            [[<span class="hljs-number">7.047830763440288e-09</span>, <span class="hljs-number">1.0</span>],<br>             [<span class="hljs-number">0.010548637248575687</span>, <span class="hljs-number">0.9894513487815857</span>],<br>             [<span class="hljs-number">1.8744471252940542e-10</span>, <span class="hljs-number">1.0</span>]],<br>            [[<span class="hljs-number">8.760089875714527e-11</span>, <span class="hljs-number">1.0</span>],<br>             [<span class="hljs-number">0.0015734446933493018</span>, <span class="hljs-number">0.9984265565872192</span>],<br>             [<span class="hljs-number">1.5642463040421717e-06</span>, <span class="hljs-number">0.9999984502792358</span>]],<br>            [[<span class="hljs-number">0.004750440828502178</span>, <span class="hljs-number">0.9952495098114014</span>],<br>             [<span class="hljs-number">6.984401466070267e-07</span>, <span class="hljs-number">0.9999992847442627</span>],<br>             [<span class="hljs-number">0.00013592069444712251</span>, <span class="hljs-number">0.9998641014099121</span>]],<br>            [[<span class="hljs-number">7.22906318140204e-11</span>, <span class="hljs-number">1.0</span>],<br>             [<span class="hljs-number">2.402198795437016e-08</span>, <span class="hljs-number">1.0</span>],<br>             [<span class="hljs-number">9.673745138272238e-10</span>, <span class="hljs-number">1.0</span>]],<br>            [[<span class="hljs-number">3.1848256298872e-07</span>, <span class="hljs-number">0.9999996423721313</span>],<br>             [<span class="hljs-number">0.0035940599627792835</span>, <span class="hljs-number">0.9964058995246887</span>],<br>             [<span class="hljs-number">1.9458911912351162e-11</span>, <span class="hljs-number">1.0</span>]]],<br> <span class="hljs-string">&#x27;y_true&#x27;</span>: [[[<span class="hljs-number">0.0</span>, <span class="hljs-number">1.0</span>], [<span class="hljs-number">0.0</span>, <span class="hljs-number">1.0</span>], [<span class="hljs-number">0.0</span>, <span class="hljs-number">1.0</span>]],<br>            [[<span class="hljs-number">0.0</span>, <span class="hljs-number">1.0</span>], [<span class="hljs-number">0.0</span>, <span class="hljs-number">1.0</span>], [<span class="hljs-number">0.0</span>, <span class="hljs-number">1.0</span>]],<br>            [[<span class="hljs-number">0.0</span>, <span class="hljs-number">1.0</span>], [<span class="hljs-number">0.0</span>, <span class="hljs-number">1.0</span>], [<span class="hljs-number">0.0</span>, <span class="hljs-number">1.0</span>]],<br>            [[<span class="hljs-number">0.0</span>, <span class="hljs-number">1.0</span>], [<span class="hljs-number">0.0</span>, <span class="hljs-number">1.0</span>], [<span class="hljs-number">0.0</span>, <span class="hljs-number">1.0</span>]],<br>            [[<span class="hljs-number">0.0</span>, <span class="hljs-number">1.0</span>], [<span class="hljs-number">0.0</span>, <span class="hljs-number">1.0</span>], [<span class="hljs-number">0.0</span>, <span class="hljs-number">1.0</span>]],<br>            [[<span class="hljs-number">0.0</span>, <span class="hljs-number">1.0</span>], [<span class="hljs-number">0.0</span>, <span class="hljs-number">1.0</span>], [<span class="hljs-number">0.0</span>, <span class="hljs-number">1.0</span>]],<br>            [[<span class="hljs-number">0.0</span>, <span class="hljs-number">1.0</span>], [<span class="hljs-number">0.0</span>, <span class="hljs-number">1.0</span>], [<span class="hljs-number">0.0</span>, <span class="hljs-number">1.0</span>]],<br>            [[<span class="hljs-number">0.0</span>, <span class="hljs-number">1.0</span>], [<span class="hljs-number">0.0</span>, <span class="hljs-number">1.0</span>], [<span class="hljs-number">0.0</span>, <span class="hljs-number">1.0</span>]],<br>            [[<span class="hljs-number">0.0</span>, <span class="hljs-number">1.0</span>], [<span class="hljs-number">0.0</span>, <span class="hljs-number">1.0</span>], [<span class="hljs-number">0.0</span>, <span class="hljs-number">1.0</span>]],<br>            [[<span class="hljs-number">0.0</span>, <span class="hljs-number">1.0</span>], [<span class="hljs-number">0.0</span>, <span class="hljs-number">1.0</span>], [<span class="hljs-number">0.0</span>, <span class="hljs-number">1.0</span>]]]&#125;<br></code></pre></td></tr></table></figure>
 
 <blockquote>
 <p>之后这些结果任君处置了；</p>
@@ -399,363 +318,278 @@
 <p>目前没有发现其他的问题，有任何不对头可以随时交流。</p>
 </blockquote>
 <link rel="stylesheet" href="/css/spoiler.css" type="text/css"><script src="/js/spoiler.js" type="text/javascript" async></script>
-    </div>
-
-    
-    
-    
-        <div class="reward-container">
-  <div>您的支持是我前进的最大动力！</div>
-  <button onclick="var qr = document.getElementById('qr'); qr.style.display = (qr.style.display === 'none') ? 'block' : 'none';">
-    赏
-  </button>
-  <div id="qr" style="display: none;">
-      
-      <div style="display: inline-block;">
-        <img src="/images/wechatpay.png" alt="Yiwei Zhang 微 信">
-        <p>微 信</p>
-      </div>
-      
-      <div style="display: inline-block;">
-        <img src="/images/alipay.png" alt="Yiwei Zhang 支付宝">
-        <p>支付宝</p>
-      </div>
-
-  </div>
-</div>
-
-        
-
-<div>
-<ul class="post-copyright">
-  <li class="post-copyright-author">
-  <span><strong>本文标题&nbsp:&nbsp&nbsp</strong>Keras 在fit-generator中获取验证数据的y_true和y_preds<br></span>
-  <span><strong>文章作者&nbsp:&nbsp&nbsp</strong><br></span>
-  <span><strong>发布时间&nbsp:&nbsp&nbsp</strong>2020年06月10日 - 15:19:50<br></span>
-  <span><strong>最后更新&nbsp:&nbsp&nbsp</strong>2020年07月07日 - 23:43:15<br></span>
-  <span><strong>原始链接&nbsp:&nbsp&nbsp</strong><a href="/2020/06/10/deep_learning/keras/get-gts-and-preds-from-evaluator/get-gts-and-preds-from-evaluator/" title="Keras 在fit-generator中获取验证数据的y_true和y_preds">https://www.zywvvd.com/2020/06/10/deep_learning/keras/get-gts-and-preds-from-evaluator/get-gts-and-preds-from-evaluator/</a><br></span>
-  <span><strong>许可协议&nbsp:&nbsp&nbsp</strong><i class="fa fa-creative-commons"></i> <a rel="license" href="https://creativecommons.org/licenses/by-nc-nd/4.0/" target="_blank" title="Attribution-NonCommercial-NoDerivatives 4.0 International (CC BY-NC-ND 4.0)">署名-非商业性使用-禁止演绎 4.0 国际</a> 转载请保留原文链接及作者<br></span>  
-	
-   <!-- <strong>Beitragsautor:  </strong>Yiwei Zhang
-  </li>
-  <li class="post-copyright-link">
-    <strong>Beitragslink: </strong>
-    <a href="https://www.zywvvd.com/2020/06/10/deep_learning/keras/get-gts-and-preds-from-evaluator/get-gts-and-preds-from-evaluator/" title="Keras 在fit-generator中获取验证数据的y_true和y_preds">https://www.zywvvd.com/2020/06/10/deep_learning/keras/get-gts-and-preds-from-evaluator/get-gts-and-preds-from-evaluator/</a>
-  </li>
-  <li class="post-copyright-license">
-    <strong>Urheberrechtshinweis:  </strong>Alle Artikel in diesem Blog sind unter <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/deed.zh" rel="noopener" target="_blank"><i class="fa fa-fw fa-creative-commons"></i>BY-NC-SA</a> lizenziert, außer es wird anders angegeben.
-  </li>-->
-</ul>
-</div>
-
-
-      <footer class="post-footer">
-          <div class="post-tags">
-              <a href="/tags/%E6%B7%B1%E5%BA%A6%E5%AD%A6%E4%B9%A0/" rel="tag"># 深度学习</a>
-              <a href="/tags/Keras/" rel="tag"># Keras</a>
-          </div>
-
-        
-
-
-        
-    <div class="post-nav">
-      <div class="post-nav-item">
-    <a href="/2020/06/03/linux/mount/mount-settings/mount-settings/" rel="prev" title="mount 命令(一) —— Liunx下设置共享文件夹，用于mount挂载文件">
-      <i class="fa fa-chevron-left"></i> mount 命令(一) —— Liunx下设置共享文件夹，用于mount挂载文件
-    </a></div>
-      <div class="post-nav-item">
-    <a href="/2020/06/18/software/install/Linux-tensorflow-2-2-install/Linux-tensorflow-2-2-install/" rel="next" title="Linux & Windows TensorFlow 1.14 升级 2.2">
-      Linux & Windows TensorFlow 1.14 升级 2.2 <i class="fa fa-chevron-right"></i>
-    </a></div>
-    </div>
-      </footer>
-    
-  </article>
-  
-  
-  
-
-  </div>
-
-
-          </div>
-          
-    <div class="comments" id="valine-comments"></div>
-
-<script>
-  window.addEventListener('tabs:register', () => {
-    let activeClass = CONFIG.comments.activeClass;
-    if (CONFIG.comments.storage) {
-      activeClass = localStorage.getItem('comments_active') || activeClass;
-    }
-    if (activeClass) {
-      let activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
-      if (activeTab) {
-        activeTab.click();
-      }
-    }
-  });
-  if (CONFIG.comments.storage) {
-    window.addEventListener('tabs:click', event => {
-      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
-      let commentClass = event.target.classList[1];
-      localStorage.setItem('comments_active', commentClass);
-    });
-  }
-</script>
-
-        </div>
-          
-  
-  <div class="toggle sidebar-toggle">
-    <span class="toggle-line toggle-line-first"></span>
-    <span class="toggle-line toggle-line-middle"></span>
-    <span class="toggle-line toggle-line-last"></span>
-  </div>
-
-  <aside class="sidebar">
-    <div class="sidebar-inner">
-
-      <ul class="sidebar-nav motion-element">
-        <li class="sidebar-nav-toc">
-          文章目录
-        </li>
-        <li class="sidebar-nav-overview">
-          小站概览
-        </li>
-      </ul>
-
-      <!--noindex-->
-      <div class="post-toc-wrap sidebar-panel">
-          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%8E%9F%E7%90%86%E7%AE%80%E4%BB%8B"><span class="nav-number">1.</span> <span class="nav-text">原理简介</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E4%BB%A3%E7%A0%81%E4%BF%AE%E6%94%B9"><span class="nav-number">2.</span> <span class="nav-text">代码修改</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#model-fit-generator"><span class="nav-number">2.1.</span> <span class="nav-text">model.fit_generator</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#training-generator-fit-generator"><span class="nav-number">2.2.</span> <span class="nav-text">training_generator.fit_generator</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#model-evaluate-generator"><span class="nav-number">2.3.</span> <span class="nav-text">model.evaluate_generator</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#training-generator-evaluate-generator"><span class="nav-number">2.4.</span> <span class="nav-text">training_generator.evaluate_generator</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#keras-callbacks-TensorBoard-write-logs"><span class="nav-number">2.5.</span> <span class="nav-text">keras.callbacks.TensorBoard._write_logs</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E6%B5%8B%E8%AF%95"><span class="nav-number">3.</span> <span class="nav-text">测试</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E9%99%84"><span class="nav-number">4.</span> <span class="nav-text">附</span></a></li></ol></div>
-      </div>
-      <!--/noindex-->
-
-
-
-      <div class="site-overview-wrap sidebar-panel">
-        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
-    <img class="site-author-image" itemprop="image" alt="Yiwei Zhang"
-      src="/images/avatar.png">
-  <p class="site-author-name" itemprop="name">Yiwei Zhang</p>
-  <div class="site-description" itemprop="description">Stay hungury ! Stay foolish ！</div>
-</div>
-
-
-         
-            <div class="feed-link motion-element">
-              <a href="/atom.xml" rel="alternate">
-                <i class="fa fa-rss"></i>
-                RSS
-              </a>
             </div>
-          
-<div class="site-state-wrap motion-element">
-  <nav class="site-state">
-      <div class="site-state-item site-state-posts">
-          <a href="/archives/">
-        
-          <span class="site-state-item-count">247</span>
-          <span class="site-state-item-name">日志</span>
-        </a>
-      </div>
-      <div class="site-state-item site-state-categories">
-            <a href="/categories/">
-          
-        <span class="site-state-item-count">97</span>
-        <span class="site-state-item-name">分类</span></a>
-      </div>
-      <div class="site-state-item site-state-tags">
-            <a href="/tags/">
-          
-        <span class="site-state-item-count">83</span>
-        <span class="site-state-item-name">标签</span></a>
-      </div>
-  </nav>
-</div>
-  <div class="links-of-author motion-element">
-      <span class="links-of-author-item">
-        <a href="https://github.com/zywvvd" title="GitHub → https:&#x2F;&#x2F;github.com&#x2F;zywvvd" rel="noopener" target="_blank"><i class="fa fa-fw fa-github"></i>GitHub</a>
-      </span>
-      <span class="links-of-author-item">
-        <a href="mailto:zywvvd@mail.ustc.edu.cn" title="E-Mail → mailto:zywvvd@mail.ustc.edu.cn" rel="noopener" target="_blank"><i class="fa fa-fw fa-envelope"></i>E-Mail</a>
-      </span>
-  </div>
+            <hr>
+            <div>
+              <div class="post-metas mb-3">
+                
+                  <div class="post-meta mr-3">
+                    <i class="iconfont icon-category"></i>
+                    
+                      <a class="hover-with-bg" href="/categories/%E6%B7%B1%E5%BA%A6%E5%AD%A6%E4%B9%A0/">深度学习</a>
+                    
+                      <a class="hover-with-bg" href="/categories/%E6%B7%B1%E5%BA%A6%E5%AD%A6%E4%B9%A0/Keras/">Keras</a>
+                    
+                  </div>
+                
+                
+                  <div class="post-meta">
+                    <i class="iconfont icon-tags"></i>
+                    
+                      <a class="hover-with-bg" href="/tags/%E6%B7%B1%E5%BA%A6%E5%AD%A6%E4%B9%A0/">深度学习</a>
+                    
+                      <a class="hover-with-bg" href="/tags/Keras/">Keras</a>
+                    
+                  </div>
+                
+              </div>
+              
+                <p class="note note-warning">
+                  
+                    本博客所有文章除特别声明外，均采用 <a target="_blank" href="https://creativecommons.org/licenses/by-sa/4.0/deed.zh" rel="nofollow noopener noopener">CC BY-SA 4.0 协议</a> ，转载请注明出处！
+                  
+                </p>
+              
+              
+                <div class="post-prevnext">
+                  <article class="post-prev col-6">
+                    
+                    
+                      <a href="/2020/06/18/software/install/Linux-tensorflow-2-2-install/Linux-tensorflow-2-2-install/">
+                        <i class="iconfont icon-arrowleft"></i>
+                        <span class="hidden-mobile">Linux & Windows TensorFlow 1.14 升级 2.2</span>
+                        <span class="visible-mobile">上一篇</span>
+                      </a>
+                    
+                  </article>
+                  <article class="post-next col-6">
+                    
+                    
+                      <a href="/2020/06/03/linux/mount/mount-settings/mount-settings/">
+                        <span class="hidden-mobile">mount 命令(一) —— Liunx下设置共享文件夹，用于mount挂载文件</span>
+                        <span class="visible-mobile">下一篇</span>
+                        <i class="iconfont icon-arrowright"></i>
+                      </a>
+                    
+                  </article>
+                </div>
+              
+            </div>
+
+            
+              <!-- Comments -->
+              <article class="comments" id="comments" lazyload>
+                
+                  
+                
+                
+  <div id="valine"></div>
+  <script type="text/javascript">
+    Fluid.utils.loadComments('#valine', function() {
+      Fluid.utils.createScript('https://cdn.jsdelivr.net/npm/valine@1.4.14/dist/Valine.min.js', function() {
+        var options = Object.assign(
+          {"appId":"OLRteWxoct1JkWm3Pe9BDYEK-gzGzoHsz","appKey":"YBKiC6SE5hpWUmy0WIyegCrM","placeholder":"遗憾莫过于难忘你的背影，却找不到你来过的痕迹 ...","path":"window.location.pathname","avatar":"retro","meta":["nick","mail","link"],"pageSize":10,"lang":"zh-CN","highlight":false,"recordIP":true,"serverURLs":"","emojiCDN":null,"emojiMaps":null,"enableQQ":false,"requiredFields":[]},
+          {
+            el: "#valine",
+            path: window.location.pathname
+          }
+        )
+        new Valine(options);
+      });
+    });
+  </script>
+  <noscript>Please enable JavaScript to view the comments</noscript>
 
 
-
-      </div>
-        <div class="back-to-top motion-element">
-          <i class="fa fa-arrow-up"></i>
-          <span>0%</span>
+              </article>
+            
+          </article>
         </div>
-
+      </div>
     </div>
-  </aside>
-  <div id="sidebar-dimmer"></div>
-
-
-      </div>
-    </main>
-
-    <footer class="footer">
-      <div class="footer-inner">
-        
-  <div class="beian"><a href="https://beian.miit.gov.cn/" rel="noopener" target="_blank">吉ICP备19007275号-1 </a>
-      <img src="/images/gongan.png" style="display: inline-block;"><a href="https://www.beian.gov.cn/portal/registerSystemInfo?recordcode=22020202000251" rel="noopener" target="_blank">吉公网安备 22020202000251号 </a>
-  </div>
-
-<div class="copyright">
-  
-  &copy; 2020 – 
-  <span itemprop="copyrightYear">2021</span>
-  <span class="with-love">
-    <i class="fa fa-user"></i>
-  </span>
-  <span class="author" itemprop="copyrightHolder">Yiwei Zhang</span>
-    <span class="post-meta-divider">|</span>
-    <span class="post-meta-item-icon">
-      <i class="fa fa-area-chart"></i>
-    </span>
-      <span class="post-meta-item-text">站点总字数: </span>
-    <span title="站点总字数">601k</span>
-    <span class="post-meta-divider">|</span>
-    <span class="post-meta-item-icon">
-      <i class="fa fa-coffee"></i>
-    </span>
-      <span class="post-meta-item-text">站点阅读时长 &asymp;</span>
-    <span title="站点阅读时长">9:06</span>
+    
+      <div class="d-none d-lg-block col-lg-2 toc-container" id="toc-ctn">
+        <div id="toc">
+  <p class="toc-header"><i class="iconfont icon-list"></i>&nbsp;目录</p>
+  <div class="toc-body" id="toc-body"></div>
 </div>
-  <div class="powered-by">技术支持 v5.4.0
-  </div>
-  <span class="post-meta-divider">|</span>
-  <div class="theme-info">主题方案 – <a href="https://pisces.theme-next.org/" class="theme-link" rel="noopener" target="_blank">NexT.Pisces</a> v7.7.1
-  </div>
-
-<script async src="//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
-<span><br></span>	
-
-<span class="post-meta-item-icon">
-      <i class="fa fa-group"></i>
-</span>
-<span>总访客&nbsp<span id="busuanzi_value_site_uv"></span>&nbsp人</span>
-<span class="post-meta-divider">|</span>
-<span class="post-meta-item-icon">
-      <i class="fa fa-eye"></i>
-</span>
-<span>访问总量&nbsp<span id="busuanzi_value_site_pv"></span>&nbsp次</span>
-
-        
-
-
-
-
-
-
-
 
       </div>
-    </footer>
+    
   </div>
+</div>
+
+<!-- Custom -->
+
+
+    
+
+    
+      <a id="scroll-top-button" href="#" role="button">
+        <i class="iconfont icon-arrowup" aria-hidden="true"></i>
+      </a>
+    
+
+    
+      <div class="modal fade" id="modalSearch" tabindex="-1" role="dialog" aria-labelledby="ModalLabel"
+     aria-hidden="true">
+  <div class="modal-dialog modal-dialog-scrollable modal-lg" role="document">
+    <div class="modal-content">
+      <div class="modal-header text-center">
+        <h4 class="modal-title w-100 font-weight-bold">搜索</h4>
+        <button type="button" id="local-search-close" class="close" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body mx-3">
+        <div class="md-form mb-5">
+          <input type="text" id="local-search-input" class="form-control validate">
+          <label data-error="x" data-success="v"
+                 for="local-search-input">关键词</label>
+        </div>
+        <div class="list-group" id="local-search-result"></div>
+      </div>
+    </div>
+  </div>
+</div>
+    
+
+    
+  </main>
+
+  <footer class="text-center mt-5 py-3">
+  <div class="footer-content">
+     <a href="https://hexo.io" target="_blank" rel="nofollow noopener"><span>Hexo</span></a> <i class="iconfont icon-love"></i> <a href="https://github.com/fluid-dev/hexo-theme-fluid" target="_blank" rel="nofollow noopener"><span>Fluid</span></a> 
+  </div>
+  
 
   
-  <script src="/lib/anime.min.js"></script>
-  <script src="//cdn.jsdelivr.net/npm/jquery@3/dist/jquery.min.js"></script>
-  <script src="//cdn.jsdelivr.net/gh/fancyapps/fancybox@3/dist/jquery.fancybox.min.js"></script>
-  <script src="/lib/velocity/velocity.min.js"></script>
-  <script src="/lib/velocity/velocity.ui.min.js"></script>
-
-<script src="/js/utils.js"></script>
-
-<script src="/js/motion.js"></script>
-
-
-<script src="/js/schemes/pisces.js"></script>
-
-
-<script src="/js/next-boot.js"></script>
-
-
-
 
   
+</footer>
+
+
+  <!-- SCRIPTS -->
+  
+  <script  src="https://cdn.jsdelivr.net/npm/nprogress@0.2.0/nprogress.min.js" ></script>
+  <link  rel="stylesheet" href="https://cdn.jsdelivr.net/npm/nprogress@0.2.0/nprogress.min.css" />
+
   <script>
-    (function(){
-      var bp = document.createElement('script');
-      var curProtocol = window.location.protocol.split(':')[0];
-      bp.src = (curProtocol === 'https') ? 'https://zz.bdstatic.com/linksubmit/push.js' : 'http://push.zhanzhang.baidu.com/push.js';
-      var s = document.getElementsByTagName("script")[0];
-      s.parentNode.insertBefore(bp, s);
-    })();
+    NProgress.configure({"showSpinner":false,"trickleSpeed":100})
+    NProgress.start()
+    window.addEventListener('load', function() {
+      NProgress.done();
+    })
+  </script>
+
+
+<script  src="https://cdn.jsdelivr.net/npm/jquery@3.6.0/dist/jquery.min.js" ></script>
+<script  src="https://cdn.jsdelivr.net/npm/bootstrap@4.6.0/dist/js/bootstrap.min.js" ></script>
+<script  src="/js/events.js" ></script>
+<script  src="/js/plugins.js" ></script>
+
+<!-- Plugins -->
+
+
+  
+    <script  src="/js/img-lazyload.js" ></script>
+  
+
+
+
+  
+
+
+
+  <script  src="https://cdn.jsdelivr.net/npm/tocbot@4.12.3/dist/tocbot.min.js" ></script>
+
+
+
+  <script  src="https://cdn.jsdelivr.net/npm/@fancyapps/fancybox@3.5.7/dist/jquery.fancybox.min.js" ></script>
+
+
+
+  <script  src="https://cdn.jsdelivr.net/npm/anchor-js@4.3.1/anchor.min.js" ></script>
+
+
+
+  <script defer src="https://cdn.jsdelivr.net/npm/clipboard@2.0.8/dist/clipboard.min.js" ></script>
+
+
+
+  <script  src="/js/local-search.js" ></script>
+
+
+
+
+
+
+  <script  src="https://cdn.jsdelivr.net/npm/typed.js@2.0.12/lib/typed.min.js" ></script>
+  <script>
+    (function (window, document) {
+      var typing = Fluid.plugins.typing;
+      var title = document.getElementById('subtitle').title;
+      
+      typing(title)
+      
+    })(window, document);
   </script>
 
 
 
 
-  
-<script src="/js/local-search.js"></script>
-
-
-
-
-
-
-
-
-
-
-
-<script>
-if (document.querySelectorAll('pre.mermaid').length) {
-  NexT.utils.getScript('//cdn.jsdelivr.net/npm/mermaid@8/dist/mermaid.min.js', () => {
-    mermaid.initialize({
-      theme    : 'default',
-      logLevel : 3,
-      flowchart: { curve     : 'linear' },
-      gantt    : { axisFormat: '%m/%d/%Y' },
-      sequence : { actorMargin: 50 }
-    });
-  }, window.mermaid);
-}
-</script>
-
 
   
 
   
+    <!-- MathJax -->
+    <script>
+      MathJax = {
+        tex: {
+          inlineMath: [['$', '$'], ['\\(', '\\)']]
+        },
+        options: {
+          renderActions: {
+            findScript: [10, doc => {
+              document.querySelectorAll('script[type^="math/tex"]').forEach(node => {
+                const display = !!node.type.match(/; *mode=display/);
+                const math = new doc.options.MathItem(node.textContent, doc.inputJax[0], display);
+                const text = document.createTextNode('');
+                node.parentNode.replaceChild(text, node);
+                math.start = { node: text, delim: '', n: 0 };
+                math.end = { node: text, delim: '', n: 0 };
+                doc.math.push(math);
+              });
+            }, '', false],
+            insertedScript: [200, () => {
+              document.querySelectorAll('mjx-container').forEach(node => {
+                let target = node.parentNode;
+                if (target.nodeName.toLowerCase() === 'li') {
+                  target.parentNode.classList.add('has-jax');
+                }
+              });
+            }, '', false]
+          }
+        }
+      };
+    </script>
+
+    <script async src="https://cdn.jsdelivr.net/npm/mathjax@3.1.4/es5/tex-svg.js" ></script>
 
   
 
 
-<script>
-NexT.utils.loadComments(document.querySelector('#valine-comments'), () => {
-  NexT.utils.getScript('//unpkg.com/valine/dist/Valine.min.js', () => {
-    var GUEST = ['nick', 'mail', 'link'];
-    var guest = 'nick,mail,link';
-    guest = guest.split(',').filter(item => {
-      return GUEST.includes(item);
-    });
-    new Valine({
-      el         : '#valine-comments',
-      verify     : true,
-      notify     : true,
-      appId      : 'OLRteWxoct1JkWm3Pe9BDYEK-gzGzoHsz',
-      appKey     : 'YBKiC6SE5hpWUmy0WIyegCrM',
-      placeholder: "遗憾莫过于难忘你的背影，却找不到你来过的痕迹 ...",
-      avatar     : 'mm',
-      meta       : guest,
-      pageSize   : '10' || 10,
-      visitor    : true,
-      lang       : '' || 'zh-cn',
-      path       : location.pathname,
-      recordIP   : false,
-      serverURLs : ''
-    });
-  }, window.Valine);
-});
-</script>
 
+
+
+
+
+
+
+
+
+<!-- 主题的启动项 保持在最底部 -->
+<script  src="/js/boot.js" ></script>
 
 
 <script src="/live2dw/lib/L2Dwidget.min.js?094cbace49a39548bed64abff5988b05"></script><script>L2Dwidget.init({"pluginRootPath":"live2dw/","pluginJsPath":"lib/","pluginModelPath":"assets/","tagMode":false,"log":false,"model":{"jsonPath":"/live2dw/assets/z16.model.json"},"display":{"position":"right","width":220,"height":440},"mobile":{"show":false},"react":{"opacity":0.7}});</script></body>

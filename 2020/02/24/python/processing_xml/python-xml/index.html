@@ -1,311 +1,237 @@
+
+
 <!DOCTYPE html>
-<html lang="zh-Hans">
+<html lang="zh-CN" data-default-color-scheme=&#34;auto&#34;>
+
+
+
 <head>
   <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
-<meta name="theme-color" content="#222">
-<meta name="generator" content="Hexo 5.4.0">
-  <link rel="apple-touch-icon" sizes="180x180" href="/images/logo-180.png">
-  <link rel="icon" type="image/png" sizes="32x32" href="/images/logo-32.png">
-  <link rel="icon" type="image/png" sizes="16x16" href="/images/logo-16.png">
-  <link rel="mask-icon" href="/images/logo-512.svg" color="#222">
+  <link rel="apple-touch-icon" sizes="76x76" href="/img/favicon.png">
+  <link rel="icon" href="/img/favicon.png">
+  <meta name="viewport"
+        content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, shrink-to-fit=no">
+  <meta http-equiv="x-ua-compatible" content="ie=edge">
+  
+  <meta name="theme-color" content="#2f4154">
+  <meta name="description" content="
+XML已经成为数据传输存储使用越来越广泛的数据格式，本文讲述使用Python DOM处理XML文件的方法。
+">
+  <meta name="author" content="Yiwei Zhang">
+  <meta name="keywords" content="人工智能, 深度学习, 个人博客, 机器学习">
+  
+  <title>Python - DOM操作XML技巧汇总 - 又见苍岚</title>
 
-<link rel="stylesheet" href="/css/main.css">
-
-
-<link rel="stylesheet" href="/lib/font-awesome/css/font-awesome.min.css">
-  <link rel="stylesheet" href="//cdn.jsdelivr.net/gh/fancyapps/fancybox@3/dist/jquery.fancybox.min.css">
-
-<script id="hexo-configurations">
-    var NexT = window.NexT || {};
-    var CONFIG = {"hostname":"www.zywvvd.com","root":"/","scheme":"Pisces","version":"7.7.1","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":true,"show_result":"default","style":null},"back2top":{"enable":true,"sidebar":true,"scrollpercent":true},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":true,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},"path":"./public/search.xml"};
-  </script>
-
-  <meta name="description" content="XML已经成为数据传输存储使用越来越广泛的数据格式，本文讲述使用Python DOM处理XML文件的方法。">
-<meta property="og:type" content="article">
-<meta property="og:title" content="Python - DOM操作XML技巧汇总">
-<meta property="og:url" content="https://www.zywvvd.com/2020/02/24/python/processing_xml/python-xml/index.html">
-<meta property="og:site_name" content="又见苍岚">
-<meta property="og:description" content="XML已经成为数据传输存储使用越来越广泛的数据格式，本文讲述使用Python DOM处理XML文件的方法。">
-<meta property="og:locale">
-<meta property="og:image" content="https://www.zywvvd.com/2020/02/24/python/processing_xml/python-xml/nodetree.gif">
-<meta property="og:image" content="https://www.zywvvd.com/2020/02/24/python/processing_xml/python-xml/leixing.png">
-<meta property="article:published_time" content="2020-02-24T12:12:51.000Z">
-<meta property="article:modified_time" content="2020-07-07T15:43:15.740Z">
-<meta property="article:author" content="Yiwei Zhang">
-<meta property="article:tag" content="Python">
-<meta property="article:tag" content="XML">
-<meta name="twitter:card" content="summary">
-<meta name="twitter:image" content="https://www.zywvvd.com/2020/02/24/python/processing_xml/python-xml/nodetree.gif">
-
-<link rel="canonical" href="https://www.zywvvd.com/2020/02/24/python/processing_xml/python-xml/">
+  <link  rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@4.6.0/dist/css/bootstrap.min.css" />
 
 
-<script id="page-configurations">
-  // https://hexo.io/docs/variables.html
-  CONFIG.page = {
-    sidebar: "",
-    isHome: false,
-    isPost: true
-  };
-</script>
+  <link  rel="stylesheet" href="https://cdn.jsdelivr.net/npm/github-markdown-css@4.0.0/github-markdown.min.css" />
+  <link  rel="stylesheet" href="/lib/hint/hint.min.css" />
 
-  <title>Python - DOM操作XML技巧汇总 | 又见苍岚</title>
+  
+    
+    
+      
+      <link  rel="stylesheet" href="https://cdn.jsdelivr.net/npm/highlight.js@10.7.2/styles/github-gist.min.css" />
+    
+  
+
+  
+    <link  rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fancyapps/fancybox@3.5.7/dist/jquery.fancybox.min.css" />
   
 
 
 
+<!-- 主题依赖的图标库，不要自行修改 -->
+
+<link rel="stylesheet" href="//at.alicdn.com/t/font_1749284_ba1fz6golrf.css">
 
 
 
-  <noscript>
-  <style>
-  .use-motion .brand,
-  .use-motion .menu-item,
-  .sidebar-inner,
-  .use-motion .post-block,
-  .use-motion .pagination,
-  .use-motion .comments,
-  .use-motion .post-header,
-  .use-motion .post-body,
-  .use-motion .collection-header { opacity: initial; }
+<link rel="stylesheet" href="//at.alicdn.com/t/font_1736178_kmeydafke9r.css">
 
-  .use-motion .site-title,
-  .use-motion .site-subtitle {
-    opacity: initial;
-    top: initial;
-  }
 
-  .use-motion .logo-line-before i { left: initial; }
-  .use-motion .logo-line-after i { right: initial; }
-  </style>
-</noscript>
+<link  rel="stylesheet" href="/css/main.css" />
 
-<link rel="alternate" href="/atom.xml" title="又见苍岚" type="application/atom+xml">
+<!-- 自定义样式保持在最底部 -->
+
+
+  <script id="fluid-configs">
+    var Fluid = window.Fluid || {};
+    var CONFIG = {"hostname":"www.zywvvd.com","root":"/","version":"1.8.11","typing":{"enable":true,"typeSpeed":70,"cursorChar":"_","loop":false},"anchorjs":{"enable":true,"element":"h1,h2,h3,h4,h5,h6","placement":"right","visible":"hover","icon":""},"progressbar":{"enable":true,"height_px":3,"color":"#29d","options":{"showSpinner":false,"trickleSpeed":100}},"copy_btn":true,"image_zoom":{"enable":true,"img_url_replace":["",""]},"toc":{"enable":true,"headingSelector":"h1,h2,h3,h4,h5,h6","collapseDepth":0},"lazyload":{"enable":true,"loading_img":"/img/loading.gif","onlypost":false,"offset_factor":2},"web_analytics":{"enable":false,"baidu":null,"google":null,"gtag":null,"tencent":{"sid":null,"cid":null},"woyaola":null,"cnzz":null,"leancloud":{"app_id":null,"app_key":null,"server_url":null}},"search_path":"/local-search.xml"};
+  </script>
+  <script  src="/js/utils.js" ></script>
+  <script  src="/js/color-schema.js" ></script>
+<meta name="generator" content="Hexo 5.4.0"><link rel="alternate" href="/atom.xml" title="又见苍岚" type="application/atom+xml">
 </head>
 
-<body itemscope itemtype="http://schema.org/WebPage">
-  <div class="container use-motion">
-    <div class="headband"></div>
 
-    	<a target="_blank" rel="noopener" href="https://github.com/zywvvd" >
-    		<img width="149" height="149"  style="position:absolute; right:-2px; top:2px;" src="https://photos.zywvvd.com/image/20200328192440.png" class="attachment-full size-full" alt="Fork me on GitHub" data-recalc-dims="1">
-    	</a>
+<body>
+  <header style="height: 70vh;">
+    <nav id="navbar" class="navbar fixed-top  navbar-expand-lg navbar-dark scrolling-navbar">
+  <div class="container">
+    <a class="navbar-brand"
+       href="/">&nbsp;<strong>Fluid</strong>&nbsp;</a>
 
-    	<a target="_blank" rel="noopener" href="https://github.com/zywvvd" class="github-corner" aria-label="View source on GitHub"><svg width="80" height="80" viewBox="0 0 250 250" style="fill:#222222; color:#fff; position: absolute; top: 0; border: 0; right: 0;" aria-hidden="true"><path d="M0,0 L115,115 L130,115 L142,142 L250,250 L250,0 Z"></path><path d="M128.3,109.0 C113.8,99.7 119.0,89.6 119.0,89.6 C122.0,82.7 120.5,78.6 120.5,78.6 C119.2,72.0 123.4,76.3 123.4,76.3 C127.3,80.9 125.5,87.3 125.5,87.3 C122.9,97.6 130.6,101.9 134.4,103.2" fill="currentColor" style="transform-origin: 130px 106px;" class="octo-arm"></path><path d="M115.0,115.0 C114.9,115.1 118.7,116.5 119.8,115.4 L133.7,101.6 C136.9,99.2 139.9,98.4 142.2,98.6 C133.8,88.0 127.5,74.4 143.8,58.0 C148.5,53.4 154.0,51.2 159.7,51.0 C160.3,49.4 163.2,43.6 171.4,40.1 C171.4,40.1 176.1,42.5 178.8,56.2 C183.1,58.6 187.2,61.8 190.9,65.4 C194.5,69.0 197.7,73.2 200.1,77.6 C213.8,80.2 216.3,84.9 216.3,84.9 C212.7,93.1 206.9,96.0 205.4,96.6 C205.1,102.4 203.0,107.8 198.3,112.5 C181.9,128.9 168.3,122.5 157.7,114.1 C157.9,116.9 156.7,120.9 152.7,124.9 L141.0,136.5 C139.8,137.7 141.6,141.9 141.8,141.8 Z" fill="currentColor" class="octo-body"></path></svg></a><style>.github-corner:hover .octo-arm{animation:octocat-wave 560ms ease-in-out}@keyframes octocat-wave{0%,100%{transform:rotate(0)}20%,60%{transform:rotate(-25deg)}40%,80%{transform:rotate(10deg)}}@media (max-width:500px){.github-corner:hover .octo-arm{animation:none}.github-corner .octo-arm{animation:octocat-wave 560ms ease-in-out}}</style>
+    <button id="navbar-toggler-btn" class="navbar-toggler" type="button" data-toggle="collapse"
+            data-target="#navbarSupportedContent"
+            aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
+      <div class="animated-icon"><span></span><span></span><span></span></div>
+    </button>
 
-    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
-      <div class="header-inner"><div class="site-brand-container">
-  <div class="site-nav-toggle">
-    <div class="toggle" aria-label="Navigationsleiste an/ausschalten">
-      <span class="toggle-line toggle-line-first"></span>
-      <span class="toggle-line toggle-line-middle"></span>
-      <span class="toggle-line toggle-line-last"></span>
+    <!-- Collapsible content -->
+    <div class="collapse navbar-collapse" id="navbarSupportedContent">
+      <ul class="navbar-nav ml-auto text-center">
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/">
+                <i class="iconfont icon-home-fill"></i>
+                首页
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/archives/">
+                <i class="iconfont icon-archive-fill"></i>
+                归档
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/categories/">
+                <i class="iconfont icon-category-fill"></i>
+                分类
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/tags/">
+                <i class="iconfont icon-tags-fill"></i>
+                标签
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/about/">
+                <i class="iconfont icon-user-fill"></i>
+                关于
+              </a>
+            </li>
+          
+        
+        
+          <li class="nav-item" id="search-btn">
+            <a class="nav-link" target="_self" data-toggle="modal" data-target="#modalSearch">&nbsp;<i
+                class="iconfont icon-search"></i>&nbsp;</a>
+          </li>
+        
+        
+          <li class="nav-item" id="color-toggle-btn">
+            <a class="nav-link" target="_self">&nbsp;<i
+                class="iconfont icon-dark" id="color-toggle-icon"></i>&nbsp;</a>
+          </li>
+        
+      </ul>
     </div>
   </div>
-
-  <div class="site-meta">
-
-    <div>
-      <a href="/" class="brand" rel="start">
-        <span class="logo-line-before"><i></i></span>
-        <span class="site-title">又见苍岚</span>
-        <span class="logo-line-after"><i></i></span>
-      </a>
-    </div>
-        <p class="site-subtitle">www.zywvvd.com</p>
-  </div>
-
-  <div class="site-nav-right">
-    <div class="toggle popup-trigger">
-        <i class="fa fa-search fa-fw fa-lg"></i>
-    </div>
-  </div>
-</div>
-
-
-<nav class="site-nav">
-  
-  <ul id="menu" class="menu">
-        <li class="menu-item menu-item-home">
-
-    <a href="/" rel="section"><i class="fa fa-fw fa-home"></i>首页</a>
-
-  </li>
-        <li class="menu-item menu-item-about">
-
-    <a href="/about/" rel="section"><i class="fa fa-fw fa-user"></i>关于</a>
-
-  </li>
-        <li class="menu-item menu-item-tags">
-
-    <a href="/tags/" rel="section"><i class="fa fa-fw fa-tags"></i>标签</a>
-
-  </li>
-        <li class="menu-item menu-item-categories">
-
-    <a href="/categories/" rel="section"><i class="fa fa-fw fa-th"></i>分类</a>
-
-  </li>
-        <li class="menu-item menu-item-archives">
-
-    <a href="/archives/" rel="section"><i class="fa fa-fw fa-archive"></i>归档</a>
-
-  </li>
-        <li class="menu-item menu-item-photos">
-
-    <a href="/photos/" rel="section"><i class="fa fa-fw fa-image"></i>相册</a>
-
-  </li>
-        <li class="menu-item menu-item-sitemap">
-
-    <a href="/sitemap.xml" rel="section"><i class="fa fa-fw fa-sitemap"></i>站点地图</a>
-
-  </li>
-      <li class="menu-item menu-item-search">
-        <a role="button" class="popup-trigger"><i class="fa fa-search fa-fw"></i>搜索
-        </a>
-      </li>
-  </ul>
-
 </nav>
-  <div class="site-search">
-    <div class="popup search-popup">
-    <div class="search-header">
-  <span class="search-icon">
-    <i class="fa fa-search"></i>
-  </span>
-  <div class="search-input-container">
-    <input autocomplete="off" autocorrect="off" autocapitalize="off"
-           placeholder="Suche..." spellcheck="false"
-           type="search" class="search-input">
-  </div>
-  <span class="popup-btn-close">
-    <i class="fa fa-times-circle"></i>
-  </span>
-</div>
-<div id="search-result"></div>
 
-</div>
-<div class="search-pop-overlay"></div>
+    <div class="banner" id="banner" parallax=true
+         style="background: url('/img/default.png') no-repeat center center;
+           background-size: cover;">
+      <div class="full-bg-img">
+        <div class="mask flex-center" style="background-color: rgba(0, 0, 0, 0.3)">
+          <div class="page-header text-center fade-in-up">
+            <span class="h2" id="subtitle" title="Python - DOM操作XML技巧汇总">
+              
+            </span>
 
-  </div>
-</div>
-    </header>
-
-    
-  <div class="reading-progress-bar"></div>
-
-
-    <main class="main">
-      <div class="main-inner">
-        <div class="content-wrap">
-          
-
-          <div class="content">
             
+              <div class="mt-3">
+  
+  
+    <span class="post-meta">
+      <i class="iconfont icon-date-fill" aria-hidden="true"></i>
+      <time datetime="2020-02-24 20:12" pubdate>
+        2020年2月24日 晚上
+      </time>
+    </span>
+  
+</div>
 
-  <div class="posts-expand">
+<div class="mt-1">
+  
+    
+    <span class="post-meta mr-2">
+      <i class="iconfont icon-chart"></i>
+      2.6k 字
+    </span>
+  
+
+  
+    
+    <span class="post-meta mr-2">
+      <i class="iconfont icon-clock-fill"></i>
       
+      
+      38
+       分钟
+    </span>
+  
+
   
   
-  <article itemscope itemtype="http://schema.org/Article" class="post-block " lang="zh-Hans">
-    <link itemprop="mainEntityOfPage" href="https://www.zywvvd.com/2020/02/24/python/processing_xml/python-xml/">
+</div>
 
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.png">
-      <meta itemprop="name" content="Yiwei Zhang">
-      <meta itemprop="description" content="Stay hungury ! Stay foolish ！">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="又见苍岚">
-    </span>
-      <header class="post-header">
-        <h1 class="post-title" itemprop="name headline">
-          Python - DOM操作XML技巧汇总
-        </h1>
-
-        <div class="post-meta">
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="fa fa-calendar-o"></i>
-              </span>
-              <span class="post-meta-item-text">发表于</span>
-
-              <time title="Erstellt: 2020-02-24 20:12:51" itemprop="dateCreated datePublished" datetime="2020-02-24T20:12:51+08:00">2020-02-24</time>
-            </span>
-              <span class="post-meta-item">
-                <span class="post-meta-item-icon">
-                  <i class="fa fa-calendar-check-o"></i>
-                </span>
-                <span class="post-meta-item-text">编辑于</span>
-                <time title="Geändert am: 2020-07-07 23:43:15" itemprop="dateModified" datetime="2020-07-07T23:43:15+08:00">2020-07-07</time>
-              </span>
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="fa fa-folder-o"></i>
-              </span>
-              <span class="post-meta-item-text">类别</span>
-                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-                  <a href="/categories/Python/" itemprop="url" rel="index"><span itemprop="name">Python</span></a>
-                </span>
-            </span>
+            
+          </div>
 
           
-            <span id="/2020/02/24/python/processing_xml/python-xml/" class="post-meta-item leancloud_visitors" data-flag-title="Python - DOM操作XML技巧汇总" title="阅读次数">
-              <span class="post-meta-item-icon">
-                <i class="fa fa-eye"></i>
-              </span>
-              <span class="post-meta-item-text">阅读次数: </span>
-              <span class="leancloud-visitors-count"></span>
-            </span>
-            <span class="post-meta-item" title="阅读次数" id="busuanzi_container_page_pv" style="display: none;">
-              <span class="post-meta-item-icon">
-                <i class="fa fa-eye"></i>
-              </span>
-              <span class="post-meta-item-text">阅读次数: </span>
-              <span id="busuanzi_value_page_pv"></span>
-            </span>
-  
-  <span class="post-meta-item">
-    
-      <span class="post-meta-item-icon">
-        <i class="fa fa-comment-o"></i>
-      </span>
-      <span class="post-meta-item-text">评论次数: </span>
-    
-    <a title="valine" href="/2020/02/24/python/processing_xml/python-xml/#valine-comments" itemprop="discussionUrl">
-      <span class="post-comments-count valine-comment-count" data-xid="/2020/02/24/python/processing_xml/python-xml/" itemprop="commentCount"></span>
-    </a>
-  </span>
-  
-  <br>
-            <span class="post-meta-item" title="本文字数">
-              <span class="post-meta-item-icon">
-                <i class="fa fa-file-word-o"></i>
-              </span>
-                <span class="post-meta-item-text">本文字数: </span>
-              <span>9.2k</span>
-            </span>
-            <span class="post-meta-item" title="阅读时长">
-              <span class="post-meta-item-icon">
-                <i class="fa fa-clock-o"></i>
-              </span>
-                <span class="post-meta-item-text">阅读时长 &asymp;</span>
-              <span>8 minuten.</span>
-            </span>
-
         </div>
-      </header>
+      </div>
+    </div>
+  </header>
 
+  <main>
     
-    
-    
-    <div class="post-body" itemprop="articleBody">
-
       
-        <blockquote>
+
+<div class="container-fluid nopadding-x">
+  <div class="row nomargin-x">
+    <div class="d-none d-lg-block col-lg-2"></div>
+    <div class="col-lg-8 nopadding-x-md">
+      <div class="container nopadding-x-md" id="board-ctn">
+        <div class="py-5" id="board">
+          <article class="post-content mx-auto">
+            <!-- SEO header -->
+            <h1 style="display: none">Python - DOM操作XML技巧汇总</h1>
+            
+            <div class="markdown-body">
+              <blockquote>
 <p>XML已经成为数据传输存储使用越来越广泛的数据格式，本文讲述使用Python DOM处理XML文件的方法。</p>
 </blockquote>
 <span id="more"></span>
@@ -320,14 +246,14 @@
 <h3 id="DOM-Document-Object-Model-本文介绍"><a href="#DOM-Document-Object-Model-本文介绍" class="headerlink" title="DOM(Document Object Model) - 本文介绍"></a>DOM(Document Object Model) - 本文介绍</h3><p>DOM (Document Object Model) 译为文档对象模型，是 HTML 和 XML 文档的编程接口。HTML DOM 定义了访问和操作 HTML 文档的标准方法。将 XML 数据在内存中解析成一个树，通过对树的操作来操作XML。</p>
 <h3 id="SAX-simple-API-for-XML"><a href="#SAX-simple-API-for-XML" class="headerlink" title="SAX (simple API for XML )"></a>SAX (simple API for XML )</h3><p>Python 标准库包含 SAX 解析器，SAX 用事件驱动模型，通过在解析XML的过程中触发一个个的事件并调用用户定义的回调函数来处理XML文件。</p>
 <h3 id="ElementTree-元素树"><a href="#ElementTree-元素树" class="headerlink" title="ElementTree(元素树)"></a>ElementTree(元素树)</h3><p>ElementTree就像一个轻量级的DOM，具有方便友好的API。代码可用性好，速度快，消耗内存少。</p>
-<h2 id="测试用例"><a href="#测试用例" class="headerlink" title="测试用例"></a>测试用例</h2><figure class="highlight xml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">&lt;?xml version=&quot;1.0&quot; encoding=&quot;utf-8&quot;?&gt;</span></span><br><span class="line"><span class="comment">&lt;!--file name &quot;test.xml&quot; 2020.2.24 by VVD--&gt;</span></span><br><span class="line"><span class="tag">&lt;<span class="name">bookstore</span> <span class="attr">type</span>=<span class="string">&quot;info science&quot;</span>&gt;</span></span><br><span class="line">    </span><br><span class="line">	<span class="tag">&lt;<span class="name">book</span> <span class="attr">category</span>=<span class="string">&quot;Coding&quot;</span>&gt;</span></span><br><span class="line">		<span class="tag">&lt;<span class="name">title</span>&gt;</span>C++Primer<span class="tag">&lt;/<span class="name">title</span>&gt;</span></span><br><span class="line">		<span class="tag">&lt;<span class="name">author</span>&gt;</span>StanleyB.Lippman<span class="tag">&lt;/<span class="name">author</span>&gt;</span></span><br><span class="line">		<span class="tag">&lt;<span class="name">price</span>&gt;</span>60.0<span class="tag">&lt;/<span class="name">price</span>&gt;</span></span><br><span class="line">        <span class="tag">&lt;<span class="name">year</span>&gt;</span>2009<span class="tag">&lt;/<span class="name">year</span>&gt;</span></span><br><span class="line">	<span class="tag">&lt;/<span class="name">book</span>&gt;</span></span><br><span class="line"></span><br><span class="line">	<span class="tag">&lt;<span class="name">book</span> <span class="attr">category</span>=<span class="string">&quot;Computer&quot;</span>&gt;</span></span><br><span class="line">		<span class="tag">&lt;<span class="name">title</span>&gt;</span>编译原理<span class="tag">&lt;/<span class="name">title</span>&gt;</span></span><br><span class="line">		<span class="tag">&lt;<span class="name">author</span>&gt;</span>AlfredV.Aho<span class="tag">&lt;/<span class="name">author</span>&gt;</span></span><br><span class="line">		<span class="tag">&lt;<span class="name">price</span>&gt;</span>70.0<span class="tag">&lt;/<span class="name">price</span>&gt;</span></span><br><span class="line">        <span class="tag">&lt;<span class="name">year</span>&gt;</span>2013<span class="tag">&lt;/<span class="name">year</span>&gt;</span></span><br><span class="line">	<span class="tag">&lt;/<span class="name">book</span>&gt;</span></span><br><span class="line"></span><br><span class="line"><span class="tag">&lt;/<span class="name">bookstore</span>&gt;</span></span><br></pre></td></tr></table></figure>
+<h2 id="测试用例"><a href="#测试用例" class="headerlink" title="测试用例"></a>测试用例</h2><figure class="highlight xml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br></pre></td><td class="code"><pre><code class="hljs xml"><span class="hljs-meta">&lt;?xml version=&quot;1.0&quot; encoding=&quot;utf-8&quot;?&gt;</span><br><span class="hljs-comment">&lt;!--file name &quot;test.xml&quot; 2020.2.24 by VVD--&gt;</span><br><span class="hljs-tag">&lt;<span class="hljs-name">bookstore</span> <span class="hljs-attr">type</span>=<span class="hljs-string">&quot;info science&quot;</span>&gt;</span><br>    <br>	<span class="hljs-tag">&lt;<span class="hljs-name">book</span> <span class="hljs-attr">category</span>=<span class="hljs-string">&quot;Coding&quot;</span>&gt;</span><br>		<span class="hljs-tag">&lt;<span class="hljs-name">title</span>&gt;</span>C++Primer<span class="hljs-tag">&lt;/<span class="hljs-name">title</span>&gt;</span><br>		<span class="hljs-tag">&lt;<span class="hljs-name">author</span>&gt;</span>StanleyB.Lippman<span class="hljs-tag">&lt;/<span class="hljs-name">author</span>&gt;</span><br>		<span class="hljs-tag">&lt;<span class="hljs-name">price</span>&gt;</span>60.0<span class="hljs-tag">&lt;/<span class="hljs-name">price</span>&gt;</span><br>        <span class="hljs-tag">&lt;<span class="hljs-name">year</span>&gt;</span>2009<span class="hljs-tag">&lt;/<span class="hljs-name">year</span>&gt;</span><br>	<span class="hljs-tag">&lt;/<span class="hljs-name">book</span>&gt;</span><br><br>	<span class="hljs-tag">&lt;<span class="hljs-name">book</span> <span class="hljs-attr">category</span>=<span class="hljs-string">&quot;Computer&quot;</span>&gt;</span><br>		<span class="hljs-tag">&lt;<span class="hljs-name">title</span>&gt;</span>编译原理<span class="hljs-tag">&lt;/<span class="hljs-name">title</span>&gt;</span><br>		<span class="hljs-tag">&lt;<span class="hljs-name">author</span>&gt;</span>AlfredV.Aho<span class="hljs-tag">&lt;/<span class="hljs-name">author</span>&gt;</span><br>		<span class="hljs-tag">&lt;<span class="hljs-name">price</span>&gt;</span>70.0<span class="hljs-tag">&lt;/<span class="hljs-name">price</span>&gt;</span><br>        <span class="hljs-tag">&lt;<span class="hljs-name">year</span>&gt;</span>2013<span class="hljs-tag">&lt;/<span class="hljs-name">year</span>&gt;</span><br>	<span class="hljs-tag">&lt;/<span class="hljs-name">book</span>&gt;</span><br><br><span class="hljs-tag">&lt;/<span class="hljs-name">bookstore</span>&gt;</span><br></code></pre></td></tr></table></figure>
 
 
 
 <h2 id="Python-DOM-解析XML"><a href="#Python-DOM-解析XML" class="headerlink" title="Python DOM 解析XML"></a>Python DOM 解析XML</h2><h3 id="DOM节点树"><a href="#DOM节点树" class="headerlink" title="DOM节点树"></a>DOM节点树</h3><blockquote>
 <p>一个 DOM 的解析器在解析一个 XML 文档时，一次性读取整个文档，把文档中所有元素保存在内存中的一个树结构里。</p>
 </blockquote>
-<img src="/2020/02/24/python/processing_xml/python-xml/nodetree.gif" class="" title="节点示例">
+<img src="/2020/02/24/python/processing_xml/python-xml/nodetree.gif" srcset="/img/loading.gif" lazyload class="" title="节点示例">
 
 <h4 id="节点级别"><a href="#节点级别" class="headerlink" title="节点级别"></a>节点级别</h4><blockquote>
 <p>节点树中的节点彼此之间都有等级关系。</p>
@@ -342,14 +268,14 @@
 <h3 id="解析XML"><a href="#解析XML" class="headerlink" title="解析XML"></a>解析XML</h3><blockquote>
 <p>python 加载DOM解析XML，并输出整个XML</p>
 </blockquote>
-<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">#加载DOM minidom模块</span></span><br><span class="line"><span class="keyword">from</span> xml.dom.minidom <span class="keyword">import</span> parse</span><br><span class="line"></span><br><span class="line"><span class="comment">#解析XML文件</span></span><br><span class="line">contents=parse(<span class="string">&#x27;test.xml&#x27;</span>)</span><br><span class="line">root=contents.documentElement</span><br><span class="line"></span><br><span class="line"><span class="built_in">print</span>(root.toxml())</span><br><span class="line"></span><br><span class="line">&gt;&gt;&gt;&lt;bookstore <span class="built_in">type</span>=<span class="string">&quot;info science&quot;</span>&gt;</span><br><span class="line"></span><br><span class="line">	&lt;book category=<span class="string">&quot;Coding&quot;</span>&gt;</span><br><span class="line">		&lt;title&gt;C++Primer&lt;/title&gt;</span><br><span class="line">		&lt;author&gt;StanleyB.Lippman&lt;/author&gt;</span><br><span class="line">		&lt;price&gt;<span class="number">60.0</span>&lt;/price&gt;</span><br><span class="line">        &lt;year&gt;<span class="number">2009</span>&lt;/year&gt;</span><br><span class="line">	&lt;/book&gt;</span><br><span class="line"></span><br><span class="line">	&lt;book category=<span class="string">&quot;Computer&quot;</span>&gt;</span><br><span class="line">		&lt;title&gt;编译原理&lt;/title&gt;</span><br><span class="line">		&lt;author&gt;AlfredV.Aho&lt;/author&gt;</span><br><span class="line">		&lt;price&gt;<span class="number">70.0</span>&lt;/price&gt;</span><br><span class="line">        &lt;year&gt;<span class="number">2013</span>&lt;/year&gt;</span><br><span class="line">	&lt;/book&gt;</span><br><span class="line"></span><br><span class="line">&lt;/bookstore&gt;</span><br></pre></td></tr></table></figure>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br></pre></td><td class="code"><pre><code class="hljs python"><span class="hljs-comment">#加载DOM minidom模块</span><br><span class="hljs-keyword">from</span> xml.dom.minidom <span class="hljs-keyword">import</span> parse<br><br><span class="hljs-comment">#解析XML文件</span><br>contents=parse(<span class="hljs-string">&#x27;test.xml&#x27;</span>)<br>root=contents.documentElement<br><br><span class="hljs-built_in">print</span>(root.toxml())<br><br>&gt;&gt;&gt;&lt;bookstore <span class="hljs-built_in">type</span>=<span class="hljs-string">&quot;info science&quot;</span>&gt;<br><br>	&lt;book category=<span class="hljs-string">&quot;Coding&quot;</span>&gt;<br>		&lt;title&gt;C++Primer&lt;/title&gt;<br>		&lt;author&gt;StanleyB.Lippman&lt;/author&gt;<br>		&lt;price&gt;<span class="hljs-number">60.0</span>&lt;/price&gt;<br>        &lt;year&gt;<span class="hljs-number">2009</span>&lt;/year&gt;<br>	&lt;/book&gt;<br><br>	&lt;book category=<span class="hljs-string">&quot;Computer&quot;</span>&gt;<br>		&lt;title&gt;编译原理&lt;/title&gt;<br>		&lt;author&gt;AlfredV.Aho&lt;/author&gt;<br>		&lt;price&gt;<span class="hljs-number">70.0</span>&lt;/price&gt;<br>        &lt;year&gt;<span class="hljs-number">2013</span>&lt;/year&gt;<br>	&lt;/book&gt;<br><br>&lt;/bookstore&gt;<br></code></pre></td></tr></table></figure>
 
 <blockquote>
 <p>此时root获取了XML文件中所有内容，组织成了一棵树，root就是该树的根节点</p>
 </blockquote>
-<h3 id="获取节点名称"><a href="#获取节点名称" class="headerlink" title="获取节点名称"></a>获取节点名称</h3><figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">#获取节点名称</span></span><br><span class="line"><span class="built_in">print</span>(root.nodeName)</span><br><span class="line"><span class="built_in">print</span>(root.tagName)</span><br><span class="line"></span><br><span class="line"><span class="meta">&gt;&gt;&gt; </span>bookstore</span><br><span class="line">bookstore</span><br></pre></td></tr></table></figure>
+<h3 id="获取节点名称"><a href="#获取节点名称" class="headerlink" title="获取节点名称"></a>获取节点名称</h3><figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><code class="hljs python"><span class="hljs-comment">#获取节点名称</span><br><span class="hljs-built_in">print</span>(root.nodeName)<br><span class="hljs-built_in">print</span>(root.tagName)<br><br><span class="hljs-meta">&gt;&gt;&gt; </span>bookstore<br>bookstore<br></code></pre></td></tr></table></figure>
 
-<h3 id="获取子节点"><a href="#获取子节点" class="headerlink" title="获取子节点"></a>获取子节点</h3><figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">#获取子节点</span></span><br><span class="line">children_Nodes=root.childNodes</span><br><span class="line"><span class="built_in">print</span>(<span class="string">f&#x27;子节点个数：<span class="subst">&#123;children_Nodes.length&#125;</span>&#x27;</span>)</span><br><span class="line"></span><br><span class="line"><span class="keyword">for</span> item <span class="keyword">in</span> children_Nodes:</span><br><span class="line">    <span class="built_in">print</span> (item.toxml())</span><br><span class="line">    </span><br><span class="line"><span class="meta">&gt;&gt;&gt; </span>子节点个数：<span class="number">5</span></span><br><span class="line"></span><br><span class="line"></span><br><span class="line">	</span><br><span class="line">&lt;book category=<span class="string">&quot;Coding&quot;</span>&gt;</span><br><span class="line">		&lt;title&gt;C++Primer&lt;/title&gt;</span><br><span class="line">		&lt;author&gt;StanleyB.Lippman&lt;/author&gt;</span><br><span class="line">		&lt;price&gt;<span class="number">60.0</span>&lt;/price&gt;</span><br><span class="line">        &lt;year&gt;<span class="number">2009</span>&lt;/year&gt;</span><br><span class="line">	&lt;/book&gt;</span><br><span class="line"></span><br><span class="line"></span><br><span class="line">	</span><br><span class="line">&lt;book category=<span class="string">&quot;Computer&quot;</span>&gt;</span><br><span class="line">		&lt;title&gt;编译原理&lt;/title&gt;</span><br><span class="line">		&lt;author&gt;AlfredV.Aho&lt;/author&gt;</span><br><span class="line">		&lt;price&gt;<span class="number">70.0</span>&lt;/price&gt;</span><br><span class="line">        &lt;year&gt;<span class="number">2013</span>&lt;/year&gt;</span><br><span class="line">	&lt;/book&gt;</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+<h3 id="获取子节点"><a href="#获取子节点" class="headerlink" title="获取子节点"></a>获取子节点</h3><figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br></pre></td><td class="code"><pre><code class="hljs python"><span class="hljs-comment">#获取子节点</span><br>children_Nodes=root.childNodes<br><span class="hljs-built_in">print</span>(<span class="hljs-string">f&#x27;子节点个数：<span class="hljs-subst">&#123;children_Nodes.length&#125;</span>&#x27;</span>)<br><br><span class="hljs-keyword">for</span> item <span class="hljs-keyword">in</span> children_Nodes:<br>    <span class="hljs-built_in">print</span> (item.toxml())<br>    <br><span class="hljs-meta">&gt;&gt;&gt; </span>子节点个数：<span class="hljs-number">5</span><br><br><br>	<br>&lt;book category=<span class="hljs-string">&quot;Coding&quot;</span>&gt;<br>		&lt;title&gt;C++Primer&lt;/title&gt;<br>		&lt;author&gt;StanleyB.Lippman&lt;/author&gt;<br>		&lt;price&gt;<span class="hljs-number">60.0</span>&lt;/price&gt;<br>        &lt;year&gt;<span class="hljs-number">2009</span>&lt;/year&gt;<br>	&lt;/book&gt;<br><br><br>	<br>&lt;book category=<span class="hljs-string">&quot;Computer&quot;</span>&gt;<br>		&lt;title&gt;编译原理&lt;/title&gt;<br>		&lt;author&gt;AlfredV.Aho&lt;/author&gt;<br>		&lt;price&gt;<span class="hljs-number">70.0</span>&lt;/price&gt;<br>        &lt;year&gt;<span class="hljs-number">2013</span>&lt;/year&gt;<br>	&lt;/book&gt;<br><br></code></pre></td></tr></table></figure>
 
 <h3 id="节点类型"><a href="#节点类型" class="headerlink" title="节点类型"></a>节点类型</h3><blockquote>
 <p>为什么2本书却有5个节点？</p>
@@ -363,7 +289,7 @@
 <li>注释属于注释节点</li>
 </ol>
 </blockquote>
-<img src="/2020/02/24/python/processing_xml/python-xml/leixing.png" class="" title="节点类型">
+<img src="/2020/02/24/python/processing_xml/python-xml/leixing.png" srcset="/img/loading.gif" lazyload class="" title="节点类型">
 
 <h4 id="文本总是存储在文本节点中"><a href="#文本总是存储在文本节点中" class="headerlink" title="文本总是存储在文本节点中"></a>文本总是存储在文本节点中</h4><blockquote>
 <p> 在 DOM 处理中一个普遍的错误是，认为元素节点包含文本。</p>
@@ -371,17 +297,17 @@
 <p> 在这个例子中：<code>&lt;year&gt;2005&lt;/year&gt;</code>，元素节点 <code>&lt;year&gt;</code>，拥有一个值为 “2005” 的文本节点。</p>
 <p> “2005” 不是 <code>&lt;year&gt;</code> 元素的值！d</p>
 </blockquote>
-<h3 id="获取节点属性"><a href="#获取节点属性" class="headerlink" title="获取节点属性"></a>获取节点属性</h3><figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">#获取节点属性</span></span><br><span class="line"><span class="built_in">print</span>(root.attributes.items())</span><br><span class="line">atr_root=root.attributes[<span class="string">&#x27;type&#x27;</span>]</span><br><span class="line"><span class="built_in">print</span>(atr_root.name)</span><br><span class="line"><span class="built_in">print</span>(atr_root.value)</span><br><span class="line"></span><br><span class="line">&gt;&gt;&gt;[(<span class="string">&#x27;type&#x27;</span>, <span class="string">&#x27;info science&#x27;</span>)]</span><br><span class="line"><span class="built_in">type</span></span><br><span class="line">info science</span><br></pre></td></tr></table></figure>
+<h3 id="获取节点属性"><a href="#获取节点属性" class="headerlink" title="获取节点属性"></a>获取节点属性</h3><figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><code class="hljs python"><span class="hljs-comment">#获取节点属性</span><br><span class="hljs-built_in">print</span>(root.attributes.items())<br>atr_root=root.attributes[<span class="hljs-string">&#x27;type&#x27;</span>]<br><span class="hljs-built_in">print</span>(atr_root.name)<br><span class="hljs-built_in">print</span>(atr_root.value)<br><br>&gt;&gt;&gt;[(<span class="hljs-string">&#x27;type&#x27;</span>, <span class="hljs-string">&#x27;info science&#x27;</span>)]<br><span class="hljs-built_in">type</span><br>info science<br></code></pre></td></tr></table></figure>
 
-<h3 id="获取指定名称的节点"><a href="#获取指定名称的节点" class="headerlink" title="获取指定名称的节点"></a>获取指定名称的节点</h3><figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">#获取指定名称的节点</span></span><br><span class="line">books=root.getElementsByTagName(<span class="string">&#x27;book&#x27;</span>)</span><br><span class="line"></span><br><span class="line"><span class="keyword">for</span> book <span class="keyword">in</span> books:</span><br><span class="line">    <span class="built_in">print</span> (book.nodeName)</span><br><span class="line">    </span><br><span class="line">&gt;&gt;&gt;book</span><br><span class="line">book</span><br></pre></td></tr></table></figure>
+<h3 id="获取指定名称的节点"><a href="#获取指定名称的节点" class="headerlink" title="获取指定名称的节点"></a>获取指定名称的节点</h3><figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><code class="hljs python"><span class="hljs-comment">#获取指定名称的节点</span><br>books=root.getElementsByTagName(<span class="hljs-string">&#x27;book&#x27;</span>)<br><br><span class="hljs-keyword">for</span> book <span class="hljs-keyword">in</span> books:<br>    <span class="hljs-built_in">print</span> (book.nodeName)<br>    <br>&gt;&gt;&gt;book<br>book<br></code></pre></td></tr></table></figure>
 
-<h3 id="判断是否包含属性值"><a href="#判断是否包含属性值" class="headerlink" title="判断是否包含属性值"></a>判断是否包含属性值</h3><figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">#判断是否包含属性值</span></span><br><span class="line"><span class="built_in">print</span>(books[<span class="number">0</span>].hasAttribute(<span class="string">&#x27;nnn&#x27;</span>))</span><br><span class="line"><span class="built_in">print</span>(books[<span class="number">0</span>].hasAttribute(<span class="string">&#x27;category&#x27;</span>))</span><br><span class="line"></span><br><span class="line">&gt;&gt;&gt;<span class="literal">False</span></span><br><span class="line"><span class="literal">True</span></span><br></pre></td></tr></table></figure>
+<h3 id="判断是否包含属性值"><a href="#判断是否包含属性值" class="headerlink" title="判断是否包含属性值"></a>判断是否包含属性值</h3><figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><code class="hljs python"><span class="hljs-comment">#判断是否包含属性值</span><br><span class="hljs-built_in">print</span>(books[<span class="hljs-number">0</span>].hasAttribute(<span class="hljs-string">&#x27;nnn&#x27;</span>))<br><span class="hljs-built_in">print</span>(books[<span class="hljs-number">0</span>].hasAttribute(<span class="hljs-string">&#x27;category&#x27;</span>))<br><br>&gt;&gt;&gt;<span class="hljs-literal">False</span><br><span class="hljs-literal">True</span><br></code></pre></td></tr></table></figure>
 
-<h3 id="获取节点指定属性的属性值"><a href="#获取节点指定属性的属性值" class="headerlink" title="获取节点指定属性的属性值"></a>获取节点指定属性的属性值</h3><figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">#获取节点指定属性的属性值</span></span><br><span class="line"><span class="built_in">print</span>(books[<span class="number">0</span>].getAttribute(<span class="string">&#x27;category&#x27;</span>))</span><br><span class="line"><span class="built_in">print</span>(books[<span class="number">1</span>].getAttribute(<span class="string">&#x27;category&#x27;</span>))</span><br><span class="line"></span><br><span class="line">&gt;&gt;&gt;Coding</span><br><span class="line">Computer</span><br></pre></td></tr></table></figure>
+<h3 id="获取节点指定属性的属性值"><a href="#获取节点指定属性的属性值" class="headerlink" title="获取节点指定属性的属性值"></a>获取节点指定属性的属性值</h3><figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><code class="hljs python"><span class="hljs-comment">#获取节点指定属性的属性值</span><br><span class="hljs-built_in">print</span>(books[<span class="hljs-number">0</span>].getAttribute(<span class="hljs-string">&#x27;category&#x27;</span>))<br><span class="hljs-built_in">print</span>(books[<span class="hljs-number">1</span>].getAttribute(<span class="hljs-string">&#x27;category&#x27;</span>))<br><br>&gt;&gt;&gt;Coding<br>Computer<br></code></pre></td></tr></table></figure>
 
-<h3 id="获取节点文本值"><a href="#获取节点文本值" class="headerlink" title="获取节点文本值"></a>获取节点文本值</h3><figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">#获取节点文本值</span></span><br><span class="line">node=books[<span class="number">0</span>]</span><br><span class="line">author=node.getElementsByTagName(<span class="string">&#x27;author&#x27;</span>)</span><br><span class="line"><span class="built_in">print</span>(author[<span class="number">0</span>].firstChild.data)</span><br><span class="line"></span><br><span class="line">&gt;&gt;&gt;StanleyB.Lippman</span><br></pre></td></tr></table></figure>
+<h3 id="获取节点文本值"><a href="#获取节点文本值" class="headerlink" title="获取节点文本值"></a>获取节点文本值</h3><figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><code class="hljs python"><span class="hljs-comment">#获取节点文本值</span><br>node=books[<span class="hljs-number">0</span>]<br>author=node.getElementsByTagName(<span class="hljs-string">&#x27;author&#x27;</span>)<br><span class="hljs-built_in">print</span>(author[<span class="hljs-number">0</span>].firstChild.data)<br><br>&gt;&gt;&gt;StanleyB.Lippman<br></code></pre></td></tr></table></figure>
 
-<h3 id="判断是否有子节点"><a href="#判断是否有子节点" class="headerlink" title="判断是否有子节点"></a>判断是否有子节点</h3><figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">#判断是否有子节点</span></span><br><span class="line"><span class="built_in">print</span>(root.hasChildNodes())</span><br><span class="line"><span class="built_in">print</span>(author[<span class="number">0</span>].hasChildNodes())</span><br><span class="line"><span class="built_in">print</span>(author[<span class="number">0</span>].firstChild.hasChildNodes())</span><br><span class="line"></span><br><span class="line">&gt;&gt;&gt;<span class="literal">True</span></span><br><span class="line"><span class="literal">True</span></span><br><span class="line"><span class="literal">False</span></span><br></pre></td></tr></table></figure>
+<h3 id="判断是否有子节点"><a href="#判断是否有子节点" class="headerlink" title="判断是否有子节点"></a>判断是否有子节点</h3><figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><code class="hljs python"><span class="hljs-comment">#判断是否有子节点</span><br><span class="hljs-built_in">print</span>(root.hasChildNodes())<br><span class="hljs-built_in">print</span>(author[<span class="hljs-number">0</span>].hasChildNodes())<br><span class="hljs-built_in">print</span>(author[<span class="hljs-number">0</span>].firstChild.hasChildNodes())<br><br>&gt;&gt;&gt;<span class="hljs-literal">True</span><br><span class="hljs-literal">True</span><br><span class="hljs-literal">False</span><br></code></pre></td></tr></table></figure>
 
 <h3 id="DOM解析XML方法总结"><a href="#DOM解析XML方法总结" class="headerlink" title="DOM解析XML方法总结"></a>DOM解析XML方法总结</h3><ul>
 <li>contents = xml.dom.minidom.parse(filename)：加载读取XML文件</li>
@@ -397,21 +323,21 @@
 <li>node.nodeValue：节点的值，文本节点才有值，其它节点返回的是None</li>
 <li>node.nodeType：节点的类型</li>
 </ul>
-<h2 id="Python-DOM-修改XML"><a href="#Python-DOM-修改XML" class="headerlink" title="Python DOM 修改XML"></a>Python DOM 修改XML</h2><h3 id="生成XML树、添加属性"><a href="#生成XML树、添加属性" class="headerlink" title="生成XML树、添加属性"></a>生成XML树、添加属性</h3><figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">from</span> xml.dom <span class="keyword">import</span> minidom</span><br><span class="line"></span><br><span class="line"><span class="comment">#1.创建DOM树对象</span></span><br><span class="line">dom=minidom.Document()</span><br><span class="line"><span class="comment"># 2.创建根节点。每次都要用DOM对象来创建任何节点。</span></span><br><span class="line">root_node=dom.createElement(<span class="string">&#x27;root&#x27;</span>)</span><br><span class="line"><span class="comment"># 3.用DOM对象添加根节点</span></span><br><span class="line">dom.appendChild(root_node)</span><br><span class="line"><span class="comment"># 用DOM对象创建元素子节点</span></span><br><span class="line">book_node=dom.createElement(<span class="string">&#x27;book&#x27;</span>)</span><br><span class="line"><span class="comment"># 用父节点对象添加元素子节点</span></span><br><span class="line">root_node.appendChild(book_node)</span><br><span class="line"><span class="comment"># 设置该节点的属性</span></span><br><span class="line">book_node.setAttribute(<span class="string">&#x27;price&#x27;</span>,<span class="string">&#x27;399&#x27;</span>)</span><br><span class="line">name_node=dom.createElement(<span class="string">&#x27;name&#x27;</span>)</span><br><span class="line">book_node.appendChild(name_node)</span><br><span class="line"><span class="comment"># 也用DOM创建文本节点，把文本节点（文字内容）看成子节点</span></span><br><span class="line">name_text=dom.createTextNode(<span class="string">&#x27;C++ Primer 第1版&#x27;</span>)</span><br><span class="line"><span class="comment"># 用添加了文本的节点对象（看成文本节点的父节点）添加文本节点</span></span><br><span class="line">name_node.appendChild(name_text)</span><br><span class="line"></span><br><span class="line"><span class="built_in">print</span>(dom.toxml()) <span class="comment">#字符格式输出</span></span><br><span class="line"><span class="built_in">print</span>(dom.toprettyxml()) <span class="comment">#美丽的输出</span></span><br><span class="line"></span><br><span class="line"><span class="meta">&gt;&gt;&gt; </span>&lt;?xml version=<span class="string">&quot;1.0&quot;</span> ?&gt;&lt;root&gt;&lt;book price=<span class="string">&quot;399&quot;</span>&gt;&lt;name&gt;C++ Primer 第<span class="number">1</span>版&lt;/name&gt;&lt;/book&gt;&lt;/root&gt;</span><br><span class="line">&lt;?xml version=<span class="string">&quot;1.0&quot;</span> ?&gt;</span><br><span class="line">&lt;root&gt;</span><br><span class="line">	&lt;book price=<span class="string">&quot;399&quot;</span>&gt;</span><br><span class="line">		&lt;name&gt;C++ Primer 第<span class="number">1</span>版&lt;/name&gt;</span><br><span class="line">	&lt;/book&gt;</span><br><span class="line">&lt;/root&gt;</span><br></pre></td></tr></table></figure>
+<h2 id="Python-DOM-修改XML"><a href="#Python-DOM-修改XML" class="headerlink" title="Python DOM 修改XML"></a>Python DOM 修改XML</h2><h3 id="生成XML树、添加属性"><a href="#生成XML树、添加属性" class="headerlink" title="生成XML树、添加属性"></a>生成XML树、添加属性</h3><figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br></pre></td><td class="code"><pre><code class="hljs python"><span class="hljs-keyword">from</span> xml.dom <span class="hljs-keyword">import</span> minidom<br><br><span class="hljs-comment">#1.创建DOM树对象</span><br>dom=minidom.Document()<br><span class="hljs-comment"># 2.创建根节点。每次都要用DOM对象来创建任何节点。</span><br>root_node=dom.createElement(<span class="hljs-string">&#x27;root&#x27;</span>)<br><span class="hljs-comment"># 3.用DOM对象添加根节点</span><br>dom.appendChild(root_node)<br><span class="hljs-comment"># 用DOM对象创建元素子节点</span><br>book_node=dom.createElement(<span class="hljs-string">&#x27;book&#x27;</span>)<br><span class="hljs-comment"># 用父节点对象添加元素子节点</span><br>root_node.appendChild(book_node)<br><span class="hljs-comment"># 设置该节点的属性</span><br>book_node.setAttribute(<span class="hljs-string">&#x27;price&#x27;</span>,<span class="hljs-string">&#x27;399&#x27;</span>)<br>name_node=dom.createElement(<span class="hljs-string">&#x27;name&#x27;</span>)<br>book_node.appendChild(name_node)<br><span class="hljs-comment"># 也用DOM创建文本节点，把文本节点（文字内容）看成子节点</span><br>name_text=dom.createTextNode(<span class="hljs-string">&#x27;C++ Primer 第1版&#x27;</span>)<br><span class="hljs-comment"># 用添加了文本的节点对象（看成文本节点的父节点）添加文本节点</span><br>name_node.appendChild(name_text)<br><br><span class="hljs-built_in">print</span>(dom.toxml()) <span class="hljs-comment">#字符格式输出</span><br><span class="hljs-built_in">print</span>(dom.toprettyxml()) <span class="hljs-comment">#美丽的输出</span><br><br><span class="hljs-meta">&gt;&gt;&gt; </span>&lt;?xml version=<span class="hljs-string">&quot;1.0&quot;</span> ?&gt;&lt;root&gt;&lt;book price=<span class="hljs-string">&quot;399&quot;</span>&gt;&lt;name&gt;C++ Primer 第<span class="hljs-number">1</span>版&lt;/name&gt;&lt;/book&gt;&lt;/root&gt;<br>&lt;?xml version=<span class="hljs-string">&quot;1.0&quot;</span> ?&gt;<br>&lt;root&gt;<br>	&lt;book price=<span class="hljs-string">&quot;399&quot;</span>&gt;<br>		&lt;name&gt;C++ Primer 第<span class="hljs-number">1</span>版&lt;/name&gt;<br>	&lt;/book&gt;<br>&lt;/root&gt;<br></code></pre></td></tr></table></figure>
 
-<h3 id="删除节点"><a href="#删除节点" class="headerlink" title="删除节点"></a>删除节点</h3><figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">#增加要删除的节点</span></span><br><span class="line">another_node=dom.createElement(<span class="string">&#x27;delete&#x27;</span>)</span><br><span class="line">another_node_child=dom.createElement(<span class="string">&#x27;content&#x27;</span>)</span><br><span class="line">another_node_child_text=dom.createTextNode(<span class="string">&#x27;testing data&#x27;</span>)</span><br><span class="line">another_node_child.appendChild(another_node_child_text)</span><br><span class="line">another_node.appendChild(another_node_child)</span><br><span class="line">root_node.appendChild(another_node)</span><br><span class="line"><span class="built_in">print</span>(dom.toprettyxml())</span><br><span class="line"></span><br><span class="line">&gt;&gt;&gt;&lt;?xml version=<span class="string">&quot;1.0&quot;</span> ?&gt;</span><br><span class="line">&lt;root&gt;</span><br><span class="line">	&lt;book price=<span class="string">&quot;399&quot;</span>&gt;</span><br><span class="line">		&lt;name&gt;C++ Primer 第<span class="number">1</span>版&lt;/name&gt;</span><br><span class="line">	&lt;/book&gt;</span><br><span class="line">	&lt;delete&gt;</span><br><span class="line">		&lt;content&gt;testing data&lt;/content&gt;</span><br><span class="line">	&lt;/delete&gt;</span><br><span class="line">&lt;/root&gt;</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+<h3 id="删除节点"><a href="#删除节点" class="headerlink" title="删除节点"></a>删除节点</h3><figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br></pre></td><td class="code"><pre><code class="hljs python"><span class="hljs-comment">#增加要删除的节点</span><br>another_node=dom.createElement(<span class="hljs-string">&#x27;delete&#x27;</span>)<br>another_node_child=dom.createElement(<span class="hljs-string">&#x27;content&#x27;</span>)<br>another_node_child_text=dom.createTextNode(<span class="hljs-string">&#x27;testing data&#x27;</span>)<br>another_node_child.appendChild(another_node_child_text)<br>another_node.appendChild(another_node_child)<br>root_node.appendChild(another_node)<br><span class="hljs-built_in">print</span>(dom.toprettyxml())<br><br>&gt;&gt;&gt;&lt;?xml version=<span class="hljs-string">&quot;1.0&quot;</span> ?&gt;<br>&lt;root&gt;<br>	&lt;book price=<span class="hljs-string">&quot;399&quot;</span>&gt;<br>		&lt;name&gt;C++ Primer 第<span class="hljs-number">1</span>版&lt;/name&gt;<br>	&lt;/book&gt;<br>	&lt;delete&gt;<br>		&lt;content&gt;testing data&lt;/content&gt;<br>	&lt;/delete&gt;<br>&lt;/root&gt;<br><br></code></pre></td></tr></table></figure>
 
-<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">#删除上文增加的节点</span></span><br><span class="line">children_Nodes=root_node.childNodes</span><br><span class="line"><span class="keyword">for</span> i <span class="keyword">in</span> <span class="built_in">range</span>(children_Nodes.length-<span class="number">1</span>,-<span class="number">1</span>,-<span class="number">1</span>):</span><br><span class="line">    <span class="keyword">if</span> children_Nodes[i].tagName==<span class="string">&#x27;delete&#x27;</span>:</span><br><span class="line">        children_Nodes.remove(children_Nodes[i]) <span class="comment">#删除root中的文本节点</span></span><br><span class="line"></span><br><span class="line"><span class="built_in">print</span>(dom.toprettyxml())</span><br><span class="line">        </span><br><span class="line"><span class="meta">&gt;&gt;&gt; </span>&lt;?xml version=<span class="string">&quot;1.0&quot;</span> ?&gt;</span><br><span class="line">&lt;root&gt;</span><br><span class="line">	&lt;book price=<span class="string">&quot;399&quot;</span>&gt;</span><br><span class="line">		&lt;name&gt;C++ Primer 第<span class="number">1</span>版&lt;/name&gt;</span><br><span class="line">	&lt;/book&gt;</span><br><span class="line">&lt;/root&gt;</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><code class="hljs python"><span class="hljs-comment">#删除上文增加的节点</span><br>children_Nodes=root_node.childNodes<br><span class="hljs-keyword">for</span> i <span class="hljs-keyword">in</span> <span class="hljs-built_in">range</span>(children_Nodes.length-<span class="hljs-number">1</span>,-<span class="hljs-number">1</span>,-<span class="hljs-number">1</span>):<br>    <span class="hljs-keyword">if</span> children_Nodes[i].tagName==<span class="hljs-string">&#x27;delete&#x27;</span>:<br>        children_Nodes.remove(children_Nodes[i]) <span class="hljs-comment">#删除root中的文本节点</span><br><br><span class="hljs-built_in">print</span>(dom.toprettyxml())<br>        <br><span class="hljs-meta">&gt;&gt;&gt; </span>&lt;?xml version=<span class="hljs-string">&quot;1.0&quot;</span> ?&gt;<br>&lt;root&gt;<br>	&lt;book price=<span class="hljs-string">&quot;399&quot;</span>&gt;<br>		&lt;name&gt;C++ Primer 第<span class="hljs-number">1</span>版&lt;/name&gt;<br>	&lt;/book&gt;<br>&lt;/root&gt;<br><br></code></pre></td></tr></table></figure>
 
-<h3 id="删除节点属性"><a href="#删除节点属性" class="headerlink" title="删除节点属性"></a>删除节点属性</h3><figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">#删除节点属性</span></span><br><span class="line">book_node.setAttribute(<span class="string">&#x27;price&#x27;</span>,<span class="string">&#x27;199&#x27;</span>)</span><br><span class="line"><span class="built_in">print</span>(book_node.hasAttribute(<span class="string">&#x27;price&#x27;</span>))</span><br><span class="line"><span class="built_in">print</span>(book_node.getAttribute(<span class="string">&#x27;price&#x27;</span>))</span><br><span class="line">book_node.removeAttribute(<span class="string">&#x27;price&#x27;</span>)</span><br><span class="line"><span class="built_in">print</span>(book_node.hasAttribute(<span class="string">&#x27;price&#x27;</span>))</span><br><span class="line"></span><br><span class="line">&gt;&gt;&gt;<span class="literal">True</span></span><br><span class="line"><span class="number">199</span></span><br><span class="line"><span class="literal">False</span></span><br></pre></td></tr></table></figure>
+<h3 id="删除节点属性"><a href="#删除节点属性" class="headerlink" title="删除节点属性"></a>删除节点属性</h3><figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><code class="hljs python"><span class="hljs-comment">#删除节点属性</span><br>book_node.setAttribute(<span class="hljs-string">&#x27;price&#x27;</span>,<span class="hljs-string">&#x27;199&#x27;</span>)<br><span class="hljs-built_in">print</span>(book_node.hasAttribute(<span class="hljs-string">&#x27;price&#x27;</span>))<br><span class="hljs-built_in">print</span>(book_node.getAttribute(<span class="hljs-string">&#x27;price&#x27;</span>))<br>book_node.removeAttribute(<span class="hljs-string">&#x27;price&#x27;</span>)<br><span class="hljs-built_in">print</span>(book_node.hasAttribute(<span class="hljs-string">&#x27;price&#x27;</span>))<br><br>&gt;&gt;&gt;<span class="hljs-literal">True</span><br><span class="hljs-number">199</span><br><span class="hljs-literal">False</span><br></code></pre></td></tr></table></figure>
 
 
 
-<h3 id="修改节点内容"><a href="#修改节点内容" class="headerlink" title="修改节点内容"></a>修改节点内容</h3><figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">#修改节点内容</span></span><br><span class="line">children_Nodes=root_node.childNodes</span><br><span class="line">name_Append = <span class="string">&#x27; (中文版)&#x27;</span></span><br><span class="line"><span class="keyword">for</span> item <span class="keyword">in</span> children_Nodes:</span><br><span class="line">    <span class="comment">#print (item.toxml())</span></span><br><span class="line">    tag_name=<span class="string">&#x27;name&#x27;</span></span><br><span class="line">    c_name = item.getElementsByTagName(tag_name)</span><br><span class="line">    <span class="built_in">print</span>(c_name[<span class="number">0</span>].firstChild.data)</span><br><span class="line">    c_name[<span class="number">0</span>].firstChild.data+=name_Append</span><br><span class="line"><span class="built_in">print</span>(dom.toprettyxml())</span><br><span class="line">    </span><br><span class="line">    &gt;&gt;&gt;C++ Primer 第<span class="number">1</span>版</span><br><span class="line">&lt;?xml version=<span class="string">&quot;1.0&quot;</span> ?&gt;</span><br><span class="line">&lt;root&gt;</span><br><span class="line">	&lt;book&gt;</span><br><span class="line">		&lt;name&gt;C++ Primer 第<span class="number">1</span>版 (中文版)&lt;/name&gt;</span><br><span class="line">	&lt;/book&gt;</span><br><span class="line">&lt;/root&gt;</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+<h3 id="修改节点内容"><a href="#修改节点内容" class="headerlink" title="修改节点内容"></a>修改节点内容</h3><figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br></pre></td><td class="code"><pre><code class="hljs python"><span class="hljs-comment">#修改节点内容</span><br>children_Nodes=root_node.childNodes<br>name_Append = <span class="hljs-string">&#x27; (中文版)&#x27;</span><br><span class="hljs-keyword">for</span> item <span class="hljs-keyword">in</span> children_Nodes:<br>    <span class="hljs-comment">#print (item.toxml())</span><br>    tag_name=<span class="hljs-string">&#x27;name&#x27;</span><br>    c_name = item.getElementsByTagName(tag_name)<br>    <span class="hljs-built_in">print</span>(c_name[<span class="hljs-number">0</span>].firstChild.data)<br>    c_name[<span class="hljs-number">0</span>].firstChild.data+=name_Append<br><span class="hljs-built_in">print</span>(dom.toprettyxml())<br>    <br>    &gt;&gt;&gt;C++ Primer 第<span class="hljs-number">1</span>版<br>&lt;?xml version=<span class="hljs-string">&quot;1.0&quot;</span> ?&gt;<br>&lt;root&gt;<br>	&lt;book&gt;<br>		&lt;name&gt;C++ Primer 第<span class="hljs-number">1</span>版 (中文版)&lt;/name&gt;<br>	&lt;/book&gt;<br>&lt;/root&gt;<br><br></code></pre></td></tr></table></figure>
 
-<h3 id="修改节点属性"><a href="#修改节点属性" class="headerlink" title="修改节点属性"></a>修改节点属性</h3><figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">#修改节点属性</span></span><br><span class="line">book_node.setAttribute(<span class="string">&#x27;price&#x27;</span>,<span class="string">&#x27;199&#x27;</span>)</span><br><span class="line"><span class="built_in">print</span>(book_node.hasAttribute(<span class="string">&#x27;price&#x27;</span>))</span><br><span class="line"><span class="built_in">print</span>(book_node.getAttribute(<span class="string">&#x27;price&#x27;</span>))</span><br><span class="line"></span><br><span class="line">book_node.setAttribute(<span class="string">&#x27;price&#x27;</span>,<span class="string">&#x27;399&#x27;</span>)</span><br><span class="line"><span class="built_in">print</span>(book_node.getAttribute(<span class="string">&#x27;price&#x27;</span>))</span><br><span class="line"></span><br><span class="line">book_node.setAttribute(<span class="string">&#x27;price2&#x27;</span>,<span class="string">&#x27;599&#x27;</span>)</span><br><span class="line"><span class="built_in">print</span>(book_node.attributes.items())</span><br><span class="line"></span><br><span class="line"><span class="meta">&gt;&gt;&gt; </span><span class="literal">True</span></span><br><span class="line"><span class="number">199</span></span><br><span class="line"><span class="number">399</span></span><br><span class="line">[(<span class="string">&#x27;price&#x27;</span>, <span class="string">&#x27;399&#x27;</span>), (<span class="string">&#x27;price2&#x27;</span>, <span class="string">&#x27;599&#x27;</span>)]</span><br></pre></td></tr></table></figure>
+<h3 id="修改节点属性"><a href="#修改节点属性" class="headerlink" title="修改节点属性"></a>修改节点属性</h3><figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><code class="hljs python"><span class="hljs-comment">#修改节点属性</span><br>book_node.setAttribute(<span class="hljs-string">&#x27;price&#x27;</span>,<span class="hljs-string">&#x27;199&#x27;</span>)<br><span class="hljs-built_in">print</span>(book_node.hasAttribute(<span class="hljs-string">&#x27;price&#x27;</span>))<br><span class="hljs-built_in">print</span>(book_node.getAttribute(<span class="hljs-string">&#x27;price&#x27;</span>))<br><br>book_node.setAttribute(<span class="hljs-string">&#x27;price&#x27;</span>,<span class="hljs-string">&#x27;399&#x27;</span>)<br><span class="hljs-built_in">print</span>(book_node.getAttribute(<span class="hljs-string">&#x27;price&#x27;</span>))<br><br>book_node.setAttribute(<span class="hljs-string">&#x27;price2&#x27;</span>,<span class="hljs-string">&#x27;599&#x27;</span>)<br><span class="hljs-built_in">print</span>(book_node.attributes.items())<br><br><span class="hljs-meta">&gt;&gt;&gt; </span><span class="hljs-literal">True</span><br><span class="hljs-number">199</span><br><span class="hljs-number">399</span><br>[(<span class="hljs-string">&#x27;price&#x27;</span>, <span class="hljs-string">&#x27;399&#x27;</span>), (<span class="hljs-string">&#x27;price2&#x27;</span>, <span class="hljs-string">&#x27;599&#x27;</span>)]<br></code></pre></td></tr></table></figure>
 
-<h3 id="修改节点名称-可用、不安全"><a href="#修改节点名称-可用、不安全" class="headerlink" title="修改节点名称(可用、不安全)"></a>修改节点名称(可用、不安全)</h3><figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">#修改节点名称(可用、不安全)</span></span><br><span class="line">name_node=dom.createElement(<span class="string">&#x27;name&#x27;</span>)</span><br><span class="line">name_node.nodeName=<span class="string">&#x27;node name&#x27;</span></span><br><span class="line">name_node.tagName=<span class="string">&#x27;tag name&#x27;</span></span><br><span class="line">root_node.appendChild(name_node)</span><br><span class="line"><span class="built_in">print</span>(dom.toxml())</span><br><span class="line"><span class="built_in">print</span>(name_node.nodeName)</span><br><span class="line"><span class="built_in">print</span>(name_node.localName)</span><br><span class="line"><span class="comment">#删掉刚刚增加的测试节点</span></span><br><span class="line">children_Nodes=root_node.childNodes</span><br><span class="line">children_Nodes.remove(children_Nodes[<span class="number">1</span>])</span><br><span class="line"></span><br><span class="line">&gt;&gt;&gt;&lt;?xml version=<span class="string">&quot;1.0&quot;</span> ?&gt;&lt;root&gt;&lt;book price=<span class="string">&quot;399&quot;</span> price2=<span class="string">&quot;599&quot;</span>&gt;&lt;name&gt;C++ Primer 第<span class="number">1</span>版 (中文版)&lt;/name&gt;&lt;/book&gt;&lt;tag name/&gt;&lt;/root&gt;</span><br><span class="line">node name</span><br><span class="line">tag name</span><br></pre></td></tr></table></figure>
+<h3 id="修改节点名称-可用、不安全"><a href="#修改节点名称-可用、不安全" class="headerlink" title="修改节点名称(可用、不安全)"></a>修改节点名称(可用、不安全)</h3><figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><code class="hljs python"><span class="hljs-comment">#修改节点名称(可用、不安全)</span><br>name_node=dom.createElement(<span class="hljs-string">&#x27;name&#x27;</span>)<br>name_node.nodeName=<span class="hljs-string">&#x27;node name&#x27;</span><br>name_node.tagName=<span class="hljs-string">&#x27;tag name&#x27;</span><br>root_node.appendChild(name_node)<br><span class="hljs-built_in">print</span>(dom.toxml())<br><span class="hljs-built_in">print</span>(name_node.nodeName)<br><span class="hljs-built_in">print</span>(name_node.localName)<br><span class="hljs-comment">#删掉刚刚增加的测试节点</span><br>children_Nodes=root_node.childNodes<br>children_Nodes.remove(children_Nodes[<span class="hljs-number">1</span>])<br><br>&gt;&gt;&gt;&lt;?xml version=<span class="hljs-string">&quot;1.0&quot;</span> ?&gt;&lt;root&gt;&lt;book price=<span class="hljs-string">&quot;399&quot;</span> price2=<span class="hljs-string">&quot;599&quot;</span>&gt;&lt;name&gt;C++ Primer 第<span class="hljs-number">1</span>版 (中文版)&lt;/name&gt;&lt;/book&gt;&lt;tag name/&gt;&lt;/root&gt;<br>node name<br>tag name<br></code></pre></td></tr></table></figure>
 
 <blockquote>
 <p>可以看到，改变tagName在事实上实现了改变节点名称的效果，但nodeName并没有一并更新，使用时需要谨慎。</p>
@@ -437,372 +363,285 @@
 <li>newl：换行格式（一般为换行回车<code>\n</code>)</li>
 <li>encoding：编码方式</li>
 </ul>
-<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">#Python DOM 写入XML</span></span><br><span class="line"><span class="keyword">with</span> <span class="built_in">open</span>(<span class="string">&#x27;write_test.xml&#x27;</span>,<span class="string">&#x27;w&#x27;</span>,encoding=<span class="string">&#x27;UTF-8&#x27;</span>) <span class="keyword">as</span> writer:</span><br><span class="line">    dom.writexml(writer,indent=<span class="string">&#x27;&#x27;</span>,addindent=<span class="string">&#x27;    &#x27;</span>,newl=<span class="string">&#x27;\n&#x27;</span>,encoding=<span class="string">&#x27;UTF-8&#x27;</span>)</span><br></pre></td></tr></table></figure>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><code class="hljs python"><span class="hljs-comment">#Python DOM 写入XML</span><br><span class="hljs-keyword">with</span> <span class="hljs-built_in">open</span>(<span class="hljs-string">&#x27;write_test.xml&#x27;</span>,<span class="hljs-string">&#x27;w&#x27;</span>,encoding=<span class="hljs-string">&#x27;UTF-8&#x27;</span>) <span class="hljs-keyword">as</span> writer:<br>    dom.writexml(writer,indent=<span class="hljs-string">&#x27;&#x27;</span>,addindent=<span class="hljs-string">&#x27;    &#x27;</span>,newl=<span class="hljs-string">&#x27;\n&#x27;</span>,encoding=<span class="hljs-string">&#x27;UTF-8&#x27;</span>)<br></code></pre></td></tr></table></figure>
 
 <p>得到xml文件<code>write_test.xml</code>：</p>
-<figure class="highlight xml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">&lt;?xml version=&quot;1.0&quot; encoding=&quot;UTF-8&quot;?&gt;</span></span><br><span class="line"><span class="tag">&lt;<span class="name">root</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">book</span> <span class="attr">price</span>=<span class="string">&quot;399&quot;</span> <span class="attr">price2</span>=<span class="string">&quot;599&quot;</span>&gt;</span></span><br><span class="line">        <span class="tag">&lt;<span class="name">name</span>&gt;</span>C++ Primer 第1版 (中文版)<span class="tag">&lt;/<span class="name">name</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;/<span class="name">book</span>&gt;</span></span><br><span class="line"><span class="tag">&lt;/<span class="name">root</span>&gt;</span></span><br><span class="line"></span><br></pre></td></tr></table></figure>
+<figure class="highlight xml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><code class="hljs xml"><span class="hljs-meta">&lt;?xml version=&quot;1.0&quot; encoding=&quot;UTF-8&quot;?&gt;</span><br><span class="hljs-tag">&lt;<span class="hljs-name">root</span>&gt;</span><br>    <span class="hljs-tag">&lt;<span class="hljs-name">book</span> <span class="hljs-attr">price</span>=<span class="hljs-string">&quot;399&quot;</span> <span class="hljs-attr">price2</span>=<span class="hljs-string">&quot;599&quot;</span>&gt;</span><br>        <span class="hljs-tag">&lt;<span class="hljs-name">name</span>&gt;</span>C++ Primer 第1版 (中文版)<span class="hljs-tag">&lt;/<span class="hljs-name">name</span>&gt;</span><br>    <span class="hljs-tag">&lt;/<span class="hljs-name">book</span>&gt;</span><br><span class="hljs-tag">&lt;/<span class="hljs-name">root</span>&gt;</span><br><br></code></pre></td></tr></table></figure>
 
 <h2 id="获取源码"><a href="#获取源码" class="headerlink" title="获取源码"></a>获取源码</h2><blockquote>
 <p>文中测试环境与所有源码可在<a target="_blank" rel="noopener" href="https://github.com/zywvvd/Python_Practise">Github</a>下载。</p>
 </blockquote>
 <link rel="stylesheet" href="/css/spoiler.css" type="text/css"><script src="/js/spoiler.js" type="text/javascript" async></script>
-    </div>
-
-    
-    
-    
-        <div class="reward-container">
-  <div>您的支持是我前进的最大动力！</div>
-  <button onclick="var qr = document.getElementById('qr'); qr.style.display = (qr.style.display === 'none') ? 'block' : 'none';">
-    赏
-  </button>
-  <div id="qr" style="display: none;">
-      
-      <div style="display: inline-block;">
-        <img src="/images/wechatpay.png" alt="Yiwei Zhang 微 信">
-        <p>微 信</p>
-      </div>
-      
-      <div style="display: inline-block;">
-        <img src="/images/alipay.png" alt="Yiwei Zhang 支付宝">
-        <p>支付宝</p>
-      </div>
-
-  </div>
-</div>
-
-        
-
-<div>
-<ul class="post-copyright">
-  <li class="post-copyright-author">
-  <span><strong>本文标题&nbsp:&nbsp&nbsp</strong>Python - DOM操作XML技巧汇总<br></span>
-  <span><strong>文章作者&nbsp:&nbsp&nbsp</strong><br></span>
-  <span><strong>发布时间&nbsp:&nbsp&nbsp</strong>2020年02月24日 - 20:12:51<br></span>
-  <span><strong>最后更新&nbsp:&nbsp&nbsp</strong>2020年07月07日 - 23:43:15<br></span>
-  <span><strong>原始链接&nbsp:&nbsp&nbsp</strong><a href="/2020/02/24/python/processing_xml/python-xml/" title="Python - DOM操作XML技巧汇总">https://www.zywvvd.com/2020/02/24/python/processing_xml/python-xml/</a><br></span>
-  <span><strong>许可协议&nbsp:&nbsp&nbsp</strong><i class="fa fa-creative-commons"></i> <a rel="license" href="https://creativecommons.org/licenses/by-nc-nd/4.0/" target="_blank" title="Attribution-NonCommercial-NoDerivatives 4.0 International (CC BY-NC-ND 4.0)">署名-非商业性使用-禁止演绎 4.0 国际</a> 转载请保留原文链接及作者<br></span>  
-	
-   <!-- <strong>Beitragsautor:  </strong>Yiwei Zhang
-  </li>
-  <li class="post-copyright-link">
-    <strong>Beitragslink: </strong>
-    <a href="https://www.zywvvd.com/2020/02/24/python/processing_xml/python-xml/" title="Python - DOM操作XML技巧汇总">https://www.zywvvd.com/2020/02/24/python/processing_xml/python-xml/</a>
-  </li>
-  <li class="post-copyright-license">
-    <strong>Urheberrechtshinweis:  </strong>Alle Artikel in diesem Blog sind unter <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/deed.zh" rel="noopener" target="_blank"><i class="fa fa-fw fa-creative-commons"></i>BY-NC-SA</a> lizenziert, außer es wird anders angegeben.
-  </li>-->
-</ul>
-</div>
-
-
-      <footer class="post-footer">
-          <div class="post-tags">
-              <a href="/tags/Python/" rel="tag"># Python</a>
-              <a href="/tags/XML/" rel="tag"># XML</a>
-          </div>
-
-        
-
-
-        
-    <div class="post-nav">
-      <div class="post-nav-item">
-    <a href="/2020/02/24/words/xml/course/xml/" rel="prev" title="文字编码 - XML 教程">
-      <i class="fa fa-chevron-left"></i> 文字编码 - XML 教程
-    </a></div>
-      <div class="post-nav-item">
-    <a href="/2020/02/25/python/file_list/python-file-list/" rel="next" title="Python - 获取文件夹内所有文件">
-      Python - 获取文件夹内所有文件 <i class="fa fa-chevron-right"></i>
-    </a></div>
-    </div>
-      </footer>
-    
-  </article>
-  
-  
-  
-
-  </div>
-
-
-          </div>
-          
-    <div class="comments" id="valine-comments"></div>
-
-<script>
-  window.addEventListener('tabs:register', () => {
-    let activeClass = CONFIG.comments.activeClass;
-    if (CONFIG.comments.storage) {
-      activeClass = localStorage.getItem('comments_active') || activeClass;
-    }
-    if (activeClass) {
-      let activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
-      if (activeTab) {
-        activeTab.click();
-      }
-    }
-  });
-  if (CONFIG.comments.storage) {
-    window.addEventListener('tabs:click', event => {
-      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
-      let commentClass = event.target.classList[1];
-      localStorage.setItem('comments_active', commentClass);
-    });
-  }
-</script>
-
-        </div>
-          
-  
-  <div class="toggle sidebar-toggle">
-    <span class="toggle-line toggle-line-first"></span>
-    <span class="toggle-line toggle-line-middle"></span>
-    <span class="toggle-line toggle-line-last"></span>
-  </div>
-
-  <aside class="sidebar">
-    <div class="sidebar-inner">
-
-      <ul class="sidebar-nav motion-element">
-        <li class="sidebar-nav-toc">
-          文章目录
-        </li>
-        <li class="sidebar-nav-overview">
-          小站概览
-        </li>
-      </ul>
-
-      <!--noindex-->
-      <div class="post-toc-wrap sidebar-panel">
-          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%87%86%E5%A4%87%E5%B7%A5%E4%BD%9C"><span class="nav-number">1.</span> <span class="nav-text">准备工作</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Python%E5%B8%B8%E7%94%A8%E5%A4%84%E7%90%86XML%E5%BA%93"><span class="nav-number">2.</span> <span class="nav-text">Python常用处理XML库</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#DOM-Document-Object-Model-%E6%9C%AC%E6%96%87%E4%BB%8B%E7%BB%8D"><span class="nav-number">2.1.</span> <span class="nav-text">DOM(Document Object Model) - 本文介绍</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#SAX-simple-API-for-XML"><span class="nav-number">2.2.</span> <span class="nav-text">SAX (simple API for XML )</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#ElementTree-%E5%85%83%E7%B4%A0%E6%A0%91"><span class="nav-number">2.3.</span> <span class="nav-text">ElementTree(元素树)</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E6%B5%8B%E8%AF%95%E7%94%A8%E4%BE%8B"><span class="nav-number">3.</span> <span class="nav-text">测试用例</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Python-DOM-%E8%A7%A3%E6%9E%90XML"><span class="nav-number">4.</span> <span class="nav-text">Python DOM 解析XML</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#DOM%E8%8A%82%E7%82%B9%E6%A0%91"><span class="nav-number">4.1.</span> <span class="nav-text">DOM节点树</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#%E8%8A%82%E7%82%B9%E7%BA%A7%E5%88%AB"><span class="nav-number">4.1.1.</span> <span class="nav-text">节点级别</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E8%A7%A3%E6%9E%90XML"><span class="nav-number">4.2.</span> <span class="nav-text">解析XML</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E8%8E%B7%E5%8F%96%E8%8A%82%E7%82%B9%E5%90%8D%E7%A7%B0"><span class="nav-number">4.3.</span> <span class="nav-text">获取节点名称</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E8%8E%B7%E5%8F%96%E5%AD%90%E8%8A%82%E7%82%B9"><span class="nav-number">4.4.</span> <span class="nav-text">获取子节点</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E8%8A%82%E7%82%B9%E7%B1%BB%E5%9E%8B"><span class="nav-number">4.5.</span> <span class="nav-text">节点类型</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#%E6%96%87%E6%9C%AC%E6%80%BB%E6%98%AF%E5%AD%98%E5%82%A8%E5%9C%A8%E6%96%87%E6%9C%AC%E8%8A%82%E7%82%B9%E4%B8%AD"><span class="nav-number">4.5.1.</span> <span class="nav-text">文本总是存储在文本节点中</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E8%8E%B7%E5%8F%96%E8%8A%82%E7%82%B9%E5%B1%9E%E6%80%A7"><span class="nav-number">4.6.</span> <span class="nav-text">获取节点属性</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E8%8E%B7%E5%8F%96%E6%8C%87%E5%AE%9A%E5%90%8D%E7%A7%B0%E7%9A%84%E8%8A%82%E7%82%B9"><span class="nav-number">4.7.</span> <span class="nav-text">获取指定名称的节点</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%88%A4%E6%96%AD%E6%98%AF%E5%90%A6%E5%8C%85%E5%90%AB%E5%B1%9E%E6%80%A7%E5%80%BC"><span class="nav-number">4.8.</span> <span class="nav-text">判断是否包含属性值</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E8%8E%B7%E5%8F%96%E8%8A%82%E7%82%B9%E6%8C%87%E5%AE%9A%E5%B1%9E%E6%80%A7%E7%9A%84%E5%B1%9E%E6%80%A7%E5%80%BC"><span class="nav-number">4.9.</span> <span class="nav-text">获取节点指定属性的属性值</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E8%8E%B7%E5%8F%96%E8%8A%82%E7%82%B9%E6%96%87%E6%9C%AC%E5%80%BC"><span class="nav-number">4.10.</span> <span class="nav-text">获取节点文本值</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%88%A4%E6%96%AD%E6%98%AF%E5%90%A6%E6%9C%89%E5%AD%90%E8%8A%82%E7%82%B9"><span class="nav-number">4.11.</span> <span class="nav-text">判断是否有子节点</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#DOM%E8%A7%A3%E6%9E%90XML%E6%96%B9%E6%B3%95%E6%80%BB%E7%BB%93"><span class="nav-number">4.12.</span> <span class="nav-text">DOM解析XML方法总结</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Python-DOM-%E4%BF%AE%E6%94%B9XML"><span class="nav-number">5.</span> <span class="nav-text">Python DOM 修改XML</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E7%94%9F%E6%88%90XML%E6%A0%91%E3%80%81%E6%B7%BB%E5%8A%A0%E5%B1%9E%E6%80%A7"><span class="nav-number">5.1.</span> <span class="nav-text">生成XML树、添加属性</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%88%A0%E9%99%A4%E8%8A%82%E7%82%B9"><span class="nav-number">5.2.</span> <span class="nav-text">删除节点</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%88%A0%E9%99%A4%E8%8A%82%E7%82%B9%E5%B1%9E%E6%80%A7"><span class="nav-number">5.3.</span> <span class="nav-text">删除节点属性</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E4%BF%AE%E6%94%B9%E8%8A%82%E7%82%B9%E5%86%85%E5%AE%B9"><span class="nav-number">5.4.</span> <span class="nav-text">修改节点内容</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E4%BF%AE%E6%94%B9%E8%8A%82%E7%82%B9%E5%B1%9E%E6%80%A7"><span class="nav-number">5.5.</span> <span class="nav-text">修改节点属性</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E4%BF%AE%E6%94%B9%E8%8A%82%E7%82%B9%E5%90%8D%E7%A7%B0-%E5%8F%AF%E7%94%A8%E3%80%81%E4%B8%8D%E5%AE%89%E5%85%A8"><span class="nav-number">5.6.</span> <span class="nav-text">修改节点名称(可用、不安全)</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#DOM%E4%BF%AE%E6%94%B9XML%E6%96%B9%E6%B3%95%E6%80%BB%E7%BB%93"><span class="nav-number">5.7.</span> <span class="nav-text">DOM修改XML方法总结</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Python-DOM-%E5%86%99%E5%85%A5XML"><span class="nav-number">6.</span> <span class="nav-text">Python DOM 写入XML</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%86%99%E5%85%A5XML"><span class="nav-number">6.1.</span> <span class="nav-text">写入XML</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E8%8E%B7%E5%8F%96%E6%BA%90%E7%A0%81"><span class="nav-number">7.</span> <span class="nav-text">获取源码</span></a></li></ol></div>
-      </div>
-      <!--/noindex-->
-
-
-
-      <div class="site-overview-wrap sidebar-panel">
-        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
-    <img class="site-author-image" itemprop="image" alt="Yiwei Zhang"
-      src="/images/avatar.png">
-  <p class="site-author-name" itemprop="name">Yiwei Zhang</p>
-  <div class="site-description" itemprop="description">Stay hungury ! Stay foolish ！</div>
-</div>
-
-
-         
-            <div class="feed-link motion-element">
-              <a href="/atom.xml" rel="alternate">
-                <i class="fa fa-rss"></i>
-                RSS
-              </a>
             </div>
-          
-<div class="site-state-wrap motion-element">
-  <nav class="site-state">
-      <div class="site-state-item site-state-posts">
-          <a href="/archives/">
-        
-          <span class="site-state-item-count">247</span>
-          <span class="site-state-item-name">日志</span>
-        </a>
-      </div>
-      <div class="site-state-item site-state-categories">
-            <a href="/categories/">
-          
-        <span class="site-state-item-count">97</span>
-        <span class="site-state-item-name">分类</span></a>
-      </div>
-      <div class="site-state-item site-state-tags">
-            <a href="/tags/">
-          
-        <span class="site-state-item-count">83</span>
-        <span class="site-state-item-name">标签</span></a>
-      </div>
-  </nav>
-</div>
-  <div class="links-of-author motion-element">
-      <span class="links-of-author-item">
-        <a href="https://github.com/zywvvd" title="GitHub → https:&#x2F;&#x2F;github.com&#x2F;zywvvd" rel="noopener" target="_blank"><i class="fa fa-fw fa-github"></i>GitHub</a>
-      </span>
-      <span class="links-of-author-item">
-        <a href="mailto:zywvvd@mail.ustc.edu.cn" title="E-Mail → mailto:zywvvd@mail.ustc.edu.cn" rel="noopener" target="_blank"><i class="fa fa-fw fa-envelope"></i>E-Mail</a>
-      </span>
-  </div>
+            <hr>
+            <div>
+              <div class="post-metas mb-3">
+                
+                  <div class="post-meta mr-3">
+                    <i class="iconfont icon-category"></i>
+                    
+                      <a class="hover-with-bg" href="/categories/Python/">Python</a>
+                    
+                  </div>
+                
+                
+                  <div class="post-meta">
+                    <i class="iconfont icon-tags"></i>
+                    
+                      <a class="hover-with-bg" href="/tags/Python/">Python</a>
+                    
+                      <a class="hover-with-bg" href="/tags/XML/">XML</a>
+                    
+                  </div>
+                
+              </div>
+              
+                <p class="note note-warning">
+                  
+                    本博客所有文章除特别声明外，均采用 <a target="_blank" href="https://creativecommons.org/licenses/by-sa/4.0/deed.zh" rel="nofollow noopener noopener">CC BY-SA 4.0 协议</a> ，转载请注明出处！
+                  
+                </p>
+              
+              
+                <div class="post-prevnext">
+                  <article class="post-prev col-6">
+                    
+                    
+                      <a href="/2020/02/25/python/file_list/python-file-list/">
+                        <i class="iconfont icon-arrowleft"></i>
+                        <span class="hidden-mobile">Python - 获取文件夹内所有文件</span>
+                        <span class="visible-mobile">上一篇</span>
+                      </a>
+                    
+                  </article>
+                  <article class="post-next col-6">
+                    
+                    
+                      <a href="/2020/02/24/words/xml/course/xml/">
+                        <span class="hidden-mobile">文字编码 - XML 教程</span>
+                        <span class="visible-mobile">下一篇</span>
+                        <i class="iconfont icon-arrowright"></i>
+                      </a>
+                    
+                  </article>
+                </div>
+              
+            </div>
+
+            
+              <!-- Comments -->
+              <article class="comments" id="comments" lazyload>
+                
+                  
+                
+                
+  <div id="valine"></div>
+  <script type="text/javascript">
+    Fluid.utils.loadComments('#valine', function() {
+      Fluid.utils.createScript('https://cdn.jsdelivr.net/npm/valine@1.4.14/dist/Valine.min.js', function() {
+        var options = Object.assign(
+          {"appId":"OLRteWxoct1JkWm3Pe9BDYEK-gzGzoHsz","appKey":"YBKiC6SE5hpWUmy0WIyegCrM","placeholder":"遗憾莫过于难忘你的背影，却找不到你来过的痕迹 ...","path":"window.location.pathname","avatar":"retro","meta":["nick","mail","link"],"pageSize":10,"lang":"zh-CN","highlight":false,"recordIP":true,"serverURLs":"","emojiCDN":null,"emojiMaps":null,"enableQQ":false,"requiredFields":[]},
+          {
+            el: "#valine",
+            path: window.location.pathname
+          }
+        )
+        new Valine(options);
+      });
+    });
+  </script>
+  <noscript>Please enable JavaScript to view the comments</noscript>
 
 
-
-      </div>
-        <div class="back-to-top motion-element">
-          <i class="fa fa-arrow-up"></i>
-          <span>0%</span>
+              </article>
+            
+          </article>
         </div>
-
+      </div>
     </div>
-  </aside>
-  <div id="sidebar-dimmer"></div>
-
-
-      </div>
-    </main>
-
-    <footer class="footer">
-      <div class="footer-inner">
-        
-  <div class="beian"><a href="https://beian.miit.gov.cn/" rel="noopener" target="_blank">吉ICP备19007275号-1 </a>
-      <img src="/images/gongan.png" style="display: inline-block;"><a href="https://www.beian.gov.cn/portal/registerSystemInfo?recordcode=22020202000251" rel="noopener" target="_blank">吉公网安备 22020202000251号 </a>
-  </div>
-
-<div class="copyright">
-  
-  &copy; 2020 – 
-  <span itemprop="copyrightYear">2021</span>
-  <span class="with-love">
-    <i class="fa fa-user"></i>
-  </span>
-  <span class="author" itemprop="copyrightHolder">Yiwei Zhang</span>
-    <span class="post-meta-divider">|</span>
-    <span class="post-meta-item-icon">
-      <i class="fa fa-area-chart"></i>
-    </span>
-      <span class="post-meta-item-text">站点总字数: </span>
-    <span title="站点总字数">601k</span>
-    <span class="post-meta-divider">|</span>
-    <span class="post-meta-item-icon">
-      <i class="fa fa-coffee"></i>
-    </span>
-      <span class="post-meta-item-text">站点阅读时长 &asymp;</span>
-    <span title="站点阅读时长">9:06</span>
+    
+      <div class="d-none d-lg-block col-lg-2 toc-container" id="toc-ctn">
+        <div id="toc">
+  <p class="toc-header"><i class="iconfont icon-list"></i>&nbsp;目录</p>
+  <div class="toc-body" id="toc-body"></div>
 </div>
-  <div class="powered-by">技术支持 v5.4.0
-  </div>
-  <span class="post-meta-divider">|</span>
-  <div class="theme-info">主题方案 – <a href="https://pisces.theme-next.org/" class="theme-link" rel="noopener" target="_blank">NexT.Pisces</a> v7.7.1
-  </div>
-
-<script async src="//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
-<span><br></span>	
-
-<span class="post-meta-item-icon">
-      <i class="fa fa-group"></i>
-</span>
-<span>总访客&nbsp<span id="busuanzi_value_site_uv"></span>&nbsp人</span>
-<span class="post-meta-divider">|</span>
-<span class="post-meta-item-icon">
-      <i class="fa fa-eye"></i>
-</span>
-<span>访问总量&nbsp<span id="busuanzi_value_site_pv"></span>&nbsp次</span>
-
-        
-
-
-
-
-
-
-
 
       </div>
-    </footer>
+    
   </div>
+</div>
+
+<!-- Custom -->
+
+
+    
+
+    
+      <a id="scroll-top-button" href="#" role="button">
+        <i class="iconfont icon-arrowup" aria-hidden="true"></i>
+      </a>
+    
+
+    
+      <div class="modal fade" id="modalSearch" tabindex="-1" role="dialog" aria-labelledby="ModalLabel"
+     aria-hidden="true">
+  <div class="modal-dialog modal-dialog-scrollable modal-lg" role="document">
+    <div class="modal-content">
+      <div class="modal-header text-center">
+        <h4 class="modal-title w-100 font-weight-bold">搜索</h4>
+        <button type="button" id="local-search-close" class="close" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body mx-3">
+        <div class="md-form mb-5">
+          <input type="text" id="local-search-input" class="form-control validate">
+          <label data-error="x" data-success="v"
+                 for="local-search-input">关键词</label>
+        </div>
+        <div class="list-group" id="local-search-result"></div>
+      </div>
+    </div>
+  </div>
+</div>
+    
+
+    
+  </main>
+
+  <footer class="text-center mt-5 py-3">
+  <div class="footer-content">
+     <a href="https://hexo.io" target="_blank" rel="nofollow noopener"><span>Hexo</span></a> <i class="iconfont icon-love"></i> <a href="https://github.com/fluid-dev/hexo-theme-fluid" target="_blank" rel="nofollow noopener"><span>Fluid</span></a> 
+  </div>
+  
 
   
-  <script src="/lib/anime.min.js"></script>
-  <script src="//cdn.jsdelivr.net/npm/jquery@3/dist/jquery.min.js"></script>
-  <script src="//cdn.jsdelivr.net/gh/fancyapps/fancybox@3/dist/jquery.fancybox.min.js"></script>
-  <script src="/lib/velocity/velocity.min.js"></script>
-  <script src="/lib/velocity/velocity.ui.min.js"></script>
-
-<script src="/js/utils.js"></script>
-
-<script src="/js/motion.js"></script>
-
-
-<script src="/js/schemes/pisces.js"></script>
-
-
-<script src="/js/next-boot.js"></script>
-
-
-
 
   
+</footer>
+
+
+  <!-- SCRIPTS -->
+  
+  <script  src="https://cdn.jsdelivr.net/npm/nprogress@0.2.0/nprogress.min.js" ></script>
+  <link  rel="stylesheet" href="https://cdn.jsdelivr.net/npm/nprogress@0.2.0/nprogress.min.css" />
+
   <script>
-    (function(){
-      var bp = document.createElement('script');
-      var curProtocol = window.location.protocol.split(':')[0];
-      bp.src = (curProtocol === 'https') ? 'https://zz.bdstatic.com/linksubmit/push.js' : 'http://push.zhanzhang.baidu.com/push.js';
-      var s = document.getElementsByTagName("script")[0];
-      s.parentNode.insertBefore(bp, s);
-    })();
+    NProgress.configure({"showSpinner":false,"trickleSpeed":100})
+    NProgress.start()
+    window.addEventListener('load', function() {
+      NProgress.done();
+    })
+  </script>
+
+
+<script  src="https://cdn.jsdelivr.net/npm/jquery@3.6.0/dist/jquery.min.js" ></script>
+<script  src="https://cdn.jsdelivr.net/npm/bootstrap@4.6.0/dist/js/bootstrap.min.js" ></script>
+<script  src="/js/events.js" ></script>
+<script  src="/js/plugins.js" ></script>
+
+<!-- Plugins -->
+
+
+  
+    <script  src="/js/img-lazyload.js" ></script>
+  
+
+
+
+  
+
+
+
+  <script  src="https://cdn.jsdelivr.net/npm/tocbot@4.12.3/dist/tocbot.min.js" ></script>
+
+
+
+  <script  src="https://cdn.jsdelivr.net/npm/@fancyapps/fancybox@3.5.7/dist/jquery.fancybox.min.js" ></script>
+
+
+
+  <script  src="https://cdn.jsdelivr.net/npm/anchor-js@4.3.1/anchor.min.js" ></script>
+
+
+
+  <script defer src="https://cdn.jsdelivr.net/npm/clipboard@2.0.8/dist/clipboard.min.js" ></script>
+
+
+
+  <script  src="/js/local-search.js" ></script>
+
+
+
+
+
+
+  <script  src="https://cdn.jsdelivr.net/npm/typed.js@2.0.12/lib/typed.min.js" ></script>
+  <script>
+    (function (window, document) {
+      var typing = Fluid.plugins.typing;
+      var title = document.getElementById('subtitle').title;
+      
+      typing(title)
+      
+    })(window, document);
   </script>
 
 
 
 
-  
-<script src="/js/local-search.js"></script>
-
-
-
-
-
-
-
-
-
-
-
-<script>
-if (document.querySelectorAll('pre.mermaid').length) {
-  NexT.utils.getScript('//cdn.jsdelivr.net/npm/mermaid@8/dist/mermaid.min.js', () => {
-    mermaid.initialize({
-      theme    : 'default',
-      logLevel : 3,
-      flowchart: { curve     : 'linear' },
-      gantt    : { axisFormat: '%m/%d/%Y' },
-      sequence : { actorMargin: 50 }
-    });
-  }, window.mermaid);
-}
-</script>
-
 
   
 
   
+    <!-- MathJax -->
+    <script>
+      MathJax = {
+        tex: {
+          inlineMath: [['$', '$'], ['\\(', '\\)']]
+        },
+        options: {
+          renderActions: {
+            findScript: [10, doc => {
+              document.querySelectorAll('script[type^="math/tex"]').forEach(node => {
+                const display = !!node.type.match(/; *mode=display/);
+                const math = new doc.options.MathItem(node.textContent, doc.inputJax[0], display);
+                const text = document.createTextNode('');
+                node.parentNode.replaceChild(text, node);
+                math.start = { node: text, delim: '', n: 0 };
+                math.end = { node: text, delim: '', n: 0 };
+                doc.math.push(math);
+              });
+            }, '', false],
+            insertedScript: [200, () => {
+              document.querySelectorAll('mjx-container').forEach(node => {
+                let target = node.parentNode;
+                if (target.nodeName.toLowerCase() === 'li') {
+                  target.parentNode.classList.add('has-jax');
+                }
+              });
+            }, '', false]
+          }
+        }
+      };
+    </script>
+
+    <script async src="https://cdn.jsdelivr.net/npm/mathjax@3.1.4/es5/tex-svg.js" ></script>
 
   
 
 
-<script>
-NexT.utils.loadComments(document.querySelector('#valine-comments'), () => {
-  NexT.utils.getScript('//unpkg.com/valine/dist/Valine.min.js', () => {
-    var GUEST = ['nick', 'mail', 'link'];
-    var guest = 'nick,mail,link';
-    guest = guest.split(',').filter(item => {
-      return GUEST.includes(item);
-    });
-    new Valine({
-      el         : '#valine-comments',
-      verify     : true,
-      notify     : true,
-      appId      : 'OLRteWxoct1JkWm3Pe9BDYEK-gzGzoHsz',
-      appKey     : 'YBKiC6SE5hpWUmy0WIyegCrM',
-      placeholder: "遗憾莫过于难忘你的背影，却找不到你来过的痕迹 ...",
-      avatar     : 'mm',
-      meta       : guest,
-      pageSize   : '10' || 10,
-      visitor    : true,
-      lang       : '' || 'zh-cn',
-      path       : location.pathname,
-      recordIP   : false,
-      serverURLs : ''
-    });
-  }, window.Valine);
-});
-</script>
 
+
+
+
+
+
+
+
+
+<!-- 主题的启动项 保持在最底部 -->
+<script  src="/js/boot.js" ></script>
 
 
 <script src="/live2dw/lib/L2Dwidget.min.js?094cbace49a39548bed64abff5988b05"></script><script>L2Dwidget.init({"pluginRootPath":"live2dw/","pluginJsPath":"lib/","pluginModelPath":"assets/","tagMode":false,"log":false,"model":{"jsonPath":"/live2dw/assets/z16.model.json"},"display":{"position":"right","width":220,"height":440},"mobile":{"show":false},"react":{"opacity":0.7}});</script></body>

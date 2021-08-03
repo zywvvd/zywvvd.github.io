@@ -1,315 +1,237 @@
+
+
 <!DOCTYPE html>
-<html lang="zh-Hans">
+<html lang="zh-CN" data-default-color-scheme=&#34;auto&#34;>
+
+
+
 <head>
   <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
-<meta name="theme-color" content="#222">
-<meta name="generator" content="Hexo 5.4.0">
-  <link rel="apple-touch-icon" sizes="180x180" href="/images/logo-180.png">
-  <link rel="icon" type="image/png" sizes="32x32" href="/images/logo-32.png">
-  <link rel="icon" type="image/png" sizes="16x16" href="/images/logo-16.png">
-  <link rel="mask-icon" href="/images/logo-512.svg" color="#222">
+  <link rel="apple-touch-icon" sizes="76x76" href="/img/favicon.png">
+  <link rel="icon" href="/img/favicon.png">
+  <meta name="viewport"
+        content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, shrink-to-fit=no">
+  <meta http-equiv="x-ua-compatible" content="ie=edge">
+  
+  <meta name="theme-color" content="#2f4154">
+  <meta name="description" content="
+相册需要在本地建立文件夹，为了维护相册，需要自动生成对应图像的json文件，并自动压缩上传，本文分享我的python程序，提供一种解决方案供大家使用参考。
+">
+  <meta name="author" content="Yiwei Zhang">
+  <meta name="keywords" content="人工智能, 深度学习, 个人博客, 机器学习">
+  
+  <title>Next -23- 添加相册系列 -3- 获取图像信息、保存为json文件并上传图像 - 又见苍岚</title>
 
-<link rel="stylesheet" href="/css/main.css">
-
-
-<link rel="stylesheet" href="/lib/font-awesome/css/font-awesome.min.css">
-  <link rel="stylesheet" href="//cdn.jsdelivr.net/gh/fancyapps/fancybox@3/dist/jquery.fancybox.min.css">
-
-<script id="hexo-configurations">
-    var NexT = window.NexT || {};
-    var CONFIG = {"hostname":"www.zywvvd.com","root":"/","scheme":"Pisces","version":"7.7.1","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":true,"show_result":"default","style":null},"back2top":{"enable":true,"sidebar":true,"scrollpercent":true},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":true,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},"path":"./public/search.xml"};
-  </script>
-
-  <meta name="description" content="相册需要在本地建立文件夹，为了维护相册，需要自动生成对应图像的json文件，并自动压缩上传，本文分享我的python程序，提供一种解决方案供大家使用参考。">
-<meta property="og:type" content="article">
-<meta property="og:title" content="Next -23- 添加相册系列 -3- 获取图像信息、保存为json文件并上传图像">
-<meta property="og:url" content="https://www.zywvvd.com/2020/04/22/next/23_get_image_info/get-image-info/index.html">
-<meta property="og:site_name" content="又见苍岚">
-<meta property="og:description" content="相册需要在本地建立文件夹，为了维护相册，需要自动生成对应图像的json文件，并自动压缩上传，本文分享我的python程序，提供一种解决方案供大家使用参考。">
-<meta property="og:locale">
-<meta property="og:image" content="https://photos.zywvvd.com/image/20200428001615.png">
-<meta property="og:image" content="https://photos.zywvvd.com/image/20200428001650.png">
-<meta property="og:image" content="https://photos.zywvvd.com/image/20200428002036.png">
-<meta property="og:image" content="https://photos.zywvvd.com/image/20200428002127.png">
-<meta property="og:image" content="https://www.zywvvd.com/2020/04/22/next/23_get_image_info/get-image-info/20200428235033.png">
-<meta property="og:image" content="https://photos.zywvvd.com/image/20200428002202.png">
-<meta property="og:image" content="https://photos.zywvvd.com/image/20200428002346.png">
-<meta property="article:published_time" content="2020-04-21T16:26:22.000Z">
-<meta property="article:modified_time" content="2020-07-07T15:43:15.710Z">
-<meta property="article:author" content="Yiwei Zhang">
-<meta property="article:tag" content="Next">
-<meta name="twitter:card" content="summary">
-<meta name="twitter:image" content="https://photos.zywvvd.com/image/20200428001615.png">
-
-<link rel="canonical" href="https://www.zywvvd.com/2020/04/22/next/23_get_image_info/get-image-info/">
+  <link  rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@4.6.0/dist/css/bootstrap.min.css" />
 
 
-<script id="page-configurations">
-  // https://hexo.io/docs/variables.html
-  CONFIG.page = {
-    sidebar: "",
-    isHome: false,
-    isPost: true
-  };
-</script>
+  <link  rel="stylesheet" href="https://cdn.jsdelivr.net/npm/github-markdown-css@4.0.0/github-markdown.min.css" />
+  <link  rel="stylesheet" href="/lib/hint/hint.min.css" />
 
-  <title>Next -23- 添加相册系列 -3- 获取图像信息、保存为json文件并上传图像 | 又见苍岚</title>
+  
+    
+    
+      
+      <link  rel="stylesheet" href="https://cdn.jsdelivr.net/npm/highlight.js@10.7.2/styles/github-gist.min.css" />
+    
+  
+
+  
+    <link  rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fancyapps/fancybox@3.5.7/dist/jquery.fancybox.min.css" />
   
 
 
 
+<!-- 主题依赖的图标库，不要自行修改 -->
+
+<link rel="stylesheet" href="//at.alicdn.com/t/font_1749284_ba1fz6golrf.css">
 
 
 
-  <noscript>
-  <style>
-  .use-motion .brand,
-  .use-motion .menu-item,
-  .sidebar-inner,
-  .use-motion .post-block,
-  .use-motion .pagination,
-  .use-motion .comments,
-  .use-motion .post-header,
-  .use-motion .post-body,
-  .use-motion .collection-header { opacity: initial; }
+<link rel="stylesheet" href="//at.alicdn.com/t/font_1736178_kmeydafke9r.css">
 
-  .use-motion .site-title,
-  .use-motion .site-subtitle {
-    opacity: initial;
-    top: initial;
-  }
 
-  .use-motion .logo-line-before i { left: initial; }
-  .use-motion .logo-line-after i { right: initial; }
-  </style>
-</noscript>
+<link  rel="stylesheet" href="/css/main.css" />
 
-<link rel="alternate" href="/atom.xml" title="又见苍岚" type="application/atom+xml">
+<!-- 自定义样式保持在最底部 -->
+
+
+  <script id="fluid-configs">
+    var Fluid = window.Fluid || {};
+    var CONFIG = {"hostname":"www.zywvvd.com","root":"/","version":"1.8.11","typing":{"enable":true,"typeSpeed":70,"cursorChar":"_","loop":false},"anchorjs":{"enable":true,"element":"h1,h2,h3,h4,h5,h6","placement":"right","visible":"hover","icon":""},"progressbar":{"enable":true,"height_px":3,"color":"#29d","options":{"showSpinner":false,"trickleSpeed":100}},"copy_btn":true,"image_zoom":{"enable":true,"img_url_replace":["",""]},"toc":{"enable":true,"headingSelector":"h1,h2,h3,h4,h5,h6","collapseDepth":0},"lazyload":{"enable":true,"loading_img":"/img/loading.gif","onlypost":false,"offset_factor":2},"web_analytics":{"enable":false,"baidu":null,"google":null,"gtag":null,"tencent":{"sid":null,"cid":null},"woyaola":null,"cnzz":null,"leancloud":{"app_id":null,"app_key":null,"server_url":null}},"search_path":"/local-search.xml"};
+  </script>
+  <script  src="/js/utils.js" ></script>
+  <script  src="/js/color-schema.js" ></script>
+<meta name="generator" content="Hexo 5.4.0"><link rel="alternate" href="/atom.xml" title="又见苍岚" type="application/atom+xml">
 </head>
 
-<body itemscope itemtype="http://schema.org/WebPage">
-  <div class="container use-motion">
-    <div class="headband"></div>
 
-    	<a target="_blank" rel="noopener" href="https://github.com/zywvvd" >
-    		<img width="149" height="149"  style="position:absolute; right:-2px; top:2px;" src="https://photos.zywvvd.com/image/20200328192440.png" class="attachment-full size-full" alt="Fork me on GitHub" data-recalc-dims="1">
-    	</a>
+<body>
+  <header style="height: 70vh;">
+    <nav id="navbar" class="navbar fixed-top  navbar-expand-lg navbar-dark scrolling-navbar">
+  <div class="container">
+    <a class="navbar-brand"
+       href="/">&nbsp;<strong>Fluid</strong>&nbsp;</a>
 
-    	<a target="_blank" rel="noopener" href="https://github.com/zywvvd" class="github-corner" aria-label="View source on GitHub"><svg width="80" height="80" viewBox="0 0 250 250" style="fill:#222222; color:#fff; position: absolute; top: 0; border: 0; right: 0;" aria-hidden="true"><path d="M0,0 L115,115 L130,115 L142,142 L250,250 L250,0 Z"></path><path d="M128.3,109.0 C113.8,99.7 119.0,89.6 119.0,89.6 C122.0,82.7 120.5,78.6 120.5,78.6 C119.2,72.0 123.4,76.3 123.4,76.3 C127.3,80.9 125.5,87.3 125.5,87.3 C122.9,97.6 130.6,101.9 134.4,103.2" fill="currentColor" style="transform-origin: 130px 106px;" class="octo-arm"></path><path d="M115.0,115.0 C114.9,115.1 118.7,116.5 119.8,115.4 L133.7,101.6 C136.9,99.2 139.9,98.4 142.2,98.6 C133.8,88.0 127.5,74.4 143.8,58.0 C148.5,53.4 154.0,51.2 159.7,51.0 C160.3,49.4 163.2,43.6 171.4,40.1 C171.4,40.1 176.1,42.5 178.8,56.2 C183.1,58.6 187.2,61.8 190.9,65.4 C194.5,69.0 197.7,73.2 200.1,77.6 C213.8,80.2 216.3,84.9 216.3,84.9 C212.7,93.1 206.9,96.0 205.4,96.6 C205.1,102.4 203.0,107.8 198.3,112.5 C181.9,128.9 168.3,122.5 157.7,114.1 C157.9,116.9 156.7,120.9 152.7,124.9 L141.0,136.5 C139.8,137.7 141.6,141.9 141.8,141.8 Z" fill="currentColor" class="octo-body"></path></svg></a><style>.github-corner:hover .octo-arm{animation:octocat-wave 560ms ease-in-out}@keyframes octocat-wave{0%,100%{transform:rotate(0)}20%,60%{transform:rotate(-25deg)}40%,80%{transform:rotate(10deg)}}@media (max-width:500px){.github-corner:hover .octo-arm{animation:none}.github-corner .octo-arm{animation:octocat-wave 560ms ease-in-out}}</style>
+    <button id="navbar-toggler-btn" class="navbar-toggler" type="button" data-toggle="collapse"
+            data-target="#navbarSupportedContent"
+            aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
+      <div class="animated-icon"><span></span><span></span><span></span></div>
+    </button>
 
-    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
-      <div class="header-inner"><div class="site-brand-container">
-  <div class="site-nav-toggle">
-    <div class="toggle" aria-label="Navigationsleiste an/ausschalten">
-      <span class="toggle-line toggle-line-first"></span>
-      <span class="toggle-line toggle-line-middle"></span>
-      <span class="toggle-line toggle-line-last"></span>
+    <!-- Collapsible content -->
+    <div class="collapse navbar-collapse" id="navbarSupportedContent">
+      <ul class="navbar-nav ml-auto text-center">
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/">
+                <i class="iconfont icon-home-fill"></i>
+                首页
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/archives/">
+                <i class="iconfont icon-archive-fill"></i>
+                归档
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/categories/">
+                <i class="iconfont icon-category-fill"></i>
+                分类
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/tags/">
+                <i class="iconfont icon-tags-fill"></i>
+                标签
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/about/">
+                <i class="iconfont icon-user-fill"></i>
+                关于
+              </a>
+            </li>
+          
+        
+        
+          <li class="nav-item" id="search-btn">
+            <a class="nav-link" target="_self" data-toggle="modal" data-target="#modalSearch">&nbsp;<i
+                class="iconfont icon-search"></i>&nbsp;</a>
+          </li>
+        
+        
+          <li class="nav-item" id="color-toggle-btn">
+            <a class="nav-link" target="_self">&nbsp;<i
+                class="iconfont icon-dark" id="color-toggle-icon"></i>&nbsp;</a>
+          </li>
+        
+      </ul>
     </div>
   </div>
-
-  <div class="site-meta">
-
-    <div>
-      <a href="/" class="brand" rel="start">
-        <span class="logo-line-before"><i></i></span>
-        <span class="site-title">又见苍岚</span>
-        <span class="logo-line-after"><i></i></span>
-      </a>
-    </div>
-        <p class="site-subtitle">www.zywvvd.com</p>
-  </div>
-
-  <div class="site-nav-right">
-    <div class="toggle popup-trigger">
-        <i class="fa fa-search fa-fw fa-lg"></i>
-    </div>
-  </div>
-</div>
-
-
-<nav class="site-nav">
-  
-  <ul id="menu" class="menu">
-        <li class="menu-item menu-item-home">
-
-    <a href="/" rel="section"><i class="fa fa-fw fa-home"></i>首页</a>
-
-  </li>
-        <li class="menu-item menu-item-about">
-
-    <a href="/about/" rel="section"><i class="fa fa-fw fa-user"></i>关于</a>
-
-  </li>
-        <li class="menu-item menu-item-tags">
-
-    <a href="/tags/" rel="section"><i class="fa fa-fw fa-tags"></i>标签</a>
-
-  </li>
-        <li class="menu-item menu-item-categories">
-
-    <a href="/categories/" rel="section"><i class="fa fa-fw fa-th"></i>分类</a>
-
-  </li>
-        <li class="menu-item menu-item-archives">
-
-    <a href="/archives/" rel="section"><i class="fa fa-fw fa-archive"></i>归档</a>
-
-  </li>
-        <li class="menu-item menu-item-photos">
-
-    <a href="/photos/" rel="section"><i class="fa fa-fw fa-image"></i>相册</a>
-
-  </li>
-        <li class="menu-item menu-item-sitemap">
-
-    <a href="/sitemap.xml" rel="section"><i class="fa fa-fw fa-sitemap"></i>站点地图</a>
-
-  </li>
-      <li class="menu-item menu-item-search">
-        <a role="button" class="popup-trigger"><i class="fa fa-search fa-fw"></i>搜索
-        </a>
-      </li>
-  </ul>
-
 </nav>
-  <div class="site-search">
-    <div class="popup search-popup">
-    <div class="search-header">
-  <span class="search-icon">
-    <i class="fa fa-search"></i>
-  </span>
-  <div class="search-input-container">
-    <input autocomplete="off" autocorrect="off" autocapitalize="off"
-           placeholder="Suche..." spellcheck="false"
-           type="search" class="search-input">
-  </div>
-  <span class="popup-btn-close">
-    <i class="fa fa-times-circle"></i>
-  </span>
-</div>
-<div id="search-result"></div>
 
-</div>
-<div class="search-pop-overlay"></div>
+    <div class="banner" id="banner" parallax=true
+         style="background: url('/img/default.png') no-repeat center center;
+           background-size: cover;">
+      <div class="full-bg-img">
+        <div class="mask flex-center" style="background-color: rgba(0, 0, 0, 0.3)">
+          <div class="page-header text-center fade-in-up">
+            <span class="h2" id="subtitle" title="Next -23- 添加相册系列 -3- 获取图像信息、保存为json文件并上传图像">
+              
+            </span>
 
-  </div>
-</div>
-    </header>
-
-    
-  <div class="reading-progress-bar"></div>
-
-
-    <main class="main">
-      <div class="main-inner">
-        <div class="content-wrap">
-          
-
-          <div class="content">
             
+              <div class="mt-3">
+  
+  
+    <span class="post-meta">
+      <i class="iconfont icon-date-fill" aria-hidden="true"></i>
+      <time datetime="2020-04-22 00:26" pubdate>
+        2020年4月22日 凌晨
+      </time>
+    </span>
+  
+</div>
 
-  <div class="posts-expand">
+<div class="mt-1">
+  
+    
+    <span class="post-meta mr-2">
+      <i class="iconfont icon-chart"></i>
+      3k 字
+    </span>
+  
+
+  
+    
+    <span class="post-meta mr-2">
+      <i class="iconfont icon-clock-fill"></i>
       
+      
+      54
+       分钟
+    </span>
+  
+
   
   
-  <article itemscope itemtype="http://schema.org/Article" class="post-block " lang="zh-Hans">
-    <link itemprop="mainEntityOfPage" href="https://www.zywvvd.com/2020/04/22/next/23_get_image_info/get-image-info/">
+</div>
 
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.png">
-      <meta itemprop="name" content="Yiwei Zhang">
-      <meta itemprop="description" content="Stay hungury ! Stay foolish ！">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="又见苍岚">
-    </span>
-      <header class="post-header">
-        <h1 class="post-title" itemprop="name headline">
-          Next -23- 添加相册系列 -3- 获取图像信息、保存为json文件并上传图像
-        </h1>
-
-        <div class="post-meta">
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="fa fa-calendar-o"></i>
-              </span>
-              <span class="post-meta-item-text">发表于</span>
-
-              <time title="Erstellt: 2020-04-22 00:26:22" itemprop="dateCreated datePublished" datetime="2020-04-22T00:26:22+08:00">2020-04-22</time>
-            </span>
-              <span class="post-meta-item">
-                <span class="post-meta-item-icon">
-                  <i class="fa fa-calendar-check-o"></i>
-                </span>
-                <span class="post-meta-item-text">编辑于</span>
-                <time title="Geändert am: 2020-07-07 23:43:15" itemprop="dateModified" datetime="2020-07-07T23:43:15+08:00">2020-07-07</time>
-              </span>
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="fa fa-folder-o"></i>
-              </span>
-              <span class="post-meta-item-text">类别</span>
-                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-                  <a href="/categories/Next/" itemprop="url" rel="index"><span itemprop="name">Next</span></a>
-                </span>
-            </span>
+            
+          </div>
 
           
-            <span id="/2020/04/22/next/23_get_image_info/get-image-info/" class="post-meta-item leancloud_visitors" data-flag-title="Next -23- 添加相册系列 -3- 获取图像信息、保存为json文件并上传图像" title="阅读次数">
-              <span class="post-meta-item-icon">
-                <i class="fa fa-eye"></i>
-              </span>
-              <span class="post-meta-item-text">阅读次数: </span>
-              <span class="leancloud-visitors-count"></span>
-            </span>
-            <span class="post-meta-item" title="阅读次数" id="busuanzi_container_page_pv" style="display: none;">
-              <span class="post-meta-item-icon">
-                <i class="fa fa-eye"></i>
-              </span>
-              <span class="post-meta-item-text">阅读次数: </span>
-              <span id="busuanzi_value_page_pv"></span>
-            </span>
-  
-  <span class="post-meta-item">
-    
-      <span class="post-meta-item-icon">
-        <i class="fa fa-comment-o"></i>
-      </span>
-      <span class="post-meta-item-text">评论次数: </span>
-    
-    <a title="valine" href="/2020/04/22/next/23_get_image_info/get-image-info/#valine-comments" itemprop="discussionUrl">
-      <span class="post-comments-count valine-comment-count" data-xid="/2020/04/22/next/23_get_image_info/get-image-info/" itemprop="commentCount"></span>
-    </a>
-  </span>
-  
-  <br>
-            <span class="post-meta-item" title="本文字数">
-              <span class="post-meta-item-icon">
-                <i class="fa fa-file-word-o"></i>
-              </span>
-                <span class="post-meta-item-text">本文字数: </span>
-              <span>19k</span>
-            </span>
-            <span class="post-meta-item" title="阅读时长">
-              <span class="post-meta-item-icon">
-                <i class="fa fa-clock-o"></i>
-              </span>
-                <span class="post-meta-item-text">阅读时长 &asymp;</span>
-              <span>17 minuten.</span>
-            </span>
-
         </div>
-      </header>
+      </div>
+    </div>
+  </header>
 
+  <main>
     
-    
-    
-    <div class="post-body" itemprop="articleBody">
-
       
-        <blockquote>
+
+<div class="container-fluid nopadding-x">
+  <div class="row nomargin-x">
+    <div class="d-none d-lg-block col-lg-2"></div>
+    <div class="col-lg-8 nopadding-x-md">
+      <div class="container nopadding-x-md" id="board-ctn">
+        <div class="py-5" id="board">
+          <article class="post-content mx-auto">
+            <!-- SEO header -->
+            <h1 style="display: none">Next -23- 添加相册系列 -3- 获取图像信息、保存为json文件并上传图像</h1>
+            
+            <div class="markdown-body">
+              <blockquote>
 <p>相册需要在本地建立文件夹，为了维护相册，需要自动生成对应图像的json文件，并自动压缩上传，本文分享我的python程序，提供一种解决方案供大家使用参考。</p>
 </blockquote>
 <span id="more"></span>
@@ -333,22 +255,22 @@
 <h2 id="工程代码"><a href="#工程代码" class="headerlink" title="工程代码"></a>工程代码</h2><blockquote>
 <p>配置文件</p>
 </blockquote>
-<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">import</span> platform</span><br><span class="line"></span><br><span class="line"></span><br><span class="line"><span class="class"><span class="keyword">class</span> <span class="title">Parameters</span>:</span></span><br><span class="line">    </span><br><span class="line">    Image_Root_Path = <span class="string">r&#x27;/media/vvd/新加卷/pic&#x27;</span>                                   <span class="comment"># root of source raw images</span></span><br><span class="line">    Hexo_Root_Path =<span class="string">r&#x27;/home/vvd/VVD_Work/Hexo/VVD_Hexo&#x27;</span>                         <span class="comment"># root of Hexo dir  </span></span><br><span class="line">    Hexo_Sub_Dir_to_Photos = <span class="string">r&#x27;source/photos&#x27;</span>                                   <span class="comment"># my source dir for album</span></span><br><span class="line">    Uploading_Temp_Image_Path = <span class="string">r&#x27;/home/vvd/VVD_Work/Hexo/Album_Temp&#x27;</span>           <span class="comment"># root of temp image dir</span></span><br><span class="line">    Album_Ddescription_File_Name = <span class="string">&#x27;readme.json&#x27;</span>                                <span class="comment"># name of json file in each image dir</span></span><br><span class="line">    Log_File_Name = <span class="string">&#x27;Album_Log.log&#x27;</span>                                             <span class="comment"># name of log file</span></span><br><span class="line">    Album_Total_Json = <span class="string">&#x27;album.json&#x27;</span>                                             <span class="comment"># json info of album</span></span><br><span class="line">    Album_Md_File_Name = <span class="string">&#x27;index.md&#x27;</span>                                             <span class="comment"># name of markdown file of hexo </span></span><br><span class="line">    Qshell_Config_File_Name = <span class="string">&#x27;upload.conf&#x27;</span>                                     <span class="comment"># qiniu qshell config file name </span></span><br><span class="line">    </span><br><span class="line">    Logging_Object = <span class="literal">None</span>                                                       <span class="comment"># object of logging class</span></span><br><span class="line">    Image_Info_Get_Object = <span class="literal">None</span>                                                <span class="comment"># instance of PhotoExifInfo</span></span><br><span class="line">    </span><br><span class="line">    Image_Extension_List =[<span class="string">&#x27;jpg&#x27;</span>,<span class="string">&#x27;png&#x27;</span>,<span class="string">&#x27;jpeg&#x27;</span>,<span class="string">&#x27;bmp&#x27;</span>]                            <span class="comment"># list of common image extensions </span></span><br><span class="line">    Image_Resize_Width = <span class="number">2000</span>                                                   <span class="comment"># image width after resize</span></span><br><span class="line">    Whether_Overwrite_Old_Temp_File = <span class="literal">False</span>                                     <span class="comment"># whether overwrite old file while the program run again</span></span><br><span class="line">    Image_Url_Prefix =<span class="string">r&#x27;https://photos.zywvvd.com/vvd_hexo/&#x27;</span>                    <span class="comment"># prefix of image url</span></span><br><span class="line">    Force_Upload = <span class="literal">False</span>                                                        <span class="comment"># upload images no matter what happens</span></span><br><span class="line"></span><br><span class="line">    Current_System = platform.system()                                          <span class="comment"># current operating system</span></span><br><span class="line">    <span class="keyword">if</span> Current_System == <span class="string">&#x27;Linux&#x27;</span>:</span><br><span class="line">        Split_Char =<span class="string">&#x27;/&#x27;</span>                                                         <span class="comment"># split char of current operating system</span></span><br><span class="line">    <span class="keyword">elif</span> Current_System == <span class="string">&#x27;Windows&#x27;</span>:</span><br><span class="line">        Split_Char =<span class="string">&#x27;\\&#x27;</span></span><br></pre></td></tr></table></figure>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br></pre></td><td class="code"><pre><code class="hljs python"><span class="hljs-keyword">import</span> platform<br><br><br><span class="hljs-class"><span class="hljs-keyword">class</span> <span class="hljs-title">Parameters</span>:</span><br>    <br>    Image_Root_Path = <span class="hljs-string">r&#x27;/media/vvd/新加卷/pic&#x27;</span>                                   <span class="hljs-comment"># root of source raw images</span><br>    Hexo_Root_Path =<span class="hljs-string">r&#x27;/home/vvd/VVD_Work/Hexo/VVD_Hexo&#x27;</span>                         <span class="hljs-comment"># root of Hexo dir  </span><br>    Hexo_Sub_Dir_to_Photos = <span class="hljs-string">r&#x27;source/photos&#x27;</span>                                   <span class="hljs-comment"># my source dir for album</span><br>    Uploading_Temp_Image_Path = <span class="hljs-string">r&#x27;/home/vvd/VVD_Work/Hexo/Album_Temp&#x27;</span>           <span class="hljs-comment"># root of temp image dir</span><br>    Album_Ddescription_File_Name = <span class="hljs-string">&#x27;readme.json&#x27;</span>                                <span class="hljs-comment"># name of json file in each image dir</span><br>    Log_File_Name = <span class="hljs-string">&#x27;Album_Log.log&#x27;</span>                                             <span class="hljs-comment"># name of log file</span><br>    Album_Total_Json = <span class="hljs-string">&#x27;album.json&#x27;</span>                                             <span class="hljs-comment"># json info of album</span><br>    Album_Md_File_Name = <span class="hljs-string">&#x27;index.md&#x27;</span>                                             <span class="hljs-comment"># name of markdown file of hexo </span><br>    Qshell_Config_File_Name = <span class="hljs-string">&#x27;upload.conf&#x27;</span>                                     <span class="hljs-comment"># qiniu qshell config file name </span><br>    <br>    Logging_Object = <span class="hljs-literal">None</span>                                                       <span class="hljs-comment"># object of logging class</span><br>    Image_Info_Get_Object = <span class="hljs-literal">None</span>                                                <span class="hljs-comment"># instance of PhotoExifInfo</span><br>    <br>    Image_Extension_List =[<span class="hljs-string">&#x27;jpg&#x27;</span>,<span class="hljs-string">&#x27;png&#x27;</span>,<span class="hljs-string">&#x27;jpeg&#x27;</span>,<span class="hljs-string">&#x27;bmp&#x27;</span>]                            <span class="hljs-comment"># list of common image extensions </span><br>    Image_Resize_Width = <span class="hljs-number">2000</span>                                                   <span class="hljs-comment"># image width after resize</span><br>    Whether_Overwrite_Old_Temp_File = <span class="hljs-literal">False</span>                                     <span class="hljs-comment"># whether overwrite old file while the program run again</span><br>    Image_Url_Prefix =<span class="hljs-string">r&#x27;https://photos.zywvvd.com/vvd_hexo/&#x27;</span>                    <span class="hljs-comment"># prefix of image url</span><br>    Force_Upload = <span class="hljs-literal">False</span>                                                        <span class="hljs-comment"># upload images no matter what happens</span><br><br>    Current_System = platform.system()                                          <span class="hljs-comment"># current operating system</span><br>    <span class="hljs-keyword">if</span> Current_System == <span class="hljs-string">&#x27;Linux&#x27;</span>:<br>        Split_Char =<span class="hljs-string">&#x27;/&#x27;</span>                                                         <span class="hljs-comment"># split char of current operating system</span><br>    <span class="hljs-keyword">elif</span> Current_System == <span class="hljs-string">&#x27;Windows&#x27;</span>:<br>        Split_Char =<span class="hljs-string">&#x27;\\&#x27;</span><br></code></pre></td></tr></table></figure>
 
 <blockquote>
 <p>图像信息提取</p>
 </blockquote>
-<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br><span class="line">84</span><br><span class="line">85</span><br><span class="line">86</span><br><span class="line">87</span><br><span class="line">88</span><br><span class="line">89</span><br><span class="line">90</span><br><span class="line">91</span><br><span class="line">92</span><br><span class="line">93</span><br><span class="line">94</span><br><span class="line">95</span><br><span class="line">96</span><br><span class="line">97</span><br><span class="line">98</span><br><span class="line">99</span><br><span class="line">100</span><br><span class="line">101</span><br><span class="line">102</span><br><span class="line">103</span><br><span class="line">104</span><br><span class="line">105</span><br><span class="line">106</span><br><span class="line">107</span><br><span class="line">108</span><br><span class="line">109</span><br><span class="line">110</span><br><span class="line">111</span><br><span class="line">112</span><br><span class="line">113</span><br><span class="line">114</span><br><span class="line">115</span><br><span class="line">116</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># getinfo.py</span></span><br><span class="line"></span><br><span class="line"><span class="class"><span class="keyword">class</span> <span class="title">PhotoExifInfo</span>():</span></span><br><span class="line">    </span><br><span class="line">    <span class="function"><span class="keyword">def</span> <span class="title">__init__</span>(<span class="params">self</span>):</span></span><br><span class="line">        </span><br><span class="line">        <span class="keyword">if</span> os.path.exists(<span class="string">&#x27;vvdkey.py&#x27;</span>):</span><br><span class="line">            <span class="keyword">from</span> vvdkey <span class="keyword">import</span> baidu_key <span class="comment"># 使用你自己的百度key</span></span><br><span class="line">            self.baidu_map_ak = baidu_key</span><br><span class="line">        <span class="keyword">else</span>:</span><br><span class="line">            <span class="comment">## set your baidu map key here</span></span><br><span class="line">            self.baidu_map_ak = <span class="string">&quot;&quot;</span></span><br><span class="line">            </span><br><span class="line">        self.interested_keys = &#123;</span><br><span class="line">            <span class="comment"># camera Model</span></span><br><span class="line">            <span class="string">&#x27;Image Model&#x27;</span>:<span class="string">&#x27;Image_Model&#x27;</span>,<span class="comment">#&#x27;相机型号&#x27;,</span></span><br><span class="line">            <span class="comment"># Aperture 1/value</span></span><br><span class="line">            <span class="string">&#x27;EXIF FNumber&#x27;</span>:<span class="string">&#x27;EXIF_FNumber&#x27;</span>,<span class="comment">#&#x27;光圈&#x27;,</span></span><br><span class="line">            <span class="comment"># Focal Length</span></span><br><span class="line">            <span class="string">&#x27;EXIF FocalLength&#x27;</span>:<span class="string">&#x27;EXIF_FocalLength&#x27;</span>,<span class="comment">#&#x27;焦距&#x27;,</span></span><br><span class="line">            <span class="comment"># Exposure Mode</span></span><br><span class="line">            <span class="string">&#x27;EXIF ExposureMode&#x27;</span>:<span class="string">&#x27;EXIF_ExposureMode&#x27;</span>,<span class="comment">#&#x27;曝光模式&#x27;,</span></span><br><span class="line">            <span class="comment"># ExposureTime in seconds</span></span><br><span class="line">            <span class="string">&#x27;EXIF ExposureTime&#x27;</span>:<span class="string">&#x27;EXIF_ExposureTime&#x27;</span>,<span class="comment">#&#x27;曝光时间&#x27;,</span></span><br><span class="line">            <span class="comment"># ISO</span></span><br><span class="line">            <span class="string">&#x27;EXIF ISOSpeedRatings&#x27;</span>:<span class="string">&#x27;EXIF_ISOSpeedRatings&#x27;</span>,<span class="comment">#&#x27;ISO&#x27;,</span></span><br><span class="line">            <span class="comment"># date of photo</span></span><br><span class="line">            <span class="string">&#x27;Image DateTime&#x27;</span>:<span class="string">&#x27;Image_DateTime&#x27;</span><span class="comment">#&#x27;拍摄时间&#x27;,</span></span><br><span class="line">        &#125;</span><br><span class="line">        </span><br><span class="line">        </span><br><span class="line">    <span class="function"><span class="keyword">def</span> <span class="title">get_image_info</span>(<span class="params">self,image_path</span>):</span></span><br><span class="line">        <span class="string">&quot;&quot;&quot;</span></span><br><span class="line"><span class="string">        获取照片信息</span></span><br><span class="line"><span class="string">        &quot;&quot;&quot;</span></span><br><span class="line">        image_info_dict=&#123;&#125;</span><br><span class="line">        </span><br><span class="line">        <span class="keyword">with</span> <span class="built_in">open</span>(image_path, <span class="string">&#x27;rb&#x27;</span>) <span class="keyword">as</span> fp:</span><br><span class="line">            tags = exifread.process_file(fp)</span><br><span class="line">        </span><br><span class="line">        <span class="keyword">for</span> j <span class="keyword">in</span> tags:</span><br><span class="line">            <span class="built_in">print</span>(<span class="string">f&quot;<span class="subst">&#123;j&#125;</span> :<span class="subst">&#123;tags[j]&#125;</span>&quot;</span>)</span><br><span class="line">        </span><br><span class="line">        <span class="keyword">for</span> item <span class="keyword">in</span> <span class="built_in">tuple</span>(self.interested_keys):</span><br><span class="line">            </span><br><span class="line">            <span class="keyword">try</span>:</span><br><span class="line">                info = tags[item].printable</span><br><span class="line">                <span class="keyword">if</span> item == <span class="string">&#x27;EXIF FNumber&#x27;</span>:</span><br><span class="line">                    <span class="keyword">if</span> <span class="string">&#x27;/&#x27;</span> <span class="keyword">in</span> info:</span><br><span class="line">                        A,B = info.split(<span class="string">&#x27;/&#x27;</span>)</span><br><span class="line">                        info = <span class="string">&#x27;f&#x27;</span>+<span class="built_in">format</span>(<span class="built_in">int</span>(A)/<span class="built_in">int</span>(B),<span class="string">&#x27;.1f&#x27;</span>)</span><br><span class="line">                    <span class="keyword">else</span>:</span><br><span class="line">                        info = <span class="string">&#x27;f&#x27;</span>+info</span><br><span class="line">                <span class="keyword">if</span> item == <span class="string">&#x27;EXIF FocalLength&#x27;</span>:</span><br><span class="line">                    info = info+<span class="string">&#x27;mm&#x27;</span></span><br><span class="line">                <span class="keyword">if</span> item == <span class="string">&#x27;EXIF ExposureTime&#x27;</span>:</span><br><span class="line">                    info = info+<span class="string">&#x27;s&#x27;</span></span><br><span class="line">                image_info_dict[self.interested_keys[item]] = info</span><br><span class="line">                </span><br><span class="line">            <span class="keyword">except</span>:</span><br><span class="line">                <span class="built_in">print</span>(<span class="string">f&#x27;<span class="subst">&#123;image_path&#125;</span> has no attribute of <span class="subst">&#123;item&#125;</span>&#x27;</span>)                </span><br><span class="line">                <span class="keyword">continue</span></span><br><span class="line">            </span><br><span class="line">        <span class="keyword">try</span>:</span><br><span class="line">            localcation = self._get_city_info(tags)</span><br><span class="line">            <span class="keyword">if</span> localcation != <span class="string">&quot;&quot;</span>:</span><br><span class="line">                image_info_dict[<span class="string">&#x27;positon&#x27;</span>] = localcation</span><br><span class="line">                </span><br><span class="line">        <span class="keyword">except</span>:</span><br><span class="line">            <span class="built_in">print</span>(<span class="string">f&#x27;<span class="subst">&#123;image_path&#125;</span> has no GPS info&#x27;</span>)    </span><br><span class="line">            </span><br><span class="line">        <span class="keyword">return</span> image_info_dict</span><br><span class="line">       </span><br><span class="line">       </span><br><span class="line">    <span class="function"><span class="keyword">def</span> <span class="title">_get_lng_lat</span>(<span class="params">self, tags</span>):</span></span><br><span class="line">        <span class="string">&quot;&quot;&quot;</span></span><br><span class="line"><span class="string">        经纬度转换</span></span><br><span class="line"><span class="string">        &quot;&quot;&quot;</span></span><br><span class="line">        <span class="keyword">try</span>:</span><br><span class="line">            </span><br><span class="line">            <span class="comment"># 纬度</span></span><br><span class="line">            LatRef = tags[<span class="string">&quot;GPS GPSLatitudeRef&quot;</span>].printable</span><br><span class="line">            Lat = tags[<span class="string">&quot;GPS GPSLatitude&quot;</span>].printable[<span class="number">1</span>:-<span class="number">1</span>].replace(<span class="string">&quot; &quot;</span>, <span class="string">&quot;&quot;</span>).replace(<span class="string">&quot;/&quot;</span>, <span class="string">&quot;,&quot;</span>).split(<span class="string">&quot;,&quot;</span>)</span><br><span class="line">            Lat = <span class="built_in">float</span>(Lat[<span class="number">0</span>]) + <span class="built_in">float</span>(Lat[<span class="number">1</span>]) / <span class="number">60</span> + <span class="built_in">float</span>(Lat[<span class="number">2</span>]) / <span class="number">3600</span></span><br><span class="line">            <span class="keyword">if</span> LatRef != <span class="string">&quot;N&quot;</span>:</span><br><span class="line">                Lat = Lat * (-<span class="number">1</span>)</span><br><span class="line">                </span><br><span class="line">            <span class="comment"># 经度</span></span><br><span class="line">            LonRef = tags[<span class="string">&quot;GPS GPSLongitudeRef&quot;</span>].printable</span><br><span class="line">            Lon = tags[<span class="string">&quot;GPS GPSLongitude&quot;</span>].printable[<span class="number">1</span>:-<span class="number">1</span>].replace(<span class="string">&quot; &quot;</span>, <span class="string">&quot;&quot;</span>).replace(<span class="string">&quot;/&quot;</span>, <span class="string">&quot;,&quot;</span>).split(<span class="string">&quot;,&quot;</span>)</span><br><span class="line">            Lon = <span class="built_in">float</span>(Lon[<span class="number">0</span>]) + <span class="built_in">float</span>(Lon[<span class="number">1</span>]) / <span class="number">60</span> + <span class="built_in">float</span>(Lon[<span class="number">2</span>]) / <span class="number">3600</span></span><br><span class="line">            <span class="keyword">if</span> LonRef != <span class="string">&quot;E&quot;</span>:</span><br><span class="line">                Lon = Lon * (-<span class="number">1</span>)</span><br><span class="line">            <span class="keyword">return</span> Lat,Lon</span><br><span class="line">        <span class="keyword">except</span>:</span><br><span class="line">            <span class="built_in">print</span>(<span class="string">&#x27;Unable to get&#x27;</span>)</span><br><span class="line"></span><br><span class="line"></span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">def</span> <span class="title">_get_city_info</span>(<span class="params">self, tags</span>):</span></span><br><span class="line">        </span><br><span class="line">        result = self._get_lng_lat(tags)</span><br><span class="line">        <span class="keyword">if</span> result:</span><br><span class="line">            Lat, Lon = result</span><br><span class="line">            url = <span class="string">&quot;https://api.map.baidu.com/reverse_geocoding/v3/?ak=&quot;</span>+self.baidu_map_ak+<span class="string">&quot;&amp;output=json&amp;coordtype=wgs84ll&amp;location=&quot;</span> + <span class="built_in">str</span>(Lat) + <span class="string">&#x27;,&#x27;</span> + <span class="built_in">str</span>(Lon)</span><br><span class="line">            <span class="comment">#url = &quot;https://api.map.baidu.com/reverse_geocoding/v3/?ak=&quot;+self.baidu_map_ak+&quot;&amp;output=json&amp;coordtype=wgs84ll&amp;location=31.225696563611,121.49884033194&quot;</span></span><br><span class="line">            response = requests.get(url).json()</span><br><span class="line">            status = response[<span class="string">&#x27;status&#x27;</span>]</span><br><span class="line">            <span class="keyword">if</span> status == <span class="number">0</span>:</span><br><span class="line">                address = response[<span class="string">&#x27;result&#x27;</span>][<span class="string">&#x27;formatted_address&#x27;</span>]</span><br><span class="line">                <span class="keyword">if</span> address != <span class="string">&quot;&quot;</span>:</span><br><span class="line">                    <span class="keyword">return</span>(address)</span><br><span class="line">            <span class="keyword">else</span>:</span><br><span class="line">                <span class="built_in">print</span>(<span class="string">&#x27;baidu_map error&#x27;</span>)</span><br><span class="line">        <span class="keyword">return</span> <span class="string">&quot;&quot;</span></span><br><span class="line"></span><br></pre></td></tr></table></figure>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br><span class="line">84</span><br><span class="line">85</span><br><span class="line">86</span><br><span class="line">87</span><br><span class="line">88</span><br><span class="line">89</span><br><span class="line">90</span><br><span class="line">91</span><br><span class="line">92</span><br><span class="line">93</span><br><span class="line">94</span><br><span class="line">95</span><br><span class="line">96</span><br><span class="line">97</span><br><span class="line">98</span><br><span class="line">99</span><br><span class="line">100</span><br><span class="line">101</span><br><span class="line">102</span><br><span class="line">103</span><br><span class="line">104</span><br><span class="line">105</span><br><span class="line">106</span><br><span class="line">107</span><br><span class="line">108</span><br><span class="line">109</span><br><span class="line">110</span><br><span class="line">111</span><br><span class="line">112</span><br><span class="line">113</span><br><span class="line">114</span><br><span class="line">115</span><br><span class="line">116</span><br></pre></td><td class="code"><pre><code class="hljs python"><span class="hljs-comment"># getinfo.py</span><br><br><span class="hljs-class"><span class="hljs-keyword">class</span> <span class="hljs-title">PhotoExifInfo</span>():</span><br>    <br>    <span class="hljs-function"><span class="hljs-keyword">def</span> <span class="hljs-title">__init__</span>(<span class="hljs-params">self</span>):</span><br>        <br>        <span class="hljs-keyword">if</span> os.path.exists(<span class="hljs-string">&#x27;vvdkey.py&#x27;</span>):<br>            <span class="hljs-keyword">from</span> vvdkey <span class="hljs-keyword">import</span> baidu_key <span class="hljs-comment"># 使用你自己的百度key</span><br>            self.baidu_map_ak = baidu_key<br>        <span class="hljs-keyword">else</span>:<br>            <span class="hljs-comment">## set your baidu map key here</span><br>            self.baidu_map_ak = <span class="hljs-string">&quot;&quot;</span><br>            <br>        self.interested_keys = &#123;<br>            <span class="hljs-comment"># camera Model</span><br>            <span class="hljs-string">&#x27;Image Model&#x27;</span>:<span class="hljs-string">&#x27;Image_Model&#x27;</span>,<span class="hljs-comment">#&#x27;相机型号&#x27;,</span><br>            <span class="hljs-comment"># Aperture 1/value</span><br>            <span class="hljs-string">&#x27;EXIF FNumber&#x27;</span>:<span class="hljs-string">&#x27;EXIF_FNumber&#x27;</span>,<span class="hljs-comment">#&#x27;光圈&#x27;,</span><br>            <span class="hljs-comment"># Focal Length</span><br>            <span class="hljs-string">&#x27;EXIF FocalLength&#x27;</span>:<span class="hljs-string">&#x27;EXIF_FocalLength&#x27;</span>,<span class="hljs-comment">#&#x27;焦距&#x27;,</span><br>            <span class="hljs-comment"># Exposure Mode</span><br>            <span class="hljs-string">&#x27;EXIF ExposureMode&#x27;</span>:<span class="hljs-string">&#x27;EXIF_ExposureMode&#x27;</span>,<span class="hljs-comment">#&#x27;曝光模式&#x27;,</span><br>            <span class="hljs-comment"># ExposureTime in seconds</span><br>            <span class="hljs-string">&#x27;EXIF ExposureTime&#x27;</span>:<span class="hljs-string">&#x27;EXIF_ExposureTime&#x27;</span>,<span class="hljs-comment">#&#x27;曝光时间&#x27;,</span><br>            <span class="hljs-comment"># ISO</span><br>            <span class="hljs-string">&#x27;EXIF ISOSpeedRatings&#x27;</span>:<span class="hljs-string">&#x27;EXIF_ISOSpeedRatings&#x27;</span>,<span class="hljs-comment">#&#x27;ISO&#x27;,</span><br>            <span class="hljs-comment"># date of photo</span><br>            <span class="hljs-string">&#x27;Image DateTime&#x27;</span>:<span class="hljs-string">&#x27;Image_DateTime&#x27;</span><span class="hljs-comment">#&#x27;拍摄时间&#x27;,</span><br>        &#125;<br>        <br>        <br>    <span class="hljs-function"><span class="hljs-keyword">def</span> <span class="hljs-title">get_image_info</span>(<span class="hljs-params">self,image_path</span>):</span><br>        <span class="hljs-string">&quot;&quot;&quot;</span><br><span class="hljs-string">        获取照片信息</span><br><span class="hljs-string">        &quot;&quot;&quot;</span><br>        image_info_dict=&#123;&#125;<br>        <br>        <span class="hljs-keyword">with</span> <span class="hljs-built_in">open</span>(image_path, <span class="hljs-string">&#x27;rb&#x27;</span>) <span class="hljs-keyword">as</span> fp:<br>            tags = exifread.process_file(fp)<br>        <br>        <span class="hljs-keyword">for</span> j <span class="hljs-keyword">in</span> tags:<br>            <span class="hljs-built_in">print</span>(<span class="hljs-string">f&quot;<span class="hljs-subst">&#123;j&#125;</span> :<span class="hljs-subst">&#123;tags[j]&#125;</span>&quot;</span>)<br>        <br>        <span class="hljs-keyword">for</span> item <span class="hljs-keyword">in</span> <span class="hljs-built_in">tuple</span>(self.interested_keys):<br>            <br>            <span class="hljs-keyword">try</span>:<br>                info = tags[item].printable<br>                <span class="hljs-keyword">if</span> item == <span class="hljs-string">&#x27;EXIF FNumber&#x27;</span>:<br>                    <span class="hljs-keyword">if</span> <span class="hljs-string">&#x27;/&#x27;</span> <span class="hljs-keyword">in</span> info:<br>                        A,B = info.split(<span class="hljs-string">&#x27;/&#x27;</span>)<br>                        info = <span class="hljs-string">&#x27;f&#x27;</span>+<span class="hljs-built_in">format</span>(<span class="hljs-built_in">int</span>(A)/<span class="hljs-built_in">int</span>(B),<span class="hljs-string">&#x27;.1f&#x27;</span>)<br>                    <span class="hljs-keyword">else</span>:<br>                        info = <span class="hljs-string">&#x27;f&#x27;</span>+info<br>                <span class="hljs-keyword">if</span> item == <span class="hljs-string">&#x27;EXIF FocalLength&#x27;</span>:<br>                    info = info+<span class="hljs-string">&#x27;mm&#x27;</span><br>                <span class="hljs-keyword">if</span> item == <span class="hljs-string">&#x27;EXIF ExposureTime&#x27;</span>:<br>                    info = info+<span class="hljs-string">&#x27;s&#x27;</span><br>                image_info_dict[self.interested_keys[item]] = info<br>                <br>            <span class="hljs-keyword">except</span>:<br>                <span class="hljs-built_in">print</span>(<span class="hljs-string">f&#x27;<span class="hljs-subst">&#123;image_path&#125;</span> has no attribute of <span class="hljs-subst">&#123;item&#125;</span>&#x27;</span>)                <br>                <span class="hljs-keyword">continue</span><br>            <br>        <span class="hljs-keyword">try</span>:<br>            localcation = self._get_city_info(tags)<br>            <span class="hljs-keyword">if</span> localcation != <span class="hljs-string">&quot;&quot;</span>:<br>                image_info_dict[<span class="hljs-string">&#x27;positon&#x27;</span>] = localcation<br>                <br>        <span class="hljs-keyword">except</span>:<br>            <span class="hljs-built_in">print</span>(<span class="hljs-string">f&#x27;<span class="hljs-subst">&#123;image_path&#125;</span> has no GPS info&#x27;</span>)    <br>            <br>        <span class="hljs-keyword">return</span> image_info_dict<br>       <br>       <br>    <span class="hljs-function"><span class="hljs-keyword">def</span> <span class="hljs-title">_get_lng_lat</span>(<span class="hljs-params">self, tags</span>):</span><br>        <span class="hljs-string">&quot;&quot;&quot;</span><br><span class="hljs-string">        经纬度转换</span><br><span class="hljs-string">        &quot;&quot;&quot;</span><br>        <span class="hljs-keyword">try</span>:<br>            <br>            <span class="hljs-comment"># 纬度</span><br>            LatRef = tags[<span class="hljs-string">&quot;GPS GPSLatitudeRef&quot;</span>].printable<br>            Lat = tags[<span class="hljs-string">&quot;GPS GPSLatitude&quot;</span>].printable[<span class="hljs-number">1</span>:-<span class="hljs-number">1</span>].replace(<span class="hljs-string">&quot; &quot;</span>, <span class="hljs-string">&quot;&quot;</span>).replace(<span class="hljs-string">&quot;/&quot;</span>, <span class="hljs-string">&quot;,&quot;</span>).split(<span class="hljs-string">&quot;,&quot;</span>)<br>            Lat = <span class="hljs-built_in">float</span>(Lat[<span class="hljs-number">0</span>]) + <span class="hljs-built_in">float</span>(Lat[<span class="hljs-number">1</span>]) / <span class="hljs-number">60</span> + <span class="hljs-built_in">float</span>(Lat[<span class="hljs-number">2</span>]) / <span class="hljs-number">3600</span><br>            <span class="hljs-keyword">if</span> LatRef != <span class="hljs-string">&quot;N&quot;</span>:<br>                Lat = Lat * (-<span class="hljs-number">1</span>)<br>                <br>            <span class="hljs-comment"># 经度</span><br>            LonRef = tags[<span class="hljs-string">&quot;GPS GPSLongitudeRef&quot;</span>].printable<br>            Lon = tags[<span class="hljs-string">&quot;GPS GPSLongitude&quot;</span>].printable[<span class="hljs-number">1</span>:-<span class="hljs-number">1</span>].replace(<span class="hljs-string">&quot; &quot;</span>, <span class="hljs-string">&quot;&quot;</span>).replace(<span class="hljs-string">&quot;/&quot;</span>, <span class="hljs-string">&quot;,&quot;</span>).split(<span class="hljs-string">&quot;,&quot;</span>)<br>            Lon = <span class="hljs-built_in">float</span>(Lon[<span class="hljs-number">0</span>]) + <span class="hljs-built_in">float</span>(Lon[<span class="hljs-number">1</span>]) / <span class="hljs-number">60</span> + <span class="hljs-built_in">float</span>(Lon[<span class="hljs-number">2</span>]) / <span class="hljs-number">3600</span><br>            <span class="hljs-keyword">if</span> LonRef != <span class="hljs-string">&quot;E&quot;</span>:<br>                Lon = Lon * (-<span class="hljs-number">1</span>)<br>            <span class="hljs-keyword">return</span> Lat,Lon<br>        <span class="hljs-keyword">except</span>:<br>            <span class="hljs-built_in">print</span>(<span class="hljs-string">&#x27;Unable to get&#x27;</span>)<br><br><br><br>    <span class="hljs-function"><span class="hljs-keyword">def</span> <span class="hljs-title">_get_city_info</span>(<span class="hljs-params">self, tags</span>):</span><br>        <br>        result = self._get_lng_lat(tags)<br>        <span class="hljs-keyword">if</span> result:<br>            Lat, Lon = result<br>            url = <span class="hljs-string">&quot;https://api.map.baidu.com/reverse_geocoding/v3/?ak=&quot;</span>+self.baidu_map_ak+<span class="hljs-string">&quot;&amp;output=json&amp;coordtype=wgs84ll&amp;location=&quot;</span> + <span class="hljs-built_in">str</span>(Lat) + <span class="hljs-string">&#x27;,&#x27;</span> + <span class="hljs-built_in">str</span>(Lon)<br>            <span class="hljs-comment">#url = &quot;https://api.map.baidu.com/reverse_geocoding/v3/?ak=&quot;+self.baidu_map_ak+&quot;&amp;output=json&amp;coordtype=wgs84ll&amp;location=31.225696563611,121.49884033194&quot;</span><br>            response = requests.get(url).json()<br>            status = response[<span class="hljs-string">&#x27;status&#x27;</span>]<br>            <span class="hljs-keyword">if</span> status == <span class="hljs-number">0</span>:<br>                address = response[<span class="hljs-string">&#x27;result&#x27;</span>][<span class="hljs-string">&#x27;formatted_address&#x27;</span>]<br>                <span class="hljs-keyword">if</span> address != <span class="hljs-string">&quot;&quot;</span>:<br>                    <span class="hljs-keyword">return</span>(address)<br>            <span class="hljs-keyword">else</span>:<br>                <span class="hljs-built_in">print</span>(<span class="hljs-string">&#x27;baidu_map error&#x27;</span>)<br>        <span class="hljs-keyword">return</span> <span class="hljs-string">&quot;&quot;</span><br><br></code></pre></td></tr></table></figure>
 
 <blockquote>
 <p>主要功能函数</p>
 </blockquote>
-<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br><span class="line">84</span><br><span class="line">85</span><br><span class="line">86</span><br><span class="line">87</span><br><span class="line">88</span><br><span class="line">89</span><br><span class="line">90</span><br><span class="line">91</span><br><span class="line">92</span><br><span class="line">93</span><br><span class="line">94</span><br><span class="line">95</span><br><span class="line">96</span><br><span class="line">97</span><br><span class="line">98</span><br><span class="line">99</span><br><span class="line">100</span><br><span class="line">101</span><br><span class="line">102</span><br><span class="line">103</span><br><span class="line">104</span><br><span class="line">105</span><br><span class="line">106</span><br><span class="line">107</span><br><span class="line">108</span><br><span class="line">109</span><br><span class="line">110</span><br><span class="line">111</span><br><span class="line">112</span><br><span class="line">113</span><br><span class="line">114</span><br><span class="line">115</span><br><span class="line">116</span><br><span class="line">117</span><br><span class="line">118</span><br><span class="line">119</span><br><span class="line">120</span><br><span class="line">121</span><br><span class="line">122</span><br><span class="line">123</span><br><span class="line">124</span><br><span class="line">125</span><br><span class="line">126</span><br><span class="line">127</span><br><span class="line">128</span><br><span class="line">129</span><br><span class="line">130</span><br><span class="line">131</span><br><span class="line">132</span><br><span class="line">133</span><br><span class="line">134</span><br><span class="line">135</span><br><span class="line">136</span><br><span class="line">137</span><br><span class="line">138</span><br><span class="line">139</span><br><span class="line">140</span><br><span class="line">141</span><br><span class="line">142</span><br><span class="line">143</span><br><span class="line">144</span><br><span class="line">145</span><br><span class="line">146</span><br><span class="line">147</span><br><span class="line">148</span><br><span class="line">149</span><br><span class="line">150</span><br><span class="line">151</span><br><span class="line">152</span><br><span class="line">153</span><br><span class="line">154</span><br><span class="line">155</span><br><span class="line">156</span><br><span class="line">157</span><br><span class="line">158</span><br><span class="line">159</span><br><span class="line">160</span><br><span class="line">161</span><br><span class="line">162</span><br><span class="line">163</span><br><span class="line">164</span><br><span class="line">165</span><br><span class="line">166</span><br><span class="line">167</span><br><span class="line">168</span><br><span class="line">169</span><br><span class="line">170</span><br><span class="line">171</span><br><span class="line">172</span><br><span class="line">173</span><br><span class="line">174</span><br><span class="line">175</span><br><span class="line">176</span><br><span class="line">177</span><br><span class="line">178</span><br><span class="line">179</span><br><span class="line">180</span><br><span class="line">181</span><br><span class="line">182</span><br><span class="line">183</span><br><span class="line">184</span><br><span class="line">185</span><br><span class="line">186</span><br><span class="line">187</span><br><span class="line">188</span><br><span class="line">189</span><br><span class="line">190</span><br><span class="line">191</span><br><span class="line">192</span><br><span class="line">193</span><br><span class="line">194</span><br><span class="line">195</span><br><span class="line">196</span><br><span class="line">197</span><br><span class="line">198</span><br><span class="line">199</span><br><span class="line">200</span><br><span class="line">201</span><br><span class="line">202</span><br><span class="line">203</span><br><span class="line">204</span><br><span class="line">205</span><br><span class="line">206</span><br><span class="line">207</span><br><span class="line">208</span><br><span class="line">209</span><br><span class="line">210</span><br><span class="line">211</span><br><span class="line">212</span><br><span class="line">213</span><br><span class="line">214</span><br><span class="line">215</span><br><span class="line">216</span><br><span class="line">217</span><br><span class="line">218</span><br><span class="line">219</span><br><span class="line">220</span><br><span class="line">221</span><br><span class="line">222</span><br><span class="line">223</span><br><span class="line">224</span><br><span class="line">225</span><br><span class="line">226</span><br><span class="line">227</span><br><span class="line">228</span><br><span class="line">229</span><br><span class="line">230</span><br><span class="line">231</span><br><span class="line">232</span><br><span class="line">233</span><br><span class="line">234</span><br><span class="line">235</span><br><span class="line">236</span><br><span class="line">237</span><br><span class="line">238</span><br><span class="line">239</span><br><span class="line">240</span><br><span class="line">241</span><br><span class="line">242</span><br><span class="line">243</span><br><span class="line">244</span><br><span class="line">245</span><br><span class="line">246</span><br><span class="line">247</span><br><span class="line">248</span><br><span class="line">249</span><br><span class="line">250</span><br><span class="line">251</span><br><span class="line">252</span><br><span class="line">253</span><br><span class="line">254</span><br><span class="line">255</span><br><span class="line">256</span><br><span class="line">257</span><br><span class="line">258</span><br><span class="line">259</span><br><span class="line">260</span><br><span class="line">261</span><br><span class="line">262</span><br><span class="line">263</span><br><span class="line">264</span><br><span class="line">265</span><br><span class="line">266</span><br><span class="line">267</span><br><span class="line">268</span><br><span class="line">269</span><br><span class="line">270</span><br><span class="line">271</span><br><span class="line">272</span><br><span class="line">273</span><br><span class="line">274</span><br><span class="line">275</span><br><span class="line">276</span><br><span class="line">277</span><br><span class="line">278</span><br><span class="line">279</span><br><span class="line">280</span><br><span class="line">281</span><br><span class="line">282</span><br><span class="line">283</span><br><span class="line">284</span><br><span class="line">285</span><br><span class="line">286</span><br><span class="line">287</span><br><span class="line">288</span><br><span class="line">289</span><br><span class="line">290</span><br><span class="line">291</span><br><span class="line">292</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">import</span> config</span><br><span class="line"><span class="keyword">import</span> json</span><br><span class="line"><span class="keyword">import</span> os </span><br><span class="line"><span class="keyword">import</span> cv2</span><br><span class="line"><span class="keyword">import</span> shutil</span><br><span class="line"><span class="keyword">import</span> logging</span><br><span class="line"><span class="keyword">import</span> time</span><br><span class="line"><span class="keyword">from</span> getinfo <span class="keyword">import</span> PhotoExifInfo</span><br><span class="line"></span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">def</span> <span class="title">log_init</span>():</span></span><br><span class="line">    <span class="string">&quot;&quot;&quot;</span></span><br><span class="line"><span class="string">    initialize logging </span></span><br><span class="line"><span class="string">    save the logging object in `config.Parameters.Logging_Object`</span></span><br><span class="line"><span class="string">    </span></span><br><span class="line"><span class="string">    after this operation,</span></span><br><span class="line"><span class="string">    we could save logs with sample orders such as `logging.debug(&#x27;test debug&#x27;)` `logging.info(&#x27;test info&#x27;)` </span></span><br><span class="line"><span class="string">    logging level : debug &lt; info &lt; warning &lt;error &lt; critica</span></span><br><span class="line"><span class="string">    &quot;&quot;&quot;</span></span><br><span class="line">    log_file_path = os.path.join(config.Parameters.Uploading_Temp_Image_Path, config.Parameters.Log_File_Name)</span><br><span class="line">    <span class="keyword">if</span> os.path.exists(log_file_path):</span><br><span class="line">        <span class="comment"># open log file as  mode of append</span></span><br><span class="line">        open_type = <span class="string">&#x27;a&#x27;</span></span><br><span class="line">    <span class="keyword">else</span>:</span><br><span class="line">        <span class="comment"># open log file as  mode of write</span></span><br><span class="line">        open_type = <span class="string">&#x27;w&#x27;</span></span><br><span class="line">        </span><br><span class="line">    logging.basicConfig(</span><br><span class="line">    </span><br><span class="line">        <span class="comment"># 日志级别,logging.DEBUG,logging.ERROR</span></span><br><span class="line">        level = logging.INFO,  </span><br><span class="line"></span><br><span class="line">    <span class="comment"># 日志格式: 时间、代码所在文件名、代码行号、日志级别名字、日志信息</span></span><br><span class="line">        <span class="comment">#format = &#x27;%(asctime)s %(filename)s[line:%(lineno)d] %(levelname)s %(message)s&#x27;,</span></span><br><span class="line">        <span class="built_in">format</span> = <span class="string">&#x27;%(asctime)s : %(message)s&#x27;</span>,</span><br><span class="line">        </span><br><span class="line">        <span class="comment"># 打印日志的时间</span></span><br><span class="line">        datefmt = <span class="string">&#x27;%Y-%m-%d %H:%M:%S&#x27;</span>,</span><br><span class="line">    </span><br><span class="line">        <span class="comment"># 日志文件存放的目录（目录必须存在）及日志文件名</span></span><br><span class="line">        filename = log_file_path, </span><br><span class="line">    </span><br><span class="line">        <span class="comment"># 打开日志文件的方式</span></span><br><span class="line">        filemode = open_type</span><br><span class="line">    )    </span><br><span class="line">    </span><br><span class="line">    config.Parameters.Logging_Object = logging</span><br><span class="line"></span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">def</span> <span class="title">log</span>(<span class="params">message</span>):</span></span><br><span class="line">    <span class="string">&quot;&quot;&quot;</span></span><br><span class="line"><span class="string">    print message to console and than save it to log </span></span><br><span class="line"><span class="string">    &quot;&quot;&quot;</span></span><br><span class="line">    <span class="built_in">print</span>(message)</span><br><span class="line">    <span class="keyword">if</span> config.Parameters.Logging_Object:</span><br><span class="line">        config.Parameters.Logging_Object.info(message)</span><br><span class="line">    <span class="keyword">else</span>:</span><br><span class="line">        <span class="keyword">raise</span> TypeError(<span class="string">&#x27;there is sth wrong with the object of logging in config &#x27;</span>)</span><br><span class="line"></span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">def</span> <span class="title">dir_check</span>(<span class="params">dir_path</span>):</span></span><br><span class="line">    <span class="string">&quot;&quot;&quot;</span></span><br><span class="line"><span class="string">    check if `dir_path` is a real directory path</span></span><br><span class="line"><span class="string">    &quot;&quot;&quot;</span></span><br><span class="line">    <span class="keyword">if</span> <span class="keyword">not</span> os.path.isdir(dir_path):</span><br><span class="line">        <span class="keyword">try</span>:</span><br><span class="line">            os.makedirs(dir_path) </span><br><span class="line">        <span class="keyword">except</span> Exception <span class="keyword">as</span> err:</span><br><span class="line">            <span class="built_in">print</span>(<span class="string">f&#x27;failed to make dir <span class="subst">&#123;dir_path&#125;</span>, error <span class="subst">&#123;err&#125;</span>&#x27;</span>)</span><br><span class="line">        <span class="keyword">finally</span>:</span><br><span class="line">            log(<span class="string">f&#x27;<span class="subst">&#123;dir_path&#125;</span> does not exist and we have built it for you &#x27;</span>)</span><br><span class="line">            </span><br><span class="line">            </span><br><span class="line"><span class="function"><span class="keyword">def</span> <span class="title">environment_check</span>():</span></span><br><span class="line">    <span class="string">&quot;&quot;&quot;</span></span><br><span class="line"><span class="string">    check album environment, try to fix the matters if sth goes wrong</span></span><br><span class="line"><span class="string">    &quot;&quot;&quot;</span></span><br><span class="line">    </span><br><span class="line">    <span class="comment">## check important dirs</span></span><br><span class="line">    <span class="keyword">assert</span> os.path.isdir(config.Parameters.Image_Root_Path) ,<span class="string">f&quot;image root dir <span class="subst">&#123;config.Parameters.Image_Root_Path&#125;</span> does not exist&quot;</span></span><br><span class="line">    <span class="keyword">assert</span> os.path.isdir(config.Parameters.Hexo_Root_Path) ,<span class="string">f&quot;hexo root dir <span class="subst">&#123;config.Parameters.Hexo_Root_Path&#125;</span> does not exist&quot;</span></span><br><span class="line">    </span><br><span class="line">    dir_check(config.Parameters.Uploading_Temp_Image_Path)</span><br><span class="line">    </span><br><span class="line">    <span class="comment">## check image width, I think it shold not &lt; 200</span></span><br><span class="line">    config.Parameters.Image_Resize_Width = <span class="built_in">max</span>(<span class="built_in">int</span>(config.Parameters.Image_Resize_Width), <span class="number">200</span>)</span><br><span class="line">    </span><br><span class="line">    <span class="comment">## initialize logging</span></span><br><span class="line">    log_init()</span><br><span class="line">    </span><br><span class="line">    <span class="comment">## image_info_get object</span></span><br><span class="line">    config.Parameters.Image_Info_Get_Object = PhotoExifInfo()</span><br><span class="line">    </span><br><span class="line">      </span><br><span class="line"><span class="function"><span class="keyword">def</span> <span class="title">init_json_create</span>(<span class="params">json_path</span>):</span></span><br><span class="line">    <span class="string">&quot;&quot;&quot;</span></span><br><span class="line"><span class="string">    init a json file to `json_path`</span></span><br><span class="line"><span class="string">    &quot;&quot;&quot;</span></span><br><span class="line">    <span class="keyword">assert</span> os.path.basename(json_path).split(<span class="string">&#x27;.&#x27;</span>)[-<span class="number">1</span>]==<span class="string">&#x27;json&#x27;</span>,<span class="string">f&#x27;<span class="subst">&#123;json_path&#125;</span> should be a path of json file &#x27;</span></span><br><span class="line">    <span class="keyword">assert</span> os.path.isdir(os.path.split(json_path)[<span class="number">0</span>]), <span class="string">&#x27;the folder does not exist&#x27;</span></span><br><span class="line">    </span><br><span class="line">    now = time.localtime()</span><br><span class="line">    info_dict=&#123;&#125;</span><br><span class="line">    </span><br><span class="line">    <span class="comment">## time</span></span><br><span class="line">    my_time=&#123;</span><br><span class="line">        <span class="string">&#x27;year&#x27;</span>:now.tm_year,\</span><br><span class="line">        <span class="string">&#x27;month&#x27;</span>:now.tm_mon,\</span><br><span class="line">        <span class="string">&#x27;day&#x27;</span>:now.tm_mday</span><br><span class="line">          &#125;</span><br><span class="line">    info_dict[<span class="string">&#x27;time&#x27;</span>] = my_time</span><br><span class="line">    </span><br><span class="line">    <span class="comment">## type</span></span><br><span class="line">    info_dict[<span class="string">&#x27;type&#x27;</span>] = <span class="string">&#x27;album type&#x27;</span></span><br><span class="line">    </span><br><span class="line">    <span class="comment">## model</span></span><br><span class="line">    info_dict[<span class="string">&#x27;model&#x27;</span>] = <span class="string">&#x27;&#x27;</span></span><br><span class="line">    </span><br><span class="line">    <span class="comment">## position</span></span><br><span class="line">    position = &#123;</span><br><span class="line">        <span class="string">&#x27;city&#x27;</span>:<span class="string">&#x27;beijing&#x27;</span>,\</span><br><span class="line">        <span class="string">&#x27;street&#x27;</span>:<span class="string">&#x27;Tiananmen&#x27;</span></span><br><span class="line">    &#125;</span><br><span class="line">    info_dict[<span class="string">&#x27;position&#x27;</span>] = position</span><br><span class="line">    </span><br><span class="line">    <span class="comment">## title</span></span><br><span class="line">    info_dict[<span class="string">&#x27;title&#x27;</span>] = <span class="string">&#x27;Album title&#x27;</span></span><br><span class="line">    </span><br><span class="line">    <span class="comment">## balabala</span></span><br><span class="line">    info_dict[<span class="string">&#x27;balabala&#x27;</span>] = <span class="string">&#x27;description of album&#x27;</span></span><br><span class="line">    </span><br><span class="line">    <span class="keyword">with</span> <span class="built_in">open</span>(json_path, mode=<span class="string">&#x27;w&#x27;</span>) <span class="keyword">as</span> fp:</span><br><span class="line">        json.dump(info_dict, fp, indent=<span class="number">3</span>)</span><br><span class="line">        log(<span class="string">f&#x27;make initial json file <span class="subst">&#123;json_path&#125;</span>&#x27;</span>)</span><br><span class="line">            </span><br><span class="line">            </span><br><span class="line"><span class="function"><span class="keyword">def</span> <span class="title">image_compression_and_save</span>(<span class="params">src_dir, tar_dir</span>):</span></span><br><span class="line">    <span class="string">&quot;&quot;&quot;</span></span><br><span class="line"><span class="string">    compress and move images from src to tar </span></span><br><span class="line"><span class="string">    &quot;&quot;&quot;</span></span><br><span class="line">    sub_image_dirs = os.listdir(src_dir)</span><br><span class="line">    </span><br><span class="line">    <span class="keyword">for</span> sub_image_dir <span class="keyword">in</span> sub_image_dirs:</span><br><span class="line">        src_sub_image_path = os.path.join(src_dir, sub_image_dir)</span><br><span class="line">        tar_sub_image_path = os.path.join(tar_dir, sub_image_dir)</span><br><span class="line">        </span><br><span class="line">        <span class="comment">## check tar dir</span></span><br><span class="line">        dir_check(tar_sub_image_path)</span><br><span class="line">        </span><br><span class="line">        file_list = os.listdir(src_sub_image_path)</span><br><span class="line">        <span class="keyword">for</span> item <span class="keyword">in</span> file_list:</span><br><span class="line">            extension = item.split(<span class="string">&#x27;.&#x27;</span>)[-<span class="number">1</span>]</span><br><span class="line">            </span><br><span class="line">            <span class="keyword">if</span> extension.lower() <span class="keyword">in</span> config.Parameters.Image_Extension_List:</span><br><span class="line">                <span class="comment">## is image file</span></span><br><span class="line">                image_path = os.path.join(src_sub_image_path, item)</span><br><span class="line">                </span><br><span class="line">                tar_image_path = os.path.join(tar_sub_image_path, item)</span><br><span class="line">                </span><br><span class="line">                <span class="keyword">if</span> <span class="keyword">not</span> os.path.exists(tar_image_path) <span class="keyword">or</span> config.Parameters.Whether_Overwrite_Old_Temp_File:</span><br><span class="line">                    <span class="comment">## new file or overwrite</span></span><br><span class="line">                    </span><br><span class="line">                    image = cv2.imread(image_path)</span><br><span class="line">                    image_shape = image.shape</span><br><span class="line">                    </span><br><span class="line">                    <span class="keyword">if</span> image_shape[<span class="number">1</span>] &gt;= config.Parameters.Image_Resize_Width:</span><br><span class="line">                        <span class="comment">## need compression</span></span><br><span class="line">                        new_width = <span class="built_in">int</span>(config.Parameters.Image_Resize_Width)</span><br><span class="line">                        new_height = <span class="built_in">int</span>(config.Parameters.Image_Resize_Width/image_shape[<span class="number">1</span>]*image_shape[<span class="number">0</span>])</span><br><span class="line">                        </span><br><span class="line">                        new_image = cv2.resize(image,(new_width, new_height) )</span><br><span class="line">                        cv2.imwrite(tar_image_path, new_image)</span><br><span class="line">                        log(<span class="string">f&#x27;image <span class="subst">&#123;os.path.join(sub_image_dir,item)&#125;</span> has been resized to <span class="subst">&#123;(new_width, new_height)&#125;</span> and moved to temp dir&#x27;</span>)</span><br><span class="line">                        </span><br><span class="line">                    <span class="keyword">else</span>:</span><br><span class="line">                        <span class="comment">## small image, copy directly</span></span><br><span class="line">                        shutil.copy(image_path, tar_image_path)</span><br><span class="line">                        log(<span class="string">f&#x27;image <span class="subst">&#123;os.path.join(sub_image_dir,item)&#125;</span> has been moved to temp dir&#x27;</span>)</span><br><span class="line">                           </span><br><span class="line">        </span><br><span class="line"><span class="function"><span class="keyword">def</span> <span class="title">deal_with_sub_json</span>(<span class="params">src_dir, tar_dir</span>):</span></span><br><span class="line">    <span class="string">&quot;&quot;&quot;</span></span><br><span class="line"><span class="string">    deal with sub json files in each sub dir</span></span><br><span class="line"><span class="string">    &quot;&quot;&quot;</span></span><br><span class="line">    sub_image_dirs = os.listdir(src_dir)</span><br><span class="line">    </span><br><span class="line">    <span class="keyword">for</span> sub_image_dir <span class="keyword">in</span> sub_image_dirs:</span><br><span class="line">        </span><br><span class="line">        src_sub_image_path = os.path.join(src_dir, sub_image_dir)</span><br><span class="line">        tar_sub_image_path = os.path.join(tar_dir, sub_image_dir)</span><br><span class="line">        </span><br><span class="line">        <span class="comment">## check tar dir</span></span><br><span class="line">        dir_check(tar_sub_image_path)    </span><br><span class="line">        </span><br><span class="line">        src_info_json_file_path = os.path.join(src_sub_image_path, config.Parameters.Album_Ddescription_File_Name)</span><br><span class="line">        </span><br><span class="line">        <span class="keyword">if</span> <span class="keyword">not</span> os.path.exists(src_info_json_file_path):</span><br><span class="line">            init_json_create(src_info_json_file_path)</span><br><span class="line">        <span class="keyword">else</span>:</span><br><span class="line">            <span class="built_in">print</span>(<span class="string">f&#x27;<span class="subst">&#123;src_info_json_file_path&#125;</span> found&#x27;</span>)</span><br><span class="line">            </span><br><span class="line">        <span class="keyword">with</span> <span class="built_in">open</span>(src_info_json_file_path) <span class="keyword">as</span> fp:</span><br><span class="line">            album_info = json.load(fp)</span><br><span class="line">        </span><br><span class="line">        file_list = os.listdir(src_sub_image_path)</span><br><span class="line">        </span><br><span class="line">        image_info_list = []</span><br><span class="line">        </span><br><span class="line">        <span class="keyword">for</span> item <span class="keyword">in</span> file_list:</span><br><span class="line">            extension = item.split(<span class="string">&#x27;.&#x27;</span>)[-<span class="number">1</span>]</span><br><span class="line">            </span><br><span class="line">            <span class="keyword">if</span> extension.lower() <span class="keyword">in</span> config.Parameters.Image_Extension_List:</span><br><span class="line">                <span class="comment">## is image file</span></span><br><span class="line">                image_path = os.path.join(src_sub_image_path, item)</span><br><span class="line">                </span><br><span class="line">                <span class="keyword">assert</span> <span class="keyword">not</span> config.Parameters.Image_Info_Get_Object <span class="keyword">is</span> <span class="literal">None</span>, <span class="string">&quot;Image_Info_Get_Object should be a instance &quot;</span></span><br><span class="line">                image_info_dict = config.Parameters.Image_Info_Get_Object.get_image_info(image_path)                </span><br><span class="line">                </span><br><span class="line">                image_info_dict[<span class="string">&#x27;url&#x27;</span>] = config.Parameters.Image_Url_Prefix+sub_image_dir+<span class="string">&#x27;/&#x27;</span>+item</span><br><span class="line">                </span><br><span class="line">                image_info_list.append(image_info_dict)</span><br><span class="line">                </span><br><span class="line">        album_info[<span class="string">&#x27;image_info&#x27;</span>] = image_info_list</span><br><span class="line">        album_info[<span class="string">&#x27;directory&#x27;</span>] = sub_image_dir</span><br><span class="line">        </span><br><span class="line">        tar_info_json_file_path = os.path.join(tar_sub_image_path, config.Parameters.Album_Ddescription_File_Name)      </span><br><span class="line">        </span><br><span class="line">        <span class="keyword">with</span> <span class="built_in">open</span>(tar_info_json_file_path,<span class="string">&#x27;w&#x27;</span>,encoding=<span class="string">&#x27;utf-8&#x27;</span>) <span class="keyword">as</span> fp:</span><br><span class="line">            json.dump(album_info, fp, indent=<span class="number">3</span>, ensure_ascii=<span class="literal">False</span>)</span><br><span class="line">            log(<span class="string">f&#x27;json file of image dir <span class="subst">&#123;sub_image_dir&#125;</span> created&#x27;</span>)</span><br><span class="line">            </span><br><span class="line">            </span><br><span class="line"><span class="function"><span class="keyword">def</span> <span class="title">json_integrate</span>(<span class="params">temp_root</span>):</span></span><br><span class="line">    <span class="string">&#x27;&#x27;&#x27;</span></span><br><span class="line"><span class="string">    integrate json files to a single file</span></span><br><span class="line"><span class="string">    &#x27;&#x27;&#x27;</span></span><br><span class="line">    sub_image_dirs = os.listdir(temp_root)</span><br><span class="line">    </span><br><span class="line">    album_dict = &#123;&#125;</span><br><span class="line">    </span><br><span class="line">    album_json_list = []</span><br><span class="line">    </span><br><span class="line">    <span class="keyword">for</span> sub_image_dir <span class="keyword">in</span> sub_image_dirs:  </span><br><span class="line">        <span class="keyword">if</span> os.path.isdir(os.path.join(temp_root,sub_image_dir)):</span><br><span class="line">            json_file_path = os.path.join(temp_root,sub_image_dir, config.Parameters.Album_Ddescription_File_Name)   </span><br><span class="line">            <span class="keyword">assert</span> os.path.exists(json_file_path),<span class="string">f&#x27;file <span class="subst">&#123;json_file_path&#125;</span> not flund&#x27;</span></span><br><span class="line">            </span><br><span class="line">            <span class="keyword">with</span> <span class="built_in">open</span>(json_file_path) <span class="keyword">as</span> fp:</span><br><span class="line">                json_dict = json.load(fp)</span><br><span class="line">            </span><br><span class="line">            album_json_list.append(json_dict)</span><br><span class="line">            </span><br><span class="line">    album_dict[<span class="string">&#x27;album&#x27;</span>] = album_json_list</span><br><span class="line">    </span><br><span class="line">    integrate_json_path = os.path.join(temp_root, config.Parameters.Album_Total_Json)</span><br><span class="line">    <span class="keyword">with</span> <span class="built_in">open</span>(integrate_json_path, mode=<span class="string">&#x27;w&#x27;</span>, encoding=<span class="string">&#x27;utf-8&#x27;</span>) <span class="keyword">as</span> fp:</span><br><span class="line">        json.dump(album_dict, fp, ensure_ascii=<span class="literal">False</span>, indent=<span class="number">3</span>)</span><br><span class="line">        log(<span class="string">f&#x27;total json <span class="subst">&#123;integrate_json_path&#125;</span> saved&#x27;</span>)</span><br><span class="line">        </span><br><span class="line">    <span class="keyword">return</span> album_dict</span><br><span class="line">        </span><br><span class="line"><span class="function"><span class="keyword">def</span> <span class="title">make_dir_json_md_of_album</span>(<span class="params">temp_root, hexo_photos_path, album_dict</span>):</span></span><br><span class="line">    <span class="string">&#x27;&#x27;&#x27;</span></span><br><span class="line"><span class="string">    save md files to hexo source/photos dir</span></span><br><span class="line"><span class="string">    &#x27;&#x27;&#x27;</span></span><br><span class="line">    <span class="keyword">assert</span> os.path.isdir(hexo_photos_path) ,<span class="string">&#x27;hexo photos path &#123;hexo_photos_path&#125; does not exist&#x27;</span></span><br><span class="line">    </span><br><span class="line">    src_album_json_path = os.path.join(temp_root, config.Parameters.Album_Total_Json)</span><br><span class="line">    <span class="keyword">assert</span> os.path.exists(src_album_json_path), <span class="string">f&#x27;album json file <span class="subst">&#123;src_album_json_path&#125;</span> not found&#x27;</span></span><br><span class="line">    tar_album_json_path = os.path.join(hexo_photos_path, config.Parameters.Album_Total_Json)</span><br><span class="line">    </span><br><span class="line">    shutil.copy(src_album_json_path, tar_album_json_path)</span><br><span class="line">    log(<span class="string">f&quot;json file <span class="subst">&#123;config.Parameters.Album_Total_Json&#125;</span> moved to hexo dir&quot;</span>)</span><br><span class="line">    <span class="keyword">for</span> sub_image_dict <span class="keyword">in</span> album_dict[<span class="string">&#x27;album&#x27;</span>]:</span><br><span class="line">        src_json_path = os.path.join(temp_root, sub_image_dict[<span class="string">&#x27;directory&#x27;</span>], config.Parameters.Album_Ddescription_File_Name)</span><br><span class="line">        <span class="keyword">assert</span> os.path.exists(src_json_path), <span class="string">f&#x27;sub json file <span class="subst">&#123;src_json_path&#125;</span> not found&#x27;</span></span><br><span class="line">        </span><br><span class="line">        tar_json_path = os.path.join(hexo_photos_path, sub_image_dict[<span class="string">&#x27;directory&#x27;</span>], config.Parameters.Album_Ddescription_File_Name)</span><br><span class="line">        image_dir = os.path.join(hexo_photos_path, sub_image_dict[<span class="string">&#x27;directory&#x27;</span>])</span><br><span class="line">        dir_check(image_dir)</span><br><span class="line">        </span><br><span class="line">        shutil.copyfile(src_json_path, tar_json_path)</span><br><span class="line">        log(<span class="string">f&quot;json file <span class="subst">&#123;sub_image_dict[<span class="string">&#x27;directory&#x27;</span>] +<span class="string">&#x27;_&#x27;</span>+ config.Parameters.Album_Ddescription_File_Name&#125;</span> moved to hexo dir&quot;</span>)</span><br><span class="line">        </span><br><span class="line">        <span class="keyword">with</span> <span class="built_in">open</span>(os.path.join(image_dir,config.Parameters.Album_Md_File_Name),<span class="string">&#x27;w&#x27;</span>, encoding=<span class="string">&#x27;utf-8&#x27;</span>) <span class="keyword">as</span> fp:</span><br><span class="line">            fp.writelines(<span class="string">&#x27;---&#x27;</span>+<span class="string">&#x27;\n&#x27;</span>)</span><br><span class="line">            fp.writelines(<span class="string">&#x27;title: &#x27;</span>+sub_image_dict[<span class="string">&#x27;title&#x27;</span>]+<span class="string">&#x27;\n&#x27;</span>)</span><br><span class="line">            fp.writelines(<span class="string">&#x27;date: &#x27;</span>+<span class="built_in">str</span>(sub_image_dict[<span class="string">&#x27;time&#x27;</span>][<span class="string">&#x27;year&#x27;</span>])+<span class="string">&#x27;-&#x27;</span>+<span class="built_in">str</span>(sub_image_dict[<span class="string">&#x27;time&#x27;</span>][<span class="string">&#x27;month&#x27;</span>])+<span class="string">&#x27;-&#x27;</span>+<span class="built_in">str</span>(sub_image_dict[<span class="string">&#x27;time&#x27;</span>][<span class="string">&#x27;day&#x27;</span>])+<span class="string">&#x27;\n&#x27;</span>)</span><br><span class="line">            fp.writelines(<span class="string">&#x27;type: photography&#x27;</span>+<span class="string">&#x27;\n&#x27;</span>)</span><br><span class="line">            fp.writelines(<span class="string">&#x27;album: &#x27;</span>+sub_image_dict[<span class="string">&#x27;directory&#x27;</span>]+<span class="string">&#x27;\n&#x27;</span>)</span><br><span class="line">            fp.writelines(<span class="string">&#x27;---&#x27;</span>+<span class="string">&#x27;\n&#x27;</span>)</span><br><span class="line">            log(<span class="string">f&#x27;create md file of <span class="subst">&#123;os.path.join(image_dir,config.Parameters.Album_Md_File_Name)&#125;</span>&#x27;</span>)</span><br></pre></td></tr></table></figure>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br><span class="line">84</span><br><span class="line">85</span><br><span class="line">86</span><br><span class="line">87</span><br><span class="line">88</span><br><span class="line">89</span><br><span class="line">90</span><br><span class="line">91</span><br><span class="line">92</span><br><span class="line">93</span><br><span class="line">94</span><br><span class="line">95</span><br><span class="line">96</span><br><span class="line">97</span><br><span class="line">98</span><br><span class="line">99</span><br><span class="line">100</span><br><span class="line">101</span><br><span class="line">102</span><br><span class="line">103</span><br><span class="line">104</span><br><span class="line">105</span><br><span class="line">106</span><br><span class="line">107</span><br><span class="line">108</span><br><span class="line">109</span><br><span class="line">110</span><br><span class="line">111</span><br><span class="line">112</span><br><span class="line">113</span><br><span class="line">114</span><br><span class="line">115</span><br><span class="line">116</span><br><span class="line">117</span><br><span class="line">118</span><br><span class="line">119</span><br><span class="line">120</span><br><span class="line">121</span><br><span class="line">122</span><br><span class="line">123</span><br><span class="line">124</span><br><span class="line">125</span><br><span class="line">126</span><br><span class="line">127</span><br><span class="line">128</span><br><span class="line">129</span><br><span class="line">130</span><br><span class="line">131</span><br><span class="line">132</span><br><span class="line">133</span><br><span class="line">134</span><br><span class="line">135</span><br><span class="line">136</span><br><span class="line">137</span><br><span class="line">138</span><br><span class="line">139</span><br><span class="line">140</span><br><span class="line">141</span><br><span class="line">142</span><br><span class="line">143</span><br><span class="line">144</span><br><span class="line">145</span><br><span class="line">146</span><br><span class="line">147</span><br><span class="line">148</span><br><span class="line">149</span><br><span class="line">150</span><br><span class="line">151</span><br><span class="line">152</span><br><span class="line">153</span><br><span class="line">154</span><br><span class="line">155</span><br><span class="line">156</span><br><span class="line">157</span><br><span class="line">158</span><br><span class="line">159</span><br><span class="line">160</span><br><span class="line">161</span><br><span class="line">162</span><br><span class="line">163</span><br><span class="line">164</span><br><span class="line">165</span><br><span class="line">166</span><br><span class="line">167</span><br><span class="line">168</span><br><span class="line">169</span><br><span class="line">170</span><br><span class="line">171</span><br><span class="line">172</span><br><span class="line">173</span><br><span class="line">174</span><br><span class="line">175</span><br><span class="line">176</span><br><span class="line">177</span><br><span class="line">178</span><br><span class="line">179</span><br><span class="line">180</span><br><span class="line">181</span><br><span class="line">182</span><br><span class="line">183</span><br><span class="line">184</span><br><span class="line">185</span><br><span class="line">186</span><br><span class="line">187</span><br><span class="line">188</span><br><span class="line">189</span><br><span class="line">190</span><br><span class="line">191</span><br><span class="line">192</span><br><span class="line">193</span><br><span class="line">194</span><br><span class="line">195</span><br><span class="line">196</span><br><span class="line">197</span><br><span class="line">198</span><br><span class="line">199</span><br><span class="line">200</span><br><span class="line">201</span><br><span class="line">202</span><br><span class="line">203</span><br><span class="line">204</span><br><span class="line">205</span><br><span class="line">206</span><br><span class="line">207</span><br><span class="line">208</span><br><span class="line">209</span><br><span class="line">210</span><br><span class="line">211</span><br><span class="line">212</span><br><span class="line">213</span><br><span class="line">214</span><br><span class="line">215</span><br><span class="line">216</span><br><span class="line">217</span><br><span class="line">218</span><br><span class="line">219</span><br><span class="line">220</span><br><span class="line">221</span><br><span class="line">222</span><br><span class="line">223</span><br><span class="line">224</span><br><span class="line">225</span><br><span class="line">226</span><br><span class="line">227</span><br><span class="line">228</span><br><span class="line">229</span><br><span class="line">230</span><br><span class="line">231</span><br><span class="line">232</span><br><span class="line">233</span><br><span class="line">234</span><br><span class="line">235</span><br><span class="line">236</span><br><span class="line">237</span><br><span class="line">238</span><br><span class="line">239</span><br><span class="line">240</span><br><span class="line">241</span><br><span class="line">242</span><br><span class="line">243</span><br><span class="line">244</span><br><span class="line">245</span><br><span class="line">246</span><br><span class="line">247</span><br><span class="line">248</span><br><span class="line">249</span><br><span class="line">250</span><br><span class="line">251</span><br><span class="line">252</span><br><span class="line">253</span><br><span class="line">254</span><br><span class="line">255</span><br><span class="line">256</span><br><span class="line">257</span><br><span class="line">258</span><br><span class="line">259</span><br><span class="line">260</span><br><span class="line">261</span><br><span class="line">262</span><br><span class="line">263</span><br><span class="line">264</span><br><span class="line">265</span><br><span class="line">266</span><br><span class="line">267</span><br><span class="line">268</span><br><span class="line">269</span><br><span class="line">270</span><br><span class="line">271</span><br><span class="line">272</span><br><span class="line">273</span><br><span class="line">274</span><br><span class="line">275</span><br><span class="line">276</span><br><span class="line">277</span><br><span class="line">278</span><br><span class="line">279</span><br><span class="line">280</span><br><span class="line">281</span><br><span class="line">282</span><br><span class="line">283</span><br><span class="line">284</span><br><span class="line">285</span><br><span class="line">286</span><br><span class="line">287</span><br><span class="line">288</span><br><span class="line">289</span><br><span class="line">290</span><br><span class="line">291</span><br><span class="line">292</span><br></pre></td><td class="code"><pre><code class="hljs Python"><span class="hljs-keyword">import</span> config<br><span class="hljs-keyword">import</span> json<br><span class="hljs-keyword">import</span> os <br><span class="hljs-keyword">import</span> cv2<br><span class="hljs-keyword">import</span> shutil<br><span class="hljs-keyword">import</span> logging<br><span class="hljs-keyword">import</span> time<br><span class="hljs-keyword">from</span> getinfo <span class="hljs-keyword">import</span> PhotoExifInfo<br><br><br><span class="hljs-function"><span class="hljs-keyword">def</span> <span class="hljs-title">log_init</span>():</span><br>    <span class="hljs-string">&quot;&quot;&quot;</span><br><span class="hljs-string">    initialize logging </span><br><span class="hljs-string">    save the logging object in `config.Parameters.Logging_Object`</span><br><span class="hljs-string">    </span><br><span class="hljs-string">    after this operation,</span><br><span class="hljs-string">    we could save logs with sample orders such as `logging.debug(&#x27;test debug&#x27;)` `logging.info(&#x27;test info&#x27;)` </span><br><span class="hljs-string">    logging level : debug &lt; info &lt; warning &lt;error &lt; critica</span><br><span class="hljs-string">    &quot;&quot;&quot;</span><br>    log_file_path = os.path.join(config.Parameters.Uploading_Temp_Image_Path, config.Parameters.Log_File_Name)<br>    <span class="hljs-keyword">if</span> os.path.exists(log_file_path):<br>        <span class="hljs-comment"># open log file as  mode of append</span><br>        open_type = <span class="hljs-string">&#x27;a&#x27;</span><br>    <span class="hljs-keyword">else</span>:<br>        <span class="hljs-comment"># open log file as  mode of write</span><br>        open_type = <span class="hljs-string">&#x27;w&#x27;</span><br>        <br>    logging.basicConfig(<br>    <br>        <span class="hljs-comment"># 日志级别,logging.DEBUG,logging.ERROR</span><br>        level = logging.INFO,  <br><br>    <span class="hljs-comment"># 日志格式: 时间、代码所在文件名、代码行号、日志级别名字、日志信息</span><br>        <span class="hljs-comment">#format = &#x27;%(asctime)s %(filename)s[line:%(lineno)d] %(levelname)s %(message)s&#x27;,</span><br>        <span class="hljs-built_in">format</span> = <span class="hljs-string">&#x27;%(asctime)s : %(message)s&#x27;</span>,<br>        <br>        <span class="hljs-comment"># 打印日志的时间</span><br>        datefmt = <span class="hljs-string">&#x27;%Y-%m-%d %H:%M:%S&#x27;</span>,<br>    <br>        <span class="hljs-comment"># 日志文件存放的目录（目录必须存在）及日志文件名</span><br>        filename = log_file_path, <br>    <br>        <span class="hljs-comment"># 打开日志文件的方式</span><br>        filemode = open_type<br>    )    <br>    <br>    config.Parameters.Logging_Object = logging<br><br><br><span class="hljs-function"><span class="hljs-keyword">def</span> <span class="hljs-title">log</span>(<span class="hljs-params">message</span>):</span><br>    <span class="hljs-string">&quot;&quot;&quot;</span><br><span class="hljs-string">    print message to console and than save it to log </span><br><span class="hljs-string">    &quot;&quot;&quot;</span><br>    <span class="hljs-built_in">print</span>(message)<br>    <span class="hljs-keyword">if</span> config.Parameters.Logging_Object:<br>        config.Parameters.Logging_Object.info(message)<br>    <span class="hljs-keyword">else</span>:<br>        <span class="hljs-keyword">raise</span> TypeError(<span class="hljs-string">&#x27;there is sth wrong with the object of logging in config &#x27;</span>)<br><br><br><span class="hljs-function"><span class="hljs-keyword">def</span> <span class="hljs-title">dir_check</span>(<span class="hljs-params">dir_path</span>):</span><br>    <span class="hljs-string">&quot;&quot;&quot;</span><br><span class="hljs-string">    check if `dir_path` is a real directory path</span><br><span class="hljs-string">    &quot;&quot;&quot;</span><br>    <span class="hljs-keyword">if</span> <span class="hljs-keyword">not</span> os.path.isdir(dir_path):<br>        <span class="hljs-keyword">try</span>:<br>            os.makedirs(dir_path) <br>        <span class="hljs-keyword">except</span> Exception <span class="hljs-keyword">as</span> err:<br>            <span class="hljs-built_in">print</span>(<span class="hljs-string">f&#x27;failed to make dir <span class="hljs-subst">&#123;dir_path&#125;</span>, error <span class="hljs-subst">&#123;err&#125;</span>&#x27;</span>)<br>        <span class="hljs-keyword">finally</span>:<br>            log(<span class="hljs-string">f&#x27;<span class="hljs-subst">&#123;dir_path&#125;</span> does not exist and we have built it for you &#x27;</span>)<br>            <br>            <br><span class="hljs-function"><span class="hljs-keyword">def</span> <span class="hljs-title">environment_check</span>():</span><br>    <span class="hljs-string">&quot;&quot;&quot;</span><br><span class="hljs-string">    check album environment, try to fix the matters if sth goes wrong</span><br><span class="hljs-string">    &quot;&quot;&quot;</span><br>    <br>    <span class="hljs-comment">## check important dirs</span><br>    <span class="hljs-keyword">assert</span> os.path.isdir(config.Parameters.Image_Root_Path) ,<span class="hljs-string">f&quot;image root dir <span class="hljs-subst">&#123;config.Parameters.Image_Root_Path&#125;</span> does not exist&quot;</span><br>    <span class="hljs-keyword">assert</span> os.path.isdir(config.Parameters.Hexo_Root_Path) ,<span class="hljs-string">f&quot;hexo root dir <span class="hljs-subst">&#123;config.Parameters.Hexo_Root_Path&#125;</span> does not exist&quot;</span><br>    <br>    dir_check(config.Parameters.Uploading_Temp_Image_Path)<br>    <br>    <span class="hljs-comment">## check image width, I think it shold not &lt; 200</span><br>    config.Parameters.Image_Resize_Width = <span class="hljs-built_in">max</span>(<span class="hljs-built_in">int</span>(config.Parameters.Image_Resize_Width), <span class="hljs-number">200</span>)<br>    <br>    <span class="hljs-comment">## initialize logging</span><br>    log_init()<br>    <br>    <span class="hljs-comment">## image_info_get object</span><br>    config.Parameters.Image_Info_Get_Object = PhotoExifInfo()<br>    <br>      <br><span class="hljs-function"><span class="hljs-keyword">def</span> <span class="hljs-title">init_json_create</span>(<span class="hljs-params">json_path</span>):</span><br>    <span class="hljs-string">&quot;&quot;&quot;</span><br><span class="hljs-string">    init a json file to `json_path`</span><br><span class="hljs-string">    &quot;&quot;&quot;</span><br>    <span class="hljs-keyword">assert</span> os.path.basename(json_path).split(<span class="hljs-string">&#x27;.&#x27;</span>)[-<span class="hljs-number">1</span>]==<span class="hljs-string">&#x27;json&#x27;</span>,<span class="hljs-string">f&#x27;<span class="hljs-subst">&#123;json_path&#125;</span> should be a path of json file &#x27;</span><br>    <span class="hljs-keyword">assert</span> os.path.isdir(os.path.split(json_path)[<span class="hljs-number">0</span>]), <span class="hljs-string">&#x27;the folder does not exist&#x27;</span><br>    <br>    now = time.localtime()<br>    info_dict=&#123;&#125;<br>    <br>    <span class="hljs-comment">## time</span><br>    my_time=&#123;<br>        <span class="hljs-string">&#x27;year&#x27;</span>:now.tm_year,\<br>        <span class="hljs-string">&#x27;month&#x27;</span>:now.tm_mon,\<br>        <span class="hljs-string">&#x27;day&#x27;</span>:now.tm_mday<br>          &#125;<br>    info_dict[<span class="hljs-string">&#x27;time&#x27;</span>] = my_time<br>    <br>    <span class="hljs-comment">## type</span><br>    info_dict[<span class="hljs-string">&#x27;type&#x27;</span>] = <span class="hljs-string">&#x27;album type&#x27;</span><br>    <br>    <span class="hljs-comment">## model</span><br>    info_dict[<span class="hljs-string">&#x27;model&#x27;</span>] = <span class="hljs-string">&#x27;&#x27;</span><br>    <br>    <span class="hljs-comment">## position</span><br>    position = &#123;<br>        <span class="hljs-string">&#x27;city&#x27;</span>:<span class="hljs-string">&#x27;beijing&#x27;</span>,\<br>        <span class="hljs-string">&#x27;street&#x27;</span>:<span class="hljs-string">&#x27;Tiananmen&#x27;</span><br>    &#125;<br>    info_dict[<span class="hljs-string">&#x27;position&#x27;</span>] = position<br>    <br>    <span class="hljs-comment">## title</span><br>    info_dict[<span class="hljs-string">&#x27;title&#x27;</span>] = <span class="hljs-string">&#x27;Album title&#x27;</span><br>    <br>    <span class="hljs-comment">## balabala</span><br>    info_dict[<span class="hljs-string">&#x27;balabala&#x27;</span>] = <span class="hljs-string">&#x27;description of album&#x27;</span><br>    <br>    <span class="hljs-keyword">with</span> <span class="hljs-built_in">open</span>(json_path, mode=<span class="hljs-string">&#x27;w&#x27;</span>) <span class="hljs-keyword">as</span> fp:<br>        json.dump(info_dict, fp, indent=<span class="hljs-number">3</span>)<br>        log(<span class="hljs-string">f&#x27;make initial json file <span class="hljs-subst">&#123;json_path&#125;</span>&#x27;</span>)<br>            <br>            <br><span class="hljs-function"><span class="hljs-keyword">def</span> <span class="hljs-title">image_compression_and_save</span>(<span class="hljs-params">src_dir, tar_dir</span>):</span><br>    <span class="hljs-string">&quot;&quot;&quot;</span><br><span class="hljs-string">    compress and move images from src to tar </span><br><span class="hljs-string">    &quot;&quot;&quot;</span><br>    sub_image_dirs = os.listdir(src_dir)<br>    <br>    <span class="hljs-keyword">for</span> sub_image_dir <span class="hljs-keyword">in</span> sub_image_dirs:<br>        src_sub_image_path = os.path.join(src_dir, sub_image_dir)<br>        tar_sub_image_path = os.path.join(tar_dir, sub_image_dir)<br>        <br>        <span class="hljs-comment">## check tar dir</span><br>        dir_check(tar_sub_image_path)<br>        <br>        file_list = os.listdir(src_sub_image_path)<br>        <span class="hljs-keyword">for</span> item <span class="hljs-keyword">in</span> file_list:<br>            extension = item.split(<span class="hljs-string">&#x27;.&#x27;</span>)[-<span class="hljs-number">1</span>]<br>            <br>            <span class="hljs-keyword">if</span> extension.lower() <span class="hljs-keyword">in</span> config.Parameters.Image_Extension_List:<br>                <span class="hljs-comment">## is image file</span><br>                image_path = os.path.join(src_sub_image_path, item)<br>                <br>                tar_image_path = os.path.join(tar_sub_image_path, item)<br>                <br>                <span class="hljs-keyword">if</span> <span class="hljs-keyword">not</span> os.path.exists(tar_image_path) <span class="hljs-keyword">or</span> config.Parameters.Whether_Overwrite_Old_Temp_File:<br>                    <span class="hljs-comment">## new file or overwrite</span><br>                    <br>                    image = cv2.imread(image_path)<br>                    image_shape = image.shape<br>                    <br>                    <span class="hljs-keyword">if</span> image_shape[<span class="hljs-number">1</span>] &gt;= config.Parameters.Image_Resize_Width:<br>                        <span class="hljs-comment">## need compression</span><br>                        new_width = <span class="hljs-built_in">int</span>(config.Parameters.Image_Resize_Width)<br>                        new_height = <span class="hljs-built_in">int</span>(config.Parameters.Image_Resize_Width/image_shape[<span class="hljs-number">1</span>]*image_shape[<span class="hljs-number">0</span>])<br>                        <br>                        new_image = cv2.resize(image,(new_width, new_height) )<br>                        cv2.imwrite(tar_image_path, new_image)<br>                        log(<span class="hljs-string">f&#x27;image <span class="hljs-subst">&#123;os.path.join(sub_image_dir,item)&#125;</span> has been resized to <span class="hljs-subst">&#123;(new_width, new_height)&#125;</span> and moved to temp dir&#x27;</span>)<br>                        <br>                    <span class="hljs-keyword">else</span>:<br>                        <span class="hljs-comment">## small image, copy directly</span><br>                        shutil.copy(image_path, tar_image_path)<br>                        log(<span class="hljs-string">f&#x27;image <span class="hljs-subst">&#123;os.path.join(sub_image_dir,item)&#125;</span> has been moved to temp dir&#x27;</span>)<br>                           <br>        <br><span class="hljs-function"><span class="hljs-keyword">def</span> <span class="hljs-title">deal_with_sub_json</span>(<span class="hljs-params">src_dir, tar_dir</span>):</span><br>    <span class="hljs-string">&quot;&quot;&quot;</span><br><span class="hljs-string">    deal with sub json files in each sub dir</span><br><span class="hljs-string">    &quot;&quot;&quot;</span><br>    sub_image_dirs = os.listdir(src_dir)<br>    <br>    <span class="hljs-keyword">for</span> sub_image_dir <span class="hljs-keyword">in</span> sub_image_dirs:<br>        <br>        src_sub_image_path = os.path.join(src_dir, sub_image_dir)<br>        tar_sub_image_path = os.path.join(tar_dir, sub_image_dir)<br>        <br>        <span class="hljs-comment">## check tar dir</span><br>        dir_check(tar_sub_image_path)    <br>        <br>        src_info_json_file_path = os.path.join(src_sub_image_path, config.Parameters.Album_Ddescription_File_Name)<br>        <br>        <span class="hljs-keyword">if</span> <span class="hljs-keyword">not</span> os.path.exists(src_info_json_file_path):<br>            init_json_create(src_info_json_file_path)<br>        <span class="hljs-keyword">else</span>:<br>            <span class="hljs-built_in">print</span>(<span class="hljs-string">f&#x27;<span class="hljs-subst">&#123;src_info_json_file_path&#125;</span> found&#x27;</span>)<br>            <br>        <span class="hljs-keyword">with</span> <span class="hljs-built_in">open</span>(src_info_json_file_path) <span class="hljs-keyword">as</span> fp:<br>            album_info = json.load(fp)<br>        <br>        file_list = os.listdir(src_sub_image_path)<br>        <br>        image_info_list = []<br>        <br>        <span class="hljs-keyword">for</span> item <span class="hljs-keyword">in</span> file_list:<br>            extension = item.split(<span class="hljs-string">&#x27;.&#x27;</span>)[-<span class="hljs-number">1</span>]<br>            <br>            <span class="hljs-keyword">if</span> extension.lower() <span class="hljs-keyword">in</span> config.Parameters.Image_Extension_List:<br>                <span class="hljs-comment">## is image file</span><br>                image_path = os.path.join(src_sub_image_path, item)<br>                <br>                <span class="hljs-keyword">assert</span> <span class="hljs-keyword">not</span> config.Parameters.Image_Info_Get_Object <span class="hljs-keyword">is</span> <span class="hljs-literal">None</span>, <span class="hljs-string">&quot;Image_Info_Get_Object should be a instance &quot;</span><br>                image_info_dict = config.Parameters.Image_Info_Get_Object.get_image_info(image_path)                <br>                <br>                image_info_dict[<span class="hljs-string">&#x27;url&#x27;</span>] = config.Parameters.Image_Url_Prefix+sub_image_dir+<span class="hljs-string">&#x27;/&#x27;</span>+item<br>                <br>                image_info_list.append(image_info_dict)<br>                <br>        album_info[<span class="hljs-string">&#x27;image_info&#x27;</span>] = image_info_list<br>        album_info[<span class="hljs-string">&#x27;directory&#x27;</span>] = sub_image_dir<br>        <br>        tar_info_json_file_path = os.path.join(tar_sub_image_path, config.Parameters.Album_Ddescription_File_Name)      <br>        <br>        <span class="hljs-keyword">with</span> <span class="hljs-built_in">open</span>(tar_info_json_file_path,<span class="hljs-string">&#x27;w&#x27;</span>,encoding=<span class="hljs-string">&#x27;utf-8&#x27;</span>) <span class="hljs-keyword">as</span> fp:<br>            json.dump(album_info, fp, indent=<span class="hljs-number">3</span>, ensure_ascii=<span class="hljs-literal">False</span>)<br>            log(<span class="hljs-string">f&#x27;json file of image dir <span class="hljs-subst">&#123;sub_image_dir&#125;</span> created&#x27;</span>)<br>            <br>            <br><span class="hljs-function"><span class="hljs-keyword">def</span> <span class="hljs-title">json_integrate</span>(<span class="hljs-params">temp_root</span>):</span><br>    <span class="hljs-string">&#x27;&#x27;&#x27;</span><br><span class="hljs-string">    integrate json files to a single file</span><br><span class="hljs-string">    &#x27;&#x27;&#x27;</span><br>    sub_image_dirs = os.listdir(temp_root)<br>    <br>    album_dict = &#123;&#125;<br>    <br>    album_json_list = []<br>    <br>    <span class="hljs-keyword">for</span> sub_image_dir <span class="hljs-keyword">in</span> sub_image_dirs:  <br>        <span class="hljs-keyword">if</span> os.path.isdir(os.path.join(temp_root,sub_image_dir)):<br>            json_file_path = os.path.join(temp_root,sub_image_dir, config.Parameters.Album_Ddescription_File_Name)   <br>            <span class="hljs-keyword">assert</span> os.path.exists(json_file_path),<span class="hljs-string">f&#x27;file <span class="hljs-subst">&#123;json_file_path&#125;</span> not flund&#x27;</span><br>            <br>            <span class="hljs-keyword">with</span> <span class="hljs-built_in">open</span>(json_file_path) <span class="hljs-keyword">as</span> fp:<br>                json_dict = json.load(fp)<br>            <br>            album_json_list.append(json_dict)<br>            <br>    album_dict[<span class="hljs-string">&#x27;album&#x27;</span>] = album_json_list<br>    <br>    integrate_json_path = os.path.join(temp_root, config.Parameters.Album_Total_Json)<br>    <span class="hljs-keyword">with</span> <span class="hljs-built_in">open</span>(integrate_json_path, mode=<span class="hljs-string">&#x27;w&#x27;</span>, encoding=<span class="hljs-string">&#x27;utf-8&#x27;</span>) <span class="hljs-keyword">as</span> fp:<br>        json.dump(album_dict, fp, ensure_ascii=<span class="hljs-literal">False</span>, indent=<span class="hljs-number">3</span>)<br>        log(<span class="hljs-string">f&#x27;total json <span class="hljs-subst">&#123;integrate_json_path&#125;</span> saved&#x27;</span>)<br>        <br>    <span class="hljs-keyword">return</span> album_dict<br>        <br><span class="hljs-function"><span class="hljs-keyword">def</span> <span class="hljs-title">make_dir_json_md_of_album</span>(<span class="hljs-params">temp_root, hexo_photos_path, album_dict</span>):</span><br>    <span class="hljs-string">&#x27;&#x27;&#x27;</span><br><span class="hljs-string">    save md files to hexo source/photos dir</span><br><span class="hljs-string">    &#x27;&#x27;&#x27;</span><br>    <span class="hljs-keyword">assert</span> os.path.isdir(hexo_photos_path) ,<span class="hljs-string">&#x27;hexo photos path &#123;hexo_photos_path&#125; does not exist&#x27;</span><br>    <br>    src_album_json_path = os.path.join(temp_root, config.Parameters.Album_Total_Json)<br>    <span class="hljs-keyword">assert</span> os.path.exists(src_album_json_path), <span class="hljs-string">f&#x27;album json file <span class="hljs-subst">&#123;src_album_json_path&#125;</span> not found&#x27;</span><br>    tar_album_json_path = os.path.join(hexo_photos_path, config.Parameters.Album_Total_Json)<br>    <br>    shutil.copy(src_album_json_path, tar_album_json_path)<br>    log(<span class="hljs-string">f&quot;json file <span class="hljs-subst">&#123;config.Parameters.Album_Total_Json&#125;</span> moved to hexo dir&quot;</span>)<br>    <span class="hljs-keyword">for</span> sub_image_dict <span class="hljs-keyword">in</span> album_dict[<span class="hljs-string">&#x27;album&#x27;</span>]:<br>        src_json_path = os.path.join(temp_root, sub_image_dict[<span class="hljs-string">&#x27;directory&#x27;</span>], config.Parameters.Album_Ddescription_File_Name)<br>        <span class="hljs-keyword">assert</span> os.path.exists(src_json_path), <span class="hljs-string">f&#x27;sub json file <span class="hljs-subst">&#123;src_json_path&#125;</span> not found&#x27;</span><br>        <br>        tar_json_path = os.path.join(hexo_photos_path, sub_image_dict[<span class="hljs-string">&#x27;directory&#x27;</span>], config.Parameters.Album_Ddescription_File_Name)<br>        image_dir = os.path.join(hexo_photos_path, sub_image_dict[<span class="hljs-string">&#x27;directory&#x27;</span>])<br>        dir_check(image_dir)<br>        <br>        shutil.copyfile(src_json_path, tar_json_path)<br>        log(<span class="hljs-string">f&quot;json file <span class="hljs-subst">&#123;sub_image_dict[<span class="hljs-string">&#x27;directory&#x27;</span>] +<span class="hljs-string">&#x27;_&#x27;</span>+ config.Parameters.Album_Ddescription_File_Name&#125;</span> moved to hexo dir&quot;</span>)<br>        <br>        <span class="hljs-keyword">with</span> <span class="hljs-built_in">open</span>(os.path.join(image_dir,config.Parameters.Album_Md_File_Name),<span class="hljs-string">&#x27;w&#x27;</span>, encoding=<span class="hljs-string">&#x27;utf-8&#x27;</span>) <span class="hljs-keyword">as</span> fp:<br>            fp.writelines(<span class="hljs-string">&#x27;---&#x27;</span>+<span class="hljs-string">&#x27;\n&#x27;</span>)<br>            fp.writelines(<span class="hljs-string">&#x27;title: &#x27;</span>+sub_image_dict[<span class="hljs-string">&#x27;title&#x27;</span>]+<span class="hljs-string">&#x27;\n&#x27;</span>)<br>            fp.writelines(<span class="hljs-string">&#x27;date: &#x27;</span>+<span class="hljs-built_in">str</span>(sub_image_dict[<span class="hljs-string">&#x27;time&#x27;</span>][<span class="hljs-string">&#x27;year&#x27;</span>])+<span class="hljs-string">&#x27;-&#x27;</span>+<span class="hljs-built_in">str</span>(sub_image_dict[<span class="hljs-string">&#x27;time&#x27;</span>][<span class="hljs-string">&#x27;month&#x27;</span>])+<span class="hljs-string">&#x27;-&#x27;</span>+<span class="hljs-built_in">str</span>(sub_image_dict[<span class="hljs-string">&#x27;time&#x27;</span>][<span class="hljs-string">&#x27;day&#x27;</span>])+<span class="hljs-string">&#x27;\n&#x27;</span>)<br>            fp.writelines(<span class="hljs-string">&#x27;type: photography&#x27;</span>+<span class="hljs-string">&#x27;\n&#x27;</span>)<br>            fp.writelines(<span class="hljs-string">&#x27;album: &#x27;</span>+sub_image_dict[<span class="hljs-string">&#x27;directory&#x27;</span>]+<span class="hljs-string">&#x27;\n&#x27;</span>)<br>            fp.writelines(<span class="hljs-string">&#x27;---&#x27;</span>+<span class="hljs-string">&#x27;\n&#x27;</span>)<br>            log(<span class="hljs-string">f&#x27;create md file of <span class="hljs-subst">&#123;os.path.join(image_dir,config.Parameters.Album_Md_File_Name)&#125;</span>&#x27;</span>)<br></code></pre></td></tr></table></figure>
 
 <blockquote>
 <p>主函数</p>
 </blockquote>
-<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">import</span> os</span><br><span class="line"><span class="keyword">import</span> config</span><br><span class="line"></span><br><span class="line"><span class="keyword">from</span> funs <span class="keyword">import</span> environment_check</span><br><span class="line"><span class="keyword">from</span> funs <span class="keyword">import</span> deal_with_sub_json</span><br><span class="line"><span class="keyword">from</span> funs <span class="keyword">import</span> json_integrate</span><br><span class="line"><span class="keyword">from</span> funs <span class="keyword">import</span> image_compression_and_save</span><br><span class="line"><span class="keyword">from</span> funs <span class="keyword">import</span> make_dir_json_md_of_album</span><br><span class="line"></span><br><span class="line"></span><br><span class="line"></span><br><span class="line"><span class="keyword">if</span> __name__ ==<span class="string">&#x27;__main__&#x27;</span>:</span><br><span class="line">    </span><br><span class="line">    src_image_root = config.Parameters.Image_Root_Path</span><br><span class="line">    temp_image_root = config.Parameters.Uploading_Temp_Image_Path</span><br><span class="line">    hexo_photos_path = os.path.join(config.Parameters.Hexo_Root_Path,config.Parameters.Hexo_Sub_Dir_to_Photos)</span><br><span class="line">    </span><br><span class="line">    <span class="comment">## check config environment</span></span><br><span class="line">    environment_check()</span><br><span class="line">    </span><br><span class="line">    <span class="comment">## compress and save images</span></span><br><span class="line">    image_compression_and_save(src_image_root, temp_image_root)</span><br><span class="line">    </span><br><span class="line">    <span class="comment">## get info of images and save json of each dir</span></span><br><span class="line">    deal_with_sub_json(src_image_root, temp_image_root)</span><br><span class="line">    </span><br><span class="line">    <span class="comment">## integrate jsons</span></span><br><span class="line">    album_dict = json_integrate(temp_image_root)</span><br><span class="line">    </span><br><span class="line">    <span class="comment">## make folders and markdowns in dir of photos</span></span><br><span class="line">    make_dir_json_md_of_album(temp_image_root, hexo_photos_path, album_dict)</span><br><span class="line">    </span><br><span class="line">    <span class="comment">## upload images with qshell</span></span><br><span class="line">    <span class="keyword">if</span> config.Parameters.Force_Upload:</span><br><span class="line">        os.system(<span class="string">&quot;rm -rf ~/.qshell/qupload&quot;</span>)</span><br><span class="line">        </span><br><span class="line">    cmd = <span class="string">&quot;qshell qupload &quot;</span>+os.path.join(config.Parameters.Uploading_Temp_Image_Path,config.Parameters.Qshell_Config_File_Name)</span><br><span class="line">    os.system(cmd)</span><br></pre></td></tr></table></figure>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br></pre></td><td class="code"><pre><code class="hljs python"><span class="hljs-keyword">import</span> os<br><span class="hljs-keyword">import</span> config<br><br><span class="hljs-keyword">from</span> funs <span class="hljs-keyword">import</span> environment_check<br><span class="hljs-keyword">from</span> funs <span class="hljs-keyword">import</span> deal_with_sub_json<br><span class="hljs-keyword">from</span> funs <span class="hljs-keyword">import</span> json_integrate<br><span class="hljs-keyword">from</span> funs <span class="hljs-keyword">import</span> image_compression_and_save<br><span class="hljs-keyword">from</span> funs <span class="hljs-keyword">import</span> make_dir_json_md_of_album<br><br><br><br><span class="hljs-keyword">if</span> __name__ ==<span class="hljs-string">&#x27;__main__&#x27;</span>:<br>    <br>    src_image_root = config.Parameters.Image_Root_Path<br>    temp_image_root = config.Parameters.Uploading_Temp_Image_Path<br>    hexo_photos_path = os.path.join(config.Parameters.Hexo_Root_Path,config.Parameters.Hexo_Sub_Dir_to_Photos)<br>    <br>    <span class="hljs-comment">## check config environment</span><br>    environment_check()<br>    <br>    <span class="hljs-comment">## compress and save images</span><br>    image_compression_and_save(src_image_root, temp_image_root)<br>    <br>    <span class="hljs-comment">## get info of images and save json of each dir</span><br>    deal_with_sub_json(src_image_root, temp_image_root)<br>    <br>    <span class="hljs-comment">## integrate jsons</span><br>    album_dict = json_integrate(temp_image_root)<br>    <br>    <span class="hljs-comment">## make folders and markdowns in dir of photos</span><br>    make_dir_json_md_of_album(temp_image_root, hexo_photos_path, album_dict)<br>    <br>    <span class="hljs-comment">## upload images with qshell</span><br>    <span class="hljs-keyword">if</span> config.Parameters.Force_Upload:<br>        os.system(<span class="hljs-string">&quot;rm -rf ~/.qshell/qupload&quot;</span>)<br>        <br>    cmd = <span class="hljs-string">&quot;qshell qupload &quot;</span>+os.path.join(config.Parameters.Uploading_Temp_Image_Path,config.Parameters.Qshell_Config_File_Name)<br>    os.system(cmd)<br></code></pre></td></tr></table></figure>
 
 <blockquote>
 <p>主要函数做了注释，希望可以给大家启发，如果想使用我这套代码可以到 <a target="_blank" rel="noopener" href="https://github.com/zywvvd/hexo_album_process">hexo_album_process</a> 下载</p>
@@ -356,404 +278,316 @@
 <h2 id="运行图示"><a href="#运行图示" class="headerlink" title="运行图示"></a>运行图示</h2><ul>
 <li>初始相册文件夹pic</li>
 </ul>
-<p><img src="https://photos.zywvvd.com/image/20200428001615.png"></p>
+<p><img src="https://photos.zywvvd.com/image/20200428001615.png" srcset="/img/loading.gif" lazyload></p>
 <ul>
 <li>相册内部</li>
 </ul>
-<p><img src="https://photos.zywvvd.com/image/20200428001650.png"></p>
+<p><img src="https://photos.zywvvd.com/image/20200428001650.png" srcset="/img/loading.gif" lazyload></p>
 <ul>
 <li>每个文件夹需要有readme.json记录文件夹信息，程序会自动提取，示例如下：</li>
 </ul>
-<figure class="highlight json"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br></pre></td><td class="code"><pre><span class="line">&#123;</span><br><span class="line">	<span class="attr">&quot;time&quot;</span>:</span><br><span class="line">	&#123;</span><br><span class="line">		<span class="attr">&quot;year&quot;</span>:<span class="number">2015</span>,</span><br><span class="line">		<span class="attr">&quot;month&quot;</span>:<span class="number">11</span>,</span><br><span class="line">		<span class="attr">&quot;day&quot;</span>:<span class="number">28</span></span><br><span class="line">	&#125;,</span><br><span class="line">	<span class="attr">&quot;type&quot;</span>:<span class="string">&quot;风光&quot;</span>,</span><br><span class="line">	<span class="attr">&quot;model&quot;</span>:<span class="string">&quot;&quot;</span>,</span><br><span class="line">	<span class="attr">&quot;position&quot;</span>:</span><br><span class="line">	&#123;</span><br><span class="line">		<span class="attr">&quot;city&quot;</span>:<span class="string">&quot;合肥&quot;</span>,</span><br><span class="line">		<span class="attr">&quot;street&quot;</span>:<span class="string">&quot;ustc&quot;</span></span><br><span class="line">	&#125;,</span><br><span class="line">	<span class="attr">&quot;title&quot;</span>:<span class="string">&quot;USTC&quot;</span>,</span><br><span class="line">	<span class="attr">&quot;balabala&quot;</span>:</span><br><span class="line">		<span class="string">&quot;关于母校。&quot;</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<figure class="highlight json"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br></pre></td><td class="code"><pre><code class="hljs json">&#123;<br>	<span class="hljs-attr">&quot;time&quot;</span>:<br>	&#123;<br>		<span class="hljs-attr">&quot;year&quot;</span>:<span class="hljs-number">2015</span>,<br>		<span class="hljs-attr">&quot;month&quot;</span>:<span class="hljs-number">11</span>,<br>		<span class="hljs-attr">&quot;day&quot;</span>:<span class="hljs-number">28</span><br>	&#125;,<br>	<span class="hljs-attr">&quot;type&quot;</span>:<span class="hljs-string">&quot;风光&quot;</span>,<br>	<span class="hljs-attr">&quot;model&quot;</span>:<span class="hljs-string">&quot;&quot;</span>,<br>	<span class="hljs-attr">&quot;position&quot;</span>:<br>	&#123;<br>		<span class="hljs-attr">&quot;city&quot;</span>:<span class="hljs-string">&quot;合肥&quot;</span>,<br>		<span class="hljs-attr">&quot;street&quot;</span>:<span class="hljs-string">&quot;ustc&quot;</span><br>	&#125;,<br>	<span class="hljs-attr">&quot;title&quot;</span>:<span class="hljs-string">&quot;USTC&quot;</span>,<br>	<span class="hljs-attr">&quot;balabala&quot;</span>:<br>		<span class="hljs-string">&quot;关于母校。&quot;</span><br>&#125;<br></code></pre></td></tr></table></figure>
 
 <ul>
 <li>配置config.py </li>
 </ul>
-<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">Image_Root_Path = <span class="string">r&#x27;/media/vvd/新加卷/pic&#x27;</span>                                   												<span class="comment"># root of source raw images</span></span><br><span class="line">Hexo_Root_Path =<span class="string">r&#x27;/home/vvd/VVD_Work/Hexo/VVD_Hexo&#x27;</span>                        		 					 <span class="comment"># root of Hexo dir  </span></span><br><span class="line">Hexo_Sub_Dir_to_Photos = <span class="string">r&#x27;source/photos&#x27;</span>                                  												   <span class="comment"># my source dir for album</span></span><br><span class="line">Uploading_Temp_Image_Path = <span class="string">r&#x27;/home/vvd/VVD_Work/Hexo/Album_Temp&#x27;</span>           	<span class="comment"># root of temp image dir</span></span><br><span class="line">Image_Url_Prefix =<span class="string">r&#x27;https://photos.zywvvd.com/vvd_hexo/&#x27;</span>                    							  <span class="comment"># prefix of image url</span></span><br></pre></td></tr></table></figure>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><code class="hljs python">Image_Root_Path = <span class="hljs-string">r&#x27;/media/vvd/新加卷/pic&#x27;</span>                                   												<span class="hljs-comment"># root of source raw images</span><br>Hexo_Root_Path =<span class="hljs-string">r&#x27;/home/vvd/VVD_Work/Hexo/VVD_Hexo&#x27;</span>                        		 					 <span class="hljs-comment"># root of Hexo dir  </span><br>Hexo_Sub_Dir_to_Photos = <span class="hljs-string">r&#x27;source/photos&#x27;</span>                                  												   <span class="hljs-comment"># my source dir for album</span><br>Uploading_Temp_Image_Path = <span class="hljs-string">r&#x27;/home/vvd/VVD_Work/Hexo/Album_Temp&#x27;</span>           	<span class="hljs-comment"># root of temp image dir</span><br>Image_Url_Prefix =<span class="hljs-string">r&#x27;https://photos.zywvvd.com/vvd_hexo/&#x27;</span>                    							  <span class="hljs-comment"># prefix of image url</span><br></code></pre></td></tr></table></figure>
 
 <ul>
 <li>运行main.py</li>
 </ul>
-<p><img src="https://photos.zywvvd.com/image/20200428002036.png"></p>
+<p><img src="https://photos.zywvvd.com/image/20200428002036.png" srcset="/img/loading.gif" lazyload></p>
 <ul>
 <li>临时文件夹产生压缩后的图像文件夹与json文件</li>
 </ul>
-<p><img src="https://photos.zywvvd.com/image/20200428002127.png"></p>
+<p><img src="https://photos.zywvvd.com/image/20200428002127.png" srcset="/img/loading.gif" lazyload></p>
 <ul>
 <li>程序会在hexo-&gt;source-&gt; photos文件夹内写入相册文件夹层级结构与对应json文件</li>
 </ul>
-<p><img src="20200428235033.png"></p>
+<p><img src="20200428235033.png" srcset="/img/loading.gif" lazyload></p>
 <ul>
 <li>文件夹内的json加入了图像的信息</li>
 </ul>
-<p><img src="https://photos.zywvvd.com/image/20200428002202.png"></p>
-<figure class="highlight json"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br></pre></td><td class="code"><pre><span class="line">&#123;</span><br><span class="line">   <span class="attr">&quot;time&quot;</span>: &#123;</span><br><span class="line">      <span class="attr">&quot;year&quot;</span>: <span class="number">2015</span>,</span><br><span class="line">      <span class="attr">&quot;month&quot;</span>: <span class="number">11</span>,</span><br><span class="line">      <span class="attr">&quot;day&quot;</span>: <span class="number">28</span></span><br><span class="line">   &#125;,</span><br><span class="line">   <span class="attr">&quot;type&quot;</span>: <span class="string">&quot;风光&quot;</span>,</span><br><span class="line">   <span class="attr">&quot;model&quot;</span>: <span class="string">&quot;&quot;</span>,</span><br><span class="line">   <span class="attr">&quot;position&quot;</span>: &#123;</span><br><span class="line">      <span class="attr">&quot;city&quot;</span>: <span class="string">&quot;合肥&quot;</span>,</span><br><span class="line">      <span class="attr">&quot;street&quot;</span>: <span class="string">&quot;ustc&quot;</span></span><br><span class="line">   &#125;,</span><br><span class="line">   <span class="attr">&quot;title&quot;</span>: <span class="string">&quot;USTC&quot;</span>,</span><br><span class="line">   <span class="attr">&quot;balabala&quot;</span>: <span class="string">&quot;关于母校。&quot;</span>,</span><br><span class="line">   <span class="attr">&quot;image_info&quot;</span>: [</span><br><span class="line">      &#123;</span><br><span class="line">         <span class="attr">&quot;Image_Model&quot;</span>: <span class="string">&quot;NIKON D610&quot;</span>,</span><br><span class="line">         <span class="attr">&quot;EXIF_FNumber&quot;</span>: <span class="string">&quot;f11&quot;</span>,</span><br><span class="line">         <span class="attr">&quot;EXIF_FocalLength&quot;</span>: <span class="string">&quot;35mm&quot;</span>,</span><br><span class="line">         <span class="attr">&quot;EXIF_ExposureMode&quot;</span>: <span class="string">&quot;Auto Exposure&quot;</span>,</span><br><span class="line">         <span class="attr">&quot;EXIF_ExposureTime&quot;</span>: <span class="string">&quot;6s&quot;</span>,</span><br><span class="line">         <span class="attr">&quot;EXIF_ISOSpeedRatings&quot;</span>: <span class="string">&quot;100&quot;</span>,</span><br><span class="line">         <span class="attr">&quot;Image_DateTime&quot;</span>: <span class="string">&quot;2015:11:28 00:07:05&quot;</span>,</span><br><span class="line">         <span class="attr">&quot;url&quot;</span>: <span class="string">&quot;https://photos.zywvvd.com/vvd_hexo/2015_11_28_hefei_ustc_fengjing/1.jpg&quot;</span></span><br><span class="line">      &#125;,</span><br><span class="line">      &#123;</span><br><span class="line">         <span class="attr">&quot;Image_Model&quot;</span>: <span class="string">&quot;NIKON D610&quot;</span>,</span><br><span class="line">         <span class="attr">&quot;EXIF_FNumber&quot;</span>: <span class="string">&quot;f4&quot;</span>,</span><br><span class="line">         <span class="attr">&quot;EXIF_FocalLength&quot;</span>: <span class="string">&quot;34mm&quot;</span>,</span><br><span class="line">         <span class="attr">&quot;EXIF_ExposureMode&quot;</span>: <span class="string">&quot;Manual Exposure&quot;</span>,</span><br><span class="line">         <span class="attr">&quot;EXIF_ExposureTime&quot;</span>: <span class="string">&quot;25s&quot;</span>,</span><br><span class="line">         <span class="attr">&quot;Image_DateTime&quot;</span>: <span class="string">&quot;2015:11:28 22:13:29&quot;</span>,</span><br><span class="line">         <span class="attr">&quot;url&quot;</span>: <span class="string">&quot;https://photos.zywvvd.com/vvd_hexo/2015_11_28_hefei_ustc_fengjing/2.jpg&quot;</span></span><br><span class="line">      &#125;</span><br><span class="line">   ],</span><br><span class="line">   <span class="attr">&quot;directory&quot;</span>: <span class="string">&quot;2015_11_28_hefei_ustc_fengjing&quot;</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p><img src="https://photos.zywvvd.com/image/20200428002202.png" srcset="/img/loading.gif" lazyload></p>
+<figure class="highlight json"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br></pre></td><td class="code"><pre><code class="hljs json">&#123;<br>   <span class="hljs-attr">&quot;time&quot;</span>: &#123;<br>      <span class="hljs-attr">&quot;year&quot;</span>: <span class="hljs-number">2015</span>,<br>      <span class="hljs-attr">&quot;month&quot;</span>: <span class="hljs-number">11</span>,<br>      <span class="hljs-attr">&quot;day&quot;</span>: <span class="hljs-number">28</span><br>   &#125;,<br>   <span class="hljs-attr">&quot;type&quot;</span>: <span class="hljs-string">&quot;风光&quot;</span>,<br>   <span class="hljs-attr">&quot;model&quot;</span>: <span class="hljs-string">&quot;&quot;</span>,<br>   <span class="hljs-attr">&quot;position&quot;</span>: &#123;<br>      <span class="hljs-attr">&quot;city&quot;</span>: <span class="hljs-string">&quot;合肥&quot;</span>,<br>      <span class="hljs-attr">&quot;street&quot;</span>: <span class="hljs-string">&quot;ustc&quot;</span><br>   &#125;,<br>   <span class="hljs-attr">&quot;title&quot;</span>: <span class="hljs-string">&quot;USTC&quot;</span>,<br>   <span class="hljs-attr">&quot;balabala&quot;</span>: <span class="hljs-string">&quot;关于母校。&quot;</span>,<br>   <span class="hljs-attr">&quot;image_info&quot;</span>: [<br>      &#123;<br>         <span class="hljs-attr">&quot;Image_Model&quot;</span>: <span class="hljs-string">&quot;NIKON D610&quot;</span>,<br>         <span class="hljs-attr">&quot;EXIF_FNumber&quot;</span>: <span class="hljs-string">&quot;f11&quot;</span>,<br>         <span class="hljs-attr">&quot;EXIF_FocalLength&quot;</span>: <span class="hljs-string">&quot;35mm&quot;</span>,<br>         <span class="hljs-attr">&quot;EXIF_ExposureMode&quot;</span>: <span class="hljs-string">&quot;Auto Exposure&quot;</span>,<br>         <span class="hljs-attr">&quot;EXIF_ExposureTime&quot;</span>: <span class="hljs-string">&quot;6s&quot;</span>,<br>         <span class="hljs-attr">&quot;EXIF_ISOSpeedRatings&quot;</span>: <span class="hljs-string">&quot;100&quot;</span>,<br>         <span class="hljs-attr">&quot;Image_DateTime&quot;</span>: <span class="hljs-string">&quot;2015:11:28 00:07:05&quot;</span>,<br>         <span class="hljs-attr">&quot;url&quot;</span>: <span class="hljs-string">&quot;https://photos.zywvvd.com/vvd_hexo/2015_11_28_hefei_ustc_fengjing/1.jpg&quot;</span><br>      &#125;,<br>      &#123;<br>         <span class="hljs-attr">&quot;Image_Model&quot;</span>: <span class="hljs-string">&quot;NIKON D610&quot;</span>,<br>         <span class="hljs-attr">&quot;EXIF_FNumber&quot;</span>: <span class="hljs-string">&quot;f4&quot;</span>,<br>         <span class="hljs-attr">&quot;EXIF_FocalLength&quot;</span>: <span class="hljs-string">&quot;34mm&quot;</span>,<br>         <span class="hljs-attr">&quot;EXIF_ExposureMode&quot;</span>: <span class="hljs-string">&quot;Manual Exposure&quot;</span>,<br>         <span class="hljs-attr">&quot;EXIF_ExposureTime&quot;</span>: <span class="hljs-string">&quot;25s&quot;</span>,<br>         <span class="hljs-attr">&quot;Image_DateTime&quot;</span>: <span class="hljs-string">&quot;2015:11:28 22:13:29&quot;</span>,<br>         <span class="hljs-attr">&quot;url&quot;</span>: <span class="hljs-string">&quot;https://photos.zywvvd.com/vvd_hexo/2015_11_28_hefei_ustc_fengjing/2.jpg&quot;</span><br>      &#125;<br>   ],<br>   <span class="hljs-attr">&quot;directory&quot;</span>: <span class="hljs-string">&quot;2015_11_28_hefei_ustc_fengjing&quot;</span><br>&#125;<br></code></pre></td></tr></table></figure>
 
 <ul>
 <li>图像会自动上传到七牛云</li>
 </ul>
-<p><img src="https://photos.zywvvd.com/image/20200428002346.png"></p>
+<p><img src="https://photos.zywvvd.com/image/20200428002346.png" srcset="/img/loading.gif" lazyload></p>
 <h2 id="小结"><a href="#小结" class="headerlink" title="小结"></a>小结</h2><blockquote>
 <p>文中没有太先进的技术，主要提供了为静态页面自动维护相册问题的解决思路，并分享了json生成与图像上传的工程，有更好的实现方法欢迎交流。</p>
 </blockquote>
 <h2 id="参考链接"><a href="#参考链接" class="headerlink" title="参考链接"></a>参考链接</h2><p>本文启发自 <a target="_blank" rel="noopener" href="https://asdfv1929.github.io/2018/05/26/next-add-photos/">https://asdfv1929.github.io/2018/05/26/next-add-photos/</a> 感谢前辈分享</p>
 <link rel="stylesheet" href="/css/spoiler.css" type="text/css"><script src="/js/spoiler.js" type="text/javascript" async></script>
-    </div>
-
-    
-    
-    
-        <div class="reward-container">
-  <div>您的支持是我前进的最大动力！</div>
-  <button onclick="var qr = document.getElementById('qr'); qr.style.display = (qr.style.display === 'none') ? 'block' : 'none';">
-    赏
-  </button>
-  <div id="qr" style="display: none;">
-      
-      <div style="display: inline-block;">
-        <img src="/images/wechatpay.png" alt="Yiwei Zhang 微 信">
-        <p>微 信</p>
-      </div>
-      
-      <div style="display: inline-block;">
-        <img src="/images/alipay.png" alt="Yiwei Zhang 支付宝">
-        <p>支付宝</p>
-      </div>
-
-  </div>
-</div>
-
-        
-
-<div>
-<ul class="post-copyright">
-  <li class="post-copyright-author">
-  <span><strong>本文标题&nbsp:&nbsp&nbsp</strong>Next -23- 添加相册系列 -3- 获取图像信息、保存为json文件并上传图像<br></span>
-  <span><strong>文章作者&nbsp:&nbsp&nbsp</strong><br></span>
-  <span><strong>发布时间&nbsp:&nbsp&nbsp</strong>2020年04月22日 - 00:26:22<br></span>
-  <span><strong>最后更新&nbsp:&nbsp&nbsp</strong>2020年07月07日 - 23:43:15<br></span>
-  <span><strong>原始链接&nbsp:&nbsp&nbsp</strong><a href="/2020/04/22/next/23_get_image_info/get-image-info/" title="Next -23- 添加相册系列 -3- 获取图像信息、保存为json文件并上传图像">https://www.zywvvd.com/2020/04/22/next/23_get_image_info/get-image-info/</a><br></span>
-  <span><strong>许可协议&nbsp:&nbsp&nbsp</strong><i class="fa fa-creative-commons"></i> <a rel="license" href="https://creativecommons.org/licenses/by-nc-nd/4.0/" target="_blank" title="Attribution-NonCommercial-NoDerivatives 4.0 International (CC BY-NC-ND 4.0)">署名-非商业性使用-禁止演绎 4.0 国际</a> 转载请保留原文链接及作者<br></span>  
-	
-   <!-- <strong>Beitragsautor:  </strong>Yiwei Zhang
-  </li>
-  <li class="post-copyright-link">
-    <strong>Beitragslink: </strong>
-    <a href="https://www.zywvvd.com/2020/04/22/next/23_get_image_info/get-image-info/" title="Next -23- 添加相册系列 -3- 获取图像信息、保存为json文件并上传图像">https://www.zywvvd.com/2020/04/22/next/23_get_image_info/get-image-info/</a>
-  </li>
-  <li class="post-copyright-license">
-    <strong>Urheberrechtshinweis:  </strong>Alle Artikel in diesem Blog sind unter <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/deed.zh" rel="noopener" target="_blank"><i class="fa fa-fw fa-creative-commons"></i>BY-NC-SA</a> lizenziert, außer es wird anders angegeben.
-  </li>-->
-</ul>
-</div>
-
-
-      <footer class="post-footer">
-          <div class="post-tags">
-              <a href="/tags/Next/" rel="tag"># Next</a>
-          </div>
-
-        
-
-
-        
-    <div class="post-nav">
-      <div class="post-nav-item">
-    <a href="/2020/04/11/python/kite_install/kite_install/" rel="prev" title="Kite Python代码补全工具安装">
-      <i class="fa fa-chevron-left"></i> Kite Python代码补全工具安装
-    </a></div>
-      <div class="post-nav-item">
-    <a href="/2020/04/28/next/24_build_online_albums/build-online-albums/" rel="next" title="Next -24- 添加相册系列 -4- 将本地相册信息部署到hexo">
-      Next -24- 添加相册系列 -4- 将本地相册信息部署到hexo <i class="fa fa-chevron-right"></i>
-    </a></div>
-    </div>
-      </footer>
-    
-  </article>
-  
-  
-  
-
-  </div>
-
-
-          </div>
-          
-    <div class="comments" id="valine-comments"></div>
-
-<script>
-  window.addEventListener('tabs:register', () => {
-    let activeClass = CONFIG.comments.activeClass;
-    if (CONFIG.comments.storage) {
-      activeClass = localStorage.getItem('comments_active') || activeClass;
-    }
-    if (activeClass) {
-      let activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
-      if (activeTab) {
-        activeTab.click();
-      }
-    }
-  });
-  if (CONFIG.comments.storage) {
-    window.addEventListener('tabs:click', event => {
-      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
-      let commentClass = event.target.classList[1];
-      localStorage.setItem('comments_active', commentClass);
-    });
-  }
-</script>
-
-        </div>
-          
-  
-  <div class="toggle sidebar-toggle">
-    <span class="toggle-line toggle-line-first"></span>
-    <span class="toggle-line toggle-line-middle"></span>
-    <span class="toggle-line toggle-line-last"></span>
-  </div>
-
-  <aside class="sidebar">
-    <div class="sidebar-inner">
-
-      <ul class="sidebar-nav motion-element">
-        <li class="sidebar-nav-toc">
-          文章目录
-        </li>
-        <li class="sidebar-nav-overview">
-          小站概览
-        </li>
-      </ul>
-
-      <!--noindex-->
-      <div class="post-toc-wrap sidebar-panel">
-          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%87%86%E5%A4%87%E5%B7%A5%E4%BD%9C"><span class="nav-number">1.</span> <span class="nav-text">准备工作</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E7%9B%AE%E6%A0%87"><span class="nav-number">2.</span> <span class="nav-text">目标</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%B7%A5%E7%A8%8B%E4%BB%A3%E7%A0%81"><span class="nav-number">3.</span> <span class="nav-text">工程代码</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E8%BF%90%E8%A1%8C%E5%9B%BE%E7%A4%BA"><span class="nav-number">4.</span> <span class="nav-text">运行图示</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%B0%8F%E7%BB%93"><span class="nav-number">5.</span> <span class="nav-text">小结</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%8F%82%E8%80%83%E9%93%BE%E6%8E%A5"><span class="nav-number">6.</span> <span class="nav-text">参考链接</span></a></li></ol></div>
-      </div>
-      <!--/noindex-->
-
-
-
-      <div class="site-overview-wrap sidebar-panel">
-        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
-    <img class="site-author-image" itemprop="image" alt="Yiwei Zhang"
-      src="/images/avatar.png">
-  <p class="site-author-name" itemprop="name">Yiwei Zhang</p>
-  <div class="site-description" itemprop="description">Stay hungury ! Stay foolish ！</div>
-</div>
-
-
-         
-            <div class="feed-link motion-element">
-              <a href="/atom.xml" rel="alternate">
-                <i class="fa fa-rss"></i>
-                RSS
-              </a>
             </div>
-          
-<div class="site-state-wrap motion-element">
-  <nav class="site-state">
-      <div class="site-state-item site-state-posts">
-          <a href="/archives/">
-        
-          <span class="site-state-item-count">247</span>
-          <span class="site-state-item-name">日志</span>
-        </a>
-      </div>
-      <div class="site-state-item site-state-categories">
-            <a href="/categories/">
-          
-        <span class="site-state-item-count">97</span>
-        <span class="site-state-item-name">分类</span></a>
-      </div>
-      <div class="site-state-item site-state-tags">
-            <a href="/tags/">
-          
-        <span class="site-state-item-count">83</span>
-        <span class="site-state-item-name">标签</span></a>
-      </div>
-  </nav>
-</div>
-  <div class="links-of-author motion-element">
-      <span class="links-of-author-item">
-        <a href="https://github.com/zywvvd" title="GitHub → https:&#x2F;&#x2F;github.com&#x2F;zywvvd" rel="noopener" target="_blank"><i class="fa fa-fw fa-github"></i>GitHub</a>
-      </span>
-      <span class="links-of-author-item">
-        <a href="mailto:zywvvd@mail.ustc.edu.cn" title="E-Mail → mailto:zywvvd@mail.ustc.edu.cn" rel="noopener" target="_blank"><i class="fa fa-fw fa-envelope"></i>E-Mail</a>
-      </span>
-  </div>
+            <hr>
+            <div>
+              <div class="post-metas mb-3">
+                
+                  <div class="post-meta mr-3">
+                    <i class="iconfont icon-category"></i>
+                    
+                      <a class="hover-with-bg" href="/categories/Next/">Next</a>
+                    
+                  </div>
+                
+                
+                  <div class="post-meta">
+                    <i class="iconfont icon-tags"></i>
+                    
+                      <a class="hover-with-bg" href="/tags/Next/">Next</a>
+                    
+                  </div>
+                
+              </div>
+              
+                <p class="note note-warning">
+                  
+                    本博客所有文章除特别声明外，均采用 <a target="_blank" href="https://creativecommons.org/licenses/by-sa/4.0/deed.zh" rel="nofollow noopener noopener">CC BY-SA 4.0 协议</a> ，转载请注明出处！
+                  
+                </p>
+              
+              
+                <div class="post-prevnext">
+                  <article class="post-prev col-6">
+                    
+                    
+                      <a href="/2020/04/28/next/24_build_online_albums/build-online-albums/">
+                        <i class="iconfont icon-arrowleft"></i>
+                        <span class="hidden-mobile">Next -24- 添加相册系列 -4- 将本地相册信息部署到hexo</span>
+                        <span class="visible-mobile">上一篇</span>
+                      </a>
+                    
+                  </article>
+                  <article class="post-next col-6">
+                    
+                    
+                      <a href="/2020/04/11/python/kite_install/kite_install/">
+                        <span class="hidden-mobile">Kite Python代码补全工具安装</span>
+                        <span class="visible-mobile">下一篇</span>
+                        <i class="iconfont icon-arrowright"></i>
+                      </a>
+                    
+                  </article>
+                </div>
+              
+            </div>
+
+            
+              <!-- Comments -->
+              <article class="comments" id="comments" lazyload>
+                
+                  
+                
+                
+  <div id="valine"></div>
+  <script type="text/javascript">
+    Fluid.utils.loadComments('#valine', function() {
+      Fluid.utils.createScript('https://cdn.jsdelivr.net/npm/valine@1.4.14/dist/Valine.min.js', function() {
+        var options = Object.assign(
+          {"appId":"OLRteWxoct1JkWm3Pe9BDYEK-gzGzoHsz","appKey":"YBKiC6SE5hpWUmy0WIyegCrM","placeholder":"遗憾莫过于难忘你的背影，却找不到你来过的痕迹 ...","path":"window.location.pathname","avatar":"retro","meta":["nick","mail","link"],"pageSize":10,"lang":"zh-CN","highlight":false,"recordIP":true,"serverURLs":"","emojiCDN":null,"emojiMaps":null,"enableQQ":false,"requiredFields":[]},
+          {
+            el: "#valine",
+            path: window.location.pathname
+          }
+        )
+        new Valine(options);
+      });
+    });
+  </script>
+  <noscript>Please enable JavaScript to view the comments</noscript>
 
 
-
-      </div>
-        <div class="back-to-top motion-element">
-          <i class="fa fa-arrow-up"></i>
-          <span>0%</span>
+              </article>
+            
+          </article>
         </div>
-
+      </div>
     </div>
-  </aside>
-  <div id="sidebar-dimmer"></div>
-
-
-      </div>
-    </main>
-
-    <footer class="footer">
-      <div class="footer-inner">
-        
-  <div class="beian"><a href="https://beian.miit.gov.cn/" rel="noopener" target="_blank">吉ICP备19007275号-1 </a>
-      <img src="/images/gongan.png" style="display: inline-block;"><a href="https://www.beian.gov.cn/portal/registerSystemInfo?recordcode=22020202000251" rel="noopener" target="_blank">吉公网安备 22020202000251号 </a>
-  </div>
-
-<div class="copyright">
-  
-  &copy; 2020 – 
-  <span itemprop="copyrightYear">2021</span>
-  <span class="with-love">
-    <i class="fa fa-user"></i>
-  </span>
-  <span class="author" itemprop="copyrightHolder">Yiwei Zhang</span>
-    <span class="post-meta-divider">|</span>
-    <span class="post-meta-item-icon">
-      <i class="fa fa-area-chart"></i>
-    </span>
-      <span class="post-meta-item-text">站点总字数: </span>
-    <span title="站点总字数">601k</span>
-    <span class="post-meta-divider">|</span>
-    <span class="post-meta-item-icon">
-      <i class="fa fa-coffee"></i>
-    </span>
-      <span class="post-meta-item-text">站点阅读时长 &asymp;</span>
-    <span title="站点阅读时长">9:06</span>
+    
+      <div class="d-none d-lg-block col-lg-2 toc-container" id="toc-ctn">
+        <div id="toc">
+  <p class="toc-header"><i class="iconfont icon-list"></i>&nbsp;目录</p>
+  <div class="toc-body" id="toc-body"></div>
 </div>
-  <div class="powered-by">技术支持 v5.4.0
-  </div>
-  <span class="post-meta-divider">|</span>
-  <div class="theme-info">主题方案 – <a href="https://pisces.theme-next.org/" class="theme-link" rel="noopener" target="_blank">NexT.Pisces</a> v7.7.1
-  </div>
-
-<script async src="//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
-<span><br></span>	
-
-<span class="post-meta-item-icon">
-      <i class="fa fa-group"></i>
-</span>
-<span>总访客&nbsp<span id="busuanzi_value_site_uv"></span>&nbsp人</span>
-<span class="post-meta-divider">|</span>
-<span class="post-meta-item-icon">
-      <i class="fa fa-eye"></i>
-</span>
-<span>访问总量&nbsp<span id="busuanzi_value_site_pv"></span>&nbsp次</span>
-
-        
-
-
-
-
-
-
-
 
       </div>
-    </footer>
+    
   </div>
+</div>
+
+<!-- Custom -->
+
+
+    
+
+    
+      <a id="scroll-top-button" href="#" role="button">
+        <i class="iconfont icon-arrowup" aria-hidden="true"></i>
+      </a>
+    
+
+    
+      <div class="modal fade" id="modalSearch" tabindex="-1" role="dialog" aria-labelledby="ModalLabel"
+     aria-hidden="true">
+  <div class="modal-dialog modal-dialog-scrollable modal-lg" role="document">
+    <div class="modal-content">
+      <div class="modal-header text-center">
+        <h4 class="modal-title w-100 font-weight-bold">搜索</h4>
+        <button type="button" id="local-search-close" class="close" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body mx-3">
+        <div class="md-form mb-5">
+          <input type="text" id="local-search-input" class="form-control validate">
+          <label data-error="x" data-success="v"
+                 for="local-search-input">关键词</label>
+        </div>
+        <div class="list-group" id="local-search-result"></div>
+      </div>
+    </div>
+  </div>
+</div>
+    
+
+    
+  </main>
+
+  <footer class="text-center mt-5 py-3">
+  <div class="footer-content">
+     <a href="https://hexo.io" target="_blank" rel="nofollow noopener"><span>Hexo</span></a> <i class="iconfont icon-love"></i> <a href="https://github.com/fluid-dev/hexo-theme-fluid" target="_blank" rel="nofollow noopener"><span>Fluid</span></a> 
+  </div>
+  
 
   
-  <script src="/lib/anime.min.js"></script>
-  <script src="//cdn.jsdelivr.net/npm/jquery@3/dist/jquery.min.js"></script>
-  <script src="//cdn.jsdelivr.net/gh/fancyapps/fancybox@3/dist/jquery.fancybox.min.js"></script>
-  <script src="/lib/velocity/velocity.min.js"></script>
-  <script src="/lib/velocity/velocity.ui.min.js"></script>
-
-<script src="/js/utils.js"></script>
-
-<script src="/js/motion.js"></script>
-
-
-<script src="/js/schemes/pisces.js"></script>
-
-
-<script src="/js/next-boot.js"></script>
-
-
-
 
   
+</footer>
+
+
+  <!-- SCRIPTS -->
+  
+  <script  src="https://cdn.jsdelivr.net/npm/nprogress@0.2.0/nprogress.min.js" ></script>
+  <link  rel="stylesheet" href="https://cdn.jsdelivr.net/npm/nprogress@0.2.0/nprogress.min.css" />
+
   <script>
-    (function(){
-      var bp = document.createElement('script');
-      var curProtocol = window.location.protocol.split(':')[0];
-      bp.src = (curProtocol === 'https') ? 'https://zz.bdstatic.com/linksubmit/push.js' : 'http://push.zhanzhang.baidu.com/push.js';
-      var s = document.getElementsByTagName("script")[0];
-      s.parentNode.insertBefore(bp, s);
-    })();
+    NProgress.configure({"showSpinner":false,"trickleSpeed":100})
+    NProgress.start()
+    window.addEventListener('load', function() {
+      NProgress.done();
+    })
+  </script>
+
+
+<script  src="https://cdn.jsdelivr.net/npm/jquery@3.6.0/dist/jquery.min.js" ></script>
+<script  src="https://cdn.jsdelivr.net/npm/bootstrap@4.6.0/dist/js/bootstrap.min.js" ></script>
+<script  src="/js/events.js" ></script>
+<script  src="/js/plugins.js" ></script>
+
+<!-- Plugins -->
+
+
+  
+    <script  src="/js/img-lazyload.js" ></script>
+  
+
+
+
+  
+
+
+
+  <script  src="https://cdn.jsdelivr.net/npm/tocbot@4.12.3/dist/tocbot.min.js" ></script>
+
+
+
+  <script  src="https://cdn.jsdelivr.net/npm/@fancyapps/fancybox@3.5.7/dist/jquery.fancybox.min.js" ></script>
+
+
+
+  <script  src="https://cdn.jsdelivr.net/npm/anchor-js@4.3.1/anchor.min.js" ></script>
+
+
+
+  <script defer src="https://cdn.jsdelivr.net/npm/clipboard@2.0.8/dist/clipboard.min.js" ></script>
+
+
+
+  <script  src="/js/local-search.js" ></script>
+
+
+
+
+
+
+  <script  src="https://cdn.jsdelivr.net/npm/typed.js@2.0.12/lib/typed.min.js" ></script>
+  <script>
+    (function (window, document) {
+      var typing = Fluid.plugins.typing;
+      var title = document.getElementById('subtitle').title;
+      
+      typing(title)
+      
+    })(window, document);
   </script>
 
 
 
 
-  
-<script src="/js/local-search.js"></script>
-
-
-
-
-
-
-
-
-
-
-
-<script>
-if (document.querySelectorAll('pre.mermaid').length) {
-  NexT.utils.getScript('//cdn.jsdelivr.net/npm/mermaid@8/dist/mermaid.min.js', () => {
-    mermaid.initialize({
-      theme    : 'default',
-      logLevel : 3,
-      flowchart: { curve     : 'linear' },
-      gantt    : { axisFormat: '%m/%d/%Y' },
-      sequence : { actorMargin: 50 }
-    });
-  }, window.mermaid);
-}
-</script>
-
 
   
 
   
+    <!-- MathJax -->
+    <script>
+      MathJax = {
+        tex: {
+          inlineMath: [['$', '$'], ['\\(', '\\)']]
+        },
+        options: {
+          renderActions: {
+            findScript: [10, doc => {
+              document.querySelectorAll('script[type^="math/tex"]').forEach(node => {
+                const display = !!node.type.match(/; *mode=display/);
+                const math = new doc.options.MathItem(node.textContent, doc.inputJax[0], display);
+                const text = document.createTextNode('');
+                node.parentNode.replaceChild(text, node);
+                math.start = { node: text, delim: '', n: 0 };
+                math.end = { node: text, delim: '', n: 0 };
+                doc.math.push(math);
+              });
+            }, '', false],
+            insertedScript: [200, () => {
+              document.querySelectorAll('mjx-container').forEach(node => {
+                let target = node.parentNode;
+                if (target.nodeName.toLowerCase() === 'li') {
+                  target.parentNode.classList.add('has-jax');
+                }
+              });
+            }, '', false]
+          }
+        }
+      };
+    </script>
+
+    <script async src="https://cdn.jsdelivr.net/npm/mathjax@3.1.4/es5/tex-svg.js" ></script>
 
   
 
 
-<script>
-NexT.utils.loadComments(document.querySelector('#valine-comments'), () => {
-  NexT.utils.getScript('//unpkg.com/valine/dist/Valine.min.js', () => {
-    var GUEST = ['nick', 'mail', 'link'];
-    var guest = 'nick,mail,link';
-    guest = guest.split(',').filter(item => {
-      return GUEST.includes(item);
-    });
-    new Valine({
-      el         : '#valine-comments',
-      verify     : true,
-      notify     : true,
-      appId      : 'OLRteWxoct1JkWm3Pe9BDYEK-gzGzoHsz',
-      appKey     : 'YBKiC6SE5hpWUmy0WIyegCrM',
-      placeholder: "遗憾莫过于难忘你的背影，却找不到你来过的痕迹 ...",
-      avatar     : 'mm',
-      meta       : guest,
-      pageSize   : '10' || 10,
-      visitor    : true,
-      lang       : '' || 'zh-cn',
-      path       : location.pathname,
-      recordIP   : false,
-      serverURLs : ''
-    });
-  }, window.Valine);
-});
-</script>
 
+
+
+
+
+
+
+
+
+<!-- 主题的启动项 保持在最底部 -->
+<script  src="/js/boot.js" ></script>
 
 
 <script src="/live2dw/lib/L2Dwidget.min.js?094cbace49a39548bed64abff5988b05"></script><script>L2Dwidget.init({"pluginRootPath":"live2dw/","pluginJsPath":"lib/","pluginModelPath":"assets/","tagMode":false,"log":false,"model":{"jsonPath":"/live2dw/assets/z16.model.json"},"display":{"position":"right","width":220,"height":440},"mobile":{"show":false},"react":{"opacity":0.7}});</script></body>
