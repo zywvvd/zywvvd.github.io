@@ -1,0 +1,829 @@
+<!DOCTYPE html>
+<html lang="zh-Hans">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 5.4.0">
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/logo-180.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/logo-32.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/logo-16.png">
+  <link rel="mask-icon" href="/images/logo-512.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+<link rel="stylesheet" href="/lib/font-awesome/css/font-awesome.min.css">
+  <link rel="stylesheet" href="//cdn.jsdelivr.net/gh/fancyapps/fancybox@3/dist/jquery.fancybox.min.css">
+
+<script id="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"www.zywvvd.com","root":"/","scheme":"Pisces","version":"7.7.1","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":true,"show_result":"default","style":null},"back2top":{"enable":true,"sidebar":true,"scrollpercent":true},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":true,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},"path":"./public/search.xml"};
+  </script>
+
+  <meta name="description" content="numpy 和 pytorch tensor 存在内存是否连续的情况，对运行速度甚至网络运行结果都存在影响。">
+<meta property="og:type" content="article">
+<meta property="og:title" content="numpy 和 pytorch tensor 的内存连续性 contiguous">
+<meta property="og:url" content="https://www.zywvvd.com/2021/08/02/deep_learning/numpy-tensor-contiguous/numpy-tensor-contiguous/index.html">
+<meta property="og:site_name" content="又见苍岚">
+<meta property="og:description" content="numpy 和 pytorch tensor 存在内存是否连续的情况，对运行速度甚至网络运行结果都存在影响。">
+<meta property="og:locale">
+<meta property="og:image" content="https://photos.zywvvd.com/win11-mt/20210803165543.png">
+<meta property="og:image" content="https://photos.zywvvd.com/win11-mt/20210803165644.png">
+<meta property="og:image" content="https://photos.zywvvd.com/win11-mt/20210803171239.png">
+<meta property="article:published_time" content="2021-08-02T07:41:12.000Z">
+<meta property="article:modified_time" content="2021-08-03T14:56:09.781Z">
+<meta property="article:author" content="Yiwei Zhang">
+<meta property="article:tag" content="deep_learning">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://photos.zywvvd.com/win11-mt/20210803165543.png">
+
+<link rel="canonical" href="https://www.zywvvd.com/2021/08/02/deep_learning/numpy-tensor-contiguous/numpy-tensor-contiguous/">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome: false,
+    isPost: true
+  };
+</script>
+
+  <title>numpy 和 pytorch tensor 的内存连续性 contiguous | 又见苍岚</title>
+  
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+<link rel="alternate" href="/atom.xml" title="又见苍岚" type="application/atom+xml">
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    	<a target="_blank" rel="noopener" href="https://github.com/zywvvd" >
+    		<img width="149" height="149"  style="position:absolute; right:-2px; top:2px;" src="https://photos.zywvvd.com/image/20200328192440.png" class="attachment-full size-full" alt="Fork me on GitHub" data-recalc-dims="1">
+    	</a>
+
+    	<a target="_blank" rel="noopener" href="https://github.com/zywvvd" class="github-corner" aria-label="View source on GitHub"><svg width="80" height="80" viewBox="0 0 250 250" style="fill:#222222; color:#fff; position: absolute; top: 0; border: 0; right: 0;" aria-hidden="true"><path d="M0,0 L115,115 L130,115 L142,142 L250,250 L250,0 Z"></path><path d="M128.3,109.0 C113.8,99.7 119.0,89.6 119.0,89.6 C122.0,82.7 120.5,78.6 120.5,78.6 C119.2,72.0 123.4,76.3 123.4,76.3 C127.3,80.9 125.5,87.3 125.5,87.3 C122.9,97.6 130.6,101.9 134.4,103.2" fill="currentColor" style="transform-origin: 130px 106px;" class="octo-arm"></path><path d="M115.0,115.0 C114.9,115.1 118.7,116.5 119.8,115.4 L133.7,101.6 C136.9,99.2 139.9,98.4 142.2,98.6 C133.8,88.0 127.5,74.4 143.8,58.0 C148.5,53.4 154.0,51.2 159.7,51.0 C160.3,49.4 163.2,43.6 171.4,40.1 C171.4,40.1 176.1,42.5 178.8,56.2 C183.1,58.6 187.2,61.8 190.9,65.4 C194.5,69.0 197.7,73.2 200.1,77.6 C213.8,80.2 216.3,84.9 216.3,84.9 C212.7,93.1 206.9,96.0 205.4,96.6 C205.1,102.4 203.0,107.8 198.3,112.5 C181.9,128.9 168.3,122.5 157.7,114.1 C157.9,116.9 156.7,120.9 152.7,124.9 L141.0,136.5 C139.8,137.7 141.6,141.9 141.8,141.8 Z" fill="currentColor" class="octo-body"></path></svg></a><style>.github-corner:hover .octo-arm{animation:octocat-wave 560ms ease-in-out}@keyframes octocat-wave{0%,100%{transform:rotate(0)}20%,60%{transform:rotate(-25deg)}40%,80%{transform:rotate(10deg)}}@media (max-width:500px){.github-corner:hover .octo-arm{animation:none}.github-corner .octo-arm{animation:octocat-wave 560ms ease-in-out}}</style>
+
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="Navigationsleiste an/ausschalten">
+      <span class="toggle-line toggle-line-first"></span>
+      <span class="toggle-line toggle-line-middle"></span>
+      <span class="toggle-line toggle-line-last"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <div>
+      <a href="/" class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">又见苍岚</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+        <p class="site-subtitle">www.zywvvd.com</p>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+        <i class="fa fa-search fa-fw fa-lg"></i>
+    </div>
+  </div>
+</div>
+
+
+<nav class="site-nav">
+  
+  <ul id="menu" class="menu">
+        <li class="menu-item menu-item-home">
+
+    <a href="/" rel="section"><i class="fa fa-fw fa-home"></i>首页</a>
+
+  </li>
+        <li class="menu-item menu-item-about">
+
+    <a href="/about/" rel="section"><i class="fa fa-fw fa-user"></i>关于</a>
+
+  </li>
+        <li class="menu-item menu-item-tags">
+
+    <a href="/tags/" rel="section"><i class="fa fa-fw fa-tags"></i>标签</a>
+
+  </li>
+        <li class="menu-item menu-item-categories">
+
+    <a href="/categories/" rel="section"><i class="fa fa-fw fa-th"></i>分类</a>
+
+  </li>
+        <li class="menu-item menu-item-archives">
+
+    <a href="/archives/" rel="section"><i class="fa fa-fw fa-archive"></i>归档</a>
+
+  </li>
+        <li class="menu-item menu-item-photos">
+
+    <a href="/photos/" rel="section"><i class="fa fa-fw fa-image"></i>相册</a>
+
+  </li>
+        <li class="menu-item menu-item-sitemap">
+
+    <a href="/sitemap.xml" rel="section"><i class="fa fa-fw fa-sitemap"></i>站点地图</a>
+
+  </li>
+      <li class="menu-item menu-item-search">
+        <a role="button" class="popup-trigger"><i class="fa fa-search fa-fw"></i>搜索
+        </a>
+      </li>
+  </ul>
+
+</nav>
+  <div class="site-search">
+    <div class="popup search-popup">
+    <div class="search-header">
+  <span class="search-icon">
+    <i class="fa fa-search"></i>
+  </span>
+  <div class="search-input-container">
+    <input autocomplete="off" autocorrect="off" autocapitalize="off"
+           placeholder="Suche..." spellcheck="false"
+           type="search" class="search-input">
+  </div>
+  <span class="popup-btn-close">
+    <i class="fa fa-times-circle"></i>
+  </span>
+</div>
+<div id="search-result"></div>
+
+</div>
+<div class="search-pop-overlay"></div>
+
+  </div>
+</div>
+    </header>
+
+    
+  <div class="reading-progress-bar"></div>
+
+
+    <main class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+
+          <div class="content">
+            
+
+  <div class="posts-expand">
+      
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block " lang="zh-Hans">
+    <link itemprop="mainEntityOfPage" href="https://www.zywvvd.com/2021/08/02/deep_learning/numpy-tensor-contiguous/numpy-tensor-contiguous/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.png">
+      <meta itemprop="name" content="Yiwei Zhang">
+      <meta itemprop="description" content="Stay hungury ! Stay foolish ！">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="又见苍岚">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          numpy 和 pytorch tensor 的内存连续性 contiguous
+        </h1>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+
+              <time title="Erstellt: 2021-08-02 15:41:12" itemprop="dateCreated datePublished" datetime="2021-08-02T15:41:12+08:00">2021-08-02</time>
+            </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="fa fa-calendar-check-o"></i>
+                </span>
+                <span class="post-meta-item-text">编辑于</span>
+                <time title="Geändert am: 2021-08-03 22:56:09" itemprop="dateModified" datetime="2021-08-03T22:56:09+08:00">2021-08-03</time>
+              </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              <span class="post-meta-item-text">类别</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/deep-learning/" itemprop="url" rel="index"><span itemprop="name">deep_learning</span></a>
+                </span>
+            </span>
+
+          
+            <span id="/2021/08/02/deep_learning/numpy-tensor-contiguous/numpy-tensor-contiguous/" class="post-meta-item leancloud_visitors" data-flag-title="numpy 和 pytorch tensor 的内存连续性 contiguous" title="阅读次数">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-eye"></i>
+              </span>
+              <span class="post-meta-item-text">阅读次数: </span>
+              <span class="leancloud-visitors-count"></span>
+            </span>
+            <span class="post-meta-item" title="阅读次数" id="busuanzi_container_page_pv" style="display: none;">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-eye"></i>
+              </span>
+              <span class="post-meta-item-text">阅读次数: </span>
+              <span id="busuanzi_value_page_pv"></span>
+            </span>
+  
+  <span class="post-meta-item">
+    
+      <span class="post-meta-item-icon">
+        <i class="fa fa-comment-o"></i>
+      </span>
+      <span class="post-meta-item-text">评论次数: </span>
+    
+    <a title="valine" href="/2021/08/02/deep_learning/numpy-tensor-contiguous/numpy-tensor-contiguous/#valine-comments" itemprop="discussionUrl">
+      <span class="post-comments-count valine-comment-count" data-xid="/2021/08/02/deep_learning/numpy-tensor-contiguous/numpy-tensor-contiguous/" itemprop="commentCount"></span>
+    </a>
+  </span>
+  
+  <br>
+            <span class="post-meta-item" title="本文字数">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-file-word-o"></i>
+              </span>
+                <span class="post-meta-item-text">本文字数: </span>
+              <span>4.8k</span>
+            </span>
+            <span class="post-meta-item" title="阅读时长">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-clock-o"></i>
+              </span>
+                <span class="post-meta-item-text">阅读时长 &asymp;</span>
+              <span>4 minuten.</span>
+            </span>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <blockquote>
+<p>numpy 和 pytorch tensor 存在内存是否连续的情况，对运行速度甚至网络运行结果都存在影响。</p>
+</blockquote>
+<span id="more"></span>
+
+<h3 id="含义"><a href="#含义" class="headerlink" title="含义"></a>含义</h3><ul>
+<li><strong>contiguous</strong> 本身是形容词<strong>，</strong>表示连续的。所谓<code>contiguous array</code>，指的是数组在内存中存放的地址也是连续的（注意内存地址实际是一维的），即访问数组中的下一个元素，直接移动到内存中的下一个地址就可以。</li>
+<li>在numpy和torch的数据结构中，都有表示变量是否在内存中数据连续存储的概念。</li>
+<li>连续存储又分为按照<strong>行优先（</strong>C order<strong>）</strong>和按照<strong>列优先（</strong>Fortran order<strong>）</strong></li>
+</ul>
+<h4 id="行优先-C-order"><a href="#行优先-C-order" class="headerlink" title="行优先  C order"></a>行优先  <strong>C order</strong></h4><p>行是指多维数组一维展开的方式，对应的是列优先。C/C++中使用的是行优先方式（row major），Matlab、Fortran使用的是列优先方式（column major），PyTorch中Tensor底层实现是C，也是使用行优先顺序，因此也称为 <code>C order</code>。</p>
+<ul>
+<li>Pascal, C，C++，Python都是行优先存储的。</li>
+</ul>
+<h4 id="列优先-Fortran-order"><a href="#列优先-Fortran-order" class="headerlink" title="列优先 Fortran order"></a>列优先 <strong>Fortran order</strong></h4><p>而<code>Fortran Order</code>则指的是列优先的顺序（Column-major Order)，即内存中同列的元素存在一起。</p>
+<ul>
+<li>Fortran，MatLab是列优先存储的。</li>
+</ul>
+<h3 id="数据举例"><a href="#数据举例" class="headerlink" title="数据举例"></a>数据举例</h3><h4 id="行优先"><a href="#行优先" class="headerlink" title="行优先"></a>行优先</h4><p>考虑一个2维数组<code>arr = np.arange(12).reshape(3,4)</code>。这个数组看起来结构是这样的：</p>
+<p><img src="https://photos.zywvvd.com/win11-mt/20210803165543.png"></p>
+<p>在计算机的内存里，数组<code>arr</code>实际存储是像下图所示的：</p>
+<p><img src="https://photos.zywvvd.com/win11-mt/20210803165644.png"></p>
+<p>这意味着<code>arr</code>是<code>C连续的</code>（<code>C contiguous</code>)的，因为在内存是行优先的，即某个元素在内存中的下一个位置存储的是它同行的下一个值。</p>
+<blockquote>
+<p>如果想要向下移动一列，则只需要跳过3个块既可（例如，从0到4只需要跳过1,2和3）。</p>
+</blockquote>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">import</span> numpy <span class="keyword">as</span> np</span><br><span class="line"></span><br><span class="line"><span class="keyword">if</span> __name__ == <span class="string">&#x27;__main__&#x27;</span>:</span><br><span class="line">    arr = np.arange(<span class="number">12</span>).reshape(<span class="number">3</span>, <span class="number">4</span>)</span><br><span class="line">    <span class="built_in">print</span>(arr.flags)</span><br><span class="line">    <span class="built_in">print</span>(arr)</span><br><span class="line"></span><br><span class="line">    <span class="keyword">pass</span></span><br></pre></td></tr></table></figure>
+
+<ul>
+<li>输出：</li>
+</ul>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line">  C_CONTIGUOUS : True</span><br><span class="line">  F_CONTIGUOUS : False</span><br><span class="line">  OWNDATA : False</span><br><span class="line">  WRITEABLE : True</span><br><span class="line">  ALIGNED : True</span><br><span class="line">  WRITEBACKIFCOPY : False</span><br><span class="line">  UPDATEIFCOPY : False</span><br><span class="line"></span><br><span class="line">[[ 0  1  2  3]</span><br><span class="line"> [ 4  5  6  7]</span><br><span class="line"> [ 8  9 10 11]]</span><br></pre></td></tr></table></figure>
+
+<ul>
+<li>C_CONTIGUOUS 为 True 表示该矩阵行连续</li>
+</ul>
+<blockquote>
+<p>也就是其中的行 [ 0  1  2  3] 在内存中连续，那么 [0 4 8] 就不会连续了，因此 F_CONTIGUOUS 为 False</p>
+</blockquote>
+<h4 id="列优先"><a href="#列优先" class="headerlink" title="列优先"></a>列优先</h4><p>上述数组的转置<code>arr.T</code>则没有了C连续特性，因为同一行中的相邻元素现在并不是在内存中相邻存储的了:</p>
+<p><img src="https://photos.zywvvd.com/win11-mt/20210803171239.png"></p>
+<blockquote>
+<p>这里要说明一下，如果直接用这些值创建的numpy变量是连续的，因为Python默认 C order，新创建的numpy都是行优先的</p>
+<p>但是我们创建arr时是以 0 - 11 为顺序创建的，其中[0 1 2 3] [4 5 6 7] [8 9 10 11]连续，矩阵转置后只改变引用，内存数据并不发生变化</p>
+<p>类似的操作如numpy 的 <code>slice</code>、<code>transpose</code>、<code>转置</code> 或 tensor中的 <code>permute</code> 等操作都可能导致改变之前数据与内存的行连续状况</p>
+</blockquote>
+<ul>
+<li>转置后，内存上仍然是 [0 1 2 3] [4 5 6 7] [8 9 10 11]连续，在当前矩阵上就是列连续，因此这是个Fortran order 连续的矩阵</li>
+</ul>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">import</span> numpy <span class="keyword">as</span> np</span><br><span class="line"></span><br><span class="line"><span class="keyword">if</span> __name__ == <span class="string">&#x27;__main__&#x27;</span>:</span><br><span class="line">    arr = np.arange(<span class="number">12</span>).reshape(<span class="number">3</span>, <span class="number">4</span>)</span><br><span class="line">    arr = arr.T</span><br><span class="line">    <span class="built_in">print</span>(arr.flags)</span><br><span class="line">    <span class="built_in">print</span>(arr)</span><br><span class="line"></span><br><span class="line">    <span class="keyword">pass</span></span><br></pre></td></tr></table></figure>
+
+<ul>
+<li>输出：</li>
+</ul>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line">  C_CONTIGUOUS : False</span><br><span class="line">  F_CONTIGUOUS : True</span><br><span class="line">  OWNDATA : False</span><br><span class="line">  WRITEABLE : True</span><br><span class="line">  ALIGNED : True</span><br><span class="line">  WRITEBACKIFCOPY : False</span><br><span class="line">  UPDATEIFCOPY : False</span><br><span class="line"></span><br><span class="line">[[ 0  4  8]</span><br><span class="line"> [ 1  5  9]</span><br><span class="line"> [ 2  6 10]</span><br><span class="line"> [ 3  7 11]]</span><br></pre></td></tr></table></figure>
+
+<h3 id="查看连续性"><a href="#查看连续性" class="headerlink" title="查看连续性"></a>查看连续性</h3><h4 id="numpy"><a href="#numpy" class="headerlink" title="numpy"></a>numpy</h4><ul>
+<li>可以使用 <code>data.contiguous</code> 、<code>data.c_contiguous</code>、 <code>data.f_contiguous</code> 属性</li>
+<li>或者使用 <code>flags</code> 属性</li>
+</ul>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">import</span> numpy <span class="keyword">as</span> np</span><br><span class="line"></span><br><span class="line"></span><br><span class="line"><span class="keyword">if</span> __name__ == <span class="string">&#x27;__main__&#x27;</span>:</span><br><span class="line">    arr = np.arange(<span class="number">12</span>).reshape(<span class="number">3</span>, <span class="number">4</span>)</span><br><span class="line"></span><br><span class="line">    <span class="built_in">print</span>(arr.data.contiguous)  <span class="comment"># True</span></span><br><span class="line">    <span class="built_in">print</span>(arr.data.c_contiguous)  <span class="comment"># True</span></span><br><span class="line">    <span class="built_in">print</span>(arr.data.f_contiguous)  <span class="comment"># False</span></span><br><span class="line"></span><br><span class="line">    <span class="built_in">print</span>(arr.flags)</span><br><span class="line">    <span class="built_in">print</span>(arr)</span><br><span class="line"></span><br><span class="line">    <span class="keyword">pass</span></span><br><span class="line"></span><br></pre></td></tr></table></figure>
+
+<ul>
+<li>输出</li>
+</ul>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line">True</span><br><span class="line">True</span><br><span class="line">False</span><br><span class="line">  C_CONTIGUOUS : True</span><br><span class="line">  F_CONTIGUOUS : False</span><br><span class="line">  OWNDATA : False</span><br><span class="line">  WRITEABLE : True</span><br><span class="line">  ALIGNED : True</span><br><span class="line">  WRITEBACKIFCOPY : False</span><br><span class="line">  UPDATEIFCOPY : False</span><br><span class="line"></span><br><span class="line">[[ 0  1  2  3]</span><br><span class="line"> [ 4  5  6  7]</span><br><span class="line"> [ 8  9 10 11]]</span><br></pre></td></tr></table></figure>
+
+<h4 id="pytorch"><a href="#pytorch" class="headerlink" title="pytorch"></a>pytorch</h4><ul>
+<li>pytorch 的 tensor 有方法 <code>is_contiguous</code> 用来查看是否 C 连续</li>
+</ul>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">import</span> torch</span><br><span class="line"><span class="keyword">import</span> numpy <span class="keyword">as</span> np</span><br><span class="line"></span><br><span class="line"></span><br><span class="line"><span class="keyword">if</span> __name__ == <span class="string">&#x27;__main__&#x27;</span>:</span><br><span class="line">    arr = np.arange(<span class="number">12</span>).reshape(<span class="number">3</span>, <span class="number">4</span>)</span><br><span class="line">    ten = torch.from_numpy(arr)</span><br><span class="line"></span><br><span class="line">    <span class="built_in">print</span>(ten.is_contiguous())  <span class="comment"># True</span></span><br><span class="line"></span><br><span class="line">    ten_t = torch.from_numpy(arr.T)</span><br><span class="line">    <span class="built_in">print</span>(ten_t.is_contiguous())  <span class="comment"># False</span></span><br><span class="line"></span><br><span class="line">    <span class="keyword">pass</span></span><br><span class="line"></span><br></pre></td></tr></table></figure>
+
+<ul>
+<li>输出</li>
+</ul>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">True</span><br><span class="line">False</span><br></pre></td></tr></table></figure>
+
+
+
+<h3 id="产生的影响"><a href="#产生的影响" class="headerlink" title="产生的影响"></a>产生的影响</h3><h4 id="性能影响"><a href="#性能影响" class="headerlink" title="性能影响"></a>性能影响</h4><p>从性能上来说，获取内存中相邻的地址比不相邻的地址速度要快很多（从RAM读取一个数值的时候可以连着一起读一块地址中的数值，并且可以保存在Cache中），这意味着对连续数组的操作会快很多。</p>
+<blockquote>
+<p>由于<code>arr</code>是C连续的，因此对其进行行操作比进行列操作速度要快</p>
+<p>通常来说</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">np.<span class="built_in">sum</span>(arr, axis=<span class="number">1</span>) <span class="comment"># 按行求和</span></span><br></pre></td></tr></table></figure>
+
+<p>会比</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">np.<span class="built_in">sum</span>(arr, axis=<span class="number">0</span>) <span class="comment"># 按列求和</span></span><br></pre></td></tr></table></figure>
+
+<p>稍微快些。</p>
+<p>同理，在<code>arr.T</code>上，列操作比行操作会快些。</p>
+</blockquote>
+<h4 id="结果影响"><a href="#结果影响" class="headerlink" title="结果影响"></a>结果影响</h4><blockquote>
+<p>其实写这篇博客的原因，就是我的onnx模型对于完全相同数据的tensor产生了完全不同的表现，险些三观俱碎。挣扎了几个小时后发现原来是数据的连续性在作祟。</p>
+</blockquote>
+<ul>
+<li>对 pyhton 中算法平台的影响</li>
+</ul>
+<table>
+<thead>
+<tr>
+<th>平台</th>
+<th>影响</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>numpy</td>
+<td>计算不连续的变量，结果不会受到影响</td>
+</tr>
+<tr>
+<td>pytorch</td>
+<td>输入不连续的tensor，结果不会受到影响</td>
+</tr>
+<tr>
+<td>onnx</td>
+<td>输入不连续的tensor，<strong>结果直接爆炸</strong></td>
+</tr>
+</tbody></table>
+<ul>
+<li>在 python 的 tensor 中，如果不是C连续的tensor，在执行 <code>view</code> 方法时会报错：</li>
+</ul>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">invalid argument 2: view size is not compatible with input tensor&#x27;s size and stride (at least one dimension </span><br><span class="line">spans across two contiguous subspaces). Call .contiguous() before .view(). </span><br></pre></td></tr></table></figure>
+
+<ul>
+<li>在 numpy 中某些需要连续的操作在遇到不连续的变量时也会报错：</li>
+</ul>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">ValueError: some of the strides of a given numpy array are negative.</span><br><span class="line">This is currently not supported, but will be added in future releases.</span><br></pre></td></tr></table></figure>
+
+<h4 id="连带影响"><a href="#连带影响" class="headerlink" title="连带影响"></a>连带影响</h4><ul>
+<li>不连续的numpy转为tensor后也是不连续的</li>
+<li>不连续的tensor转为numpy后也是不连续的</li>
+</ul>
+<h3 id="修正连续性"><a href="#修正连续性" class="headerlink" title="修正连续性"></a>修正连续性</h3><p>变量可以通过重新开辟空间，将数据连续拷贝进去的方法将不连续的数据变成某种连续方式。</p>
+<h4 id="numpy-1"><a href="#numpy-1" class="headerlink" title="numpy"></a>numpy</h4><ul>
+<li>numpy 变量中连续性可以用自带的函数修正，不连续的变量通过函数 <code>np.ascontiguousarray(arr)</code>变为C连续，<code>np.asfortranarray(arr)</code>变为Fortran连续</li>
+</ul>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">import</span> numpy <span class="keyword">as</span> np</span><br><span class="line"></span><br><span class="line"></span><br><span class="line"><span class="keyword">if</span> __name__ == <span class="string">&#x27;__main__&#x27;</span>:</span><br><span class="line">    arr = np.arange(<span class="number">12</span>).reshape(<span class="number">3</span>, <span class="number">2</span>, <span class="number">2</span>)</span><br><span class="line">    <span class="built_in">print</span>(arr.data.c_contiguous)  <span class="comment"># True arr C连续</span></span><br><span class="line"></span><br><span class="line">    tran_arr = arr.transpose(<span class="number">2</span>, <span class="number">0</span>, <span class="number">1</span>)</span><br><span class="line">    <span class="built_in">print</span>(tran_arr.data.contiguous)  <span class="comment"># False tran_arr不连续</span></span><br><span class="line"></span><br><span class="line">    c_arr = np.ascontiguousarray(tran_arr)  <span class="comment"># 变为 C 连续</span></span><br><span class="line">    <span class="built_in">print</span>(c_arr.flags)</span><br><span class="line"></span><br><span class="line">    f_arr = np.asfortranarray(tran_arr)  <span class="comment"># 变为 Fortran 连续</span></span><br><span class="line">    <span class="built_in">print</span>(f_arr.flags)</span><br><span class="line"></span><br><span class="line">    <span class="keyword">pass</span></span><br><span class="line"></span><br></pre></td></tr></table></figure>
+
+<ul>
+<li>输出：</li>
+</ul>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br></pre></td><td class="code"><pre><span class="line">True</span><br><span class="line">False</span><br><span class="line">  C_CONTIGUOUS : True</span><br><span class="line">  F_CONTIGUOUS : False</span><br><span class="line">  OWNDATA : True</span><br><span class="line">  WRITEABLE : True</span><br><span class="line">  ALIGNED : True</span><br><span class="line">  WRITEBACKIFCOPY : False</span><br><span class="line">  UPDATEIFCOPY : False</span><br><span class="line"></span><br><span class="line">  C_CONTIGUOUS : False</span><br><span class="line">  F_CONTIGUOUS : True</span><br><span class="line">  OWNDATA : True</span><br><span class="line">  WRITEABLE : True</span><br><span class="line">  ALIGNED : True</span><br><span class="line">  WRITEBACKIFCOPY : False</span><br><span class="line">  UPDATEIFCOPY : False</span><br></pre></td></tr></table></figure>
+
+<h4 id="pytorch-1"><a href="#pytorch-1" class="headerlink" title="pytorch"></a>pytorch</h4><ul>
+<li>pytorch 的 tensor 在python中运行，需要C连续的变量，因此只有C连续的函数 <code>contiguous()</code></li>
+</ul>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">import</span> torch</span><br><span class="line"><span class="keyword">import</span> numpy <span class="keyword">as</span> np</span><br><span class="line"></span><br><span class="line"></span><br><span class="line"><span class="keyword">if</span> __name__ == <span class="string">&#x27;__main__&#x27;</span>:</span><br><span class="line">    arr = np.arange(<span class="number">12</span>).reshape(<span class="number">3</span>, <span class="number">2</span>, <span class="number">2</span>)</span><br><span class="line"></span><br><span class="line">    tran_arr = arr.transpose(<span class="number">2</span>, <span class="number">0</span>, <span class="number">1</span>)</span><br><span class="line">    <span class="built_in">print</span>(tran_arr.data.contiguous)  <span class="comment"># False tran_arr不连续</span></span><br><span class="line"></span><br><span class="line">    ten = torch.from_numpy(tran_arr)</span><br><span class="line">    <span class="built_in">print</span>(ten.is_contiguous())  <span class="comment"># False 不连续的numpy产生不连续的tensor</span></span><br><span class="line"></span><br><span class="line">    c_ten = ten.contiguous()</span><br><span class="line">    <span class="built_in">print</span>(c_ten.is_contiguous())  <span class="comment"># True Tensor变成连续的</span></span><br><span class="line"></span><br><span class="line">    c_ten_arr = c_ten.numpy()</span><br><span class="line">    <span class="built_in">print</span>(c_ten_arr.flags)  <span class="comment"># tensor 的连续函数结果是变成C连续的变量</span></span><br><span class="line"></span><br><span class="line">    <span class="keyword">pass</span></span><br><span class="line"></span><br></pre></td></tr></table></figure>
+
+<ul>
+<li>输出</li>
+</ul>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line">False</span><br><span class="line">False</span><br><span class="line">True</span><br><span class="line">  C_CONTIGUOUS : True</span><br><span class="line">  F_CONTIGUOUS : False</span><br><span class="line">  OWNDATA : False</span><br><span class="line">  WRITEABLE : True</span><br><span class="line">  ALIGNED : True</span><br><span class="line">  WRITEBACKIFCOPY : False</span><br><span class="line">  UPDATEIFCOPY : False</span><br></pre></td></tr></table></figure>
+
+
+
+<h3 id="参考资料"><a href="#参考资料" class="headerlink" title="参考资料"></a>参考资料</h3><ul>
+<li><a target="_blank" rel="noopener" href="https://zhuanlan.zhihu.com/p/64551412">https://zhuanlan.zhihu.com/p/64551412</a></li>
+<li><a target="_blank" rel="noopener" href="https://www.cnblogs.com/peixu/articles/13455350.html">https://www.cnblogs.com/peixu/articles/13455350.html</a></li>
+<li><a target="_blank" rel="noopener" href="https://www.cnblogs.com/sdu20112013/p/11981793.html">https://www.cnblogs.com/sdu20112013/p/11981793.html</a></li>
+<li><a target="_blank" rel="noopener" href="https://zhuanlan.zhihu.com/p/59767914">https://zhuanlan.zhihu.com/p/59767914</a></li>
+<li><a target="_blank" rel="noopener" href="https://stackoverflow.com/questions/51304154/check-if-numpy-array-is-contiguous">https://stackoverflow.com/questions/51304154/check-if-numpy-array-is-contiguous</a></li>
+</ul>
+<link rel="stylesheet" href="/css/spoiler.css" type="text/css"><script src="/js/spoiler.js" type="text/javascript" async></script>
+    </div>
+
+    
+    
+    
+        <div class="reward-container">
+  <div>您的支持是我前进的最大动力！</div>
+  <button onclick="var qr = document.getElementById('qr'); qr.style.display = (qr.style.display === 'none') ? 'block' : 'none';">
+    赏
+  </button>
+  <div id="qr" style="display: none;">
+      
+      <div style="display: inline-block;">
+        <img src="/images/wechatpay.png" alt="Yiwei Zhang 微 信">
+        <p>微 信</p>
+      </div>
+      
+      <div style="display: inline-block;">
+        <img src="/images/alipay.png" alt="Yiwei Zhang 支付宝">
+        <p>支付宝</p>
+      </div>
+
+  </div>
+</div>
+
+        
+
+<div>
+<ul class="post-copyright">
+  <li class="post-copyright-author">
+  <span><strong>本文标题&nbsp:&nbsp&nbsp</strong>numpy 和 pytorch tensor 的内存连续性 contiguous<br></span>
+  <span><strong>文章作者&nbsp:&nbsp&nbsp</strong><br></span>
+  <span><strong>发布时间&nbsp:&nbsp&nbsp</strong>2021年08月02日 - 15:41:12<br></span>
+  <span><strong>最后更新&nbsp:&nbsp&nbsp</strong>2021年08月03日 - 22:56:09<br></span>
+  <span><strong>原始链接&nbsp:&nbsp&nbsp</strong><a href="/2021/08/02/deep_learning/numpy-tensor-contiguous/numpy-tensor-contiguous/" title="numpy 和 pytorch tensor 的内存连续性 contiguous">https://www.zywvvd.com/2021/08/02/deep_learning/numpy-tensor-contiguous/numpy-tensor-contiguous/</a><br></span>
+  <span><strong>许可协议&nbsp:&nbsp&nbsp</strong><i class="fa fa-creative-commons"></i> <a rel="license" href="https://creativecommons.org/licenses/by-nc-nd/4.0/" target="_blank" title="Attribution-NonCommercial-NoDerivatives 4.0 International (CC BY-NC-ND 4.0)">署名-非商业性使用-禁止演绎 4.0 国际</a> 转载请保留原文链接及作者<br></span>  
+	
+   <!-- <strong>Beitragsautor:  </strong>Yiwei Zhang
+  </li>
+  <li class="post-copyright-link">
+    <strong>Beitragslink: </strong>
+    <a href="https://www.zywvvd.com/2021/08/02/deep_learning/numpy-tensor-contiguous/numpy-tensor-contiguous/" title="numpy 和 pytorch tensor 的内存连续性 contiguous">https://www.zywvvd.com/2021/08/02/deep_learning/numpy-tensor-contiguous/numpy-tensor-contiguous/</a>
+  </li>
+  <li class="post-copyright-license">
+    <strong>Urheberrechtshinweis:  </strong>Alle Artikel in diesem Blog sind unter <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/deed.zh" rel="noopener" target="_blank"><i class="fa fa-fw fa-creative-commons"></i>BY-NC-SA</a> lizenziert, außer es wird anders angegeben.
+  </li>-->
+</ul>
+</div>
+
+
+      <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/tags/deep-learning/" rel="tag"># deep_learning</a>
+          </div>
+
+        
+
+
+        
+    <div class="post-nav">
+      <div class="post-nav-item">
+    <a href="/2021/08/02/tools/nodejs-install-error/nodejs-install-error/" rel="prev" title="Node.js npm 安装包 unable to verify the first certificate 错误解决方案">
+      <i class="fa fa-chevron-left"></i> Node.js npm 安装包 unable to verify the first certificate 错误解决方案
+    </a></div>
+      <div class="post-nav-item">
+    <a href="/2021/08/03/python/python-threading/python-threading/" rel="next" title="Python - 多线程">
+      Python - 多线程 <i class="fa fa-chevron-right"></i>
+    </a></div>
+    </div>
+      </footer>
+    
+  </article>
+  
+  
+  
+
+  </div>
+
+
+          </div>
+          
+    <div class="comments" id="valine-comments"></div>
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let activeClass = CONFIG.comments.activeClass;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      let activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      let commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+        </div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          小站概览
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%90%AB%E4%B9%89"><span class="nav-number">1.</span> <span class="nav-text">含义</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#%E8%A1%8C%E4%BC%98%E5%85%88-C-order"><span class="nav-number">1.1.</span> <span class="nav-text">行优先  C order</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#%E5%88%97%E4%BC%98%E5%85%88-Fortran-order"><span class="nav-number">1.2.</span> <span class="nav-text">列优先 Fortran order</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E6%95%B0%E6%8D%AE%E4%B8%BE%E4%BE%8B"><span class="nav-number">2.</span> <span class="nav-text">数据举例</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#%E8%A1%8C%E4%BC%98%E5%85%88"><span class="nav-number">2.1.</span> <span class="nav-text">行优先</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#%E5%88%97%E4%BC%98%E5%85%88"><span class="nav-number">2.2.</span> <span class="nav-text">列优先</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E6%9F%A5%E7%9C%8B%E8%BF%9E%E7%BB%AD%E6%80%A7"><span class="nav-number">3.</span> <span class="nav-text">查看连续性</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#numpy"><span class="nav-number">3.1.</span> <span class="nav-text">numpy</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#pytorch"><span class="nav-number">3.2.</span> <span class="nav-text">pytorch</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E4%BA%A7%E7%94%9F%E7%9A%84%E5%BD%B1%E5%93%8D"><span class="nav-number">4.</span> <span class="nav-text">产生的影响</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#%E6%80%A7%E8%83%BD%E5%BD%B1%E5%93%8D"><span class="nav-number">4.1.</span> <span class="nav-text">性能影响</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#%E7%BB%93%E6%9E%9C%E5%BD%B1%E5%93%8D"><span class="nav-number">4.2.</span> <span class="nav-text">结果影响</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#%E8%BF%9E%E5%B8%A6%E5%BD%B1%E5%93%8D"><span class="nav-number">4.3.</span> <span class="nav-text">连带影响</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E4%BF%AE%E6%AD%A3%E8%BF%9E%E7%BB%AD%E6%80%A7"><span class="nav-number">5.</span> <span class="nav-text">修正连续性</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#numpy-1"><span class="nav-number">5.1.</span> <span class="nav-text">numpy</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#pytorch-1"><span class="nav-number">5.2.</span> <span class="nav-text">pytorch</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%8F%82%E8%80%83%E8%B5%84%E6%96%99"><span class="nav-number">6.</span> <span class="nav-text">参考资料</span></a></li></ol></div>
+      </div>
+      <!--/noindex-->
+
+
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+    <img class="site-author-image" itemprop="image" alt="Yiwei Zhang"
+      src="/images/avatar.png">
+  <p class="site-author-name" itemprop="name">Yiwei Zhang</p>
+  <div class="site-description" itemprop="description">Stay hungury ! Stay foolish ！</div>
+</div>
+
+
+         
+            <div class="feed-link motion-element">
+              <a href="/atom.xml" rel="alternate">
+                <i class="fa fa-rss"></i>
+                RSS
+              </a>
+            </div>
+          
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/archives/">
+        
+          <span class="site-state-item-count">247</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+            <a href="/categories/">
+          
+        <span class="site-state-item-count">97</span>
+        <span class="site-state-item-name">分类</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+            <a href="/tags/">
+          
+        <span class="site-state-item-count">83</span>
+        <span class="site-state-item-name">标签</span></a>
+      </div>
+  </nav>
+</div>
+  <div class="links-of-author motion-element">
+      <span class="links-of-author-item">
+        <a href="https://github.com/zywvvd" title="GitHub → https:&#x2F;&#x2F;github.com&#x2F;zywvvd" rel="noopener" target="_blank"><i class="fa fa-fw fa-github"></i>GitHub</a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="mailto:zywvvd@mail.ustc.edu.cn" title="E-Mail → mailto:zywvvd@mail.ustc.edu.cn" rel="noopener" target="_blank"><i class="fa fa-fw fa-envelope"></i>E-Mail</a>
+      </span>
+  </div>
+
+
+
+      </div>
+        <div class="back-to-top motion-element">
+          <i class="fa fa-arrow-up"></i>
+          <span>0%</span>
+        </div>
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        
+  <div class="beian"><a href="https://beian.miit.gov.cn/" rel="noopener" target="_blank">吉ICP备19007275号-1 </a>
+      <img src="/images/gongan.png" style="display: inline-block;"><a href="https://www.beian.gov.cn/portal/registerSystemInfo?recordcode=22020202000251" rel="noopener" target="_blank">吉公网安备 22020202000251号 </a>
+  </div>
+
+<div class="copyright">
+  
+  &copy; 2020 – 
+  <span itemprop="copyrightYear">2021</span>
+  <span class="with-love">
+    <i class="fa fa-user"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">Yiwei Zhang</span>
+    <span class="post-meta-divider">|</span>
+    <span class="post-meta-item-icon">
+      <i class="fa fa-area-chart"></i>
+    </span>
+      <span class="post-meta-item-text">站点总字数: </span>
+    <span title="站点总字数">601k</span>
+    <span class="post-meta-divider">|</span>
+    <span class="post-meta-item-icon">
+      <i class="fa fa-coffee"></i>
+    </span>
+      <span class="post-meta-item-text">站点阅读时长 &asymp;</span>
+    <span title="站点阅读时长">9:06</span>
+</div>
+  <div class="powered-by">技术支持 v5.4.0
+  </div>
+  <span class="post-meta-divider">|</span>
+  <div class="theme-info">主题方案 – <a href="https://pisces.theme-next.org/" class="theme-link" rel="noopener" target="_blank">NexT.Pisces</a> v7.7.1
+  </div>
+
+<script async src="//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+<span><br></span>	
+
+<span class="post-meta-item-icon">
+      <i class="fa fa-group"></i>
+</span>
+<span>总访客&nbsp<span id="busuanzi_value_site_uv"></span>&nbsp人</span>
+<span class="post-meta-divider">|</span>
+<span class="post-meta-item-icon">
+      <i class="fa fa-eye"></i>
+</span>
+<span>访问总量&nbsp<span id="busuanzi_value_site_pv"></span>&nbsp次</span>
+
+        
+
+
+
+
+
+
+
+
+      </div>
+    </footer>
+  </div>
+
+  
+  <script src="/lib/anime.min.js"></script>
+  <script src="//cdn.jsdelivr.net/npm/jquery@3/dist/jquery.min.js"></script>
+  <script src="//cdn.jsdelivr.net/gh/fancyapps/fancybox@3/dist/jquery.fancybox.min.js"></script>
+  <script src="/lib/velocity/velocity.min.js"></script>
+  <script src="/lib/velocity/velocity.ui.min.js"></script>
+
+<script src="/js/utils.js"></script>
+
+<script src="/js/motion.js"></script>
+
+
+<script src="/js/schemes/pisces.js"></script>
+
+
+<script src="/js/next-boot.js"></script>
+
+
+
+
+  
+  <script>
+    (function(){
+      var bp = document.createElement('script');
+      var curProtocol = window.location.protocol.split(':')[0];
+      bp.src = (curProtocol === 'https') ? 'https://zz.bdstatic.com/linksubmit/push.js' : 'http://push.zhanzhang.baidu.com/push.js';
+      var s = document.getElementsByTagName("script")[0];
+      s.parentNode.insertBefore(bp, s);
+    })();
+  </script>
+
+
+
+
+  
+<script src="/js/local-search.js"></script>
+
+
+
+
+
+
+
+
+
+
+
+<script>
+if (document.querySelectorAll('pre.mermaid').length) {
+  NexT.utils.getScript('//cdn.jsdelivr.net/npm/mermaid@8/dist/mermaid.min.js', () => {
+    mermaid.initialize({
+      theme    : 'default',
+      logLevel : 3,
+      flowchart: { curve     : 'linear' },
+      gantt    : { axisFormat: '%m/%d/%Y' },
+      sequence : { actorMargin: 50 }
+    });
+  }, window.mermaid);
+}
+</script>
+
+
+  
+
+  
+
+  
+
+
+<script>
+NexT.utils.loadComments(document.querySelector('#valine-comments'), () => {
+  NexT.utils.getScript('//unpkg.com/valine/dist/Valine.min.js', () => {
+    var GUEST = ['nick', 'mail', 'link'];
+    var guest = 'nick,mail,link';
+    guest = guest.split(',').filter(item => {
+      return GUEST.includes(item);
+    });
+    new Valine({
+      el         : '#valine-comments',
+      verify     : true,
+      notify     : true,
+      appId      : 'OLRteWxoct1JkWm3Pe9BDYEK-gzGzoHsz',
+      appKey     : 'YBKiC6SE5hpWUmy0WIyegCrM',
+      placeholder: "遗憾莫过于难忘你的背影，却找不到你来过的痕迹 ...",
+      avatar     : 'mm',
+      meta       : guest,
+      pageSize   : '10' || 10,
+      visitor    : true,
+      lang       : '' || 'zh-cn',
+      path       : location.pathname,
+      recordIP   : false,
+      serverURLs : ''
+    });
+  }, window.Valine);
+});
+</script>
+
+
+
+<script src="/live2dw/lib/L2Dwidget.min.js?094cbace49a39548bed64abff5988b05"></script><script>L2Dwidget.init({"pluginRootPath":"live2dw/","pluginJsPath":"lib/","pluginModelPath":"assets/","tagMode":false,"log":false,"model":{"jsonPath":"/live2dw/assets/z16.model.json"},"display":{"position":"right","width":220,"height":440},"mobile":{"show":false},"react":{"opacity":0.7}});</script></body>
+</html>
