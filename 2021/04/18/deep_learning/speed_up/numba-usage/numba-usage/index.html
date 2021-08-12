@@ -1,0 +1,709 @@
+
+
+<!DOCTYPE html>
+<html lang="zh-CN" data-default-color-scheme=&#34;auto&#34;>
+<script type="text/javascript" src="/js/jquery.js"></script>
+
+
+
+<head>
+  <meta charset="UTF-8">
+  <link rel="apple-touch-icon" sizes="76x76" href="/img/favicon.png">
+  <link rel="icon" href="/img/favicon.png">
+  <meta name="viewport"
+        content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, shrink-to-fit=no">
+  <meta http-equiv="x-ua-compatible" content="ie=edge">
+  
+  <meta name="theme-color" content="#2f4154">
+  <meta name="description" content="
+本文介绍GPU编程的一些重要概念。
+">
+  <meta name="author" content="Yiwei Zhang">
+  <meta name="keywords" content="人工智能, 深度学习, 个人博客, 机器学习">
+  
+  <title>Python CUDA 编程 - 3 - GPU编程介绍 - 又见苍岚</title>
+
+  <link  rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@4.6.0/dist/css/bootstrap.min.css" />
+
+
+  <link  rel="stylesheet" href="https://cdn.jsdelivr.net/npm/github-markdown-css@4.0.0/github-markdown.min.css" />
+  <link  rel="stylesheet" href="/lib/hint/hint.min.css" />
+
+  
+    
+    
+      
+      <link  rel="stylesheet" href="https://cdn.jsdelivr.net/npm/highlight.js@10.7.2/styles/github-gist.min.css" />
+    
+  
+
+  
+    <link  rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fancyapps/fancybox@3.5.7/dist/jquery.fancybox.min.css" />
+  
+
+
+
+<!-- 主题依赖的图标库，不要自行修改 -->
+
+<link rel="stylesheet" href="//at.alicdn.com/t/font_1749284_ba1fz6golrf.css">
+
+
+
+<link rel="stylesheet" href="//at.alicdn.com/t/font_1736178_kmeydafke9r.css">
+
+
+<link  rel="stylesheet" href="/css/main.css" />
+
+<!-- 自定义样式保持在最底部 -->
+
+
+  <script id="fluid-configs">
+    var Fluid = window.Fluid || {};
+    var CONFIG = {"hostname":"www.zywvvd.com","root":"/","version":"1.8.11","typing":{"enable":true,"typeSpeed":70,"cursorChar":"_","loop":false},"anchorjs":{"enable":true,"element":"h1,h2,h3,h4,h5,h6","placement":"right","visible":"hover","icon":""},"progressbar":{"enable":true,"height_px":3,"color":"#29d","options":{"showSpinner":false,"trickleSpeed":100}},"copy_btn":true,"image_zoom":{"enable":true,"img_url_replace":["",""]},"toc":{"enable":true,"headingSelector":"h1,h2,h3,h4,h5,h6","collapseDepth":0},"lazyload":{"enable":true,"loading_img":"/img/loading.gif","onlypost":false,"offset_factor":2},"web_analytics":{"enable":false,"baidu":null,"google":null,"gtag":null,"tencent":{"sid":null,"cid":null},"woyaola":null,"cnzz":null,"leancloud":{"app_id":null,"app_key":null,"server_url":null}},"search_path":"/local-search.xml"};
+  </script>
+  <script  src="/js/utils.js" ></script>
+  <script  src="/js/color-schema.js" ></script>
+<meta name="generator" content="Hexo 5.4.0"><link rel="alternate" href="/atom.xml" title="又见苍岚" type="application/atom+xml">
+</head>
+
+
+<body>
+
+  <header style="height: 70vh;">
+    <nav id="navbar" class="navbar fixed-top  navbar-expand-lg navbar-dark scrolling-navbar">
+  <div class="container">
+    <a class="navbar-brand"
+       href="/">&nbsp;<strong>Fluid</strong>&nbsp;</a>
+
+    <button id="navbar-toggler-btn" class="navbar-toggler" type="button" data-toggle="collapse"
+            data-target="#navbarSupportedContent"
+            aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
+      <div class="animated-icon"><span></span><span></span><span></span></div>
+    </button>
+
+    <!-- Collapsible content -->
+    <div class="collapse navbar-collapse" id="navbarSupportedContent">
+      <ul class="navbar-nav ml-auto text-center">
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/">
+                <i class="iconfont icon-home-fill"></i>
+                首页
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/archives/">
+                <i class="iconfont icon-archive-fill"></i>
+                归档
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/categories/">
+                <i class="iconfont icon-category-fill"></i>
+                分类
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/tags/">
+                <i class="iconfont icon-tags-fill"></i>
+                标签
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/about/">
+                <i class="iconfont icon-user-fill"></i>
+                关于
+              </a>
+            </li>
+          
+        
+        
+          <li class="nav-item" id="search-btn">
+            <a class="nav-link" target="_self" data-toggle="modal" data-target="#modalSearch">&nbsp;<i
+                class="iconfont icon-search"></i>&nbsp;</a>
+          </li>
+        
+        
+          <li class="nav-item" id="color-toggle-btn">
+            <a class="nav-link" target="_self">&nbsp;<i
+                class="iconfont icon-dark" id="color-toggle-icon"></i>&nbsp;</a>
+          </li>
+        
+      </ul>
+    </div>
+  </div>
+</nav>
+
+		<div class="banner" id="banner" parallax=true
+			 style="background: url('/img/default.png') no-repeat center center;
+			   background-size: cover;">
+
+      <div class="full-bg-img" >
+
+		
+		<div id="banner_video_insert">
+		</div>
+		<script>
+						
+			var ua = navigator.userAgent;
+			var ipad = ua.match(/(iPad).*OS\s([\d_]+)/),
+				isIphone = !ipad && ua.match(/(iPhone\sOS)\s([\d_]+)/),
+				isAndroid = ua.match(/(Android)\s+([\d.]+)/),
+				isMobile = isIphone || isAndroid;
+
+			function set_video_attr(id){
+				
+				var height = document.body.children[0].clientHeight
+
+				var width = document.body.children[0].clientWidth
+
+				var video_item = document.getElementById(id);
+
+				if (height / width < 0.56){
+					video_item.setAttribute('width', '100%');
+					video_item.setAttribute('height', 'auto');
+				} else {
+					video_item.setAttribute('height', '100%');
+					video_item.setAttribute('width', 'auto');
+				}
+			}
+
+			$.getJSON('/js/video_url.json', function(data){
+				if (!isMobile){
+					var video_list_length = data.length
+					var seed = Math.random()
+					index = Math.floor(seed * video_list_length)
+					
+					video_url = data[index]
+					video_html_res = "<video id='video_item' style='position: absolute;' muted='muted' src=" + video_url + " autoplay='autoplay' loop='loop'></video>"
+
+					document.getElementById("banner_video_insert").innerHTML = video_html_res;
+					set_video_attr('video_item')
+				}
+
+			});
+
+			if (!isMobile){
+				window.onresize = function(){
+					set_video_attr('video_item')
+					}
+				}
+			</script>
+
+		
+
+        <div class="mask flex-center" style="background-color: rgba(0, 0, 0, 0.3)">
+          <div class="page-header text-center fade-in-up">
+            <span class="h2" id="subtitle" title="Python CUDA 编程 - 3 - GPU编程介绍">
+              
+            </span>
+
+            
+              <div class="mt-3">
+  
+    <span class="post-meta mr-2">
+      <i class="iconfont icon-author" aria-hidden="true"></i>
+      Yiwei Zhang
+    </span>
+  
+  
+    <span class="post-meta">
+      <i class="iconfont icon-date-fill" aria-hidden="true"></i>
+      <time datetime="2021-04-18 00:25" pubdate>
+        2021年4月18日 凌晨
+      </time>
+    </span>
+  
+</div>
+
+<div class="mt-1">
+  
+    
+    <span class="post-meta mr-2">
+      <i class="iconfont icon-chart"></i>
+      1.8k 字
+    </span>
+  
+
+  
+    
+    <span class="post-meta mr-2">
+      <i class="iconfont icon-clock-fill"></i>
+      
+      
+      20
+       分钟
+    </span>
+  
+
+  
+  
+    
+      <!-- 不蒜子统计文章PV -->
+      <span id="busuanzi_container_page_pv" style="display: none">
+        <i class="iconfont icon-eye" aria-hidden="true"></i>
+        <span id="busuanzi_value_page_pv"></span> 次
+      </span>
+    
+  
+</div>
+
+            
+          </div>
+
+          
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <main>
+    
+      
+
+<div class="container-fluid nopadding-x">
+  <div class="row nomargin-x">
+    <div class="d-none d-lg-block col-lg-2"></div>
+    <div class="col-lg-8 nopadding-x-md">
+      <div class="container nopadding-x-md" id="board-ctn">
+        <div class="py-5" id="board">
+          <article class="post-content mx-auto">
+            <!-- SEO header -->
+            <h1 style="display: none">Python CUDA 编程 - 3 - GPU编程介绍</h1>
+            
+              <p class="note note-info">
+                
+                  本文最后更新于：2021年8月11日 晚上
+                
+              </p>
+            
+            <div class="markdown-body">
+              <blockquote>
+<p>本文介绍GPU编程的一些重要概念。</p>
+</blockquote>
+<span id="more"></span>
+
+<h3 id="GPU编程"><a href="#GPU编程" class="headerlink" title="GPU编程"></a>GPU编程</h3><blockquote>
+<p>GPU编程与CPU编程的思考角度不尽相同，举皮皮鲁老师的一个例子：</p>
+</blockquote>
+<p>以加法计算为例，CPU就像大学数学教授，GPU就像几千个小学生，现在需要不借助外界，只通过纸笔，对2000个数字进行加法计算，得到1000个加法结果，在这个过程中，大学教授要协调指挥小学生完成任务。</p>
+<p>在计算过程中，每个小学生需要按照大学教授的提出的规范，基于一个加法函数，完成计算。每个小学生就像GPU的一个计算核心，加法函数就是核函数，一个小学生完成本次计算就像一次线程计算。在整个计算过程中，只能通过纸笔交流，无论是计算任务本身，还是计算的中间结果都需要落地到纸上进行计算，作为记录的纸就像是计算机中的存储，</p>
+<p>假设我们有2000个数字需要加到一起，得到1000个加法结果。如果只依赖20个大学教授，那每个教授需要执行50次计算，耗时很长。如果大学教授可以借助1000个小学生同时计算，那么大学教授可以这样设计GPU并行算法：</p>
+<ol>
+<li>设计一个加法函数，加法函数可以将两个数字加在一起。</li>
+<li>每个小学生分配2个数字，使用加法函数，对这2个数字执行计算。</li>
+<li>大学教授给1000个小学生分配数字，并告知他们使用怎样的加法函数进行计算。</li>
+<li>1000个小学生同时计算，得到1000个结果数字，写到纸上，返回给大学教授。</li>
+</ol>
+<p>实际上，CUDA并行算法和上面的流程基本相似，就是设计核函数，在存储上合理分配数据，告知GPU以一定的并行度执行配置来并行计算。核函数的设计与所要解决的问题本身高度相关。</p>
+<h3 id="主机与设备"><a href="#主机与设备" class="headerlink" title="主机与设备"></a>主机与设备</h3><p>在CUDA中，CPU和主存被称为<strong>主机（Host）</strong>，GPU和显存（显卡内存）被称为<strong>设备（Device）</strong>，CPU无法直接读取显存数据，GPU无法直接读取主存数据，主机与设备必须通过总线（Bus）相互通信。</p>
+<p><img src="https://photos.zywvvd.com/image_canglan/20210418004055.png" srcset="/img/loading.gif" lazyload></p>
+<h3 id="GPU程序与CPU程序的区别"><a href="#GPU程序与CPU程序的区别" class="headerlink" title="GPU程序与CPU程序的区别"></a>GPU程序与CPU程序的区别</h3><h4 id="CPU程序"><a href="#CPU程序" class="headerlink" title="CPU程序"></a>CPU程序</h4><ol>
+<li>初始化。</li>
+<li>CPU计算。</li>
+<li>得到计算结果。</li>
+</ol>
+<p><img src="https://photos.zywvvd.com/image_canglan/20210418010401.png" srcset="/img/loading.gif" lazyload></p>
+<h4 id="GPU程序"><a href="#GPU程序" class="headerlink" title="GPU程序"></a>GPU程序</h4><ol>
+<li>初始化，并将必要的数据拷贝到GPU设备的显存上。</li>
+<li>CPU调用GPU函数，启动GPU多个核心同时进行计算。</li>
+<li>CPU与GPU异步计算。</li>
+<li>将GPU计算结果拷贝回主机端，得到计算结果</li>
+</ol>
+<p><img src="https://photos.zywvvd.com/image_canglan/20210418010429.png" srcset="/img/loading.gif" lazyload></p>
+<h3 id="Thread层次结构"><a href="#Thread层次结构" class="headerlink" title="Thread层次结构"></a>Thread层次结构</h3><p>在进行GPU并行编程时，需要定义执行配置来告知以怎样的方式去并行执行核函数。CUDA将核函数所定义的运算称为<strong>线程（Thread）</strong>，多个线程组成一个<strong>块（Block）</strong>，多个块组成<strong>网格（Grid）</strong>。这样一个Grid可以定义成千上万个线程，也就解决了并行执行上万次操作的问题。</p>
+<p><img src="https://photos.zywvvd.com/image_canglan/20210418012102.png" srcset="/img/loading.gif" lazyload></p>
+<p>实际上，线程（Thread）是一个编程上的软件概念。从硬件来看，Thread运行在一个CUDA核心上，多个Thread组成的Block运行在Streaming Multiprocessor（SM），多个Block组成的Grid运行在一个GPU显卡上。</p>
+<p><img src="https://photos.zywvvd.com/image_canglan/20210418012441.png" srcset="/img/loading.gif" lazyload alt="Thread运行在一个核心上，Block运行在SM上，Grid运行在整个GPU卡上">)</p>
+<p>CUDA提供了一系列内置变量，以记录Thread和Block的大小及索引下标。以<code>[2, 4]</code>这样的配置为例：<code>blockDim.x</code>变量表示Block的大小是4，即每个Block有4个Thread，<code>threadIdx.x</code>变量是一个从0到<code>blockDim.x - 1</code>（4-1=3）的索引下标，记录这是第几个Thread；<code>gridDim.x</code>变量表示Grid的大小是2，即每个Grid有2个Block，<code>blockIdx.x</code>变量是一个从0到<code>gridDim.x - 1</code>（2-1=1）的索引下标，记录这是第几个Block。</p>
+<p>某个Thread在整个Grid中的位置编号为：<code>threadIdx.x + blockIdx.x * blockDim.x</code>。</p>
+<p><img src="https://photos.zywvvd.com/image_canglan/20210418012608.png" srcset="/img/loading.gif" lazyload></p>
+<h3 id="Block大小设置"><a href="#Block大小设置" class="headerlink" title="Block大小设置"></a>Block大小设置</h3><p>不同的执行配置会影响GPU程序的速度，一般需要多次调试才能找到较好的执行配置，在实际编程中，执行配置<code>[gridDim, blockDim]</code>应参考下面的方法：</p>
+<ul>
+<li>Block运行在SM上，不同硬件架构（Turing、Volta、Pascal…）的CUDA核心数不同，一般需要根据当前硬件来设置Block的大小<code>blockDim</code>（执行配置中第二个参数）。一个Block中的Thread数最好是32、128、256的倍数。注意，限于当前硬件的设计，Block大小不能超过1024。</li>
+<li>Grid的大小<code>gridDim</code>（执行配置中第一个参数），即一个Grid中Block的个数可以由总次数<code>N</code>除以<code>blockDim</code>，并向上取整。</li>
+</ul>
+<p>例如，我们想并行启动1000个Thread，可以将blockDim设置为128，<code>1000 ÷ 128 = 7.8</code>，向上取整为8。使用时，执行配置可以写成<code>gpuWork[8, 128]()</code>，CUDA共启动<code>8 * 128 = 1024</code>个Thread，实际计算时只使用前1000个Thread，多余的24个Thread不进行计算。</p>
+<p>这几个变量比较容易混淆，再次明确一下：<code>blockDim</code>是Block中Thread的个数，一个Block中的<code>threadIdx</code>最大不超过<code>blockDim</code>；<code>gridDim</code>是Grid中Block的个数，一个Grid中的<code>blockIdx</code>最大不超过<code>gridDim</code>。</p>
+<p>以上讨论中，Block和Grid大小均是一维，实际编程使用的执行配置常常更复杂，Block和Grid的大小可以设置为二维甚至三维：</p>
+<p><img src="https://photos.zywvvd.com/image_canglan/20210418013021.png" srcset="/img/loading.gif" lazyload alt="*二维Block和Grid设置*"></p>
+<p>一个二维的执行配置如上图所示，其中，每个Block有(3 * 4)个Thread，每个Grid有(2 * 3)个Block。 二维块大小为 *(Dx, Dy)*，某个线程号 <em>(x, y)</em> 的公式为 **(x + y Dx)**；三维块大小为 <em>(Dx, Dy, Dz)<em>，某个线程号</em>(x, y, z)</em> 的公式为 **(x + y Dx + z Dx Dy)**。各个内置变量中<code>.x</code> <code>.y</code>和<code>.z</code>为不同维度下的值。</p>
+<p>例如，一个二维配置，某个线程在矩阵中的位置可以表示为：</p>
+<figure class="highlight ini"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><code class="hljs ini"><span class="hljs-attr">col</span> = cuda.threadIdx.y + cuda.blockDim.y * cuda.blockIdx.y<br><span class="hljs-attr">row</span> = cuda.threadIdx.x + cuda.blockDim.x * cuda.blockIdx.x<br></code></pre></td></tr></table></figure>
+
+<p>如何将二维Block映射到自己的数据上并没有固定的映射方法，一般情况将<code>.x</code>映射为矩阵的行，将<code>.y</code>映射为矩阵的列。Numba提供了一个更简单的方法帮我们计算线程的编号：</p>
+<figure class="highlight maxima"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs maxima"><span class="hljs-built_in">row</span>, <span class="hljs-built_in">col</span> = cuda.<span class="hljs-built_in">grid</span>(<span class="hljs-number">2</span>)<br></code></pre></td></tr></table></figure>
+
+<p>其中，参数2表示这是一个2维的执行配置。1维或3维的时候，可以将参数改为1或3。</p>
+<p>对应的执行配置也要改为二维：</p>
+<figure class="highlight apache"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><code class="hljs apache"><span class="hljs-attribute">threads_per_block</span> = (<span class="hljs-number">16</span>, <span class="hljs-number">16</span>)<br><span class="hljs-attribute">blocks_per_grid</span> = (<span class="hljs-number">32</span>, <span class="hljs-number">32</span>)<br><span class="hljs-attribute">gpu_kernel</span>[blocks_per_grid, threads_per_block]<br></code></pre></td></tr></table></figure>
+
+<p><code>(16, 16)</code>的二维Block是一个常用的配置，共256个线程。之前也曾提到过，每个Block的Thread个数最好是128、256或512，这与GPU的硬件架构高度相关。</p>
+<h3 id="内存分配"><a href="#内存分配" class="headerlink" title="内存分配"></a>内存分配</h3><p>前文提到，GPU计算时直接从显存中读取数据，因此每当计算时要将数据从主存拷贝到显存上，用CUDA的术语来说就是要把数据从主机端拷贝到设备端。用小学生计算的例子来解释，大学教授需要将计算任务写在纸上，分发给各组小学生。CUDA强大之处在于它能自动将数据从主机和设备间相互拷贝，不需要程序员在代码中写明。这种方法对编程者来说非常方便，不必对原有的CPU代码做大量改动。</p>
+<h3 id="参考资料"><a href="#参考资料" class="headerlink" title="参考资料"></a>参考资料</h3><ul>
+<li><a target="_blank" rel="noopener" href="https://lulaoshi.info/gpu/python-cuda/cuda-intro.html">https://lulaoshi.info/gpu/python-cuda/cuda-intro.html</a></li>
+</ul>
+<link rel="stylesheet" href="/css/spoiler.css" type="text/css"><script src="/js/spoiler.js" type="text/javascript" async></script>
+            </div>
+            <hr>
+            <div>
+              <div class="post-metas mb-3">
+                
+                  <div class="post-meta mr-3">
+                    <i class="iconfont icon-category"></i>
+                    
+                      <a class="hover-with-bg" href="/categories/Deep-Learning/">Deep Learning</a>
+                    
+                      <a class="hover-with-bg" href="/categories/Deep-Learning/CUDA/">CUDA</a>
+                    
+                  </div>
+                
+                
+                  <div class="post-meta">
+                    <i class="iconfont icon-tags"></i>
+                    
+                      <a class="hover-with-bg" href="/tags/Deep-Learning/">Deep Learning</a>
+                    
+                      <a class="hover-with-bg" href="/tags/CUDA/">CUDA</a>
+                    
+                  </div>
+                
+              </div>
+              
+                <p class="note note-warning">
+                  
+                    本博客所有文章除特别声明外，均采用 <a target="_blank" href="https://creativecommons.org/licenses/by-sa/4.0/deed.zh" rel="nofollow noopener noopener">CC BY-SA 4.0 协议</a> ，转载请注明出处！
+                  
+                </p>
+              
+              
+                <div class="post-prevnext">
+                  <article class="post-prev col-6">
+                    
+                    
+                      <a href="/2021/04/19/python/python-memory-share/python-memory-share/">
+                        <i class="iconfont icon-arrowleft"></i>
+                        <span class="hidden-mobile">Python - mmap 共享内存</span>
+                        <span class="visible-mobile">上一篇</span>
+                      </a>
+                    
+                  </article>
+                  <article class="post-next col-6">
+                    
+                    
+                      <a href="/2021/04/17/tools/geogebra/multi-geogebra/multi-geogebra/">
+                        <span class="hidden-mobile">在 Hexo 页面中嵌入多个 geogebra 动态图</span>
+                        <span class="visible-mobile">下一篇</span>
+                        <i class="iconfont icon-arrowright"></i>
+                      </a>
+                    
+                  </article>
+                </div>
+              
+            </div>
+
+            
+              <!-- Comments -->
+              <article class="comments" id="comments" lazyload>
+                
+                  
+                
+                
+  <div id="valine"></div>
+  <script type="text/javascript">
+    Fluid.utils.loadComments('#valine', function() {
+      Fluid.utils.createScript('https://cdn.jsdelivr.net/npm/valine@1.4.14/dist/Valine.min.js', function() {
+        var options = Object.assign(
+          {"appId":"OLRteWxoct1JkWm3Pe9BDYEK-gzGzoHsz","appKey":"YBKiC6SE5hpWUmy0WIyegCrM","placeholder":"遗憾莫过于难忘你的背影，却找不到你来过的痕迹 ...","path":"window.location.pathname","avatar":"retro","meta":["nick","mail","link"],"pageSize":10,"lang":"zh-CN","highlight":false,"recordIP":true,"serverURLs":"","emojiCDN":null,"emojiMaps":null,"enableQQ":false,"requiredFields":[]},
+          {
+            el: "#valine",
+            path: window.location.pathname
+          }
+        )
+        new Valine(options);
+      });
+    });
+  </script>
+  <noscript>Please enable JavaScript to view the comments</noscript>
+
+
+              </article>
+            
+          </article>
+        </div>
+      </div>
+    </div>
+    
+      <div class="d-none d-lg-block col-lg-2 toc-container" id="toc-ctn">
+        <div id="toc">
+  <p class="toc-header"><i class="iconfont icon-list"></i>&nbsp;目录</p>
+  <div class="toc-body" id="toc-body"></div>
+</div>
+
+      </div>
+    
+  </div>
+</div>
+
+<!-- Custom -->
+
+  <div class="col-lg-7 mx-auto nopadding-x-md">
+    <div class="container custom post-custom mx-auto">
+      <img src="https://octodex.github.com/images/jetpacktocat.png" srcset="/img/loading.gif" lazyload class="rounded mx-auto d-block mt-5" style="width:150px; height:150px;">
+    </div>
+  </div>
+
+
+    
+
+    
+      <a id="scroll-top-button" href="#" role="button">
+        <i class="iconfont icon-arrowup" aria-hidden="true"></i>
+      </a>
+    
+
+    
+      <div class="modal fade" id="modalSearch" tabindex="-1" role="dialog" aria-labelledby="ModalLabel"
+     aria-hidden="true">
+  <div class="modal-dialog modal-dialog-scrollable modal-lg" role="document">
+    <div class="modal-content">
+      <div class="modal-header text-center">
+        <h4 class="modal-title w-100 font-weight-bold">搜索</h4>
+        <button type="button" id="local-search-close" class="close" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body mx-3">
+        <div class="md-form mb-5">
+          <input type="text" id="local-search-input" class="form-control validate">
+          <label data-error="x" data-success="v"
+                 for="local-search-input">关键词</label>
+        </div>
+        <div class="list-group" id="local-search-result"></div>
+      </div>
+    </div>
+  </div>
+</div>
+    
+
+    
+  </main>
+
+  <footer class="text-center mt-5 py-3">
+  <div class="footer-content">
+     <a href="https://hexo.io" target="_blank" rel="nofollow noopener"><span>Hexo</span></a> <i class="iconfont icon-love"></i> <a href="https://github.com/fluid-dev/hexo-theme-fluid" target="_blank" rel="nofollow noopener"><span>Fluid</span></a> 
+  </div>
+  
+  <div class="statistics">
+    
+    
+
+    
+      
+        <!-- 不蒜子统计PV -->
+        <span id="busuanzi_container_site_pv" style="display: none">
+            总访问量 
+            <span id="busuanzi_value_site_pv"></span>
+             次
+          </span>
+      
+      
+        <!-- 不蒜子统计UV -->
+        <span id="busuanzi_container_site_uv" style="display: none">
+            总访客数 
+            <span id="busuanzi_value_site_uv"></span>
+             人
+          </span>
+      
+    
+  </div>
+
+
+  
+  <!-- 备案信息 -->
+  <div class="beian">
+    <span>
+      <a href="http://beian.miit.gov.cn/" target="_blank" rel="nofollow noopener">
+        吉ICP备19007275号-1
+      </a>
+    </span>
+    
+      
+        <span>
+          <a
+            href="http://www.beian.gov.cn/portal/registerSystemInfo?recordcode=吉公网安备 22020202000251号"
+            rel="nofollow noopener"
+            class="beian-police"
+            target="_blank"
+          >
+            
+              <span style="visibility: hidden; width: 0">|</span>
+              <img src="/img/police_beian.png" srcset="/img/loading.gif" lazyload alt="police-icon"/>
+            
+            <span>吉公网安备 22020202000251号</span>
+          </a>
+        </span>
+      
+    
+  </div>
+
+
+  
+</footer>
+
+
+  <!-- SCRIPTS -->
+  
+  <script  src="https://cdn.jsdelivr.net/npm/nprogress@0.2.0/nprogress.min.js" ></script>
+  <link  rel="stylesheet" href="https://cdn.jsdelivr.net/npm/nprogress@0.2.0/nprogress.min.css" />
+
+  <script>
+    NProgress.configure({"showSpinner":false,"trickleSpeed":100})
+    NProgress.start()
+    window.addEventListener('load', function() {
+      NProgress.done();
+    })
+  </script>
+
+
+<script  src="https://cdn.jsdelivr.net/npm/jquery@3.6.0/dist/jquery.min.js" ></script>
+<script  src="https://cdn.jsdelivr.net/npm/bootstrap@4.6.0/dist/js/bootstrap.min.js" ></script>
+<script  src="/js/events.js" ></script>
+<script  src="/js/plugins.js" ></script>
+
+<!-- Plugins -->
+
+
+  
+    <script  src="/js/img-lazyload.js" ></script>
+  
+
+
+
+  
+
+
+
+  <script  src="https://cdn.jsdelivr.net/npm/tocbot@4.12.3/dist/tocbot.min.js" ></script>
+
+
+
+  <script  src="https://cdn.jsdelivr.net/npm/@fancyapps/fancybox@3.5.7/dist/jquery.fancybox.min.js" ></script>
+
+
+
+  <script  src="https://cdn.jsdelivr.net/npm/anchor-js@4.3.1/anchor.min.js" ></script>
+
+
+
+  <script defer src="https://cdn.jsdelivr.net/npm/clipboard@2.0.8/dist/clipboard.min.js" ></script>
+
+
+
+  <script  src="/js/local-search.js" ></script>
+
+
+
+  <script defer src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js" ></script>
+
+
+
+
+  <script  src="https://cdn.jsdelivr.net/npm/typed.js@2.0.12/lib/typed.min.js" ></script>
+  <script>
+    (function (window, document) {
+      var typing = Fluid.plugins.typing;
+      var title = document.getElementById('subtitle').title;
+      
+      typing(title)
+      
+    })(window, document);
+  </script>
+
+
+
+
+
+  
+
+  
+    <!-- MathJax -->
+    <script>
+      MathJax = {
+        tex: {
+          inlineMath: [['$', '$'], ['\\(', '\\)']]
+        },
+        options: {
+          renderActions: {
+            findScript: [10, doc => {
+              document.querySelectorAll('script[type^="math/tex"]').forEach(node => {
+                const display = !!node.type.match(/; *mode=display/);
+                const math = new doc.options.MathItem(node.textContent, doc.inputJax[0], display);
+                const text = document.createTextNode('');
+                node.parentNode.replaceChild(text, node);
+                math.start = { node: text, delim: '', n: 0 };
+                math.end = { node: text, delim: '', n: 0 };
+                doc.math.push(math);
+              });
+            }, '', false],
+            insertedScript: [200, () => {
+              document.querySelectorAll('mjx-container').forEach(node => {
+                let target = node.parentNode;
+                if (target.nodeName.toLowerCase() === 'li') {
+                  target.parentNode.classList.add('has-jax');
+                }
+              });
+            }, '', false]
+          }
+        }
+      };
+    </script>
+
+    <script async src="https://cdn.jsdelivr.net/npm/mathjax@3.1.4/es5/tex-svg.js" ></script>
+
+  
+
+
+
+
+
+
+
+
+
+
+
+<!-- 主题的启动项 保持在最底部 -->
+<script  src="/js/boot.js" ></script>
+
+
+<script src="/live2dw/lib/L2Dwidget.min.js?094cbace49a39548bed64abff5988b05"></script><script>L2Dwidget.init({"pluginRootPath":"live2dw/","pluginJsPath":"lib/","pluginModelPath":"assets/","tagMode":false,"log":false,"model":{"jsonPath":"/live2dw/assets/z16.model.json"},"display":{"position":"left","width":220,"height":440},"mobile":{"show":false},"react":{"opacity":0.7}});</script></body>
+</html>
