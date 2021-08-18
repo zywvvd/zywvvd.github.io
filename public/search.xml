@@ -1,6 +1,48 @@
 <?xml version="1.0" encoding="utf-8"?>
 <search>
   <entry>
+    <title>Pytorch 拷贝数据</title>
+    <url>/2021/08/18/deep_learning/pytorch/torch-copy/torch-copy/</url>
+    <content><![CDATA[<blockquote>
+<p>本文记录Pytorch拷贝数据的几种方法，clone(), detach(), new_tensor(), copy_()。</p>
+</blockquote>
+<span id="more"></span>
+
+<h3 id="1、clone"><a href="#1、clone" class="headerlink" title="1、clone()"></a>1、clone()</h3><p>clone()函数返回一个和源张量同shape、dtype和device的张量，与源张量不共享数据内存，但提供梯度的回溯。</p>
+<figure class="highlight python"><table><tr><td class="code"><pre><code class="hljs python"><span class="hljs-keyword">import</span> torch<br><br>a = torch.tensor(<span class="hljs-number">1.0</span>, requires_grad=<span class="hljs-literal">True</span>)<br>y = a ** <span class="hljs-number">2</span><br>a_ = a.clone()<br>z = a_ * <span class="hljs-number">3</span><br>y.backward()<br><span class="hljs-built_in">print</span>(a.grad)  <span class="hljs-comment"># 2</span><br>z.backward()<br><span class="hljs-built_in">print</span>(a_.grad)  <span class="hljs-comment"># None, 无grad</span><br><span class="hljs-built_in">print</span>(a.grad)  <span class="hljs-comment"># 5. a_的梯度会传递回给a，因此2+3=5</span><br><br><br>a = a + <span class="hljs-number">1</span><br><span class="hljs-built_in">print</span>(a_) <span class="hljs-comment"># 1</span><br></code></pre></td></tr></table></figure>
+
+
+<p>梯度回溯：进行的运算梯度会加在a（叶子节点）的梯度上。</p>
+<figure class="highlight python"><table><tr><td class="code"><pre><code class="hljs python"><span class="hljs-keyword">import</span> torch<br><br>a = torch.tensor(<span class="hljs-number">1.0</span>, requires_grad=<span class="hljs-literal">True</span>)<br>a_ = a.clone()<br>a_.add_(torch.tensor(<span class="hljs-number">1.0</span>))<br><span class="hljs-built_in">print</span>(a)    <span class="hljs-comment"># tensor(1., requires_grad=True)</span><br><span class="hljs-built_in">print</span>(a_)   <span class="hljs-comment"># tensor(2., grad_fn=&lt;AddBackward0&gt;)</span><br>a_.backward()<br><span class="hljs-built_in">print</span>(a_.grad)  <span class="hljs-comment"># None</span><br><span class="hljs-built_in">print</span>(a.grad)   <span class="hljs-comment"># tensor(1.)</span><br>可以发现不共享内存空间。<br></code></pre></td></tr></table></figure>
+
+<h3 id="2、detach"><a href="#2、detach" class="headerlink" title="2、detach()"></a>2、detach()</h3><p>detach()函数返回一个和源张量同shape、dtype和device的张量，并且与源张量共享数据内存，但不提供梯度的回溯。</p>
+<figure class="highlight python"><table><tr><td class="code"><pre><code class="hljs python"><span class="hljs-keyword">import</span> torch<br><br>a = torch.tensor(<span class="hljs-number">1.0</span>, requires_grad=<span class="hljs-literal">True</span>)<br>y = a ** <span class="hljs-number">2</span><br>a_ = a.detach()<br><span class="hljs-built_in">print</span>(a_.grad)  <span class="hljs-comment"># None，requires_grad=False</span><br>a_.requires_grad_()  <span class="hljs-comment"># set a_.requires_grad = True</span><br>z = a_ * <span class="hljs-number">3</span><br>y.backward()<br>z.backward()<br><span class="hljs-built_in">print</span>(a_.grad)  <span class="hljs-comment"># tensor(3.)</span><br><span class="hljs-built_in">print</span>(a.grad)  <span class="hljs-comment"># tensor(2.)</span><br></code></pre></td></tr></table></figure>
+
+<p>可见，a_即使重新定义requires_grad=True，也与a的梯度没有关系。</p>
+<figure class="highlight python"><table><tr><td class="code"><pre><code class="hljs python"><span class="hljs-keyword">import</span> torch<br><br>a = torch.tensor(<span class="hljs-number">1.0</span>, requires_grad=<span class="hljs-literal">True</span>)<br>a_ = a.detach()<br>a_.add_(torch.tensor(<span class="hljs-number">1.0</span>))<br><span class="hljs-built_in">print</span>(a)    <span class="hljs-comment"># tensor(2., requires_grad=True)</span><br><span class="hljs-built_in">print</span>(a_)   <span class="hljs-comment"># tensor(2.)</span><br><span class="hljs-comment"># a_.backward()</span><br><span class="hljs-comment"># print(a.grad) # RuntimeError: element 0 of tensors does not require grad and does not have a grad_fn</span><br></code></pre></td></tr></table></figure>
+
+<p>容易验证a与a_共享内存空间</p>
+<h3 id="3、torch-clone-detach-（建议赋值方法）"><a href="#3、torch-clone-detach-（建议赋值方法）" class="headerlink" title="3、torch.clone.detach() （建议赋值方法）"></a>3、torch.clone.detach() （建议赋值方法）</h3><p>clone()提供了非数据内存共享的梯度追溯功能，而detach又“舍弃”了梯度回溯功能，因此clone.detach()只做简单的数据复制，既不数据共享，也不梯度共享，从此两个张量无关联。<br>置于是先clone还是先detach，其返回值一样，一般采用sourcetensor.clone().detach()。</p>
+<h3 id="4、new-tensor"><a href="#4、new-tensor" class="headerlink" title="4、new_tensor()"></a>4、new_tensor()</h3><p>new_tensor()可以将源张量中的数据复制到目标张量（数据不共享），同时提供了更细致的属性控制：</p>
+<figure class="highlight python"><table><tr><td class="code"><pre><code class="hljs python"><span class="hljs-keyword">import</span> torch<br><br>a = torch.tensor(<span class="hljs-number">1.0</span>, device=<span class="hljs-string">&quot;cuda&quot;</span>, dtype=torch.float32, requires_grad=<span class="hljs-literal">True</span>)<br>b = a.clone()<br>c = a.detach()<br>d = a.clone().detach()<br>e = a.new_tensor(a)  <span class="hljs-comment"># more attributions could be setted</span><br>f = a.new_tensor(a, device=<span class="hljs-string">&quot;cpu&quot;</span>, dtype=torch.float64, requires_grad=<span class="hljs-literal">False</span>)<br><span class="hljs-built_in">print</span>(a)  <span class="hljs-comment"># tensor(1., device=&#x27;cuda:0&#x27;, requires_grad=True)</span><br><span class="hljs-built_in">print</span>(b)  <span class="hljs-comment"># tensor(1., device=&#x27;cuda:0&#x27;, grad_fn=&lt;CloneBackward&gt;)</span><br><span class="hljs-built_in">print</span>(c)  <span class="hljs-comment"># tensor(1., device=&#x27;cuda:0&#x27;)</span><br><span class="hljs-built_in">print</span>(d)  <span class="hljs-comment"># tensor(1., device=&#x27;cuda:0&#x27;)</span><br><span class="hljs-built_in">print</span>(e)  <span class="hljs-comment"># tensor(1., device=&#x27;cuda:0&#x27;)</span><br><span class="hljs-built_in">print</span>(f)  <span class="hljs-comment"># tensor(1., dtype=torch.float64)</span><br></code></pre></td></tr></table></figure>
+
+<h3 id="5、copy"><a href="#5、copy" class="headerlink" title="5、copy_()"></a>5、copy_()</h3><figure class="highlight python"><table><tr><td class="code"><pre><code class="hljs python"><span class="hljs-keyword">import</span> torch<br><br>a = torch.tensor(<span class="hljs-number">1.0</span>, device=<span class="hljs-string">&quot;cpu&quot;</span>, requires_grad=<span class="hljs-literal">False</span>)<br>b = torch.tensor(<span class="hljs-number">2.0</span>, device=<span class="hljs-string">&quot;cuda&quot;</span>, requires_grad=<span class="hljs-literal">True</span>)<br><span class="hljs-built_in">print</span>(a)  <span class="hljs-comment"># tensor(1.)</span><br><span class="hljs-built_in">print</span>(b)  <span class="hljs-comment"># tensor(2., device=&#x27;cuda:0&#x27;, requires_grad=True)</span><br>a.copy_(b)<br><span class="hljs-built_in">print</span>(a)  <span class="hljs-comment"># tensor(2., grad_fn=&lt;CopyBackwards&gt;)</span><br><span class="hljs-built_in">print</span>(a.device)  <span class="hljs-comment"># cpu</span><br><span class="hljs-built_in">print</span>(a.requires_grad)  <span class="hljs-comment"># True</span><br></code></pre></td></tr></table></figure>
+
+<p><code>copy_()</code>会将b复制给a，同时改变 a 的 requires_grad 属性，但不改变 device 属性。（当a.requires_grad=False是copy_()方法会报错）</p>
+<h3 id="参考资料"><a href="#参考资料" class="headerlink" title="参考资料"></a>参考资料</h3><ul>
+<li><a href="https://blog.csdn.net/qq_40438388/article/details/106860180">https://blog.csdn.net/qq_40438388/article/details/106860180</a></li>
+</ul>
+<link rel="stylesheet" href="/css/spoiler.css" type="text/css"><script src="/js/spoiler.js" type="text/javascript" async></script>]]></content>
+      <categories>
+        <category>Deep Learning</category>
+        <category>pytorch</category>
+      </categories>
+      <tags>
+        <tag>Deep Learning</tag>
+        <tag>pytorch</tag>
+      </tags>
+  </entry>
+  <entry>
     <title>设置 CUDA_VISIBLE_DEVICES</title>
     <url>/2021/08/17/deep_learning/cuda-vis-device/cuda-vis-device/</url>
     <content><![CDATA[<blockquote>
@@ -94,9 +136,10 @@
 <p>官方网站：<a href="https://mozilla.github.io/pdf.js/">https://mozilla.github.io/pdf.js/</a></p>
 <h3 id="下载-pdf-js"><a href="#下载-pdf-js" class="headerlink" title="下载 pdf.js"></a>下载 pdf.js</h3><ul>
 <li>官网地址：<a href="https://mozilla.github.io/pdf.js/">https://mozilla.github.io/pdf.js/</a></li>
+<li>新版本不支持部分浏览器，为了更好的兼容性，下载旧版本浏览器的文件包</li>
 <li>点击 <code>Download</code> 按钮</li>
 </ul>
-<p><img src="https://photos.zywvvd.com/vvd-dell-2021-win-10/20210815155734.png"></p>
+<p><img src="https://photos.zywvvd.com/win11-mt/20210818111723.png"></p>
 <ul>
 <li>下载并解压相关内容</li>
 </ul>
@@ -105,9 +148,9 @@
 
 <p>需要注释掉</p>
 <ul>
-<li> <code>web\viwer.js</code> 文件中的相应内容：</li>
+<li> <code>web/viewer.js</code> 文件中的相应内容：</li>
 </ul>
-<p><img src="https://photos.zywvvd.com/vvd-dell-2021-win-10/20210815160610.png"></p>
+<p><img src="https://photos.zywvvd.com/win11-mt/20210818112623.png"></p>
 <h3 id="加入主题"><a href="#加入主题" class="headerlink" title="加入主题"></a>加入主题</h3><p>将下载文件夹命名为 pdfjs，拷贝到 <code>themes/fluid/source/js</code> 中</p>
 <p><img src="https://photos.zywvvd.com/vvd-dell-2021-win-10/20210815161714.png"></p>
 <h3 id="使用方法"><a href="#使用方法" class="headerlink" title="使用方法"></a>使用方法</h3><ul>
@@ -174,16 +217,19 @@
 <li><p>手机端不支持该方案</p>
 </li>
 </ul>
-<h3 id="方法五-pdf-js"><a href="#方法五-pdf-js" class="headerlink" title="方法五 pdf.js"></a>方法五 pdf.js</h3><p>使用方法</p>
+<h3 id="方法五-pdf-js"><a href="#方法五-pdf-js" class="headerlink" title="方法五 pdf.js"></a>方法五 pdf.js</h3><blockquote>
+<p><strong>全平台查看PDF解决方案</strong></p>
+</blockquote>
+<p>使用方法</p>
 <ul>
 <li><p>下载 pdf.js</p>
 </li>
 <li><p>官网地址：<a href="https://mozilla.github.io/pdf.js/">https://mozilla.github.io/pdf.js/</a></p>
 </li>
-<li><p>点击 <code>Download</code> 按钮</p>
+<li><p>新版本不支持部分浏览器，为了更好的兼容性，下载旧版本浏览器的文件包，点击 <code>Download</code> 按钮</p>
 </li>
 </ul>
-<p><img src="https://photos.zywvvd.com/vvd-dell-2021-win-10/20210815155734.png"></p>
+<p><img src="https://photos.zywvvd.com/win11-mt/20210818111723.png"></p>
 <ul>
 <li>下载并解压相关内容，使用 viewer.html 配合 iframe 插件查看pdf文件：</li>
 </ul>
@@ -195,16 +241,16 @@
 <figure class="highlight subunit"><table><tr><td class="code"><pre><code class="hljs subunit"><span class="hljs-keyword">Error: </span>file origin does not match viewer&#x27;s<br></code></pre></td></tr></table></figure>
 
 <ul>
-<li>需要注释掉 <code>web\viwer.js</code> 文件中的相应内容：</li>
+<li>需要注释掉 <code>web/viewer.js</code> 文件中的相应内容：</li>
 </ul>
-<p><img src="https://photos.zywvvd.com/vvd-dell-2021-win-10/20210815160610.png"></p>
+<p><img src="https://photos.zywvvd.com/win11-mt/20210818112623.png"></p>
 <ul>
 <li>示例：</li>
 </ul>
 <iframe src='/js/pdfjs/web/viewer.html?file=https://photos.zywvvd.com/win11-mt/20210814144827.pdf' style='width:100%;height:100%'></iframe>
 
 <ul>
-<li>这是目前发现唯一支持多平台浏览PDF的方案（经测试Android端Oppo浏览器不行，Huawei可以）</li>
+<li>这是目前发现唯一支持多平台浏览PDF的方案</li>
 </ul>
 <h3 id="参考资料"><a href="#参考资料" class="headerlink" title="参考资料"></a>参考资料</h3><ul>
 <li><p><a href="https://github.com/superalsrk/hexo-pdf">https://github.com/superalsrk/hexo-pdf</a></p>
@@ -240,11 +286,11 @@
 <li>在提升模型性能的同时，注意力机制增加了神经网络结构的可解释性。由于传统的神经网络是一个黑盒模型，因此提高其可解释性对机器学习模型的公平性、可靠性和透明性的提高至关重要。</li>
 <li>能够帮助缓解递归神经网络中的一些缺陷，比方说随着输入序列长度的增加导致的性能下降和对输入的顺序处理所导致的计算效率低下。本文的目的在于对注意力模型进行一个简单且易理解的介绍。</li>
 </ol>
-<h3 id="注意力的作用"><a href="#注意力的作用" class="headerlink" title="注意力的作用"></a>注意力的作用</h3><p>注意力机制最早用在 seq2seq 模型上<strong>，</strong>原始编解码模型的encode过程会生成一个中间向量C，用于保存原序列的语义信息。但是这个向量长度是固定的，当输入原序列的长度比较长时，向量C无法保存全部的语义信息，上下文语义信息受到了限制，这也限制了模型的理解能力。</p>
-<p>常规的编码方法，无法体现对一个句子序列中不同语素的关注程度，在自然语言中，一个句子中的不同部分是有不同含义和重要性的，比如：I hate this movie。 如果是做情感分析的应用场景，训练的时候明显应该对hate这个词语做更多的关注。</p>
+<h3 id="传统编码的弊端"><a href="#传统编码的弊端" class="headerlink" title="传统编码的弊端"></a>传统编码的弊端</h3><p>注意力机制最早用在 seq2seq 模型上<strong>，</strong>原始编解码模型的encode过程会生成一个中间向量C，用于保存原序列的语义信息。但是这个向量长度是固定的，<strong>当输入原序列的长度比较长时，向量C无法保存全部的语义信息</strong>，上下文语义信息受到了限制，这也限制了模型的理解能力。</p>
+<p>常规的编码方法，<strong>无法体现对一个句子序列中不同语素的关注程度</strong>，在自然语言中，一个句子中的不同部分是有不同含义和重要性的，比如：I hate this movie。 如果是做情感分析的应用场景，训练的时候明显应该对hate这个词语做更多的关注。</p>
 <h3 id="注意力模型"><a href="#注意力模型" class="headerlink" title="注意力模型"></a>注意力模型</h3><p>一个经典的序列模型 (sequence-to-sequence) 包含一个编码部分和一个解码部分。编码器通常采用一个循环神经网络结构来对序列的输入${x _ { 1 }, x _ { 2 }, \cdots , x _ { T } }$​​​​​​​​​  进行编码得到一组固定长度的编码向量 $ {h_ { 1}, h_ { 2}, \cdots, h_ { T } } $​​。解码器同样利用一个RNN结构读取单个输入 $ h_{T} $​​组固定长度的编码向量 $ {h_ {  1 }, h _ { 2 }, \cdots , h _ { T } } $​​ 。解码器同样利用一个RNN结构读取单个输入 $ h_{T} $​​ 然后一个接一个的进行输出得到一个输出序列 $  {x_ {1 }, x_{2 }, \cdots, x_{T ^ { \prime}} } $​​ 。其中 $ T $​​ 和 $ T^{\prime} $​​ 分别代表输入和输出序列的长度。在每个位置$ t, h_{t} $​​ 和 $ s_{t} $​​​​​​​​​分别代表该位置编码器和解码器的隐藏状态。</p>
 <p><img src="https://photos.zywvvd.com/vvd-dell-2021-win-10/20210816234637.png" alt="编码器-解码器结构:(a)传统结构 (b)加入注意力机制的模型的结构"></p>
-<h3 id="核心思路"><a href="#核心思路" class="headerlink" title="核心思路"></a>核心思路</h3><p>注意力模型通过允许解码器访问所有编码器产生的输出 $ {h_{1}, h_{2}, \cdots, h_ { T}} $​​ 来克服传统结构的上述两大缺点。其核心思想是对编码器的所有输出进行加权组合后输入到当前位置的解码器中来影响解码器的输出。通过对编码器的输出进行加权，在实现输入与输出的对齐的同时还能够利用更多的原始数据的上下文信息。</p>
+<h3 id="核心思路"><a href="#核心思路" class="headerlink" title="核心思路"></a>核心思路</h3><p>注意力模型通过允许解码器访问所有编码器产生的输出 $ {h_{1}, h_{2}, \cdots, h_ { T}} $​​ 来克服传统结构的缺点。其核心思想是对编码器的所有输出进行加权组合后输入到当前位置的解码器中来影响解码器的输出。通过对编码器的输出进行加权，在实现输入与输出的对齐的同时还能够利用更多的原始数据的上下文信息。</p>
 <h4 id="注意力机制的引入"><a href="#注意力机制的引入" class="headerlink" title="注意力机制的引入"></a>注意力机制的引入</h4><p>引入注意力机制的模型的结构如图2(b)所示。注意力模块能够自动地学习权重 $ \alpha_{i j} $ 用来捕捉编码器隐藏状态$ h_{i} $和解码器隐藏状态$ s_{j} $ 的相关性。习得的这些注意力权重将会被用来构建一个上下文向量 $ c $ 来作为解码器的输入。在解码器的每个位置 $ j $,上下文向量 $ c_{j} $ 是由注意力权重对所有的编码器的隐藏状态进行加权求和进行得到的，即: $ c_{j}=\sum_{i=1}^{T^{\prime}} \alpha_{i j} h_{i} $ 。于是, 这一上下文向量其实为解码器提供了一种访问整个输入序列并且关注序列中的特定相关位置的一种机制，我们称这 种机制为注意力机制。</p>
 <h4 id="注意力权重的学习"><a href="#注意力权重的学习" class="headerlink" title="注意力权重的学习"></a>注意力权重的学习</h4><p>注意力权重的学习是通过在原始的网络结构中增加一个前馈网络来实现的。这一前馈网络的注意力权重的值$ \alpha_{i j} $是编码器隐藏状态值 $ h_{j} $和解码器内部隐藏状态值$ \boldsymbol{S}_{i-1} $的函数。该前馈网络可以与之前的网络结构一起进行训练。</p>
 <p>该权重值可以通过下面的表达式算出:</p>
@@ -261,16 +307,58 @@ $$
 <h3 id="注意力机制的可解释性"><a href="#注意力机制的可解释性" class="headerlink" title="注意力机制的可解释性"></a>注意力机制的可解释性</h3><p>人们对人工智能模型的可解释性有着巨大的兴趣，这是由模型的性能、透明度和公平性驱动的。然而，神经网络，尤其是深度学习结构因其不可预测性而受到批评。从可解释性的角度来看，注意力模型特别有趣，因为它允许我们直接检查深度学习体系结构的内部工作。针对输入和输出均为一个序列的问题，注意力模型的一个重要假设是学习得到的注意力权重体现了当前需输出的数据与输入序列的某些特定位置数据的相关性。为了验证这一假设，我们可以通过对一组输入输出序列对进行可视化。</p>
 <p>研究人员将注意力权重可视化，尽管不同语言的主语-动名词位置不同，但法语和英语的句子自动对齐的效果很明显。在一般情况下，注意模型通过正确地将海洋环境与海洋环境进行比对，显示出非单调的一致性。</p>
 <p><img src="https://photos.zywvvd.com/vvd-dell-2021-win-10/20210818001633.png"></p>
-<h3 id="论文"><a href="#论文" class="headerlink" title="论文"></a>论文</h3><details>
+<h3 id="Attention"><a href="#Attention" class="headerlink" title="Attention"></a>Attention</h3><h4 id="基本流程描述"><a href="#基本流程描述" class="headerlink" title="基本流程描述"></a>基本流程描述</h4><p>以 seq2seq 模型为例子，对于一个句子序列S，其由单词序列$[w_1,w_2,w_3,…,w_n]$​构成：</p>
+<ol>
+<li>将S的每个单词 $ w_{i} $ 编码为一个单独向量 $ v_{i} $​, 这里对应seq2seq模型, 就是在encoder编码阶段，每个时间步单位(即每个单词)的输出隐状态。</li>
+<li>在解码decoder阶段，待预测词的输入隐状态C(即上一个时间步的输出状态)与 (1) 中每个单词的隐状态相乘再做 softmax 归一化后得到权重分数，使用学习到的注意力权重 $ a_{i} $ 对 (1) 中得到的所有单词向量做加权线性组合 $ Z=\sum_{i} a_{i} v_{i} $​。</li>
+<li>利于输入状态C以及输入变量Z作为对待预测词的共同输入，来进行预测。</li>
+</ol>
+<h4 id="公式步骤"><a href="#公式步骤" class="headerlink" title="公式步骤"></a>公式步骤</h4><ol>
+<li>首先利用 RNN 模型已经得到了序列的隐层状态$(h_1,h_2,…,h_n)$</li>
+<li>如果当前 decoder 阶段已经到了$S_{i-1}$，要进行下一个$S_i$​的预测了，接下来计算每一个输入位置$h_j$对当前位置$i$​的影响</li>
+</ol>
+<p>$$<br>e_{i j}=a\left(s_{i-1}, h_{j}\right)<br>$$</p>
+<ol start="3">
+<li>$e_{ij}$​做归一化处理，得到 attention 的权重分布</li>
+</ol>
+<p>$$<br>\alpha_{i j}=\frac{\exp \left(e_{i j}\right)}{\sum_{k=1}^{T_{x}} \exp \left(e_{i k}\right)}<br>$$</p>
+<ol start="4">
+<li>利用 $α_{ij}$​​ 进行加权求和，得到相应的 context vector</li>
+</ol>
+<p>$$<br>c_{i}=\sum_{j=1}^{T_{x}} \alpha_{i j} h_{j}<br>$$</p>
+<ol start="5">
+<li>计算预测最终的输出</li>
+</ol>
+<p>$$<br>s_{i}=f\left(s_{i-1}, y_{i-1}, c_{i}\right)<br>$$</p>
+<h3 id="Self-Attention"><a href="#Self-Attention" class="headerlink" title="Self-Attention"></a><strong>Self-Attention</strong></h3><h4 id="不同于-Attention"><a href="#不同于-Attention" class="headerlink" title="不同于 Attention"></a>不同于 Attention</h4><p>传统的Attention是基于source端和target端的隐变量（hidden state）计算Attention的，得到的结果是源端（source端）的每个词与目标端（target端）每个词之间的依赖关系。</p>
+<p>Self -Attention 首先分别在source端和target端进行自身的attention，仅与source input或者target input自身相关的Self -Attention，以捕捉source端或target端自身的词与词之间的依赖关系；然后再把source端的得到的self -Attention加入到target端得到的Attention中，称作为Cross-Attention，以捕捉source端和target端词与词之间的依赖关系。</p>
+<p><img src="https://photos.zywvvd.com/vvd-dell-2021-win-10/20210818234646.png"></p>
+<p>传统的Attention机制<strong>忽略了源端或目标端句子中词与词之间的依赖关系</strong>，相对比，self Attention可以不仅可以得到源端与目标端词与词之间的依赖关系，同时还可以有效获取源端或目标端自身词与词之间的依赖关系。</p>
+<h4 id="论文"><a href="#论文" class="headerlink" title="论文"></a>论文</h4><p> 开山的论文 《Attention is all you need》</p>
+<details>
 <summary>原始论文</summary>
     <iframe src='/js/pdfjs/web/viewer.html?file=https://photos.zywvvd.com/win11-mt/20210814144827.pdf' style='width:100%;height:800px'></iframe>
 </details>
+#### 计算步骤
 
-
-
+<ol>
+<li>将输入单词转化成嵌入向量;</li>
+<li>根据嵌入向量得到 $ q, k, v $ 三个向量;</li>
+<li>为每个向量计算一个score: score $ =q \cdot k $;</li>
+<li>为了梯度的稳定, Transformer使用了score归一化，即除以 $ \sqrt{d_{k}} $;</li>
+<li>对score施以softmax激活函数;</li>
+<li>softmax点乘Value值 $ v $, 得到加权的每个输入向量的评分 $ v $;</li>
+<li>相加之后得到最终的输出结果 $ z: \quad z=\sum v 。 $</li>
+</ol>
+<ul>
+<li>核心公式</li>
+</ul>
+<p>$$<br>Attention  (Q, K, V)=\operatorname{softmax}\left(\frac{Q K^{T}}{\sqrt{d_{k}}}\right) V<br>$$</p>
 <h3 id="参考资料"><a href="#参考资料" class="headerlink" title="参考资料"></a>参考资料</h3><ul>
 <li><a href="https://www.cnblogs.com/gczr/p/14693829.html">https://www.cnblogs.com/gczr/p/14693829.html</a></li>
 <li><a href="https://zhuanlan.zhihu.com/p/66076731">https://zhuanlan.zhihu.com/p/66076731</a></li>
+<li><a href="https://zhuanlan.zhihu.com/p/46313756">https://zhuanlan.zhihu.com/p/46313756</a></li>
+<li><a href="https://zhuanlan.zhihu.com/p/79115586">https://zhuanlan.zhihu.com/p/79115586</a></li>
 </ul>
 <link rel="stylesheet" href="/css/spoiler.css" type="text/css"><script src="/js/spoiler.js" type="text/javascript" async></script>]]></content>
       <categories>
@@ -14268,29 +14356,29 @@ $$
 <h4 id="传输文件"><a href="#传输文件" class="headerlink" title="传输文件"></a>传输文件</h4><h5 id="从服务器上下载文件"><a href="#从服务器上下载文件" class="headerlink" title="从服务器上下载文件"></a>从服务器上下载文件</h5><figure class="highlight elixir"><table><tr><td class="code"><pre><code class="hljs elixir">scp username<span class="hljs-variable">@servername</span><span class="hljs-symbol">:/path/filename</span> /var/www/local_dir（本地目录）<br></code></pre></td></tr></table></figure>
 
 <blockquote>
-<p>例如: scp <a href="mailto:&#x72;&#x6f;&#x6f;&#116;&#64;&#49;&#x39;&#50;&#46;&#x31;&#54;&#x38;&#x2e;&#48;&#x2e;&#49;&#x30;&#x31;">&#x72;&#x6f;&#x6f;&#116;&#64;&#49;&#x39;&#50;&#46;&#x31;&#54;&#x38;&#x2e;&#48;&#x2e;&#49;&#x30;&#x31;</a>:/var/www/test.txt 把192.168.0.101上的/var/www/test.txt 的文件下载到/var/www/local_dir（本地目录）</p>
+<p>例如: scp <a href="mailto:&#x72;&#111;&#111;&#116;&#64;&#x31;&#x39;&#x32;&#46;&#x31;&#54;&#x38;&#x2e;&#x30;&#46;&#x31;&#48;&#49;">&#x72;&#111;&#111;&#116;&#64;&#x31;&#x39;&#x32;&#46;&#x31;&#54;&#x38;&#x2e;&#x30;&#46;&#x31;&#48;&#49;</a>:/var/www/test.txt 把192.168.0.101上的/var/www/test.txt 的文件下载到/var/www/local_dir（本地目录）</p>
 </blockquote>
 <h5 id="上传本地文件到服务器"><a href="#上传本地文件到服务器" class="headerlink" title="上传本地文件到服务器"></a>上传本地文件到服务器</h5><figure class="highlight elixir"><table><tr><td class="code"><pre><code class="hljs elixir">scp /path/filename username<span class="hljs-variable">@servername</span><span class="hljs-symbol">:/path</span>  <br></code></pre></td></tr></table></figure>
 
 <blockquote>
-<p>例如: scp /var/www/test.php <a href="mailto:&#114;&#111;&#111;&#x74;&#x40;&#49;&#57;&#x32;&#x2e;&#x31;&#54;&#56;&#x2e;&#48;&#46;&#x31;&#48;&#49;">&#114;&#111;&#111;&#x74;&#x40;&#49;&#57;&#x32;&#x2e;&#x31;&#54;&#56;&#x2e;&#48;&#46;&#x31;&#48;&#49;</a>:/var/www/ 把本机/var/www/目录下的test.php文件上传到192.168.0.101这台服务器上的/var/www/目录中</p>
+<p>例如: scp /var/www/test.php <a href="mailto:&#114;&#x6f;&#111;&#x74;&#x40;&#x31;&#x39;&#50;&#x2e;&#49;&#54;&#56;&#46;&#x30;&#46;&#49;&#48;&#x31;">&#114;&#x6f;&#111;&#x74;&#x40;&#x31;&#x39;&#50;&#x2e;&#49;&#54;&#56;&#46;&#x30;&#46;&#49;&#48;&#x31;</a>:/var/www/ 把本机/var/www/目录下的test.php文件上传到192.168.0.101这台服务器上的/var/www/目录中</p>
 </blockquote>
 <h5 id="从服务器下载整个目录"><a href="#从服务器下载整个目录" class="headerlink" title="从服务器下载整个目录"></a>从服务器下载整个目录</h5><figure class="highlight elixir"><table><tr><td class="code"><pre><code class="hljs elixir">scp -r username<span class="hljs-variable">@servername</span><span class="hljs-symbol">:/var/www/remote_dir/</span>（远程目录） /var/www/local_dir（本地目录）<br></code></pre></td></tr></table></figure>
 
 <blockquote>
-<p>例如: scp -r <a href="mailto:&#114;&#111;&#111;&#116;&#64;&#x31;&#57;&#50;&#46;&#49;&#54;&#56;&#46;&#48;&#46;&#x31;&#48;&#x31;">&#114;&#111;&#111;&#116;&#64;&#x31;&#57;&#50;&#46;&#49;&#54;&#56;&#46;&#48;&#46;&#x31;&#48;&#x31;</a>:/var/www/test /var/www/  </p>
+<p>例如: scp -r <a href="mailto:&#x72;&#x6f;&#x6f;&#x74;&#x40;&#49;&#x39;&#x32;&#46;&#x31;&#54;&#56;&#x2e;&#48;&#46;&#49;&#x30;&#x31;">&#x72;&#x6f;&#x6f;&#x74;&#x40;&#49;&#x39;&#x32;&#46;&#x31;&#54;&#56;&#x2e;&#48;&#46;&#49;&#x30;&#x31;</a>:/var/www/test /var/www/  </p>
 </blockquote>
 <h5 id="上传目录到服务器"><a href="#上传目录到服务器" class="headerlink" title="上传目录到服务器"></a>上传目录到服务器</h5><figure class="highlight elixir"><table><tr><td class="code"><pre><code class="hljs elixir">scp -r local_dir username<span class="hljs-variable">@servername</span><span class="hljs-symbol">:remote_dir</span><br></code></pre></td></tr></table></figure>
 
 <blockquote>
-<p>例如：scp -r test  <a href="mailto:&#114;&#111;&#x6f;&#x74;&#64;&#49;&#57;&#x32;&#x2e;&#x31;&#x36;&#56;&#x2e;&#48;&#x2e;&#x31;&#48;&#x31;">&#114;&#111;&#x6f;&#x74;&#64;&#49;&#57;&#x32;&#x2e;&#x31;&#x36;&#56;&#x2e;&#48;&#x2e;&#x31;&#48;&#x31;</a>:/var/www/  把当前目录下的test目录上传到服务器的/var/www/ 目录</p>
+<p>例如：scp -r test  <a href="mailto:&#x72;&#x6f;&#111;&#116;&#x40;&#x31;&#57;&#x32;&#x2e;&#x31;&#x36;&#56;&#x2e;&#48;&#46;&#49;&#x30;&#x31;">&#x72;&#x6f;&#111;&#116;&#x40;&#x31;&#57;&#x32;&#x2e;&#x31;&#x36;&#56;&#x2e;&#48;&#46;&#49;&#x30;&#x31;</a>:/var/www/  把当前目录下的test目录上传到服务器的/var/www/ 目录</p>
 </blockquote>
 <h4 id="ssh自带的sftp功能"><a href="#ssh自带的sftp功能" class="headerlink" title="ssh自带的sftp功能"></a>ssh自带的sftp功能</h4><h5 id="Window和Linux的传输工具"><a href="#Window和Linux的传输工具" class="headerlink" title="Window和Linux的传输工具"></a>Window和Linux的传输工具</h5><figure class="highlight xl"><table><tr><td class="code"><pre><code class="hljs xl">wincp  filezip          <br><span class="hljs-function"><span class="hljs-title">sftp</span> --&gt;</span>基于 ssh 的安全加密传输<br></code></pre></td></tr></table></figure>
 
 <h5 id="sftp客户端连接"><a href="#sftp客户端连接" class="headerlink" title="sftp客户端连接"></a>sftp客户端连接</h5><figure class="highlight awk"><table><tr><td class="code"><pre><code class="hljs awk">sftp -oPort=<span class="hljs-number">22</span> root@<span class="hljs-number">192.168</span>.<span class="hljs-number">25.137</span>                   <br>put <span class="hljs-regexp">/etc/</span>hosts /tmp                   <br>get <span class="hljs-regexp">/etc/</span>hosts <span class="hljs-regexp">/home/</span>omd <br></code></pre></td></tr></table></figure>
 
 <h5 id="sftp小结"><a href="#sftp小结" class="headerlink" title="sftp小结"></a>sftp小结</h5><ul>
-<li>linux下使用命令： sftp -oPort=22 <a href="mailto:&#x72;&#x6f;&#111;&#x74;&#64;&#x78;&#46;&#x78;&#x2e;&#x78;&#46;&#120;">&#x72;&#x6f;&#111;&#x74;&#64;&#x78;&#46;&#x78;&#x2e;&#x78;&#46;&#120;</a>                   </li>
+<li>linux下使用命令： sftp -oPort=22 <a href="mailto:&#x72;&#x6f;&#x6f;&#x74;&#x40;&#x78;&#x2e;&#x78;&#x2e;&#120;&#46;&#120;">&#x72;&#x6f;&#x6f;&#x74;&#x40;&#x78;&#x2e;&#x78;&#x2e;&#120;&#46;&#120;</a>                   </li>
 <li>put加客户端本地路径上传                  </li>
 <li>get下载服务器端内容到本地                   </li>
 <li>远程连接默认连接用户的家目录</li>
