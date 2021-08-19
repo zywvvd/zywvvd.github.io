@@ -249,7 +249,7 @@
     
     <span class="post-meta mr-2">
       <i class="iconfont icon-chart"></i>
-      2.7k 字
+      3.2k 字
     </span>
   
 
@@ -259,7 +259,7 @@
       <i class="iconfont icon-clock-fill"></i>
       
       
-      30
+      36
        分钟
     </span>
   
@@ -301,7 +301,7 @@
             
               <p class="note note-info">
                 
-                  本文最后更新于：2021年8月18日 晚上
+                  本文最后更新于：2021年8月20日 凌晨
                 
               </p>
             
@@ -346,6 +346,11 @@ $$
 <li>在解码decoder阶段，待预测词的输入隐状态C(即上一个时间步的输出状态)与 (1) 中每个单词的隐状态相乘再做 softmax 归一化后得到权重分数，使用学习到的注意力权重 $ a_{i} $ 对 (1) 中得到的所有单词向量做加权线性组合 $ Z=\sum_{i} a_{i} v_{i} $​。</li>
 <li>利于输入状态C以及输入变量Z作为对待预测词的共同输入，来进行预测。</li>
 </ol>
+<p>我们的最终目标是要能够帮助decoder在生成词语时，有一个不同词语的权重的参考。在训练时，对于decoder我们是有训练目标的，此时将decoder中的信息定义为一个<strong>Query。</strong>而encoder中包含了所有可能出现的词语，我们将其作为一个<strong>字典</strong>，该字典的<strong>key</strong>为所有encoder的序列信息。n个单词相当于当前字典中有n条记录，而字典的<strong>value</strong>通常也是所有encoder的序列信息。</p>
+<p>上面对应于第一步，然后是第二部计算注意力权重，由于我们要让模型自己去学习该对哪些语素重点关注，因此要用我们的学习目标Query来参与这个过程，因此对于Query的每个向量，通过一个函数 $ a_{i}=F\left(Q_{i}, K\right) $，计算预测i时刻词时，需要学习的注意力权重，由于包含n个单词，因此， $a_i$ 应当是一个n维的向量，为了后续计算方便，需要将该向量进行softmax归一化，让向量的每一维元素都是一个概率值。</p>
+<p><img src="https://photos.zywvvd.com/vvd-dell-2021-win-10/20210819232635.png" srcset="/img/loading.gif" lazyload></p>
+<p>最后对Value vectors进行加权线性组合，得到带权重参考的“字典”输出：</p>
+<p><img src="https://photos.zywvvd.com/vvd-dell-2021-win-10/20210819232741.png" srcset="/img/loading.gif" lazyload></p>
 <h4 id="公式步骤"><a href="#公式步骤" class="headerlink" title="公式步骤"></a>公式步骤</h4><ol>
 <li>首先利用 RNN 模型已经得到了序列的隐层状态$(h_1,h_2,…,h_n)$</li>
 <li>如果当前 decoder 阶段已经到了$S_{i-1}$，要进行下一个$S_i$​的预测了，接下来计算每一个输入位置$h_j$对当前位置$i$​的影响</li>
@@ -387,6 +392,32 @@ $$
 <li>核心公式</li>
 </ul>
 <p>$$<br>Attention  (Q, K, V)=\operatorname{softmax}\left(\frac{Q K^{T}}{\sqrt{d_{k}}}\right) V<br>$$</p>
+<h4 id="图示"><a href="#图示" class="headerlink" title="图示"></a>图示</h4><ul>
+<li>Embedding Queries Keys Values</li>
+</ul>
+<p><img src="https://photos.zywvvd.com/vvd-dell-2021-win-10/20210819231055.png" srcset="/img/loading.gif" lazyload></p>
+<ul>
+<li>其中 $Q, K, V$ 是由 $X$ 计算而来的</li>
+<li>论文中计算方式如下：</li>
+</ul>
+<p><img src="https://photos.zywvvd.com/vvd-dell-2021-win-10/20210819231330.png" srcset="/img/loading.gif" lazyload></p>
+<ul>
+<li>网络学习参数 $W^Q, Q^K, W^V$，计算得到 $Q, K, V$</li>
+<li>由 $Q, K, V$ 计算得到 $Z$</li>
+</ul>
+<p><img src="https://photos.zywvvd.com/vvd-dell-2021-win-10/20210819235151.png" srcset="/img/loading.gif" lazyload></p>
+<ul>
+<li>在Transformer中，同时采用了 resnet 类似的 short-cut 结构</li>
+</ul>
+<p><img src="https://photos.zywvvd.com/vvd-dell-2021-win-10/20210819235341.png" srcset="/img/loading.gif" lazyload></p>
+<ul>
+<li>多头 Attention</li>
+</ul>
+<p><img src="https://photos.zywvvd.com/vvd-dell-2021-win-10/20210819235509.png" srcset="/img/loading.gif" lazyload></p>
+<ul>
+<li>同一组 $X$ 输入多个 Transformer 中，得到多组 $Z_i$，将$Z_i$们连接起来组成大$Z^O$，和 $W^O$ 相乘得到输出层 $Z$</li>
+<li>注意 Transformer 中的 Attention 会将 encoder 的 $K$ 和 $V$ 传给 decoder，而 $Q$ 来自与解码器的上一个输出。</li>
+</ul>
 <h3 id="参考资料"><a href="#参考资料" class="headerlink" title="参考资料"></a>参考资料</h3><ul>
 <li><a target="_blank" rel="noopener" href="https://www.cnblogs.com/gczr/p/14693829.html">https://www.cnblogs.com/gczr/p/14693829.html</a></li>
 <li><a target="_blank" rel="noopener" href="https://zhuanlan.zhihu.com/p/66076731">https://zhuanlan.zhihu.com/p/66076731</a></li>

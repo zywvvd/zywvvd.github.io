@@ -1,6 +1,75 @@
 <?xml version="1.0" encoding="utf-8"?>
 <search>
   <entry>
+    <title>错误 mkl-service + Intel(R) MKL MKL_THREADING_LAYER=INTEL is incompatible with libgomp.so.1 ... 解决方案</title>
+    <url>/2021/08/19/deep_learning/bug-fix/mkl-service-err-message/mkl-service-err-message/</url>
+    <content><![CDATA[<blockquote>
+<p>当使用pytorch 多卡训练时可能会报错 <code>mkl-service + Intel(R) MKL MKL_THREADING_LAYER=INTEL is incompatible ...</code>，本文记录解决方案。</p>
+</blockquote>
+<span id="more"></span>
+
+<h3 id="问题原因"><a href="#问题原因" class="headerlink" title="问题原因"></a>问题原因</h3><h4 id="出现问题的条件"><a href="#出现问题的条件" class="headerlink" title="出现问题的条件"></a>出现问题的条件</h4><ul>
+<li>在 pytorch 1.5 + 以上的版本</li>
+<li>在多卡训练</li>
+<li>在import torch 在 import numpy 之前</li>
+</ul>
+<h4 id="原因"><a href="#原因" class="headerlink" title="原因"></a>原因</h4><p>如果在 numpy 之前导入了 torch，那么这里的子进程将获得一个 GNU 线程层（即使父进程没有定义变量）</p>
+<p>但是如果 numpy 在 Torch 之前被导入，子进程将获得一个 INTEL 线程层，这种情况会导致线程之间打架</p>
+<ul>
+<li>错误信息</li>
+</ul>
+<figure class="highlight subunit"><table><tr><td class="code"><pre><code class="hljs subunit"><span class="hljs-keyword">Error: </span>mkl-service + Intel® MKL: MKL_THREADING_LAYER=INTEL is incompatible with libgomp.so.1 library. Try to import numpy first or set the threading layer accordingly. Set MKL_SERVICE_FORCE_INTEL to force it.<br></code></pre></td></tr></table></figure>
+
+<h3 id="解决方案"><a href="#解决方案" class="headerlink" title="解决方案"></a>解决方案</h3><h4 id="方案一"><a href="#方案一" class="headerlink" title="方案一"></a>方案一</h4><p>降级pytorch </p>
+<ul>
+<li>降级 pytorch 到1.5 一下</li>
+</ul>
+<h4 id="方案二"><a href="#方案二" class="headerlink" title="方案二"></a>方案二</h4><blockquote>
+<p>谁会接受降级啊</p>
+</blockquote>
+<p>使用单卡训练</p>
+<h4 id="方案三"><a href="#方案三" class="headerlink" title="方案三"></a>方案三</h4><blockquote>
+<p>单卡batch size 不够大啊</p>
+</blockquote>
+<ul>
+<li>在python 程序入口 import numpy</li>
+<li>可以极大程度上减少 error 信息输出</li>
+</ul>
+<h4 id="方案四"><a href="#方案四" class="headerlink" title="方案四"></a>方案四</h4><blockquote>
+<p>正儿八经的</p>
+</blockquote>
+<ul>
+<li>在环境变量添加</li>
+</ul>
+<figure class="highlight ini"><table><tr><td class="code"><pre><code class="hljs ini"><span class="hljs-attr">&#x27;MKL_SERVICE_FORCE_INTEL&#x27;</span> = <span class="hljs-string">&#x27;1&#x27;</span><br></code></pre></td></tr></table></figure>
+
+<blockquote>
+<p>可以使得程序继续运行，但错误信息还是会报</p>
+</blockquote>
+<ul>
+<li>再加入</li>
+</ul>
+<figure class="highlight ini"><table><tr><td class="code"><pre><code class="hljs ini"><span class="hljs-attr">&#x27;MKL_THREADING_LAYER&#x27;</span> = <span class="hljs-string">&#x27;GNU&#x27;</span> <br></code></pre></td></tr></table></figure>
+
+<blockquote>
+<p>据说可以避免报错</p>
+</blockquote>
+<ul>
+<li>可以查看原始 <a href="https://github.com/pytorch/pytorch/issues/37377">issues</a></li>
+</ul>
+<h3 id="参考资料"><a href="#参考资料" class="headerlink" title="参考资料"></a>参考资料</h3><ul>
+<li><a href="https://github.com/pytorch/pytorch/issues/37377">https://github.com/pytorch/pytorch/issues/37377</a></li>
+<li><a href="https://blog.csdn.net/qq_40246742/article/details/117898715">https://blog.csdn.net/qq_40246742/article/details/117898715</a></li>
+</ul>
+<link rel="stylesheet" href="/css/spoiler.css" type="text/css"><script src="/js/spoiler.js" type="text/javascript" async></script>]]></content>
+      <categories>
+        <category>Deep Learning</category>
+      </categories>
+      <tags>
+        <tag>Deep Learning</tag>
+      </tags>
+  </entry>
+  <entry>
     <title>Pytorch 拷贝数据</title>
     <url>/2021/08/18/deep_learning/pytorch/torch-copy/torch-copy/</url>
     <content><![CDATA[<blockquote>
@@ -78,6 +147,7 @@
 <p>或</p>
 <figure class="highlight ini"><table><tr><td class="code"><pre><code class="hljs ini"><span class="hljs-attr">CUDA_VISIBLE_DEVICES</span>=<span class="hljs-number">1</span> python **.py<br></code></pre></td></tr></table></figure>
 
+<p><strong>注意</strong>：这种设置方法一定要<strong>在第一次使用 cuda 之前进行设置</strong></p>
 <h5 id="永久设置"><a href="#永久设置" class="headerlink" title="永久设置"></a>永久设置</h5><ul>
 <li>linux:<br>在~/.bashrc 的最后加上export CUDA_VISIBLE_DEVICES=1，然后source ~/.bashrc</li>
 <li>windows:<br>打开我的电脑环境变量设置的地方，直接添加就行了。</li>
@@ -313,6 +383,11 @@ $$
 <li>在解码decoder阶段，待预测词的输入隐状态C(即上一个时间步的输出状态)与 (1) 中每个单词的隐状态相乘再做 softmax 归一化后得到权重分数，使用学习到的注意力权重 $ a_{i} $ 对 (1) 中得到的所有单词向量做加权线性组合 $ Z=\sum_{i} a_{i} v_{i} $​。</li>
 <li>利于输入状态C以及输入变量Z作为对待预测词的共同输入，来进行预测。</li>
 </ol>
+<p>我们的最终目标是要能够帮助decoder在生成词语时，有一个不同词语的权重的参考。在训练时，对于decoder我们是有训练目标的，此时将decoder中的信息定义为一个<strong>Query。</strong>而encoder中包含了所有可能出现的词语，我们将其作为一个<strong>字典</strong>，该字典的<strong>key</strong>为所有encoder的序列信息。n个单词相当于当前字典中有n条记录，而字典的<strong>value</strong>通常也是所有encoder的序列信息。</p>
+<p>上面对应于第一步，然后是第二部计算注意力权重，由于我们要让模型自己去学习该对哪些语素重点关注，因此要用我们的学习目标Query来参与这个过程，因此对于Query的每个向量，通过一个函数 $ a_{i}=F\left(Q_{i}, K\right) $，计算预测i时刻词时，需要学习的注意力权重，由于包含n个单词，因此， $a_i$ 应当是一个n维的向量，为了后续计算方便，需要将该向量进行softmax归一化，让向量的每一维元素都是一个概率值。</p>
+<p><img src="https://photos.zywvvd.com/vvd-dell-2021-win-10/20210819232635.png"></p>
+<p>最后对Value vectors进行加权线性组合，得到带权重参考的“字典”输出：</p>
+<p><img src="https://photos.zywvvd.com/vvd-dell-2021-win-10/20210819232741.png"></p>
 <h4 id="公式步骤"><a href="#公式步骤" class="headerlink" title="公式步骤"></a>公式步骤</h4><ol>
 <li>首先利用 RNN 模型已经得到了序列的隐层状态$(h_1,h_2,…,h_n)$</li>
 <li>如果当前 decoder 阶段已经到了$S_{i-1}$，要进行下一个$S_i$​的预测了，接下来计算每一个输入位置$h_j$对当前位置$i$​的影响</li>
@@ -354,6 +429,32 @@ $$
 <li>核心公式</li>
 </ul>
 <p>$$<br>Attention  (Q, K, V)=\operatorname{softmax}\left(\frac{Q K^{T}}{\sqrt{d_{k}}}\right) V<br>$$</p>
+<h4 id="图示"><a href="#图示" class="headerlink" title="图示"></a>图示</h4><ul>
+<li>Embedding Queries Keys Values</li>
+</ul>
+<p><img src="https://photos.zywvvd.com/vvd-dell-2021-win-10/20210819231055.png"></p>
+<ul>
+<li>其中 $Q, K, V$ 是由 $X$ 计算而来的</li>
+<li>论文中计算方式如下：</li>
+</ul>
+<p><img src="https://photos.zywvvd.com/vvd-dell-2021-win-10/20210819231330.png"></p>
+<ul>
+<li>网络学习参数 $W^Q, Q^K, W^V$，计算得到 $Q, K, V$</li>
+<li>由 $Q, K, V$ 计算得到 $Z$</li>
+</ul>
+<p><img src="https://photos.zywvvd.com/vvd-dell-2021-win-10/20210819235151.png"></p>
+<ul>
+<li>在Transformer中，同时采用了 resnet 类似的 short-cut 结构</li>
+</ul>
+<p><img src="https://photos.zywvvd.com/vvd-dell-2021-win-10/20210819235341.png"></p>
+<ul>
+<li>多头 Attention</li>
+</ul>
+<p><img src="https://photos.zywvvd.com/vvd-dell-2021-win-10/20210819235509.png"></p>
+<ul>
+<li>同一组 $X$ 输入多个 Transformer 中，得到多组 $Z_i$，将$Z_i$们连接起来组成大$Z^O$，和 $W^O$ 相乘得到输出层 $Z$</li>
+<li>注意 Transformer 中的 Attention 会将 encoder 的 $K$ 和 $V$ 传给 decoder，而 $Q$ 来自与解码器的上一个输出。</li>
+</ul>
 <h3 id="参考资料"><a href="#参考资料" class="headerlink" title="参考资料"></a>参考资料</h3><ul>
 <li><a href="https://www.cnblogs.com/gczr/p/14693829.html">https://www.cnblogs.com/gczr/p/14693829.html</a></li>
 <li><a href="https://zhuanlan.zhihu.com/p/66076731">https://zhuanlan.zhihu.com/p/66076731</a></li>
@@ -14356,29 +14457,29 @@ $$
 <h4 id="传输文件"><a href="#传输文件" class="headerlink" title="传输文件"></a>传输文件</h4><h5 id="从服务器上下载文件"><a href="#从服务器上下载文件" class="headerlink" title="从服务器上下载文件"></a>从服务器上下载文件</h5><figure class="highlight elixir"><table><tr><td class="code"><pre><code class="hljs elixir">scp username<span class="hljs-variable">@servername</span><span class="hljs-symbol">:/path/filename</span> /var/www/local_dir（本地目录）<br></code></pre></td></tr></table></figure>
 
 <blockquote>
-<p>例如: scp <a href="mailto:&#x72;&#111;&#111;&#116;&#64;&#x31;&#x39;&#x32;&#46;&#x31;&#54;&#x38;&#x2e;&#x30;&#46;&#x31;&#48;&#49;">&#x72;&#111;&#111;&#116;&#64;&#x31;&#x39;&#x32;&#46;&#x31;&#54;&#x38;&#x2e;&#x30;&#46;&#x31;&#48;&#49;</a>:/var/www/test.txt 把192.168.0.101上的/var/www/test.txt 的文件下载到/var/www/local_dir（本地目录）</p>
+<p>例如: scp <a href="mailto:&#114;&#111;&#x6f;&#x74;&#64;&#x31;&#57;&#x32;&#46;&#49;&#x36;&#56;&#46;&#48;&#46;&#49;&#48;&#49;">&#114;&#111;&#x6f;&#x74;&#64;&#x31;&#57;&#x32;&#46;&#49;&#x36;&#56;&#46;&#48;&#46;&#49;&#48;&#49;</a>:/var/www/test.txt 把192.168.0.101上的/var/www/test.txt 的文件下载到/var/www/local_dir（本地目录）</p>
 </blockquote>
 <h5 id="上传本地文件到服务器"><a href="#上传本地文件到服务器" class="headerlink" title="上传本地文件到服务器"></a>上传本地文件到服务器</h5><figure class="highlight elixir"><table><tr><td class="code"><pre><code class="hljs elixir">scp /path/filename username<span class="hljs-variable">@servername</span><span class="hljs-symbol">:/path</span>  <br></code></pre></td></tr></table></figure>
 
 <blockquote>
-<p>例如: scp /var/www/test.php <a href="mailto:&#114;&#x6f;&#111;&#x74;&#x40;&#x31;&#x39;&#50;&#x2e;&#49;&#54;&#56;&#46;&#x30;&#46;&#49;&#48;&#x31;">&#114;&#x6f;&#111;&#x74;&#x40;&#x31;&#x39;&#50;&#x2e;&#49;&#54;&#56;&#46;&#x30;&#46;&#49;&#48;&#x31;</a>:/var/www/ 把本机/var/www/目录下的test.php文件上传到192.168.0.101这台服务器上的/var/www/目录中</p>
+<p>例如: scp /var/www/test.php <a href="mailto:&#114;&#x6f;&#x6f;&#116;&#x40;&#x31;&#x39;&#50;&#x2e;&#x31;&#54;&#x38;&#x2e;&#x30;&#46;&#49;&#x30;&#49;">&#114;&#x6f;&#x6f;&#116;&#x40;&#x31;&#x39;&#50;&#x2e;&#x31;&#54;&#x38;&#x2e;&#x30;&#46;&#49;&#x30;&#49;</a>:/var/www/ 把本机/var/www/目录下的test.php文件上传到192.168.0.101这台服务器上的/var/www/目录中</p>
 </blockquote>
 <h5 id="从服务器下载整个目录"><a href="#从服务器下载整个目录" class="headerlink" title="从服务器下载整个目录"></a>从服务器下载整个目录</h5><figure class="highlight elixir"><table><tr><td class="code"><pre><code class="hljs elixir">scp -r username<span class="hljs-variable">@servername</span><span class="hljs-symbol">:/var/www/remote_dir/</span>（远程目录） /var/www/local_dir（本地目录）<br></code></pre></td></tr></table></figure>
 
 <blockquote>
-<p>例如: scp -r <a href="mailto:&#x72;&#x6f;&#x6f;&#x74;&#x40;&#49;&#x39;&#x32;&#46;&#x31;&#54;&#56;&#x2e;&#48;&#46;&#49;&#x30;&#x31;">&#x72;&#x6f;&#x6f;&#x74;&#x40;&#49;&#x39;&#x32;&#46;&#x31;&#54;&#56;&#x2e;&#48;&#46;&#49;&#x30;&#x31;</a>:/var/www/test /var/www/  </p>
+<p>例如: scp -r <a href="mailto:&#x72;&#x6f;&#x6f;&#116;&#x40;&#49;&#57;&#x32;&#46;&#x31;&#54;&#56;&#46;&#48;&#46;&#x31;&#x30;&#49;">&#x72;&#x6f;&#x6f;&#116;&#x40;&#49;&#57;&#x32;&#46;&#x31;&#54;&#56;&#46;&#48;&#46;&#x31;&#x30;&#49;</a>:/var/www/test /var/www/  </p>
 </blockquote>
 <h5 id="上传目录到服务器"><a href="#上传目录到服务器" class="headerlink" title="上传目录到服务器"></a>上传目录到服务器</h5><figure class="highlight elixir"><table><tr><td class="code"><pre><code class="hljs elixir">scp -r local_dir username<span class="hljs-variable">@servername</span><span class="hljs-symbol">:remote_dir</span><br></code></pre></td></tr></table></figure>
 
 <blockquote>
-<p>例如：scp -r test  <a href="mailto:&#x72;&#x6f;&#111;&#116;&#x40;&#x31;&#57;&#x32;&#x2e;&#x31;&#x36;&#56;&#x2e;&#48;&#46;&#49;&#x30;&#x31;">&#x72;&#x6f;&#111;&#116;&#x40;&#x31;&#57;&#x32;&#x2e;&#x31;&#x36;&#56;&#x2e;&#48;&#46;&#49;&#x30;&#x31;</a>:/var/www/  把当前目录下的test目录上传到服务器的/var/www/ 目录</p>
+<p>例如：scp -r test  <a href="mailto:&#x72;&#111;&#x6f;&#x74;&#64;&#x31;&#57;&#x32;&#x2e;&#49;&#x36;&#56;&#46;&#x30;&#x2e;&#x31;&#48;&#x31;">&#x72;&#111;&#x6f;&#x74;&#64;&#x31;&#57;&#x32;&#x2e;&#49;&#x36;&#56;&#46;&#x30;&#x2e;&#x31;&#48;&#x31;</a>:/var/www/  把当前目录下的test目录上传到服务器的/var/www/ 目录</p>
 </blockquote>
 <h4 id="ssh自带的sftp功能"><a href="#ssh自带的sftp功能" class="headerlink" title="ssh自带的sftp功能"></a>ssh自带的sftp功能</h4><h5 id="Window和Linux的传输工具"><a href="#Window和Linux的传输工具" class="headerlink" title="Window和Linux的传输工具"></a>Window和Linux的传输工具</h5><figure class="highlight xl"><table><tr><td class="code"><pre><code class="hljs xl">wincp  filezip          <br><span class="hljs-function"><span class="hljs-title">sftp</span> --&gt;</span>基于 ssh 的安全加密传输<br></code></pre></td></tr></table></figure>
 
 <h5 id="sftp客户端连接"><a href="#sftp客户端连接" class="headerlink" title="sftp客户端连接"></a>sftp客户端连接</h5><figure class="highlight awk"><table><tr><td class="code"><pre><code class="hljs awk">sftp -oPort=<span class="hljs-number">22</span> root@<span class="hljs-number">192.168</span>.<span class="hljs-number">25.137</span>                   <br>put <span class="hljs-regexp">/etc/</span>hosts /tmp                   <br>get <span class="hljs-regexp">/etc/</span>hosts <span class="hljs-regexp">/home/</span>omd <br></code></pre></td></tr></table></figure>
 
 <h5 id="sftp小结"><a href="#sftp小结" class="headerlink" title="sftp小结"></a>sftp小结</h5><ul>
-<li>linux下使用命令： sftp -oPort=22 <a href="mailto:&#x72;&#x6f;&#x6f;&#x74;&#x40;&#x78;&#x2e;&#x78;&#x2e;&#120;&#46;&#120;">&#x72;&#x6f;&#x6f;&#x74;&#x40;&#x78;&#x2e;&#x78;&#x2e;&#120;&#46;&#120;</a>                   </li>
+<li>linux下使用命令： sftp -oPort=22 <a href="mailto:&#x72;&#x6f;&#x6f;&#x74;&#64;&#120;&#x2e;&#x78;&#x2e;&#x78;&#46;&#x78;">&#x72;&#x6f;&#x6f;&#x74;&#64;&#120;&#x2e;&#x78;&#x2e;&#x78;&#46;&#x78;</a>                   </li>
 <li>put加客户端本地路径上传                  </li>
 <li>get下载服务器端内容到本地                   </li>
 <li>远程连接默认连接用户的家目录</li>

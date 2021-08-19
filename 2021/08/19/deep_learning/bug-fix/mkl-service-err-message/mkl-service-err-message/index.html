@@ -16,12 +16,12 @@
   
   <meta name="theme-color" content="#2f4154">
   <meta name="description" content="
-本文记录Pytorch拷贝数据的几种方法，clone(), detach(), new_tensor(), copy_()。
+当使用pytorch 多卡训练时可能会报错 mkl-service + Intel(R) MKL MKL_THREADING_LAYER=INTEL is incompatible ...，本文记录解决方案。
 ">
   <meta name="author" content="Yiwei Zhang">
   <meta name="keywords" content="人工智能, 深度学习, 个人博客, 机器学习">
   
-  <title>Pytorch 拷贝数据 - 又见苍岚</title>
+  <title>错误 mkl-service + Intel(R) MKL MKL_THREADING_LAYER=INTEL is incompatible with libgomp.so.1 ... 解决方案 - 又见苍岚</title>
 
   <link  rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@4.6.0/dist/css/bootstrap.min.css" />
 
@@ -222,7 +222,7 @@
 
         <div class="mask flex-center" style="background-color: rgba(0, 0, 0, 0.3)">
           <div class="page-header text-center fade-in-up">
-            <span class="h2" id="subtitle" title="Pytorch 拷贝数据">
+            <span class="h2" id="subtitle" title="错误 mkl-service + Intel(R) MKL MKL_THREADING_LAYER=INTEL is incompatible with libgomp.so.1 ... 解决方案">
               
             </span>
 
@@ -237,8 +237,8 @@
   
     <span class="post-meta">
       <i class="iconfont icon-date-fill" aria-hidden="true"></i>
-      <time datetime="2021-08-18 10:14" pubdate>
-        2021年8月18日 上午
+      <time datetime="2021-08-19 17:03" pubdate>
+        2021年8月19日 下午
       </time>
     </span>
   
@@ -249,7 +249,7 @@
     
     <span class="post-meta mr-2">
       <i class="iconfont icon-chart"></i>
-      680 字
+      327 字
     </span>
   
 
@@ -259,7 +259,7 @@
       <i class="iconfont icon-clock-fill"></i>
       
       
-      10
+      4
        分钟
     </span>
   
@@ -297,43 +297,72 @@
         <div class="py-5" id="board">
           <article class="post-content mx-auto">
             <!-- SEO header -->
-            <h1 style="display: none">Pytorch 拷贝数据</h1>
+            <h1 style="display: none">错误 mkl-service + Intel(R) MKL MKL_THREADING_LAYER=INTEL is incompatible with libgomp.so.1 ... 解决方案</h1>
             
               <p class="note note-info">
                 
-                  本文最后更新于：2021年8月18日 晚上
+                  本文最后更新于：2021年8月19日 晚上
                 
               </p>
             
             <div class="markdown-body">
               <blockquote>
-<p>本文记录Pytorch拷贝数据的几种方法，clone(), detach(), new_tensor(), copy_()。</p>
+<p>当使用pytorch 多卡训练时可能会报错 <code>mkl-service + Intel(R) MKL MKL_THREADING_LAYER=INTEL is incompatible ...</code>，本文记录解决方案。</p>
 </blockquote>
 <span id="more"></span>
 
-<h3 id="1、clone"><a href="#1、clone" class="headerlink" title="1、clone()"></a>1、clone()</h3><p>clone()函数返回一个和源张量同shape、dtype和device的张量，与源张量不共享数据内存，但提供梯度的回溯。</p>
-<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><code class="hljs python"><span class="hljs-keyword">import</span> torch<br><br>a = torch.tensor(<span class="hljs-number">1.0</span>, requires_grad=<span class="hljs-literal">True</span>)<br>y = a ** <span class="hljs-number">2</span><br>a_ = a.clone()<br>z = a_ * <span class="hljs-number">3</span><br>y.backward()<br><span class="hljs-built_in">print</span>(a.grad)  <span class="hljs-comment"># 2</span><br>z.backward()<br><span class="hljs-built_in">print</span>(a_.grad)  <span class="hljs-comment"># None, 无grad</span><br><span class="hljs-built_in">print</span>(a.grad)  <span class="hljs-comment"># 5. a_的梯度会传递回给a，因此2+3=5</span><br><br><br>a = a + <span class="hljs-number">1</span><br><span class="hljs-built_in">print</span>(a_) <span class="hljs-comment"># 1</span><br></code></pre></td></tr></table></figure>
+<h3 id="问题原因"><a href="#问题原因" class="headerlink" title="问题原因"></a>问题原因</h3><h4 id="出现问题的条件"><a href="#出现问题的条件" class="headerlink" title="出现问题的条件"></a>出现问题的条件</h4><ul>
+<li>在 pytorch 1.5 + 以上的版本</li>
+<li>在多卡训练</li>
+<li>在import torch 在 import numpy 之前</li>
+</ul>
+<h4 id="原因"><a href="#原因" class="headerlink" title="原因"></a>原因</h4><p>如果在 numpy 之前导入了 torch，那么这里的子进程将获得一个 GNU 线程层（即使父进程没有定义变量）</p>
+<p>但是如果 numpy 在 Torch 之前被导入，子进程将获得一个 INTEL 线程层，这种情况会导致线程之间打架</p>
+<ul>
+<li>错误信息</li>
+</ul>
+<figure class="highlight subunit"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs subunit"><span class="hljs-keyword">Error: </span>mkl-service + Intel® MKL: MKL_THREADING_LAYER=INTEL is incompatible with libgomp.so.1 library. Try to import numpy first or set the threading layer accordingly. Set MKL_SERVICE_FORCE_INTEL to force it.<br></code></pre></td></tr></table></figure>
 
+<h3 id="解决方案"><a href="#解决方案" class="headerlink" title="解决方案"></a>解决方案</h3><h4 id="方案一"><a href="#方案一" class="headerlink" title="方案一"></a>方案一</h4><p>降级pytorch </p>
+<ul>
+<li>降级 pytorch 到1.5 一下</li>
+</ul>
+<h4 id="方案二"><a href="#方案二" class="headerlink" title="方案二"></a>方案二</h4><blockquote>
+<p>谁会接受降级啊</p>
+</blockquote>
+<p>使用单卡训练</p>
+<h4 id="方案三"><a href="#方案三" class="headerlink" title="方案三"></a>方案三</h4><blockquote>
+<p>单卡batch size 不够大啊</p>
+</blockquote>
+<ul>
+<li>在python 程序入口 import numpy</li>
+<li>可以极大程度上减少 error 信息输出</li>
+</ul>
+<h4 id="方案四"><a href="#方案四" class="headerlink" title="方案四"></a>方案四</h4><blockquote>
+<p>正儿八经的</p>
+</blockquote>
+<ul>
+<li>在环境变量添加</li>
+</ul>
+<figure class="highlight ini"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs ini"><span class="hljs-attr">&#x27;MKL_SERVICE_FORCE_INTEL&#x27;</span> = <span class="hljs-string">&#x27;1&#x27;</span><br></code></pre></td></tr></table></figure>
 
-<p>梯度回溯：进行的运算梯度会加在a（叶子节点）的梯度上。</p>
-<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><code class="hljs python"><span class="hljs-keyword">import</span> torch<br><br>a = torch.tensor(<span class="hljs-number">1.0</span>, requires_grad=<span class="hljs-literal">True</span>)<br>a_ = a.clone()<br>a_.add_(torch.tensor(<span class="hljs-number">1.0</span>))<br><span class="hljs-built_in">print</span>(a)    <span class="hljs-comment"># tensor(1., requires_grad=True)</span><br><span class="hljs-built_in">print</span>(a_)   <span class="hljs-comment"># tensor(2., grad_fn=&lt;AddBackward0&gt;)</span><br>a_.backward()<br><span class="hljs-built_in">print</span>(a_.grad)  <span class="hljs-comment"># None</span><br><span class="hljs-built_in">print</span>(a.grad)   <span class="hljs-comment"># tensor(1.)</span><br>可以发现不共享内存空间。<br></code></pre></td></tr></table></figure>
+<blockquote>
+<p>可以使得程序继续运行，但错误信息还是会报</p>
+</blockquote>
+<ul>
+<li>再加入</li>
+</ul>
+<figure class="highlight ini"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs ini"><span class="hljs-attr">&#x27;MKL_THREADING_LAYER&#x27;</span> = <span class="hljs-string">&#x27;GNU&#x27;</span> <br></code></pre></td></tr></table></figure>
 
-<h3 id="2、detach"><a href="#2、detach" class="headerlink" title="2、detach()"></a>2、detach()</h3><p>detach()函数返回一个和源张量同shape、dtype和device的张量，并且与源张量共享数据内存，但不提供梯度的回溯。</p>
-<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><code class="hljs python"><span class="hljs-keyword">import</span> torch<br><br>a = torch.tensor(<span class="hljs-number">1.0</span>, requires_grad=<span class="hljs-literal">True</span>)<br>y = a ** <span class="hljs-number">2</span><br>a_ = a.detach()<br><span class="hljs-built_in">print</span>(a_.grad)  <span class="hljs-comment"># None，requires_grad=False</span><br>a_.requires_grad_()  <span class="hljs-comment"># set a_.requires_grad = True</span><br>z = a_ * <span class="hljs-number">3</span><br>y.backward()<br>z.backward()<br><span class="hljs-built_in">print</span>(a_.grad)  <span class="hljs-comment"># tensor(3.)</span><br><span class="hljs-built_in">print</span>(a.grad)  <span class="hljs-comment"># tensor(2.)</span><br></code></pre></td></tr></table></figure>
-
-<p>可见，a_即使重新定义requires_grad=True，也与a的梯度没有关系。</p>
-<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><code class="hljs python"><span class="hljs-keyword">import</span> torch<br><br>a = torch.tensor(<span class="hljs-number">1.0</span>, requires_grad=<span class="hljs-literal">True</span>)<br>a_ = a.detach()<br>a_.add_(torch.tensor(<span class="hljs-number">1.0</span>))<br><span class="hljs-built_in">print</span>(a)    <span class="hljs-comment"># tensor(2., requires_grad=True)</span><br><span class="hljs-built_in">print</span>(a_)   <span class="hljs-comment"># tensor(2.)</span><br><span class="hljs-comment"># a_.backward()</span><br><span class="hljs-comment"># print(a.grad) # RuntimeError: element 0 of tensors does not require grad and does not have a grad_fn</span><br></code></pre></td></tr></table></figure>
-
-<p>容易验证a与a_共享内存空间</p>
-<h3 id="3、torch-clone-detach-（建议赋值方法）"><a href="#3、torch-clone-detach-（建议赋值方法）" class="headerlink" title="3、torch.clone.detach() （建议赋值方法）"></a>3、torch.clone.detach() （建议赋值方法）</h3><p>clone()提供了非数据内存共享的梯度追溯功能，而detach又“舍弃”了梯度回溯功能，因此clone.detach()只做简单的数据复制，既不数据共享，也不梯度共享，从此两个张量无关联。<br>置于是先clone还是先detach，其返回值一样，一般采用sourcetensor.clone().detach()。</p>
-<h3 id="4、new-tensor"><a href="#4、new-tensor" class="headerlink" title="4、new_tensor()"></a>4、new_tensor()</h3><p>new_tensor()可以将源张量中的数据复制到目标张量（数据不共享），同时提供了更细致的属性控制：</p>
-<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><code class="hljs python"><span class="hljs-keyword">import</span> torch<br><br>a = torch.tensor(<span class="hljs-number">1.0</span>, device=<span class="hljs-string">&quot;cuda&quot;</span>, dtype=torch.float32, requires_grad=<span class="hljs-literal">True</span>)<br>b = a.clone()<br>c = a.detach()<br>d = a.clone().detach()<br>e = a.new_tensor(a)  <span class="hljs-comment"># more attributions could be setted</span><br>f = a.new_tensor(a, device=<span class="hljs-string">&quot;cpu&quot;</span>, dtype=torch.float64, requires_grad=<span class="hljs-literal">False</span>)<br><span class="hljs-built_in">print</span>(a)  <span class="hljs-comment"># tensor(1., device=&#x27;cuda:0&#x27;, requires_grad=True)</span><br><span class="hljs-built_in">print</span>(b)  <span class="hljs-comment"># tensor(1., device=&#x27;cuda:0&#x27;, grad_fn=&lt;CloneBackward&gt;)</span><br><span class="hljs-built_in">print</span>(c)  <span class="hljs-comment"># tensor(1., device=&#x27;cuda:0&#x27;)</span><br><span class="hljs-built_in">print</span>(d)  <span class="hljs-comment"># tensor(1., device=&#x27;cuda:0&#x27;)</span><br><span class="hljs-built_in">print</span>(e)  <span class="hljs-comment"># tensor(1., device=&#x27;cuda:0&#x27;)</span><br><span class="hljs-built_in">print</span>(f)  <span class="hljs-comment"># tensor(1., dtype=torch.float64)</span><br></code></pre></td></tr></table></figure>
-
-<h3 id="5、copy"><a href="#5、copy" class="headerlink" title="5、copy_()"></a>5、copy_()</h3><figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><code class="hljs python"><span class="hljs-keyword">import</span> torch<br><br>a = torch.tensor(<span class="hljs-number">1.0</span>, device=<span class="hljs-string">&quot;cpu&quot;</span>, requires_grad=<span class="hljs-literal">False</span>)<br>b = torch.tensor(<span class="hljs-number">2.0</span>, device=<span class="hljs-string">&quot;cuda&quot;</span>, requires_grad=<span class="hljs-literal">True</span>)<br><span class="hljs-built_in">print</span>(a)  <span class="hljs-comment"># tensor(1.)</span><br><span class="hljs-built_in">print</span>(b)  <span class="hljs-comment"># tensor(2., device=&#x27;cuda:0&#x27;, requires_grad=True)</span><br>a.copy_(b)<br><span class="hljs-built_in">print</span>(a)  <span class="hljs-comment"># tensor(2., grad_fn=&lt;CopyBackwards&gt;)</span><br><span class="hljs-built_in">print</span>(a.device)  <span class="hljs-comment"># cpu</span><br><span class="hljs-built_in">print</span>(a.requires_grad)  <span class="hljs-comment"># True</span><br></code></pre></td></tr></table></figure>
-
-<p><code>copy_()</code>会将b复制给a，同时改变 a 的 requires_grad 属性，但不改变 device 属性。（当a.requires_grad=False是copy_()方法会报错）</p>
+<blockquote>
+<p>据说可以避免报错</p>
+</blockquote>
+<ul>
+<li>可以查看原始 <a target="_blank" rel="noopener" href="https://github.com/pytorch/pytorch/issues/37377">issues</a></li>
+</ul>
 <h3 id="参考资料"><a href="#参考资料" class="headerlink" title="参考资料"></a>参考资料</h3><ul>
-<li><a target="_blank" rel="noopener" href="https://blog.csdn.net/qq_40438388/article/details/106860180">https://blog.csdn.net/qq_40438388/article/details/106860180</a></li>
+<li><a target="_blank" rel="noopener" href="https://github.com/pytorch/pytorch/issues/37377">https://github.com/pytorch/pytorch/issues/37377</a></li>
+<li><a target="_blank" rel="noopener" href="https://blog.csdn.net/qq_40246742/article/details/117898715">https://blog.csdn.net/qq_40246742/article/details/117898715</a></li>
 </ul>
 <link rel="stylesheet" href="/css/spoiler.css" type="text/css"><script src="/js/spoiler.js" type="text/javascript" async></script>
             </div>
@@ -346,8 +375,6 @@
                     
                       <a class="hover-with-bg" href="/categories/Deep-Learning/">Deep Learning</a>
                     
-                      <a class="hover-with-bg" href="/categories/Deep-Learning/pytorch/">pytorch</a>
-                    
                   </div>
                 
                 
@@ -355,8 +382,6 @@
                     <i class="iconfont icon-tags"></i>
                     
                       <a class="hover-with-bg" href="/tags/Deep-Learning/">Deep Learning</a>
-                    
-                      <a class="hover-with-bg" href="/tags/pytorch/">pytorch</a>
                     
                   </div>
                 
@@ -373,18 +398,12 @@
                   <article class="post-prev col-6">
                     
                     
-                      <a href="/2021/08/19/deep_learning/bug-fix/mkl-service-err-message/mkl-service-err-message/">
-                        <i class="iconfont icon-arrowleft"></i>
-                        <span class="hidden-mobile">错误 mkl-service + Intel(R) MKL MKL_THREADING_LAYER=INTEL is incompatible with libgomp.so.1 ... 解决方案</span>
-                        <span class="visible-mobile">上一篇</span>
-                      </a>
-                    
                   </article>
                   <article class="post-next col-6">
                     
                     
-                      <a href="/2021/08/17/deep_learning/cuda-vis-device/cuda-vis-device/">
-                        <span class="hidden-mobile">设置 CUDA_VISIBLE_DEVICES</span>
+                      <a href="/2021/08/18/deep_learning/pytorch/torch-copy/torch-copy/">
+                        <span class="hidden-mobile">Pytorch 拷贝数据</span>
                         <span class="visible-mobile">下一篇</span>
                         <i class="iconfont icon-arrowright"></i>
                       </a>
