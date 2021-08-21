@@ -249,7 +249,7 @@
     
     <span class="post-meta mr-2">
       <i class="iconfont icon-chart"></i>
-      3.2k 字
+      4k 字
     </span>
   
 
@@ -259,7 +259,7 @@
       <i class="iconfont icon-clock-fill"></i>
       
       
-      36
+      45
        分钟
     </span>
   
@@ -301,7 +301,7 @@
             
               <p class="note note-info">
                 
-                  本文最后更新于：2021年8月20日 凌晨
+                  本文最后更新于：2021年8月21日 下午
                 
               </p>
             
@@ -319,81 +319,111 @@
 <li>在提升模型性能的同时，注意力机制增加了神经网络结构的可解释性。由于传统的神经网络是一个黑盒模型，因此提高其可解释性对机器学习模型的公平性、可靠性和透明性的提高至关重要。</li>
 <li>能够帮助缓解递归神经网络中的一些缺陷，比方说随着输入序列长度的增加导致的性能下降和对输入的顺序处理所导致的计算效率低下。本文的目的在于对注意力模型进行一个简单且易理解的介绍。</li>
 </ol>
-<h3 id="传统编码的弊端"><a href="#传统编码的弊端" class="headerlink" title="传统编码的弊端"></a>传统编码的弊端</h3><p>注意力机制最早用在 seq2seq 模型上<strong>，</strong>原始编解码模型的encode过程会生成一个中间向量C，用于保存原序列的语义信息。但是这个向量长度是固定的，<strong>当输入原序列的长度比较长时，向量C无法保存全部的语义信息</strong>，上下文语义信息受到了限制，这也限制了模型的理解能力。</p>
+<h3 id="序列模型"><a href="#序列模型" class="headerlink" title="序列模型"></a>序列模型</h3><p>一个经典的序列模型 (sequence-to-sequence) 包含一个编码部分和一个解码部分。编码器通常采用一个循环神经网络结构来对序列的输入${x _ { 1 }, x _ { 2 }, \cdots , x _ { T } }$​​​​​​​​​  进行编码得到一组固定长度的编码向量 $ {h_ { 1}, h_ { 2}, \cdots, h_ { T } } $​​。解码器同样利用一个RNN结构读取单个输入 $ h_{T} $​​组固定长度的编码向量 $ {h_ {  1 }, h _ { 2 }, \cdots , h _ { T } } $​​ 。解码器同样利用一个RNN结构读取单个输入 $ h_{T} $​​ 然后一个接一个的进行输出得到一个输出序列 $  {x_ {1 }, x_{2 }, \cdots, x_{T ^ { \prime}} } $​​ 。其中 $ T $​​ 和 $ T^{\prime} $​​ 分别代表输入和输出序列的长度。在每个位置$ t, h_{t} $​​ 和 $ s_{t} $​​​​​​​​​分别代表该位置编码器和解码器的隐藏状态。</p>
+<h4 id="传统编码的弊端"><a href="#传统编码的弊端" class="headerlink" title="传统编码的弊端"></a>传统编码的弊端</h4><p>注意力机制最早用在 seq2seq 模型上<strong>，</strong>原始编解码模型的encode过程会生成一个中间向量C，用于保存原序列的语义信息。但是这个向量长度是固定的，<strong>当输入原序列的长度比较长时，向量C无法保存全部的语义信息</strong>，上下文语义信息受到了限制，这也限制了模型的理解能力。</p>
+<p><img src="https://photos.zywvvd.com/vvd-dell-2021-win-10/20210821141955.png" srcset="/img/loading.gif" lazyload></p>
 <p>常规的编码方法，<strong>无法体现对一个句子序列中不同语素的关注程度</strong>，在自然语言中，一个句子中的不同部分是有不同含义和重要性的，比如：I hate this movie。 如果是做情感分析的应用场景，训练的时候明显应该对hate这个词语做更多的关注。</p>
-<h3 id="注意力模型"><a href="#注意力模型" class="headerlink" title="注意力模型"></a>注意力模型</h3><p>一个经典的序列模型 (sequence-to-sequence) 包含一个编码部分和一个解码部分。编码器通常采用一个循环神经网络结构来对序列的输入${x _ { 1 }, x _ { 2 }, \cdots , x _ { T } }$​​​​​​​​​  进行编码得到一组固定长度的编码向量 $ {h_ { 1}, h_ { 2}, \cdots, h_ { T } } $​​。解码器同样利用一个RNN结构读取单个输入 $ h_{T} $​​组固定长度的编码向量 $ {h_ {  1 }, h _ { 2 }, \cdots , h _ { T } } $​​ 。解码器同样利用一个RNN结构读取单个输入 $ h_{T} $​​ 然后一个接一个的进行输出得到一个输出序列 $  {x_ {1 }, x_{2 }, \cdots, x_{T ^ { \prime}} } $​​ 。其中 $ T $​​ 和 $ T^{\prime} $​​ 分别代表输入和输出序列的长度。在每个位置$ t, h_{t} $​​ 和 $ s_{t} $​​​​​​​​​分别代表该位置编码器和解码器的隐藏状态。</p>
+<h3 id="注意力模型-Attention"><a href="#注意力模型-Attention" class="headerlink" title="注意力模型 Attention"></a>注意力模型 Attention</h3><p>注意力模型通过允许解码器访问所有编码器产生的输出 $ {h_{1}, h_{2}, \cdots, h_ { T}} $​​ 来克服传统结构的缺点。其核心思想是对编码器的所有输出进行加权组合后输入到当前位置的解码器中来影响解码器的输出。通过对编码器的输出进行加权，在实现输入与输出的对齐的同时还能够利用更多的原始数据的上下文信息。</p>
 <p><img src="https://photos.zywvvd.com/vvd-dell-2021-win-10/20210816234637.png" srcset="/img/loading.gif" lazyload alt="编码器-解码器结构:(a)传统结构 (b)加入注意力机制的模型的结构"></p>
-<h3 id="核心思路"><a href="#核心思路" class="headerlink" title="核心思路"></a>核心思路</h3><p>注意力模型通过允许解码器访问所有编码器产生的输出 $ {h_{1}, h_{2}, \cdots, h_ { T}} $​​ 来克服传统结构的缺点。其核心思想是对编码器的所有输出进行加权组合后输入到当前位置的解码器中来影响解码器的输出。通过对编码器的输出进行加权，在实现输入与输出的对齐的同时还能够利用更多的原始数据的上下文信息。</p>
-<h4 id="注意力机制的引入"><a href="#注意力机制的引入" class="headerlink" title="注意力机制的引入"></a>注意力机制的引入</h4><p>引入注意力机制的模型的结构如图2(b)所示。注意力模块能够自动地学习权重 $ \alpha_{i j} $ 用来捕捉编码器隐藏状态$ h_{i} $和解码器隐藏状态$ s_{j} $ 的相关性。习得的这些注意力权重将会被用来构建一个上下文向量 $ c $ 来作为解码器的输入。在解码器的每个位置 $ j $,上下文向量 $ c_{j} $ 是由注意力权重对所有的编码器的隐藏状态进行加权求和进行得到的，即: $ c_{j}=\sum_{i=1}^{T^{\prime}} \alpha_{i j} h_{i} $ 。于是, 这一上下文向量其实为解码器提供了一种访问整个输入序列并且关注序列中的特定相关位置的一种机制，我们称这 种机制为注意力机制。</p>
-<h4 id="注意力权重的学习"><a href="#注意力权重的学习" class="headerlink" title="注意力权重的学习"></a>注意力权重的学习</h4><p>注意力权重的学习是通过在原始的网络结构中增加一个前馈网络来实现的。这一前馈网络的注意力权重的值$ \alpha_{i j} $是编码器隐藏状态值 $ h_{j} $和解码器内部隐藏状态值$ \boldsymbol{S}_{i-1} $的函数。该前馈网络可以与之前的网络结构一起进行训练。</p>
-<p>该权重值可以通过下面的表达式算出:</p>
-
-$$
-\begin{aligned}
-e_{i j} &=v_{a}^{T} \tanh \left(W_{a} s_{i-1}+U_{a} h_{j}\right) \\
-\alpha_{i j} &=\frac{\exp \left(e_{i j}\right)}{\sum_{k=1} T_{x} \exp \left(e_{i k}\right)}
-\end{aligned}
-$$
-
-
-<p>其中 $ v_{a}, W_{a}, U_{a} $​ 是注意力网络的权重值。</p>
-<h3 id="注意力机制的可解释性"><a href="#注意力机制的可解释性" class="headerlink" title="注意力机制的可解释性"></a>注意力机制的可解释性</h3><p>人们对人工智能模型的可解释性有着巨大的兴趣，这是由模型的性能、透明度和公平性驱动的。然而，神经网络，尤其是深度学习结构因其不可预测性而受到批评。从可解释性的角度来看，注意力模型特别有趣，因为它允许我们直接检查深度学习体系结构的内部工作。针对输入和输出均为一个序列的问题，注意力模型的一个重要假设是学习得到的注意力权重体现了当前需输出的数据与输入序列的某些特定位置数据的相关性。为了验证这一假设，我们可以通过对一组输入输出序列对进行可视化。</p>
-<p>研究人员将注意力权重可视化，尽管不同语言的主语-动名词位置不同，但法语和英语的句子自动对齐的效果很明显。在一般情况下，注意模型通过正确地将海洋环境与海洋环境进行比对，显示出非单调的一致性。</p>
-<p><img src="https://photos.zywvvd.com/vvd-dell-2021-win-10/20210818001633.png" srcset="/img/loading.gif" lazyload></p>
-<h3 id="Attention"><a href="#Attention" class="headerlink" title="Attention"></a>Attention</h3><h4 id="基本流程描述"><a href="#基本流程描述" class="headerlink" title="基本流程描述"></a>基本流程描述</h4><p>以 seq2seq 模型为例子，对于一个句子序列S，其由单词序列$[w_1,w_2,w_3,…,w_n]$​构成：</p>
+<h4 id="注意力机制的引入"><a href="#注意力机制的引入" class="headerlink" title="注意力机制的引入"></a>注意力机制的引入</h4><p>引入注意力机制的模型的结构如图(b)所示。注意力模块能够自动地学习权重 $ \alpha_{i j} $ 用来捕捉编码器隐藏状态$ h_{i} $和解码器隐藏状态$ s_{j} $ 的相关性。习得的这些注意力权重将会被用来构建一个上下文向量 $ c $ 来作为解码器的输入。在解码器的每个位置 $ j $,上下文向量 $ c_{j} $ 是由注意力权重对所有的编码器的隐藏状态进行加权求和进行得到的，即: $ c_{j}=\sum_{i=1}^{T^{\prime}} \alpha_{i j} h_{i} $ 。于是, 这一上下文向量其实为解码器提供了一种访问整个输入序列并且关注序列中的特定相关位置的一种机制，我们称这 种机制为注意力机制。</p>
+<h4 id="基本流程"><a href="#基本流程" class="headerlink" title="基本流程"></a>基本流程</h4><p>以 seq2seq 模型为例子，对于一个句子序列$S$，其由单词序列$[w_1,w_2,w_3,…,w_n]$​构成：</p>
 <ol>
-<li>将S的每个单词 $ w_{i} $ 编码为一个单独向量 $ v_{i} $​, 这里对应seq2seq模型, 就是在encoder编码阶段，每个时间步单位(即每个单词)的输出隐状态。</li>
-<li>在解码decoder阶段，待预测词的输入隐状态C(即上一个时间步的输出状态)与 (1) 中每个单词的隐状态相乘再做 softmax 归一化后得到权重分数，使用学习到的注意力权重 $ a_{i} $ 对 (1) 中得到的所有单词向量做加权线性组合 $ Z=\sum_{i} a_{i} v_{i} $​。</li>
-<li>利于输入状态C以及输入变量Z作为对待预测词的共同输入，来进行预测。</li>
+<li>将$S$的每个单词 $ w_{i} $ 编码为一个单独向量 $ v_{i} $​, 这里对应seq2seq模型, 就是在encoder编码阶段，每个时间步单位(即每个单词)的输出隐状态。</li>
+<li>在解码decoder阶段，待预测词的输入隐状态$C$(即上一个时间步的输出状态)与 (1) 中每个单词的隐状态相乘再做 softmax 归一化后得到权重分数，使用学习到的注意力权重 $ a_{i} $ 对 (1) 中得到的所有单词向量做加权线性组合 $ Z=\sum_{i} a_{i} v_{i} $​。</li>
+<li>利用输入状态$C$以及输入变量$Z$作为对待预测词的共同输入，来进行预测。</li>
 </ol>
-<p>我们的最终目标是要能够帮助decoder在生成词语时，有一个不同词语的权重的参考。在训练时，对于decoder我们是有训练目标的，此时将decoder中的信息定义为一个<strong>Query。</strong>而encoder中包含了所有可能出现的词语，我们将其作为一个<strong>字典</strong>，该字典的<strong>key</strong>为所有encoder的序列信息。n个单词相当于当前字典中有n条记录，而字典的<strong>value</strong>通常也是所有encoder的序列信息。</p>
+<h4 id="具体描述"><a href="#具体描述" class="headerlink" title="具体描述"></a>具体描述</h4><p>我们的最终目标是要能够帮助decoder在生成词语时，有一个不同词语的权重的参考。在训练时，对于decoder我们是有训练目标的，此时将decoder中的信息定义为一个<strong>Query。</strong>而encoder中包含了所有可能出现的词语，我们将其作为一个<strong>字典</strong>，该字典的<strong>key</strong>为所有encoder的序列信息。n个单词相当于当前字典中有n条记录，而字典的<strong>value</strong>通常也是所有encoder的序列信息。</p>
 <p>上面对应于第一步，然后是第二部计算注意力权重，由于我们要让模型自己去学习该对哪些语素重点关注，因此要用我们的学习目标Query来参与这个过程，因此对于Query的每个向量，通过一个函数 $ a_{i}=F\left(Q_{i}, K\right) $，计算预测i时刻词时，需要学习的注意力权重，由于包含n个单词，因此， $a_i$ 应当是一个n维的向量，为了后续计算方便，需要将该向量进行softmax归一化，让向量的每一维元素都是一个概率值。</p>
 <p><img src="https://photos.zywvvd.com/vvd-dell-2021-win-10/20210819232635.png" srcset="/img/loading.gif" lazyload></p>
 <p>最后对Value vectors进行加权线性组合，得到带权重参考的“字典”输出：</p>
 <p><img src="https://photos.zywvvd.com/vvd-dell-2021-win-10/20210819232741.png" srcset="/img/loading.gif" lazyload></p>
-<h4 id="公式步骤"><a href="#公式步骤" class="headerlink" title="公式步骤"></a>公式步骤</h4><ol>
-<li>首先利用 RNN 模型已经得到了序列的隐层状态$(h_1,h_2,…,h_n)$</li>
-<li>如果当前 decoder 阶段已经到了$S_{i-1}$，要进行下一个$S_i$​的预测了，接下来计算每一个输入位置$h_j$对当前位置$i$​的影响</li>
+<p>此处Value 和 Key 是相同的。</p>
+<h4 id="Q，K，V"><a href="#Q，K，V" class="headerlink" title="Q，K，V"></a>Q，K，V</h4><p>Query , Key 和 Value 是注意力机制的几个核心概念，刚接触时总是难以理解，个人总结一些要点辅助理顺思路：</p>
+<ul>
+<li>注意力最终的目的是从已经编码好的 Value 中挑出一组线性组合和 Query 最相关</li>
+<li>那么就需要计算每一组 Value 和当前 Query 的相关程度了</li>
+<li>可以认为 Key 和 Value 是一一绑定的，我们通过计算 Query 和每一组 Key 的相关性来得到 Query 和 Value 的相关性</li>
+<li>将计算得到的相关性向量做 softmax 得到加权系数</li>
+<li>用这个加权系数线性组合 Value 得到解码后的特征</li>
+</ul>
+<h4 id="注意力权重的学习"><a href="#注意力权重的学习" class="headerlink" title="注意力权重的学习"></a>注意力权重的学习</h4><p>注意力权重的学习是通过在原始的网络结构中增加一个前馈网络来实现的。这一前馈网络的注意力权重的值$ \alpha_{i j} $是编码器隐藏状态值 $ h_{j} $和解码器内部隐藏状态值$ \boldsymbol{S}_{i-1} $的函数。该前馈网络可以与之前的网络结构一起进行训练。</p>
+<p>那么如何计算 Query 和 key 的注意力权重$\alpha$呢？</p>
+<p>这里总结了几种方法：</p>
+<ol>
+<li>多层感知机方法</li>
 </ol>
-<p>$$<br>e_{i j}=a\left(s_{i-1}, h_{j}\right)<br>$$</p>
+<p>$$<br>a(q, k)=w_{2}^{T} \tanh \left(W_{1}[q ; k]\right)<br>$$</p>
+<blockquote>
+<p>主要是先将query和key进行拼接，然后接一个激活函数为 $tanh$ 的全连接层，然后再与一个网络定义的权重矩阵做乘积。这种方法据说对于大规模的数据特别有效。</p>
+</blockquote>
+<ol start="2">
+<li>Bilinear方法</li>
+</ol>
+<p>$$<br>a(q, k)=q^{T} W k<br>$$</p>
+<blockquote>
+<p>通过一个权重矩阵直接建立q和k的关系映射，比较直接，且计算速度较快。</p>
+</blockquote>
 <ol start="3">
-<li>$e_{ij}$​做归一化处理，得到 attention 的权重分布</li>
+<li>Dot Product</li>
 </ol>
-<p>$$<br>\alpha_{i j}=\frac{\exp \left(e_{i j}\right)}{\sum_{k=1}^{T_{x}} \exp \left(e_{i k}\right)}<br>$$</p>
+<p>$$<br>a(q, k)=q^{T} k<br>$$</p>
+<blockquote>
+<p>这个方法更直接，连权重矩阵都省了，直接建立q和k的关系映射，优点是计算速度更快了，且不需要参数，降低了模型的复杂度。但是需要q和k的维度要相同。</p>
+</blockquote>
 <ol start="4">
-<li>利用 $α_{ij}$​​ 进行加权求和，得到相应的 context vector</li>
+<li>scaled-dot Product</li>
 </ol>
-<p>$$<br>c_{i}=\sum_{j=1}^{T_{x}} \alpha_{i j} h_{j}<br>$$</p>
-<ol start="5">
-<li>计算预测最终的输出</li>
-</ol>
-<p>$$<br>s_{i}=f\left(s_{i-1}, y_{i-1}, c_{i}\right)<br>$$</p>
-<h3 id="Self-Attention"><a href="#Self-Attention" class="headerlink" title="Self-Attention"></a><strong>Self-Attention</strong></h3><h4 id="不同于-Attention"><a href="#不同于-Attention" class="headerlink" title="不同于 Attention"></a>不同于 Attention</h4><p>传统的Attention是基于source端和target端的隐变量（hidden state）计算Attention的，得到的结果是源端（source端）的每个词与目标端（target端）每个词之间的依赖关系。</p>
+<p>$$<br>a(q, k)=\frac{q^{T} k}{\sqrt{|k|}}<br>$$</p>
+<blockquote>
+<p>上面的点积方法有一个问题，就是随着向量维度的增加，最后得到的权重也会增加，为了提升计算效率，防止数据上溢，对其进行scaling。</p>
+</blockquote>
+<h4 id="可解释性"><a href="#可解释性" class="headerlink" title="可解释性"></a>可解释性</h4><p>人们对人工智能模型的可解释性有着巨大的兴趣，这是由模型的性能、透明度和公平性驱动的。然而，神经网络，尤其是深度学习结构因其不可预测性而受到批评。从可解释性的角度来看，注意力模型特别有趣，因为它允许我们直接检查深度学习体系结构的内部工作。针对输入和输出均为一个序列的问题，注意力模型的一个重要假设是学习得到的注意力权重体现了当前需输出的数据与输入序列的某些特定位置数据的相关性。为了验证这一假设，我们可以通过对一组输入输出序列对进行可视化。</p>
+<p>研究人员将注意力权重可视化，尽管不同语言的主语-动名词位置不同，但法语和英语的句子自动对齐的效果很明显。在一般情况下，注意模型通过正确地将海洋环境与海洋环境进行比对，显示出非单调的一致性。</p>
+<p><img src="https://photos.zywvvd.com/vvd-dell-2021-win-10/20210818001633.png" srcset="/img/loading.gif" lazyload></p>
+<h3 id="自注意力模型-Self-Attention"><a href="#自注意力模型-Self-Attention" class="headerlink" title="自注意力模型 Self-Attention"></a><strong>自注意力模型 Self-Attention</strong></h3><h4 id="不同于-Attention"><a href="#不同于-Attention" class="headerlink" title="不同于 Attention"></a>不同于 Attention</h4><p>传统的Attention是基于source端和target端的隐变量（hidden state）计算Attention的，得到的结果是源端（source端）的每个词与目标端（target端）每个词之间的依赖关系。</p>
 <p>Self -Attention 首先分别在source端和target端进行自身的attention，仅与source input或者target input自身相关的Self -Attention，以捕捉source端或target端自身的词与词之间的依赖关系；然后再把source端的得到的self -Attention加入到target端得到的Attention中，称作为Cross-Attention，以捕捉source端和target端词与词之间的依赖关系。</p>
 <p><img src="https://photos.zywvvd.com/vvd-dell-2021-win-10/20210818234646.png" srcset="/img/loading.gif" lazyload></p>
 <p>传统的Attention机制<strong>忽略了源端或目标端句子中词与词之间的依赖关系</strong>，相对比，self Attention可以不仅可以得到源端与目标端词与词之间的依赖关系，同时还可以有效获取源端或目标端自身词与词之间的依赖关系。</p>
-<h4 id="论文"><a href="#论文" class="headerlink" title="论文"></a>论文</h4><p> 开山的论文 《Attention is all you need》</p>
-<details>
-<summary>原始论文</summary>
+<h4 id="基本流程-1"><a href="#基本流程-1" class="headerlink" title="基本流程"></a>基本流程</h4><p>关于attention有很多应用，在非seq2seq任务中，比如文本分类，或者其他分类问题，会通过self attention来使用attention。这个方法思想很简单，而且计算成本相对来说不高，强烈推荐。具体来说就是：</p>
+<p>Query和Key，value都是相同的，即输入的句子序列信息（可以是词向量lookup后的序列信息，也可以先用cnn或者rnn进行一次序列编码后得到的处理过的序列信息。）后面的步骤与上述的都是一样的：</p>
+<p>1、首先建立句子序列中的每个词 $q_i$ 与句子其他词 $k_i$ 的注意力权重$a_i$</p>
+<p>2、然后将注意力权重向量进行softmax归一化，并与句子序列的所有时刻的信息（词向量或者rnn hidden state）进行线性加权。</p>
+<p><img src="https://photos.zywvvd.com/vvd-dell-2021-win-10/20210821150445.png" srcset="/img/loading.gif" lazyload></p>
+<p>这种方法中，句子中的每个词都能与句子中任意距离的其他词建立一个敏感的关系，可以说在一定程度上提升了之前所说的CNN和RNN对于长距离语义依赖建模能力的上限。</p>
+<h3 id="多头注意力模型-Multi-head-attention"><a href="#多头注意力模型-Multi-head-attention" class="headerlink" title="多头注意力模型 Multi-head attention"></a>多头注意力模型 Multi-head attention</h3><details>
+<summary>论文 《Attention is all you need》</summary>
     <iframe src='/js/pdfjs/web/viewer.html?file=https://photos.zywvvd.com/win11-mt/20210814144827.pdf' style='width:100%;height:800px'></iframe>
 </details>
-#### 计算步骤
+公式化表示如下：
 
-<ol>
+
+$$
+multihead  (Q, K, V)=  concat  \left(\right.  head  _{1} , head  _{2}, \ldots , head  \left._{h}\right) W^{o}
+$$
+$$
+head  _{i}=\operatorname{attention}\left(Q W^{Q}, K W^{K}, V W^{V}\right)
+$$
+
+
+
+
+
+<p>与原来的self-attention的核心原理其实是差不多的，但是由于self attention只从一个角度去学习关注点，可能会有点偏颇。所以，设计h种不同的$( W _ { i } ^ { Q } , W _ { i } ^ { K } , W _ { i } ^ { V } )$权重矩阵对，然后做基本的attention操作前，将query，key和value分别用上述权重对做线性变换，然后再计算得到h个不同角度的attention权重$head_i$，将这些 $head_i$<strong>按列拼接</strong>后，再与一个新的权重矩阵$W^O$做线性变换，得到最终的attention输出。</p>
+<h4 id="计算步骤"><a href="#计算步骤" class="headerlink" title="计算步骤"></a>计算步骤</h4><ol>
 <li>将输入单词转化成嵌入向量;</li>
 <li>根据嵌入向量得到 $ q, k, v $ 三个向量;</li>
-<li>为每个向量计算一个score: score $ =q \cdot k $;</li>
-<li>为了梯度的稳定, Transformer使用了score归一化，即除以 $ \sqrt{d_{k}} $;</li>
+<li>为每个向量计算一个$score$: $score$ $ =q \cdot k $;</li>
+<li>为了梯度的稳定, 使用归一化，即除以 $ \sqrt{d_{k}} $，($d_{k}$为特征的维度数量);</li>
 <li>对score施以softmax激活函数;</li>
-<li>softmax点乘Value值 $ v $, 得到加权的每个输入向量的评分 $ v $;</li>
+<li>softmax点乘Value , 得到加权的每个输入向量的评分 $v$;</li>
 <li>相加之后得到最终的输出结果 $ z: \quad z=\sum v 。 $</li>
 </ol>
 <ul>
 <li>核心公式</li>
 </ul>
 <p>$$<br>Attention  (Q, K, V)=\operatorname{softmax}\left(\frac{Q K^{T}}{\sqrt{d_{k}}}\right) V<br>$$</p>
-<h4 id="图示"><a href="#图示" class="headerlink" title="图示"></a>图示</h4><ul>
-<li>Embedding Queries Keys Values</li>
+<ul>
+<li>以单个 self-attention 为例，词向量维度为4，单词数量2，$Q,K,V$ 维度为3，$W$ 矩阵为4$\times$3</li>
 </ul>
 <p><img src="https://photos.zywvvd.com/vvd-dell-2021-win-10/20210819231055.png" srcset="/img/loading.gif" lazyload></p>
 <ul>
@@ -402,20 +432,24 @@ $$
 </ul>
 <p><img src="https://photos.zywvvd.com/vvd-dell-2021-win-10/20210819231330.png" srcset="/img/loading.gif" lazyload></p>
 <ul>
-<li>网络学习参数 $W^Q, Q^K, W^V$，计算得到 $Q, K, V$</li>
-<li>由 $Q, K, V$ 计算得到 $Z$</li>
+<li>网络学习参数 $W^Q, Q^K, W^V$，计算得到 $Q, K, V$，维度均为 $2\times3$</li>
+<li>由 $Q, K, V$ 计算得到 $Z$<ul>
+<li>其中$QK^T$为计算相关度的过程，得到 $2\times2$的矩阵，每行表示一组Query向量与所有Key向量的相关度</li>
+<li>$d_{k}$是向量维度，此处为3，$ \sqrt{d_{k}} $为归一化系数，用于防止由于维度过大导致结果太大</li>
+<li>softmax 按行做</li>
+</ul>
+</li>
 </ul>
 <p><img src="https://photos.zywvvd.com/vvd-dell-2021-win-10/20210819235151.png" srcset="/img/loading.gif" lazyload></p>
 <ul>
-<li>在Transformer中，同时采用了 resnet 类似的 short-cut 结构</li>
+<li>同一组 $X$ 输入多个 Attention模块中，得到多组 $Z_i$，将$Z_i$们连接起来组成大$Z^O$，和 $W^O$ 相乘得到输出层 $Z$<ul>
+<li>多头汇总，$Z$的维度是$2\times3$，8个头，共有八组$Z$，按列拼接得到 $2\times24$的特征</li>
+<li>线性变化到指定维度(4)，得到汇总的多头注意力结果特征$2\times4$</li>
 </ul>
-<p><img src="https://photos.zywvvd.com/vvd-dell-2021-win-10/20210819235341.png" srcset="/img/loading.gif" lazyload></p>
-<ul>
-<li>多头 Attention</li>
+</li>
 </ul>
 <p><img src="https://photos.zywvvd.com/vvd-dell-2021-win-10/20210819235509.png" srcset="/img/loading.gif" lazyload></p>
 <ul>
-<li>同一组 $X$ 输入多个 Transformer 中，得到多组 $Z_i$，将$Z_i$们连接起来组成大$Z^O$，和 $W^O$ 相乘得到输出层 $Z$</li>
 <li>注意 Transformer 中的 Attention 会将 encoder 的 $K$ 和 $V$ 传给 decoder，而 $Q$ 来自与解码器的上一个输出。</li>
 </ul>
 <h3 id="参考资料"><a href="#参考资料" class="headerlink" title="参考资料"></a>参考资料</h3><ul>
