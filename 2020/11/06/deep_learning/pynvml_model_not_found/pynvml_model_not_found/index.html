@@ -310,60 +310,65 @@ pynvml包直接在Windows系统上安装可能会报出模块找不到的错误�
 <p>pynvml包直接在Windows系统上安装可能会报出模块找不到的错误，本文记录解决方法。</p>
 </blockquote>
 <span id="more"></span>
-
-<h3 id="问题复现"><a href="#问题复现" class="headerlink" title="问题复现"></a>问题复现</h3><blockquote>
+<h3 id="问题复现">问题复现</h3>
+<blockquote>
 <p>在Windows中调用 <code>pynvml.nvmlInit()</code>时出错：</p>
 </blockquote>
-<p><img src="https://photos.zywvvd.com/images_matrixtime/20201106155637.png" srcset="/img/loading.gif" lazyload></p>
+<p><img src="https://photos.zywvvd.com/images_matrixtime/20201106155637.png" srcset="/img/loading.gif" lazyload alt=""></p>
 <blockquote>
 <p>错误信息：</p>
 </blockquote>
 <figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><code class="hljs python"> File <span class="hljs-string">&quot;E:\Program_Files\Annoconda\lib\site-packages\pynvml\nvml.py&quot;</span>, line <span class="hljs-number">731</span>, <span class="hljs-keyword">in</span> _load_nvml_library<br>    nvml_lib = CDLL(os.path.join(os.getenv(<span class="hljs-string">&quot;ProgramFiles&quot;</span>, <span class="hljs-string">&quot;C:/Program Files&quot;</span>), <span class="hljs-string">&quot;NVIDIA Corporation/NVSMI/nvml.dll&quot;</span>))<br>  File <span class="hljs-string">&quot;E:\Program_Files\Annoconda\lib\ctypes\__init__.py&quot;</span>, line <span class="hljs-number">356</span>, <span class="hljs-keyword">in</span> __init__<br>    self._handle = _dlopen(self._name, mode)<br>OSError: [WinError <span class="hljs-number">126</span>] 找不到指定的模块。<br></code></pre></td></tr></table></figure>
-
-<h3 id="问题分析"><a href="#问题分析" class="headerlink" title="问题分析"></a>问题分析</h3><ul>
-<li>在源代码文件 numl.py 中 731 行附近：</li>
+<h3 id="问题分析">问题分析</h3>
+<ul>
+<li>在源代码文件 <a target="_blank" rel="noopener" href="http://numl.py">numl.py</a> 中 731 行附近：</li>
 </ul>
 <figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><code class="hljs python"><span class="hljs-keyword">if</span> (sys.platform[:<span class="hljs-number">3</span>] == <span class="hljs-string">&quot;win&quot;</span>):<br>    <span class="hljs-comment"># cdecl calling convention</span><br>    <span class="hljs-comment"># load nvml.dll from %ProgramFiles%/NVIDIA Corporation/NVSMI/nvml.dll</span><br>    nvml_lib = CDLL(os.path.join(os.getenv(<span class="hljs-string">&quot;ProgramFiles&quot;</span>, <span class="hljs-string">&quot;C:/Program Files&quot;</span>), <span class="hljs-string">&quot;NVIDIA Corporation/NVSMI/nvml.dll&quot;</span>))<br><span class="hljs-keyword">else</span>:<br>    <span class="hljs-comment"># assume linux</span><br>    nvml_lib = CDLL(<span class="hljs-string">&quot;libnvidia-ml.so.1&quot;</span>)<br></code></pre></td></tr></table></figure>
-
 <blockquote>
 <p>可以看到模块在尝试寻找 <code>C:/Program Files/NVIDIA Corporation/NVSMI/nvml.dll</code> 文件，如果你的<code>nvml.dll</code>文件不在这就会报错。</p>
 </blockquote>
-<h3 id="解决方案"><a href="#解决方案" class="headerlink" title="解决方案"></a>解决方案</h3><blockquote>
+<h3 id="解决方案">解决方案</h3>
+<blockquote>
 <p>知道问题的原因，排除故障有两种方案，但都需要知道当前的<code>nvml.dll</code>文件在哪。</p>
 </blockquote>
-<h5 id="确定-nvidia-smi-exe-位置"><a href="#确定-nvidia-smi-exe-位置" class="headerlink" title="确定 nvidia-smi.exe 位置"></a>确定 nvidia-smi.exe 位置</h5><ul>
+<h5 id="确定-nvidia-smi-exe-位置">确定 nvidia-smi.exe 位置</h5>
+<ul>
 <li>打开cmd，输入命令：</li>
 </ul>
 <figure class="highlight applescript"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs applescript"><span class="hljs-keyword">where</span> nvidia-smi<br></code></pre></td></tr></table></figure>
-
 <blockquote>
 <p>会返回当前系统的 nvidia-smi.exe的位置 （前提是当前cuda安装正常，可以使用nvidia-smi）</p>
 </blockquote>
-<p><img src="https://photos.zywvvd.com/images_matrixtime/20201106161405.png" srcset="/img/loading.gif" lazyload></p>
+<p><img src="https://photos.zywvvd.com/images_matrixtime/20201106161405.png" srcset="/img/loading.gif" lazyload alt=""></p>
 <ul>
 <li>去相应位置查看，发现<code>nvml.dll</code>文件和他在一起，所以只要将代码中路径指向它就行了。</li>
 </ul>
-<h4 id="方案1：-修改源码："><a href="#方案1：-修改源码：" class="headerlink" title="方案1： 修改源码："></a>方案1： 修改源码：</h4><ul>
+<h4 id="方案1：-修改源码：">方案1： 修改源码：</h4>
+<ul>
 <li>修改<code>numl.py</code> 中第 731 行代码：</li>
 </ul>
 <figure class="highlight reasonml"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs reasonml">nvml_lib = <span class="hljs-constructor">CDLL(<span class="hljs-params">os</span>.<span class="hljs-params">path</span>.<span class="hljs-params">join</span>(<span class="hljs-params">os</span>.<span class="hljs-params">getenv</span>(<span class="hljs-string">&quot;ProgramFiles&quot;</span>, <span class="hljs-string">&quot;C:/Program Files&quot;</span>)</span>, <span class="hljs-string">&quot;NVIDIA Corporation/NVSMI/nvml.dll&quot;</span>))<br></code></pre></td></tr></table></figure>
-
 <p>改为你自己的路径：</p>
 <figure class="highlight awk"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs awk">nvml_lib = CDLL(<span class="hljs-string">r&quot;C:\Windows\System32\nvml.dll&quot;</span>)<br></code></pre></td></tr></table></figure>
-
 <blockquote>
 <p>注意反斜杠路径需要在前面加 <code>r</code></p>
 </blockquote>
-<h4 id="方案2：-为源码创建运行环境"><a href="#方案2：-为源码创建运行环境" class="headerlink" title="方案2： 为源码创建运行环境"></a>方案2： 为源码创建运行环境</h4><ul>
-<li><p>源码不会出错，错的是我们自己的环境，改过来就是了。</p>
+<h4 id="方案2：-为源码创建运行环境">方案2： 为源码创建运行环境</h4>
+<ul>
+<li>
+<p>源码不会出错，错的是我们自己的环境，改过来就是了。</p>
 </li>
-<li><p>创建文件夹<code>C:\Program Files\NVIDIA Corporation\NVSMI</code></p>
+<li>
+<p>创建文件夹<code>C:\Program Files\NVIDIA Corporation\NVSMI</code></p>
 </li>
-<li><p>将<code>nvml.dll</code>文件放在文件夹里</p>
+<li>
+<p>将<code>nvml.dll</code>文件放在文件夹里</p>
 </li>
 </ul>
-<h4 id="运行示例"><a href="#运行示例" class="headerlink" title="运行示例"></a>运行示例</h4><p><img src="https://photos.zywvvd.com/images_matrixtime/20201106162159.png" srcset="/img/loading.gif" lazyload></p>
-<h3 id="参考资料："><a href="#参考资料：" class="headerlink" title="参考资料："></a>参考资料：</h3><ul>
+<h4 id="运行示例">运行示例</h4>
+<p><img src="https://photos.zywvvd.com/images_matrixtime/20201106162159.png" srcset="/img/loading.gif" lazyload alt=""></p>
+<h3 id="参考资料：">参考资料：</h3>
+<ul>
 <li><a target="_blank" rel="noopener" href="https://blog.csdn.net/com_fang_bean/article/details/107988018">https://blog.csdn.net/com_fang_bean/article/details/107988018</a></li>
 </ul>
 <link rel="stylesheet" href="/css/spoiler.css" type="text/css"><script src="/js/spoiler.js" type="text/javascript" async></script>

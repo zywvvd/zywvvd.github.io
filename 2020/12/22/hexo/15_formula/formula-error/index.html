@@ -310,8 +310,8 @@ Hexo比较好用的公式插件是Mathjax，但由于swig的文件解析机制�
 <p>Hexo比较好用的公式插件是Mathjax，但由于swig的文件解析机制，使得多行公式无法在Hexo中正常显示，本文介绍该问题的解决方法。</p>
 </blockquote>
 <span id="more"></span>
-
-<h3 id="问题复现"><a href="#问题复现" class="headerlink" title="问题复现"></a>问题复现</h3><ul>
+<h3 id="问题复现">问题复现</h3>
+<ul>
 <li>准备输入一个矩阵：</li>
 </ul>
 
@@ -323,7 +323,6 @@ A = \left( {\begin{array}{*{20}{c}}
 {}&{}&{}&1
 \end{array}} \right)
 $$
-
 
 <ul>
 <li>再输入一个多行公式</li>
@@ -337,34 +336,45 @@ z &= {(x + y)^2}\\
 $$
 
 
-
-<h4 id="问题1"><a href="#问题1" class="headerlink" title="问题1"></a>问题1</h4><ul>
+<h4 id="问题1">问题1</h4>
+<ul>
 <li>此时运行 <code>hexo g</code> 或<code>hexo s</code>有可能报错：</li>
 </ul>
 <figure class="highlight vhdl"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><code class="hljs vhdl">Unhandled rejection Nunjucks <span class="hljs-literal">Error</span>:  [<span class="hljs-literal">Line</span> <span class="hljs-number">11</span>, Column <span class="hljs-number">65</span>] expected <span class="hljs-keyword">variable</span> <span class="hljs-keyword">end</span><br>    =====               <span class="hljs-keyword">Context</span> Dump               =====<br>    === (<span class="hljs-literal">line</span> number probably different from source) ===<br><br></code></pre></td></tr></table></figure>
-
-<h4 id="问题2"><a href="#问题2" class="headerlink" title="问题2"></a>问题2</h4><ul>
+<h4 id="问题2">问题2</h4>
+<ul>
 <li>或者显示公式不正常，多行公式会挤成一行：</li>
 </ul>
-<p><img src="https://photos.zywvvd.com/image_canglan/20201222003739.png" srcset="/img/loading.gif" lazyload></p>
-<h3 id="原因分析"><a href="#原因分析" class="headerlink" title="原因分析"></a>原因分析</h3><h4 id="问题1-1"><a href="#问题1-1" class="headerlink" title="问题1"></a>问题1</h4><ul>
+<p><img src="https://photos.zywvvd.com/image_canglan/20201222003739.png" srcset="/img/loading.gif" lazyload alt=""></p>
+<h3 id="原因分析">原因分析</h3>
+<h4 id="问题1-2">问题1</h4>
+<ul>
 <li>由于hexo解码时关注{{，}}，%% 等连续字符，会将这部分代码解读为其他带有特殊含义的内容</li>
 <li>如果公式中恰巧出现了此类字符，会报出上述错误</li>
 </ul>
-<h4 id="问题2-1"><a href="#问题2-1" class="headerlink" title="问题2"></a>问题2</h4><ul>
+<h4 id="问题2-2">问题2</h4>
+<ul>
 <li>由于hexo在公式中的<code>\\</code>错会成了转义符，也就是说他只看见了一个反斜杠，不会执行换行命令，导致公式堆成一行</li>
 </ul>
-<h3 id="解决方案"><a href="#解决方案" class="headerlink" title="解决方案"></a>解决方案</h3><h4 id="临时方案"><a href="#临时方案" class="headerlink" title="临时方案"></a>临时方案</h4><h5 id="针对问题1"><a href="#针对问题1" class="headerlink" title="针对问题1"></a>针对问题1</h5><ul>
+<h3 id="解决方案">解决方案</h3>
+<h4 id="临时方案">临时方案</h4>
+<h5 id="针对问题1">针对问题1</h5>
+<ul>
 <li>可以在连续的 <code>&#123;</code> <code>&#125;</code> <code>%</code>中间插入空格，分开就没事了</li>
 </ul>
-<h5 id="针对问题2"><a href="#针对问题2" class="headerlink" title="针对问题2"></a>针对问题2</h5><ul>
+<h5 id="针对问题2">针对问题2</h5>
+<ul>
 <li>可以将<code>\\</code>换成<code>\\\\</code>，可以实现公式的多行正确显示</li>
 </ul>
-<h4 id="终极方案"><a href="#终极方案" class="headerlink" title="终极方案"></a>终极方案</h4><ul>
-<li><p>在官方文档中提到了可以为hexo提供标记，阻止其按照自己的规则解释我们的字符串，显示其原本的含义</p>
+<h4 id="终极方案">终极方案</h4>
+<ul>
+<li>
+<p>在官方文档中提到了可以为hexo提供标记，阻止其按照自己的规则解释我们的字符串，显示其原本的含义</p>
 </li>
-<li><p>标记为 </p>
-<figure class="highlight django"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><code class="hljs django"><span class="hljs-template-tag">&#123;% <span class="hljs-name">raw</span> %&#125;</span><span class="xml"></span><br><span class="xml">...</span><br><span class="xml"></span><span class="hljs-template-tag">&#123;% <span class="hljs-name">endraw</span> %&#125;</span><br></code></pre></td></tr></table></figure></li>
+<li>
+<p>标记为</p>
+<figure class="highlight django"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><code class="hljs django"><span class="hljs-template-tag">&#123;% <span class="hljs-name">raw</span> %&#125;</span><span class="xml"></span><br><span class="xml">...</span><br><span class="xml"></span><span class="hljs-template-tag">&#123;% <span class="hljs-name">endraw</span> %&#125;</span><br></code></pre></td></tr></table></figure>
+</li>
 </ul>
 <link rel="stylesheet" href="/css/spoiler.css" type="text/css"><script src="/js/spoiler.js" type="text/javascript" async></script>
             </div>

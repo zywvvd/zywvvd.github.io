@@ -249,7 +249,7 @@ Docker 默认会占用根目录的空间，时间久了就会吧根目录占满�
     
     <span class="post-meta mr-2">
       <i class="iconfont icon-chart"></i>
-      527 字
+      528 字
     </span>
   
 
@@ -310,43 +310,39 @@ Docker 默认会占用根目录的空间，时间久了就会吧根目录占满�
 <p>Docker 默认会占用根目录的空间，时间久了就会吧根目录占满，本文记录解决方案。</p>
 </blockquote>
 <span id="more"></span>
-
-<h3 id="问题复现"><a href="#问题复现" class="headerlink" title="问题复现"></a>问题复现</h3><blockquote>
+<h3 id="问题复现">问题复现</h3>
+<blockquote>
 <p>不知不觉根目录已经没有空间，<code>ls</code> 的补全都会报错。</p>
 </blockquote>
 <figure class="highlight livecodeserver"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs livecodeserver">cannot <span class="hljs-built_in">create</span> temp <span class="hljs-built_in">file</span> <span class="hljs-keyword">for</span> here-document: No <span class="hljs-literal">space</span> left <span class="hljs-keyword">on</span> <span class="hljs-title">devic</span><br></code></pre></td></tr></table></figure>
-
 <ul>
 <li>可以看到 <code>/</code>已经没有空间了</li>
 </ul>
 <figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><code class="hljs shell"><span class="hljs-meta">$</span><span class="bash"> df -h</span><br>Filesystem                           Size  Used Avail Use% Mounted on<br>udev                                  32G     0   32G   0% /dev<br>tmpfs                                6.3G  138M  6.2G   3% /run<br>/dev/mapper/MT3--vg-root             219G  208G     0 100% /<br>tmpfs                                 32G   32K   32G   1% /dev/shm<br>tmpfs                                5.0M     0  5.0M   0% /run/lock<br>tmpfs                                 32G     0   32G   0% /sys/fs/cgroup<br>/dev/sdb1                            3.6T  1.1T  2.4T  32% /gluster/data<br></code></pre></td></tr></table></figure>
-
-<h3 id="解决思路"><a href="#解决思路" class="headerlink" title="解决思路"></a>解决思路</h3><h4 id="方案1"><a href="#方案1" class="headerlink" title="方案1"></a>方案1</h4><figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><code class="hljs shell">sudo　apt-get autoclean   # 删除你已经卸载掉的软件包的命令为 <br><br>sudo apt-get clean       # 若你想清理出更多的空间，可以把电脑上存储的安装包全部卸载<br><br>sudo apt-get autoremove  # 删除已经被卸载的软件所依赖的（其他软件不依赖的）孤立的软件包<br></code></pre></td></tr></table></figure>
-
-<h4 id="方案2"><a href="#方案2" class="headerlink" title="方案2"></a>方案2</h4><blockquote>
+<h3 id="解决思路">解决思路</h3>
+<h4 id="方案1">方案1</h4>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><code class="hljs shell">sudo　apt-get autoclean   # 删除你已经卸载掉的软件包的命令为 <br><br>sudo apt-get clean       # 若你想清理出更多的空间，可以把电脑上存储的安装包全部卸载<br><br>sudo apt-get autoremove  # 删除已经被卸载的软件所依赖的（其他软件不依赖的）孤立的软件包<br></code></pre></td></tr></table></figure>
+<h4 id="方案2">方案2</h4>
+<blockquote>
 <p>空间仍不足：通过建立软链接将/var目录下占用空间较大的目录移动到富足的空间区块（如/home）下，使得/var下不再占用空间。 （具体实现）</p>
 </blockquote>
 <ul>
 <li>查看文件夹下文件占用磁盘空间</li>
 </ul>
 <figure class="highlight gml"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs gml">sudo du -ah -<span class="hljs-symbol">x</span> --<span class="hljs-built_in">max</span>-<span class="hljs-symbol">depth</span>=<span class="hljs-number">1</span><br></code></pre></td></tr></table></figure>
-
 <ul>
 <li>通过排查发现<code>/var/lib/docker</code>中文件巨大，将其移到其他磁盘中</li>
 <li>为了避免风险并提升速度（小文件很多），将其压缩到其他盘中再解压</li>
 </ul>
 <figure class="highlight awk"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs awk">tar -zcvf [压缩后的文件.tar.gz] var<span class="hljs-regexp">/lib/</span>docker<br></code></pre></td></tr></table></figure>
-
 <ul>
 <li>解压：</li>
 </ul>
 <figure class="highlight apache"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs apache"><span class="hljs-attribute">tar</span> -zxvf<span class="hljs-meta"> [压缩后的文件.tar.gz]</span><br></code></pre></td></tr></table></figure>
-
 <ul>
 <li>将<code>/var/lib/docker</code>重命名为<code>/var/lib/docker-old</code></li>
 </ul>
 <figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs shell">sudo mv /var/lib/docker /var/lib/docker-old<br></code></pre></td></tr></table></figure>
-
 <blockquote>
 <p>这时查看 <code>docker images</code> 是空的</p>
 </blockquote>
@@ -354,7 +350,6 @@ Docker 默认会占用根目录的空间，时间久了就会吧根目录占满�
 <li>建立软连接重现<code>docker</code></li>
 </ul>
 <figure class="highlight awk"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs awk">ln -s <span class="hljs-regexp">/var/</span>lib/docker [解压后的docker文件夹]<br></code></pre></td></tr></table></figure>
-
 <ul>
 <li>这时查看 <code>docker images</code> 一切正常的化已经可以看到之前的所有docker 数据了</li>
 </ul>
@@ -362,19 +357,14 @@ Docker 默认会占用根目录的空间，时间久了就会吧根目录占满�
 <p>但是如果这时新建容器或启动容器会报错：</p>
 </blockquote>
 <figure class="highlight apache"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs apache"><span class="hljs-attribute">OCI</span> runtime create failed: /var/lib/docker/overlay<span class="hljs-number">2</span>/c<span class="hljs-number">6</span>eb<span class="hljs-number">60</span>dada<span class="hljs-number">971</span>e<span class="hljs-number">57</span>fd<span class="hljs-number">5</span>d<span class="hljs-number">125</span>fb<span class="hljs-number">61</span>d<span class="hljs-number">294870</span>be<span class="hljs-number">347</span>a<span class="hljs-number">2</span>efb<span class="hljs-number">287862</span>f<span class="hljs-number">8</span>dfe<span class="hljs-number">52</span>d<span class="hljs-number">99</span>c<span class="hljs-number">57</span>b/merged is not an absolute path or is a symlink: unknown<br></code></pre></td></tr></table></figure>
-
 <ul>
 <li>需要重启 docker</li>
 </ul>
 <figure class="highlight crmsh"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><code class="hljs crmsh">service docker <span class="hljs-literal">stop</span><br>service docker <span class="hljs-literal">start</span><br></code></pre></td></tr></table></figure>
-
 <p>或</p>
 <figure class="highlight ebnf"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs ebnf"><span class="hljs-attribute">service docker restart</span><br></code></pre></td></tr></table></figure>
-
-
-
-
-<h3 id="参考资料"><a href="#参考资料" class="headerlink" title="参考资料"></a>参考资料</h3><ul>
+<h3 id="参考资料">参考资料</h3>
+<ul>
 <li><a target="_blank" rel="noopener" href="https://blog.csdn.net/weixin_30710457/article/details/95471146">https://blog.csdn.net/weixin_30710457/article/details/95471146</a></li>
 </ul>
 <link rel="stylesheet" href="/css/spoiler.css" type="text/css"><script src="/js/spoiler.js" type="text/javascript" async></script>

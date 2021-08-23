@@ -310,38 +310,41 @@ matplotlib是python图像处理中让人又爱又恨的库。最近遇到了需�
 <p>matplotlib是python图像处理中让人又爱又恨的库。最近遇到了需要获取plt图像数据的需求，本文记录了将matplotlib图像转换为numpy.array 或 PIL.Image的方法。</p>
 </blockquote>
 <span id="more"></span>
-
 <blockquote>
 <p>众所周知，这个库处理图像会出现内存泄漏的问题，原想着将plt的图转出来用opencv存就好了，然而并没有，牢骚完毕。</p>
 </blockquote>
-<h3 id="转换思路"><a href="#转换思路" class="headerlink" title="转换思路"></a>转换思路</h3><blockquote>
+<h3 id="转换思路">转换思路</h3>
+<blockquote>
 <p>总体分为两步完成目标：</p>
 </blockquote>
 <ul>
 <li>将plt或fig对象转为argb string的对象</li>
 <li>将argb string对象图像转为array 或 Image</li>
 </ul>
-<h3 id="步骤一"><a href="#步骤一" class="headerlink" title="步骤一"></a>步骤一</h3><blockquote>
+<h3 id="步骤一">步骤一</h3>
+<blockquote>
 <p>区分对象为plt和fig的情况，具体使用哪种根据对象类型确定</p>
 </blockquote>
-<h4 id="转换plt对象为argb-string编码对象"><a href="#转换plt对象为argb-string编码对象" class="headerlink" title="转换plt对象为argb string编码对象"></a>转换plt对象为argb string编码对象</h4><blockquote>
+<h4 id="转换plt对象为argb-string编码对象">转换plt对象为argb string编码对象</h4>
+<blockquote>
 <p>代码在plt对象中构建了图像内容，生成了plt图像，但还没有savefig 和 show：</p>
 <p>例如：</p>
 <figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><code class="hljs python">plt.figure()<br>plt.imshow(img)<br></code></pre></td></tr></table></figure>
 </blockquote>
 <figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><code class="hljs python"><span class="hljs-comment"># 引入 FigureCanvasAgg</span><br><span class="hljs-keyword">from</span> matplotlib.backends.backend_agg <span class="hljs-keyword">import</span> FigureCanvasAgg<br><span class="hljs-comment"># 引入 Image</span><br><span class="hljs-keyword">import</span> PIL.Image <span class="hljs-keyword">as</span> Image<br><span class="hljs-comment"># 将plt转化为numpy数据</span><br>canvas = FigureCanvasAgg(plt.gcf())<br><span class="hljs-comment"># 绘制图像</span><br>canvas.draw()<br><span class="hljs-comment"># 获取图像尺寸</span><br>w, h = canvas.get_width_height()<br><span class="hljs-comment"># 解码string 得到argb图像</span><br>buf = np.fromstring(canvas.tostring_argb(), dtype=np.uint8)<br></code></pre></td></tr></table></figure>
-
-<h4 id="转换fig对象为argb-string编码对象"><a href="#转换fig对象为argb-string编码对象" class="headerlink" title="转换fig对象为argb string编码对象"></a>转换fig对象为argb string编码对象</h4><blockquote>
+<h4 id="转换fig对象为argb-string编码对象">转换fig对象为argb string编码对象</h4>
+<blockquote>
 <p>以 matplotlab 的 fig 对象为目标，获取 argb string编码图像</p>
 </blockquote>
 <figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><code class="hljs python"><span class="hljs-comment"># 引入 Image</span><br><span class="hljs-keyword">import</span> PIL.Image <span class="hljs-keyword">as</span> Image<br><span class="hljs-comment"># 绘制图像</span><br>fig.canvas.draw()<br><span class="hljs-comment"># 获取图像尺寸</span><br>w, h = fig.canvas.get_width_height()<br><span class="hljs-comment"># 获取 argb 图像</span><br>buf = np.fromstring(fig.canvas.tostring_argb(), dtype=np.uint8)<br></code></pre></td></tr></table></figure>
-
-<h3 id="步骤二"><a href="#步骤二" class="headerlink" title="步骤二"></a>步骤二</h3><h4 id="转换argb-string编码对象为PIL-Image或numpy-array图像"><a href="#转换argb-string编码对象为PIL-Image或numpy-array图像" class="headerlink" title="转换argb string编码对象为PIL.Image或numpy.array图像"></a>转换argb string编码对象为PIL.Image或numpy.array图像</h4><blockquote>
+<h3 id="步骤二">步骤二</h3>
+<h4 id="转换argb-string编码对象为PIL-Image或numpy-array图像">转换argb string编码对象为PIL.Image或numpy.array图像</h4>
+<blockquote>
 <p>此时的argb string不是我们常见的uint8 w h rgb的图像，还需要进一步转化</p>
 </blockquote>
 <figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><code class="hljs python"><span class="hljs-comment"># 重构成w h 4(argb)图像</span><br>buf.shape = (w, h, <span class="hljs-number">4</span>)<br><span class="hljs-comment"># 转换为 RGBA</span><br>buf = np.roll(buf, <span class="hljs-number">3</span>, axis=<span class="hljs-number">2</span>)<br><span class="hljs-comment"># 得到 Image RGBA图像对象 (需要Image对象的同学到此为止就可以了)</span><br>image = Image.frombytes(<span class="hljs-string">&quot;RGBA&quot;</span>, (w, h), buf.tostring())<br><span class="hljs-comment"># 转换为numpy array rgba四通道数组</span><br>image = np.asarray(image)<br><span class="hljs-comment"># 转换为rgb图像</span><br>rgb_image = image[:, :, :<span class="hljs-number">3</span>]<br></code></pre></td></tr></table></figure>
-
-<h3 id="参考资料"><a href="#参考资料" class="headerlink" title="参考资料"></a>参考资料</h3><ul>
+<h3 id="参考资料">参考资料</h3>
+<ul>
 <li><a target="_blank" rel="noopener" href="https://blog.csdn.net/aa846555831/article/details/52372884">https://blog.csdn.net/aa846555831/article/details/52372884</a></li>
 <li><a target="_blank" rel="noopener" href="https://blog.csdn.net/jpc20144055069/article/details/106628889">https://blog.csdn.net/jpc20144055069/article/details/106628889</a></li>
 <li><a target="_blank" rel="noopener" href="https://blog.csdn.net/aa846555831/article/details/52372884">https://blog.csdn.net/aa846555831/article/details/52372884</a></li>

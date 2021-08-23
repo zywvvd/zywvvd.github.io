@@ -310,46 +310,47 @@
 <p>使用localhost作为地址执行网络请求时会有2s的延时，这个问题在Linux并不存在，本文分析并提出解决方案。</p>
 </blockquote>
 <span id="more"></span>
-
-<h3 id="问题复现"><a href="#问题复现" class="headerlink" title="问题复现"></a>问题复现</h3><blockquote>
+<h3 id="问题复现">问题复现</h3>
+<blockquote>
 <p>主要体现在windows 下，python 使用 flask 将 localhost 作为地址时有2s延迟</p>
 </blockquote>
-<h3 id="原因分析"><a href="#原因分析" class="headerlink" title="原因分析"></a>原因分析</h3><blockquote>
+<h3 id="原因分析">原因分析</h3>
+<blockquote>
 <p>问题在于解析localhost时，优先按照ipv6地址解析，这个可以通过ping命令验证：</p>
 </blockquote>
 <figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><code class="hljs shell">C:\Users\Admin&gt;ping localhost<br><br>正在 Ping VVD [::1] 具有 32 字节的数据:<br>来自 ::1 的回复: 时间&lt;1ms<br>来自 ::1 的回复: 时间&lt;1ms<br></code></pre></td></tr></table></figure>
-
-<h3 id="解决方案"><a href="#解决方案" class="headerlink" title="解决方案"></a>解决方案</h3><blockquote>
+<h3 id="解决方案">解决方案</h3>
+<blockquote>
 <p>关闭ipv6的方案尝试过几次，都没有效果</p>
 <p>修改host文件添加 <code>127.0.0.1 localhost</code> 也没有用</p>
 </blockquote>
 <blockquote>
 <p>问题症结在于ipv6和ipv4的优先级，如果ipv4的更高，则会优先使用ipv4地址</p>
 </blockquote>
-<h4 id="查看优先级"><a href="#查看优先级" class="headerlink" title="查看优先级"></a>查看优先级</h4><p>命令：<code>netsh interface ipv6 show prefixpolicies</code></p>
+<h4 id="查看优先级">查看优先级</h4>
+<p>命令：<code>netsh interface ipv6 show prefixpolicies</code></p>
 <figure class="highlight jboss-cli"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><code class="hljs jboss-cli">C:\WINDOWS\system32&gt;netsh interface ipv6 show prefixpolicies<br>查询活动状态<span class="hljs-string">...</span><br><br>优先顺序    标签   前缀<br><span class="hljs-params">----------</span>  <span class="hljs-params">-----</span>  <span class="hljs-params">--------------------------------</span><br>        50      0  :<span class="hljs-function">:1</span>/128<br>        40      1  ::<span class="hljs-string">/0</span><br>        35      4  :<span class="hljs-function">:ffff</span><span class="hljs-function">:0</span><span class="hljs-function">:0</span>/96<br>        30      2  2002::<span class="hljs-string">/16</span><br>         5      5  2001::<span class="hljs-string">/32</span><br>         3     13  fc00::<span class="hljs-string">/7</span><br>         1     11  fec0::<span class="hljs-string">/10</span><br>         1     12  3ffe::<span class="hljs-string">/16</span><br>         1      3  ::<span class="hljs-string">/96</span><br></code></pre></td></tr></table></figure>
-
 <ul>
 <li>其中<code>::1/128</code>和<code>::/0</code>是ipv6的地址，<code>::/96</code>是ipv4</li>
 <li>我们需要将ipv4地址前移到最高优先级</li>
 </ul>
-<h4 id="修改优先级"><a href="#修改优先级" class="headerlink" title="修改优先级"></a>修改优先级</h4><figure class="highlight apache"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><code class="hljs apache"><span class="hljs-attribute">netsh</span> int ipv<span class="hljs-number">6</span> set prefix ::/<span class="hljs-number">96</span> <span class="hljs-number">50</span> <span class="hljs-number">0</span><br><span class="hljs-attribute">netsh</span> int ipv<span class="hljs-number">6</span> set prefix ::ffff:<span class="hljs-number">0</span>:<span class="hljs-number">0</span>/<span class="hljs-number">96</span> <span class="hljs-number">40</span> <span class="hljs-number">1</span><br><span class="hljs-attribute">netsh</span> int ipv<span class="hljs-number">6</span> set prefix ::<span class="hljs-number">1</span>/<span class="hljs-number">128</span> <span class="hljs-number">10</span> <span class="hljs-number">4</span><br><span class="hljs-attribute">netsh</span> int ipv<span class="hljs-number">6</span> set prefix ::/<span class="hljs-number">0</span> <span class="hljs-number">5</span> <span class="hljs-number">5</span><br></code></pre></td></tr></table></figure>
-
+<h4 id="修改优先级">修改优先级</h4>
+<figure class="highlight apache"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><code class="hljs apache"><span class="hljs-attribute">netsh</span> int ipv<span class="hljs-number">6</span> set prefix ::/<span class="hljs-number">96</span> <span class="hljs-number">50</span> <span class="hljs-number">0</span><br><span class="hljs-attribute">netsh</span> int ipv<span class="hljs-number">6</span> set prefix ::ffff:<span class="hljs-number">0</span>:<span class="hljs-number">0</span>/<span class="hljs-number">96</span> <span class="hljs-number">40</span> <span class="hljs-number">1</span><br><span class="hljs-attribute">netsh</span> int ipv<span class="hljs-number">6</span> set prefix ::<span class="hljs-number">1</span>/<span class="hljs-number">128</span> <span class="hljs-number">10</span> <span class="hljs-number">4</span><br><span class="hljs-attribute">netsh</span> int ipv<span class="hljs-number">6</span> set prefix ::/<span class="hljs-number">0</span> <span class="hljs-number">5</span> <span class="hljs-number">5</span><br></code></pre></td></tr></table></figure>
 <ul>
 <li>此时优先级关系位：</li>
 </ul>
 <figure class="highlight jboss-cli"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><code class="hljs jboss-cli">C:\Users\Admin&gt;netsh interface ipv6 show prefixpolicies<br>查询活动状态<span class="hljs-string">...</span><br><br>优先顺序    标签   前缀<br><span class="hljs-params">----------</span>  <span class="hljs-params">-----</span>  <span class="hljs-params">--------------------------------</span><br>        50      0  ::<span class="hljs-string">/96</span><br>        40      1  :<span class="hljs-function">:ffff</span><span class="hljs-function">:0</span><span class="hljs-function">:0</span>/96<br>        30      2  2002::<span class="hljs-string">/16</span><br>        10      4  :<span class="hljs-function">:1</span>/128<br>         5      5  2001::<span class="hljs-string">/32</span><br>         5      5  ::<span class="hljs-string">/0</span><br>         3     13  fc00::<span class="hljs-string">/7</span><br>         1     12  3ffe::<span class="hljs-string">/16</span><br>         1     11  fec0::<span class="hljs-string">/10</span><br></code></pre></td></tr></table></figure>
-
 <blockquote>
 <p>问题解决</p>
 </blockquote>
-<h3 id="测试"><a href="#测试" class="headerlink" title="测试"></a>测试</h3><figure class="highlight routeros"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><code class="hljs routeros">C:\Users\Admin&gt;ping localhost<br><br>正在<span class="hljs-built_in"> Ping </span>VVD [127.0.0.1] 具有 32 字节的数据:<br>来自 127.0.0.1 的回复: 字节=32 时间&lt;1ms <span class="hljs-attribute">TTL</span>=64<br>来自 127.0.0.1 的回复: 字节=32 时间&lt;1ms <span class="hljs-attribute">TTL</span>=64<br></code></pre></td></tr></table></figure>
-
+<h3 id="测试">测试</h3>
+<figure class="highlight routeros"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><code class="hljs routeros">C:\Users\Admin&gt;ping localhost<br><br>正在<span class="hljs-built_in"> Ping </span>VVD [127.0.0.1] 具有 32 字节的数据:<br>来自 127.0.0.1 的回复: 字节=32 时间&lt;1ms <span class="hljs-attribute">TTL</span>=64<br>来自 127.0.0.1 的回复: 字节=32 时间&lt;1ms <span class="hljs-attribute">TTL</span>=64<br></code></pre></td></tr></table></figure>
 <blockquote>
 <p>而且使用localhost做地址执行各种任务都快了很多</p>
 </blockquote>
-<h3 id="参考资料"><a href="#参考资料" class="headerlink" title="参考资料"></a>参考资料</h3><ul>
-<li><a target="_blank" rel="noopener" href="http://cache.baiducontent.com/c?m=7nuW37g3ClnQQ4TESYoMV19XOKkNHhXUETAL5Gd1cAHho68Clboy-NpJhHQwM7-KzLJm3K6xlH7bkQPB168FqRbbiTQ_BBXAt5gnV_T5WcCviPr-g7bk_9TCft1XFmmNZAt-uKNslVspTU6xdNnnmMpFzmUBhgaU3jY5_kernRW&amp;p=90759a45d4995be006be9b7c547a&amp;newp=8c769a47cd9d50fe08e2947c5c4292695d0fc20e3ddcda01298ffe0cc4241a1a1a3aecbf2c261104d3c77e6700ab4a57e0f53c783d0034f1f689df08d2ecce7e34d63665&amp;s=f05fb18fe7e5de06&amp;user=baidu&amp;fm=sc&amp;query=windows+ping+localhost+::1&amp;qid=b2a232ff00233ded&amp;p1=1">http://cache.baiducontent.com/c?m=7nuW37g3ClnQQ4TESYoMV19XOKkNHhXUETAL5Gd1cAHho68Clboy-NpJhHQwM7-KzLJm3K6xlH7bkQPB168FqRbbiTQ_BBXAt5gnV_T5WcCviPr-g7bk_9TCft1XFmmNZAt-uKNslVspTU6xdNnnmMpFzmUBhgaU3jY5_kernRW&amp;p=90759a45d4995be006be9b7c547a&amp;newp=8c769a47cd9d50fe08e2947c5c4292695d0fc20e3ddcda01298ffe0cc4241a1a1a3aecbf2c261104d3c77e6700ab4a57e0f53c783d0034f1f689df08d2ecce7e34d63665&amp;s=f05fb18fe7e5de06&amp;user=baidu&amp;fm=sc&amp;query=windows+ping+localhost+%3A%3A1&amp;qid=b2a232ff00233ded&amp;p1=1</a></li>
+<h3 id="参考资料">参考资料</h3>
+<ul>
+<li><a target="_blank" rel="noopener" href="http://cache.baiducontent.com/c?m=7nuW37g3ClnQQ4TESYoMV19XOKkNHhXUETAL5Gd1cAHho68Clboy-NpJhHQwM7-KzLJm3K6xlH7bkQPB168FqRbbiTQ_BBXAt5gnV_T5WcCviPr-g7bk_9TCft1XFmmNZAt-uKNslVspTU6xdNnnmMpFzmUBhgaU3jY5_kernRW&amp;p=90759a45d4995be006be9b7c547a&amp;newp=8c769a47cd9d50fe08e2947c5c4292695d0fc20e3ddcda01298ffe0cc4241a1a1a3aecbf2c261104d3c77e6700ab4a57e0f53c783d0034f1f689df08d2ecce7e34d63665&amp;s=f05fb18fe7e5de06&amp;user=baidu&amp;fm=sc&amp;query=windows+ping+localhost+%3A%3A1&amp;qid=b2a232ff00233ded&amp;p1=1">http://cache.baiducontent.com/c?m=7nuW37g3ClnQQ4TESYoMV19XOKkNHhXUETAL5Gd1cAHho68Clboy-NpJhHQwM7-KzLJm3K6xlH7bkQPB168FqRbbiTQ_BBXAt5gnV_T5WcCviPr-g7bk_9TCft1XFmmNZAt-uKNslVspTU6xdNnnmMpFzmUBhgaU3jY5_kernRW&amp;p=90759a45d4995be006be9b7c547a&amp;newp=8c769a47cd9d50fe08e2947c5c4292695d0fc20e3ddcda01298ffe0cc4241a1a1a3aecbf2c261104d3c77e6700ab4a57e0f53c783d0034f1f689df08d2ecce7e34d63665&amp;s=f05fb18fe7e5de06&amp;user=baidu&amp;fm=sc&amp;query=windows+ping+localhost+%3A%3A1&amp;qid=b2a232ff00233ded&amp;p1=1</a></li>
 </ul>
 <link rel="stylesheet" href="/css/spoiler.css" type="text/css"><script src="/js/spoiler.js" type="text/javascript" async></script>
             </div>

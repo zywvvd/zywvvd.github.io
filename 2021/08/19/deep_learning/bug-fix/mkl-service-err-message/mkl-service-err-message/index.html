@@ -310,42 +310,47 @@
 <p>当使用pytorch 多卡训练时可能会报错 <code>mkl-service + Intel(R) MKL MKL_THREADING_LAYER=INTEL is incompatible ...</code>，本文记录解决方案。</p>
 </blockquote>
 <span id="more"></span>
-
-<h3 id="问题原因"><a href="#问题原因" class="headerlink" title="问题原因"></a>问题原因</h3><h4 id="出现问题的条件"><a href="#出现问题的条件" class="headerlink" title="出现问题的条件"></a>出现问题的条件</h4><ul>
+<h3 id="问题原因">问题原因</h3>
+<h4 id="出现问题的条件">出现问题的条件</h4>
+<ul>
 <li>在 pytorch 1.5 + 以上的版本</li>
 <li>在多卡训练</li>
 <li>在import torch 在 import numpy 之前</li>
 </ul>
-<h4 id="原因"><a href="#原因" class="headerlink" title="原因"></a>原因</h4><p>如果在 numpy 之前导入了 torch，那么这里的子进程将获得一个 GNU 线程层（即使父进程没有定义变量）</p>
+<h4 id="原因">原因</h4>
+<p>如果在 numpy 之前导入了 torch，那么这里的子进程将获得一个 GNU 线程层（即使父进程没有定义变量）</p>
 <p>但是如果 numpy 在 Torch 之前被导入，子进程将获得一个 INTEL 线程层，这种情况会导致线程之间打架</p>
 <ul>
 <li>错误信息</li>
 </ul>
 <figure class="highlight subunit"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs subunit"><span class="hljs-keyword">Error: </span>mkl-service + Intel® MKL: MKL_THREADING_LAYER=INTEL is incompatible with libgomp.so.1 library. Try to import numpy first or set the threading layer accordingly. Set MKL_SERVICE_FORCE_INTEL to force it.<br></code></pre></td></tr></table></figure>
-
-<h3 id="解决方案"><a href="#解决方案" class="headerlink" title="解决方案"></a>解决方案</h3><h4 id="方案一"><a href="#方案一" class="headerlink" title="方案一"></a>方案一</h4><p>降级pytorch </p>
+<h3 id="解决方案">解决方案</h3>
+<h4 id="方案一">方案一</h4>
+<p>降级pytorch</p>
 <ul>
 <li>降级 pytorch 到1.5 一下</li>
 </ul>
-<h4 id="方案二"><a href="#方案二" class="headerlink" title="方案二"></a>方案二</h4><blockquote>
+<h4 id="方案二">方案二</h4>
+<blockquote>
 <p>谁会接受降级啊</p>
 </blockquote>
 <p>使用单卡训练</p>
-<h4 id="方案三"><a href="#方案三" class="headerlink" title="方案三"></a>方案三</h4><blockquote>
+<h4 id="方案三">方案三</h4>
+<blockquote>
 <p>单卡batch size 不够大啊</p>
 </blockquote>
 <ul>
 <li>在python 程序入口 import numpy</li>
 <li>可以极大程度上减少 error 信息输出</li>
 </ul>
-<h4 id="方案四"><a href="#方案四" class="headerlink" title="方案四"></a>方案四</h4><blockquote>
+<h4 id="方案四">方案四</h4>
+<blockquote>
 <p>正儿八经的</p>
 </blockquote>
 <ul>
 <li>在环境变量添加</li>
 </ul>
 <figure class="highlight ini"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs ini"><span class="hljs-attr">&#x27;MKL_SERVICE_FORCE_INTEL&#x27;</span> = <span class="hljs-string">&#x27;1&#x27;</span><br></code></pre></td></tr></table></figure>
-
 <blockquote>
 <p>可以使得程序继续运行，但错误信息还是会报</p>
 </blockquote>
@@ -353,14 +358,14 @@
 <li>再加入</li>
 </ul>
 <figure class="highlight ini"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs ini"><span class="hljs-attr">&#x27;MKL_THREADING_LAYER&#x27;</span> = <span class="hljs-string">&#x27;GNU&#x27;</span> <br></code></pre></td></tr></table></figure>
-
 <blockquote>
 <p>据说可以避免报错</p>
 </blockquote>
 <ul>
 <li>可以查看原始 <a target="_blank" rel="noopener" href="https://github.com/pytorch/pytorch/issues/37377">issues</a></li>
 </ul>
-<h3 id="参考资料"><a href="#参考资料" class="headerlink" title="参考资料"></a>参考资料</h3><ul>
+<h3 id="参考资料">参考资料</h3>
+<ul>
 <li><a target="_blank" rel="noopener" href="https://github.com/pytorch/pytorch/issues/37377">https://github.com/pytorch/pytorch/issues/37377</a></li>
 <li><a target="_blank" rel="noopener" href="https://blog.csdn.net/qq_40246742/article/details/117898715">https://blog.csdn.net/qq_40246742/article/details/117898715</a></li>
 </ul>

@@ -310,45 +310,46 @@ pytorch 模型部署很重要的一步是转存pth模型为ONNX，本文记录�
 <p>pytorch 模型部署很重要的一步是转存pth模型为ONNX，本文记录方法。</p>
 </blockquote>
 <span id="more"></span>
-
-<h3 id="转存-onnx"><a href="#转存-onnx" class="headerlink" title="转存 onnx"></a>转存 onnx</h3><ul>
+<h3 id="转存-onnx">转存 onnx</h3>
+<ul>
 <li>建立自己的pytorch模型，并加载权重</li>
 </ul>
 <figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><code class="hljs python">model = create_model(num_classes=<span class="hljs-number">2</span>)<br>model.load_state_dict(load(model_path, map_location=<span class="hljs-string">&#x27;cpu&#x27;</span>)[<span class="hljs-string">&quot;model&quot;</span>])<br></code></pre></td></tr></table></figure>
-
 <ul>
 <li>转存onnx文件</li>
 </ul>
 <figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><code class="hljs python">dummy_input = torch.randn(<span class="hljs-number">1</span>, <span class="hljs-number">3</span>, <span class="hljs-number">256</span>, <span class="hljs-number">256</span>, device=<span class="hljs-string">&#x27;cpu&#x27;</span>)<br>torch.onnx._export(model, dummy_input, <span class="hljs-string">&quot;faster_rcnn.onnx&quot;</span>, verbose=<span class="hljs-literal">True</span>, opset_version=<span class="hljs-number">11</span>)<br></code></pre></td></tr></table></figure>
-
 <blockquote>
 <p>将模型保存在了当前目录的 <code>faster_rcnn.onnx</code>文件内</p>
 </blockquote>
-<h4 id="验证-onnx-有效性"><a href="#验证-onnx-有效性" class="headerlink" title="验证 onnx 有效性"></a>验证 onnx 有效性</h4><ul>
+<h4 id="验证-onnx-有效性">验证 onnx 有效性</h4>
+<ul>
 <li>安装 <code>onnxruntime</code> 库</li>
 </ul>
 <figure class="highlight cmake"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs cmake">pip <span class="hljs-keyword">install</span> onnxruntime<br></code></pre></td></tr></table></figure>
-
 <ul>
 <li>加载onnx模型并测试</li>
 </ul>
 <figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br></pre></td><td class="code"><pre><code class="hljs python"><span class="hljs-keyword">import</span> onnxruntime<br><span class="hljs-keyword">from</span> onnxruntime.datasets <span class="hljs-keyword">import</span> get_example<br><br><span class="hljs-function"><span class="hljs-keyword">def</span> <span class="hljs-title">to_numpy</span>(<span class="hljs-params">tensor</span>):</span><br>    <span class="hljs-keyword">return</span> tensor.detach().cpu().numpy() <span class="hljs-keyword">if</span> tensor.requires_grad <span class="hljs-keyword">else</span> tensor.cpu().numpy()<br><br><span class="hljs-comment"># 测试数据</span><br>dummy_input = torch.randn(<span class="hljs-number">1</span>, <span class="hljs-number">3</span>, <span class="hljs-number">256</span>, <span class="hljs-number">256</span>, device=<span class="hljs-string">&#x27;cpu&#x27;</span>)<br><br>example_model = get_example(&lt;absolute_root_to_your_onnx_model_file&gt;)<br><span class="hljs-comment"># netron.start(example_model) 使用 netron python 包可视化网络</span><br>sess = onnxruntime.InferenceSession(example_model)<br><br><span class="hljs-comment"># onnx 网络输出</span><br>onnx_out = sess.run(<span class="hljs-literal">None</span>, &#123;&lt;input_layer_name_of_your_network&gt;: to_numpy(dummy_input)&#125;)<br><span class="hljs-built_in">print</span>(onnx_out)<br><br>model.<span class="hljs-built_in">eval</span>()<br><span class="hljs-keyword">with</span> torch.no_grad():<br>    <span class="hljs-comment"># pytorch model 网络输出</span><br>    torch_out = model(dummy_input)<br>	<span class="hljs-built_in">print</span>(torch_out)<br></code></pre></td></tr></table></figure>
-
 <ul>
 <li>输出：</li>
 </ul>
 <figure class="highlight prolog"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><code class="hljs prolog">onnx_out<br>[array([[  <span class="hljs-number">0.</span>       ,  <span class="hljs-number">93.246</span>    , <span class="hljs-number">228.95842</span>  , <span class="hljs-number">256.</span>       ],<br>       [  <span class="hljs-number">0.</span>       ,   <span class="hljs-number">2.6370468</span>, <span class="hljs-number">209.39705</span>  , <span class="hljs-number">148.17822</span>  ]],<br>      dtype=float32), array([<span class="hljs-number">1</span>, <span class="hljs-number">1</span>], dtype=int64), array([<span class="hljs-number">0.1501071</span> , <span class="hljs-number">0.07568519</span>], dtype=float32)]<br><br>torch_out<br>[&#123;<span class="hljs-string">&#x27;boxes&#x27;</span>: tensor([[  <span class="hljs-number">0.0000</span>,  <span class="hljs-number">93.2459</span>, <span class="hljs-number">228.9584</span>, <span class="hljs-number">256.0000</span>],<br>        [  <span class="hljs-number">0.0000</span>,   <span class="hljs-number">2.6370</span>, <span class="hljs-number">209.3971</span>, <span class="hljs-number">148.1782</span>]]), <span class="hljs-string">&#x27;labels&#x27;</span>: tensor([<span class="hljs-number">1</span>, <span class="hljs-number">1</span>]), <span class="hljs-string">&#x27;scores&#x27;</span>: tensor([<span class="hljs-number">0.1501</span>, <span class="hljs-number">0.0757</span>])&#125;]<br><br></code></pre></td></tr></table></figure>
-
-<h4 id="获取自己网络输入层名称"><a href="#获取自己网络输入层名称" class="headerlink" title="获取自己网络输入层名称"></a>获取自己网络输入层名称</h4><ul>
+<h4 id="获取自己网络输入层名称">获取自己网络输入层名称</h4>
+<ul>
 <li>有时对网络不熟悉的情况下不清楚模型输入层的名称，可以使用Netron可视化自己的网络，获取输入层名称，喂入onnx的sess中。</li>
 </ul>
-<h2 id="注意-！！！"><a href="#注意-！！！" class="headerlink" title="注意 ！！！"></a><font color=red size=6 face='微软雅黑'>注意 ！！！</font></h2><ul>
-<li><p>pytorch 模型在转 ONNX 模型的过程中，使用的导出器是一个基于轨迹的导出器,这意味着它执行时需要运行一次模型,然后导出实际参与运算的运算符. 这也意味着, 如果你的模型是动态的,例如,改变一些依赖于输入数据的操作,这时的导出结果是不准确的.同样,一 个轨迹可能只对一个具体的输入尺寸有效 (这是为什么我们在轨迹中需要有明确的输入的原因之一.) 我们建议检查 模型的轨迹,确保被追踪的运算符是合理的.   ———  <a target="_blank" rel="noopener" href="https://pytorch.apachecn.org/docs/0.3/onnx.html">pytorch 文档</a></p>
+<h2 id="font-color-red-size-6-face-微软雅黑-注意-！！！-font"><font color=red size=6 face='微软雅黑'>注意 ！！！</font></h2>
+<ul>
+<li>
+<p>pytorch 模型在转 ONNX 模型的过程中，使用的导出器是一个基于轨迹的导出器,这意味着它执行时需要运行一次模型,然后导出实际参与运算的运算符. 这也意味着, 如果你的模型是动态的,例如,改变一些依赖于输入数据的操作,这时的导出结果是不准确的.同样,一 个轨迹可能只对一个具体的输入尺寸有效 (这是为什么我们在轨迹中需要有明确的输入的原因之一.) 我们建议检查 模型的轨迹,确保被追踪的运算符是合理的.   ———  <a target="_blank" rel="noopener" href="https://pytorch.apachecn.org/docs/0.3/onnx.html">pytorch 文档</a></p>
 </li>
-<li><p>也就是说，如果网络模块中存在 if.. else.. 类似的分支，在生成ONNX模型时会依据所使用的初始数据来选择其中某一个分支，这样所生成的ONNX模型仅会保留这一个分支的结构，在原始pytorch模型中的其他逻辑能力在该模型中不复存在。</p>
+<li>
+<p>也就是说，如果网络模块中存在 if… else… 类似的分支，在生成ONNX模型时会依据所使用的初始数据来选择其中某一个分支，这样所生成的ONNX模型仅会保留这一个分支的结构，在原始pytorch模型中的其他逻辑能力在该模型中不复存在。</p>
 </li>
 </ul>
-<h3 id="参考资料"><a href="#参考资料" class="headerlink" title="参考资料"></a>参考资料</h3><ul>
+<h3 id="参考资料">参考资料</h3>
+<ul>
 <li><a target="_blank" rel="noopener" href="https://pytorch.apachecn.org/docs/0.3/onnx.html">https://pytorch.apachecn.org/docs/0.3/onnx.html</a></li>
 <li><a target="_blank" rel="noopener" href="https://www.jianshu.com/p/5a0a09fbdeba">https://www.jianshu.com/p/5a0a09fbdeba</a></li>
 </ul>

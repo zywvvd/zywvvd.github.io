@@ -310,75 +310,86 @@
 <p>在使用 pytorch dataloader 时，出现了当把num_workers 设置不为0即报错的问题，本文记录两种此类错误的解决方案。</p>
 </blockquote>
 <span id="more"></span>
-
-<h3 id="Dataloader-num-workers"><a href="#Dataloader-num-workers" class="headerlink" title="Dataloader - num_workers"></a>Dataloader - num_workers</h3><ul>
-<li><p>Pytorch 中加载数据的模块<code>Dataloader</code>有个参数<code>num_workers</code>，该参数表示使用<code>dataloader</code>时加载数据的进程数量，可以理解为为网络搬运数据的工人数量；</p>
+<h3 id="Dataloader-num-workers">Dataloader - num_workers</h3>
+<ul>
+<li>
+<p>Pytorch 中加载数据的模块<code>Dataloader</code>有个参数<code>num_workers</code>，该参数表示使用<code>dataloader</code>时加载数据的进程数量，可以理解为为网络搬运数据的工人数量；</p>
 </li>
-<li><p>所以如果<code>dataloader</code>比较复杂，工人多的时候自然可以节省大量数据加载时间，他们可以在网络训练时同时进行数据加载工作，等网络训练结束直接从内存中取走加载完成的数据，因此当<code>num_worker</code>大于1时可以对数据加载进行加速，当数量多到网络不需要加载数据的时间时就是工人们为加速训练做工作的极限收益了；</p>
+<li>
+<p>所以如果<code>dataloader</code>比较复杂，工人多的时候自然可以节省大量数据加载时间，他们可以在网络训练时同时进行数据加载工作，等网络训练结束直接从内存中取走加载完成的数据，因此当<code>num_worker</code>大于1时可以对数据加载进行加速，当数量多到网络不需要加载数据的时间时就是工人们为加速训练做工作的极限收益了；</p>
 </li>
-<li><p>使用大于1的工人会占用更多的内存和cpu，同时也会占用更多的共享内存(share memory)；</p>
+<li>
+<p>使用大于1的工人会占用更多的内存和cpu，同时也会占用更多的共享内存(share memory)；</p>
 </li>
-<li><p>使用大于1的工人会调用多线程。</p>
+<li>
+<p>使用大于1的工人会调用多线程。</p>
 </li>
 </ul>
-<h3 id="问题说明"><a href="#问题说明" class="headerlink" title="问题说明"></a>问题说明</h3><blockquote>
+<h3 id="问题说明">问题说明</h3>
+<blockquote>
 <p>根据<code>num_worker</code>的工作思路，可能会在工作中出现两种错误（我遇到的两种）：</p>
 </blockquote>
 <ul>
 <li>共享内存不足：</li>
 </ul>
 <figure class="highlight vbnet"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs vbnet"><span class="hljs-symbol">RuntimeError:</span> DataLoader worker (pid XXX) <span class="hljs-built_in">is</span> killed <span class="hljs-keyword">by</span> signal: Bus <span class="hljs-keyword">error</span><br></code></pre></td></tr></table></figure>
-
 <ul>
 <li>多线程出现段错误导致死锁，进而导致程序卡住，线程阻塞：</li>
 </ul>
 <figure class="highlight subunit"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs subunit"><span class="hljs-keyword">ERROR: </span>Unexpected segmentation fault encountered in worker.<br></code></pre></td></tr></table></figure>
-
 <p>或</p>
 <figure class="highlight yaml"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs yaml"><span class="hljs-attr">RuntimeError:</span> <span class="hljs-string">DataLoader</span> <span class="hljs-string">worker</span> <span class="hljs-string">(pid</span> <span class="hljs-number">4499</span><span class="hljs-string">)</span> <span class="hljs-attr">is killed by signal:</span> <span class="hljs-string">Segmentation</span> <span class="hljs-string">fault.</span> <br></code></pre></td></tr></table></figure>
-
 <p>或</p>
 <figure class="highlight asciidoc"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs asciidoc">RuntimeError: DataLoader worker (pid(s) <span class="hljs-strong">***</span>*) exited unexpectedly<br></code></pre></td></tr></table></figure>
-
 <blockquote>
 <p>下面给出两种问题的解决方案。</p>
 </blockquote>
-<h3 id="问题1-RuntimeError-DataLoader-worker-pid-XXX-is-killed-by-signal-Bus-error"><a href="#问题1-RuntimeError-DataLoader-worker-pid-XXX-is-killed-by-signal-Bus-error" class="headerlink" title="问题1 RuntimeError: DataLoader worker (pid XXX) is killed by signal: Bus error"></a>问题1 RuntimeError: DataLoader worker (pid XXX) is killed by signal: Bus error</h3><h4 id="问题原因"><a href="#问题原因" class="headerlink" title="问题原因"></a>问题原因</h4><ul>
+<h3 id="问题1-RuntimeError-DataLoader-worker-pid-XXX-is-killed-by-signal-Bus-error">问题1 RuntimeError: DataLoader worker (pid XXX) is killed by signal: Bus error</h3>
+<h4 id="问题原因">问题原因</h4>
+<ul>
 <li>一般这种问题发生在docker中，由于docker默认的共享内存为64M，导致工人数量多时空间不够用，发生错误。</li>
 </ul>
-<h4 id="解决方案"><a href="#解决方案" class="headerlink" title="解决方案"></a>解决方案</h4><h5 id="1-自废武功"><a href="#1-自废武功" class="headerlink" title="1 自废武功"></a>1 自废武功</h5><ul>
+<h4 id="解决方案">解决方案</h4>
+<h5 id="1-自废武功">1 自废武功</h5>
+<ul>
 <li>将<code>num_workers</code>设置为0</li>
 </ul>
-<h5 id="2-解决问题"><a href="#2-解决问题" class="headerlink" title="2 解决问题"></a>2 解决问题</h5><ul>
+<h5 id="2-解决问题">2 解决问题</h5>
+<ul>
 <li>在<a href="https://www.zywvvd.com/2020/05/06/docker/docker_usage/">创建docker</a>时配置较大的共享内存，加入参数<code>--shm-size=&quot;15g&quot;</code>，设置15g（根据实际情况酌量设置）的共享内存：</li>
 </ul>
 <figure class="highlight jboss-cli"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs jboss-cli">nvidia-docker run -it <span class="hljs-params">--name</span> [container_name] <span class="hljs-params">--shm-size=</span><span class="hljs-string">&quot;15g&quot;</span> <span class="hljs-string">...</span><br></code></pre></td></tr></table></figure>
-
 <ul>
 <li>通过 <code>df -h</code>查看</li>
 </ul>
 <figure class="highlight awk"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><code class="hljs awk"><span class="hljs-comment"># df -h</span><br>Filesystem                                          Size  Used Avail Use% Mounted on<br>overlay                                             <span class="hljs-number">3.6</span>T  <span class="hljs-number">3.1</span>T  <span class="hljs-number">317</span>G  <span class="hljs-number">91</span>% /<br>tmpfs                                                <span class="hljs-number">64</span>M     <span class="hljs-number">0</span>   <span class="hljs-number">64</span>M   <span class="hljs-number">0</span>% /dev<br>tmpfs                                                <span class="hljs-number">63</span>G     <span class="hljs-number">0</span>   <span class="hljs-number">63</span>G   <span class="hljs-number">0</span>% <span class="hljs-regexp">/sys/</span>fs/cgroup<br><span class="hljs-regexp">/dev/</span>sdb1                                           <span class="hljs-number">3.6</span>T  <span class="hljs-number">3.1</span>T  <span class="hljs-number">317</span>G  <span class="hljs-number">91</span>% <span class="hljs-regexp">/workspace/</span>tmp<br>shm                                                  <span class="hljs-number">15</span>G  <span class="hljs-number">8.1</span>G  <span class="hljs-number">7.0</span>G  <span class="hljs-number">54</span>% <span class="hljs-regexp">/dev/</span>shm<br>tmpfs                                                <span class="hljs-number">63</span>G   <span class="hljs-number">12</span>K   <span class="hljs-number">63</span>G   <span class="hljs-number">1</span>% <span class="hljs-regexp">/proc/</span>driver/nvidia<br><span class="hljs-regexp">/dev/</span>sda1                                           <span class="hljs-number">219</span>G  <span class="hljs-number">170</span>G   <span class="hljs-number">39</span>G  <span class="hljs-number">82</span>% <span class="hljs-regexp">/usr/</span>bin/nvidia-smi<br>udev                                                 <span class="hljs-number">63</span>G     <span class="hljs-number">0</span>   <span class="hljs-number">63</span>G   <span class="hljs-number">0</span>% <span class="hljs-regexp">/dev/</span>nvidia3<br>tmpfs                                                <span class="hljs-number">63</span>G     <span class="hljs-number">0</span>   <span class="hljs-number">63</span>G   <span class="hljs-number">0</span>% <span class="hljs-regexp">/proc/</span>acpi<br>tmpfs                                                <span class="hljs-number">63</span>G     <span class="hljs-number">0</span>   <span class="hljs-number">63</span>G   <span class="hljs-number">0</span>% <span class="hljs-regexp">/proc/</span>scsi<br>tmpfs                                                <span class="hljs-number">63</span>G     <span class="hljs-number">0</span>   <span class="hljs-number">63</span>G   <span class="hljs-number">0</span>% <span class="hljs-regexp">/sys/</span>firmware<br></code></pre></td></tr></table></figure>
-
 <ul>
 <li>其中shm即为共享内存空间</li>
 </ul>
-<h3 id="问题2-RuntimeError-DataLoader-worker-pid-s-exited-unexpectedly"><a href="#问题2-RuntimeError-DataLoader-worker-pid-s-exited-unexpectedly" class="headerlink" title="问题2 RuntimeError: DataLoader worker (pid(s) ****) exited unexpectedly"></a>问题2 RuntimeError: DataLoader worker (pid(s) ****) exited unexpectedly</h3><h4 id="问题原因-1"><a href="#问题原因-1" class="headerlink" title="问题原因"></a>问题原因</h4><ul>
+<h3 id="问题2-RuntimeError-DataLoader-worker-pid-s-exited-unexpectedly">问题2 RuntimeError: DataLoader worker (pid(s) ****) exited unexpectedly</h3>
+<h4 id="问题原因-2">问题原因</h4>
+<ul>
 <li>由于<code>dataloader</code>使用了多线程操作，如果程序中存在其他有些问题的多线程操作时就有可能导致线程套线程，容易出现死锁的情况</li>
 <li>具体的情况可能会根据具体环境不同，我的是由于opencv中的多线程与<code>dataloader</code>的杂糅出现了问题；</li>
 <li>此时cv版本 3.4.2，相同的代码在 4.2.0.34 的cv中没有出现问题。</li>
 </ul>
-<h4 id="解决方案-1"><a href="#解决方案-1" class="headerlink" title="解决方案"></a>解决方案</h4><h5 id="1-自废武功-1"><a href="#1-自废武功-1" class="headerlink" title="1 自废武功"></a>1 自废武功</h5><ul>
+<h4 id="解决方案-2">解决方案</h4>
+<h5 id="1-自废武功-2">1 自废武功</h5>
+<ul>
 <li>将<code>num_workers</code>设置为0</li>
 </ul>
-<h5 id="2-解决问题-1"><a href="#2-解决问题-1" class="headerlink" title="2 解决问题"></a>2 解决问题</h5><ul>
+<h5 id="2-解决问题-2">2 解决问题</h5>
+<ul>
 <li>在dataloader 的 <code>__getitem__</code> 方法中禁用opencv的多线程：</li>
 </ul>
 <figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><code class="hljs python"><span class="hljs-function"><span class="hljs-keyword">def</span> <span class="hljs-title">__getitem__</span>(<span class="hljs-params">self, idx</span>):</span><br>	<span class="hljs-keyword">import</span> cv2<br>	cv2.setNumThreads(<span class="hljs-number">0</span>)<br>	...<br></code></pre></td></tr></table></figure>
-
-<h3 id="参考资料"><a href="#参考资料" class="headerlink" title="参考资料"></a>参考资料</h3><ul>
-<li><p><a target="_blank" rel="noopener" href="https://blog.csdn.net/willen_/article/details/103489485?utm_medium=distribute.pc_relevant.none-task-blog-title-6&amp;spm=1001.2101.3001.4242">https://blog.csdn.net/willen_/article/details/103489485?utm_medium=distribute.pc_relevant.none-task-blog-title-6&amp;spm=1001.2101.3001.4242</a></p>
+<h3 id="参考资料">参考资料</h3>
+<ul>
+<li>
+<p><a target="_blank" rel="noopener" href="https://blog.csdn.net/willen_/article/details/103489485?utm_medium=distribute.pc_relevant.none-task-blog-title-6&amp;spm=1001.2101.3001.4242">https://blog.csdn.net/willen_/article/details/103489485?utm_medium=distribute.pc_relevant.none-task-blog-title-6&amp;spm=1001.2101.3001.4242</a></p>
 </li>
-<li><p><a target="_blank" rel="noopener" href="https://zhuanlan.zhihu.com/p/133707658">https://zhuanlan.zhihu.com/p/133707658</a></p>
+<li>
+<p><a target="_blank" rel="noopener" href="https://zhuanlan.zhihu.com/p/133707658">https://zhuanlan.zhihu.com/p/133707658</a></p>
 </li>
 </ul>
 <link rel="stylesheet" href="/css/spoiler.css" type="text/css"><script src="/js/spoiler.js" type="text/javascript" async></script>

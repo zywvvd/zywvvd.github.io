@@ -310,11 +310,13 @@
 <p>常规的模糊算法如高斯模糊等会模糊图像边缘，很多场景中我们需要保留图像纹理并模糊一些细节，这就可以使用PS中的表面模糊。</p>
 </blockquote>
 <span id="more"></span>
-
-<h3 id="表面模糊"><a href="#表面模糊" class="headerlink" title="表面模糊"></a>表面模糊</h3><ul>
+<h3 id="表面模糊">表面模糊</h3>
+<ul>
 <li>表面模糊有两个参数，半径Radius和阈值Threshold。 如果我们知道了以某点为中心，半径为Radius范围内的直方图数据Hist，以及该点的像素值，那根据原始的算法，其计算公式为：</li>
 </ul>
-<p>$$<br>x = \frac { \sum _ { i = 1 } ^ { ( 2 r + 1 ) ^ { 2 } } [ ( 1 - \frac { | x _ { i } - x _ { 1 } | } { 2.5 Y } ) x _ { i } ] } { \sum _ { i = 1 } ^ { ( 2 r + 1 ) ^ { 2 } } ( 1 - \frac { | x _ { i } - x _ { 1 } | } { 2.5 Y } ) }<br>$$</p>
+<p>$$<br>
+x = \frac { \sum _ { i = 1 } ^ { ( 2 r + 1 ) ^ { 2 } } [ ( 1 - \frac { | x _ { i } - x _ { 1 } | } { 2.5 Y } ) x _ { i } ] } { \sum _ { i = 1 } ^ { ( 2 r + 1 ) ^ { 2 } } ( 1 - \frac { | x _ { i } - x _ { 1 } | } { 2.5 Y } ) }<br>
+$$</p>
 <blockquote>
 <p>其中：$r $为半径，$Y$为阈值， $x_1$为当前像素阶值，$x_i$为模板中某个像素值，$x$为当前像素结果阶值</p>
 </blockquote>
@@ -327,21 +329,19 @@
 <p>使用了numba cpu加速，可以提速10倍，但还是没有c++快</p>
 </blockquote>
 <figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br></pre></td><td class="code"><pre><code class="hljs python"><span class="hljs-meta">@nb.jit(<span class="hljs-params">nopython=<span class="hljs-literal">True</span></span>)</span><br><span class="hljs-function"><span class="hljs-keyword">def</span> <span class="hljs-title">Surface_blur</span>(<span class="hljs-params">I_in, thre, radius</span>):</span><br><br>    I_out = I_in.copy()<br>    row, col = I_in.shape<br><br>    <span class="hljs-keyword">for</span> ii <span class="hljs-keyword">in</span> <span class="hljs-built_in">range</span>(radius, row-<span class="hljs-number">1</span>-radius):<br>        <span class="hljs-keyword">for</span> jj <span class="hljs-keyword">in</span> <span class="hljs-built_in">range</span>(radius, col - <span class="hljs-number">1</span> - radius):<br>            p0 = I_in[ii, jj]<br>            aa = I_in[ii-radius: ii+radius+<span class="hljs-number">1</span>, jj-radius: jj + radius + <span class="hljs-number">1</span>]<br><br>            mask_2 = <span class="hljs-number">1</span>-np.<span class="hljs-built_in">abs</span>(aa-p0)/(<span class="hljs-number">2.5</span>*thre)<br>            mask_3 = mask_2 * (mask_2 &gt; <span class="hljs-number">0</span>)<br>            t1 = aa * mask_3<br>            I_out[ii, jj] = t1.<span class="hljs-built_in">sum</span>()/mask_3.<span class="hljs-built_in">sum</span>()<br><br>    <span class="hljs-keyword">return</span> I_out<br><br></code></pre></td></tr></table></figure>
-
 <ul>
 <li>numba CUDA 加速代码：</li>
 </ul>
 <figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br></pre></td><td class="code"><pre><code class="hljs python"><span class="hljs-keyword">from</span> numba <span class="hljs-keyword">import</span> cuda<br><br><span class="hljs-meta">@cuda.jit</span><br><span class="hljs-function"><span class="hljs-keyword">def</span> <span class="hljs-title">image_process_cuda</span>(<span class="hljs-params">img_cuda, result_img_cuda, y_size, x_size</span>):</span><br>    y = cuda.threadIdx.y + cuda.blockDim.y * cuda.blockIdx.y<br>    x = cuda.threadIdx.x + cuda.blockDim.x * cuda.blockIdx.x<br><br>    radius = <span class="hljs-number">8</span><br>    thre = <span class="hljs-number">20</span><br>    <span class="hljs-keyword">if</span> radius &lt; y &lt; y_size-radius <span class="hljs-keyword">and</span> radius &lt; x &lt; x_size-radius:<br>        a = <span class="hljs-number">0.0</span><br>        b = <span class="hljs-number">0.0</span><br>        x_1 = <span class="hljs-built_in">float</span>(img_cuda[y, x, <span class="hljs-number">0</span>])<br>        <span class="hljs-keyword">for</span> x_index <span class="hljs-keyword">in</span> <span class="hljs-built_in">range</span>(x-radius, x+radius+<span class="hljs-number">1</span>):<br>            <span class="hljs-keyword">for</span> y_index <span class="hljs-keyword">in</span> <span class="hljs-built_in">range</span>(y-radius, y+radius+<span class="hljs-number">1</span>):<br>                x_i = <span class="hljs-built_in">float</span>(img_cuda[y_index, x_index, <span class="hljs-number">0</span>])<br>                <br>                temp_b = (<span class="hljs-number">1</span> - <span class="hljs-built_in">abs</span>(x_i - x_1) / <span class="hljs-number">2.5</span> / thre)<br>                <span class="hljs-keyword">if</span> temp_b &lt;= <span class="hljs-number">0</span>:<br>                    <span class="hljs-keyword">continue</span><br>                b += temp_b<br>                a += temp_b * x_i<br>        <span class="hljs-keyword">for</span> i <span class="hljs-keyword">in</span> <span class="hljs-built_in">range</span>(<span class="hljs-number">3</span>):<br>            result_img_cuda[y, x, i] = <span class="hljs-built_in">int</span>(<span class="hljs-built_in">round</span>(a / b))<br></code></pre></td></tr></table></figure>
-
 <blockquote>
 <p>调用：</p>
 </blockquote>
 <figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><code class="hljs python">img = ...<br>ori_image_cuda = cuda.to_device(img)<br>copy_image_cuda = cuda.to_device(copy_image)<br>image_process_cuda[blocks_per_grid, threads_per_block](ori_image_cuda, copy_image_cuda, y_size, x_size)<br>result_img = copy_image_cuda.copy_to_host()<br></code></pre></td></tr></table></figure>
-
 <blockquote>
 <p>相比于 cpu 加速运算可以有百倍以上的速度提升</p>
 </blockquote>
-<h3 id="参考资料"><a href="#参考资料" class="headerlink" title="参考资料"></a>参考资料</h3><ul>
+<h3 id="参考资料">参考资料</h3>
+<ul>
 <li><a target="_blank" rel="noopener" href="https://blog.csdn.net/matrix_space/article/details/52818857">https://blog.csdn.net/matrix_space/article/details/52818857</a></li>
 </ul>
 <link rel="stylesheet" href="/css/spoiler.css" type="text/css"><script src="/js/spoiler.js" type="text/javascript" async></script>

@@ -310,13 +310,15 @@
 <p>曾经在原始Win10下装了双系统，开机时用 grub 选择启动哪个系统。随后又把linux删了，但是grub启动还在，每次开机都要选择一下，很麻烦，本文记录删除grub启动的方法。</p>
 </blockquote>
 <span id="more"></span>
-
-<h3 id="工作原理"><a href="#工作原理" class="headerlink" title="工作原理"></a>工作原理</h3><ul>
+<h3 id="工作原理">工作原理</h3>
+<ul>
 <li>本文的内容适用于和我一样经历的电脑，一定脱离grub后自己可以启动的那种才行，即：<strong>原始Windows</strong> -&gt; <strong>双系统，自带 grub</strong> -&gt; <strong>需要删除grub</strong></li>
 <li>安装双系统时会在Win的启动区安装grub，这样就算删除了双系统grub也是要运行的</li>
 <li>解决思路就是找到这个grub直接删掉，然后就会使用原来的Win引导自动启动系统</li>
 </ul>
-<h3 id="操作流程"><a href="#操作流程" class="headerlink" title="操作流程"></a>操作流程</h3><h4 id="具象化启动磁盘"><a href="#具象化启动磁盘" class="headerlink" title="具象化启动磁盘"></a>具象化启动磁盘</h4><blockquote>
+<h3 id="操作流程">操作流程</h3>
+<h4 id="具象化启动磁盘">具象化启动磁盘</h4>
+<blockquote>
 <p>我们需要修改系统启动磁盘的信息，这部分磁盘默认都是隐藏的，我们无法操作，因此需要将他们映射到某个盘符，便于我们修改</p>
 </blockquote>
 <ol>
@@ -325,7 +327,6 @@
 <li>在<code>diskpart</code>中运行<code>list disk</code></li>
 </ol>
 <figure class="highlight jboss-cli"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><code class="hljs jboss-cli">DISKPART&gt; list disk<br><br>  磁盘 <span class="hljs-comment">###  状态           大小     可用     Dyn  Gpt</span><br>  <span class="hljs-params">--------</span>  <span class="hljs-params">-------------</span>  <span class="hljs-params">-------</span>  <span class="hljs-params">-------</span>  <span class="hljs-params">---</span>  <span class="hljs-params">---</span><br>  磁盘 0    联机              111 GB  3072 KB        *<br>  磁盘 1    联机              931 GB      0 B        *<br></code></pre></td></tr></table></figure>
-
 <blockquote>
 <p>我的磁盘0是Win系统磁盘</p>
 </blockquote>
@@ -333,7 +334,6 @@
 <li>选择boot文件所在的磁盘，运行命令<code>sel disk X</code>（我的是0，大家根据各自情况填入）</li>
 </ol>
 <figure class="highlight mipsasm"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><code class="hljs mipsasm"><span class="hljs-keyword">DISKPART&gt; </span>sel <span class="hljs-keyword">disk </span><span class="hljs-number">0</span><br><br>磁盘 <span class="hljs-number">0</span> 现在是所选磁盘。<br></code></pre></td></tr></table></figure>
-
 <ol start="5">
 <li>运行命令<code>list vol</code></li>
 </ol>
@@ -341,7 +341,6 @@
 <p>查看磁盘上的所有分区（卷）（EFI卷将被格式化为FAT，其他卷将被格式化为NTFS）</p>
 </blockquote>
 <figure class="highlight jboss-cli"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><code class="hljs jboss-cli"><br>DISKPART&gt; list vol<br><br>  卷 <span class="hljs-comment">###      LTR  标签         FS     类型        大小     状态       信息</span><br>  <span class="hljs-params">----------</span>  <span class="hljs-params">---</span>  <span class="hljs-params">-----------</span>  <span class="hljs-params">-----</span>  <span class="hljs-params">----------</span>  <span class="hljs-params">-------</span>  <span class="hljs-params">---------</span>  <span class="hljs-params">--------</span><br>  卷     0     C                NTFS   磁盘分区          74 GB  正常         启动<br>  卷     1     D   代码区          NTFS   磁盘分区          28 GB  正常         页面文件<br>  卷     2     L                FAT32  磁盘分区         200 MB  正常         系统<br>  卷     3                      NTFS   磁盘分区         588 MB  正常         已隐藏<br>  卷     4     E                NTFS   磁盘分区         234 GB  正常<br>  卷     5     F                NTFS   磁盘分区         465 GB  正常<br>  卷     6                      FAT32  磁盘分区         513 MB  正常         已隐藏<br></code></pre></td></tr></table></figure>
-
 <ol start="6">
 <li>选择EFI分区，启动信息都在上面，运行命令<code>sel vol X</code></li>
 </ol>
@@ -349,7 +348,6 @@
 <p>X 就是后面写着系统的那个卷的标号（我的是2）</p>
 </blockquote>
 <figure class="highlight armasm"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><code class="hljs armasm"><span class="hljs-symbol">DISKPART</span>&gt; <span class="hljs-keyword">sel</span> vol <span class="hljs-number">2</span><br><br>卷 <span class="hljs-number">2</span> 是所选卷。<br></code></pre></td></tr></table></figure>
-
 <ol start="7">
 <li>将其映射到某个盘符上<code>assign letter=L:</code>（L是我电脑上没有使用的盘符，不要忘了有冒号）</li>
 </ol>
@@ -357,7 +355,8 @@
 <p>此时会多一个L磁盘，第一步就成功了</p>
 <p>打是打不开的，而且这部分文件最好不要轻举妄动，可能一不小心就启动不起来了</p>
 </blockquote>
-<h4 id="删除ubuntu引导文件夹"><a href="#删除ubuntu引导文件夹" class="headerlink" title="删除ubuntu引导文件夹"></a>删除ubuntu引导文件夹</h4><blockquote>
+<h4 id="删除ubuntu引导文件夹">删除ubuntu引导文件夹</h4>
+<blockquote>
 <p>我们已经把引导磁盘抓出来了，删除grub引导文件就可以了</p>
 </blockquote>
 <ol>
@@ -369,25 +368,24 @@
 <p>这一步就是为了检查我们此时操作是否正确，正常的话应该只有一个名为<code>EFI</code>的文件夹</p>
 </blockquote>
 <figure class="highlight dts"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><code class="hljs dts"><span class="hljs-symbol"></span><br><span class="hljs-symbol">L:</span>\&gt;dir<br> 驱动器 L 中的卷没有标签。<br> 卷的序列号是 <span class="hljs-number">3</span>A1C<span class="hljs-number">-7752</span><br><span class="hljs-symbol"></span><br><span class="hljs-symbol"> L:</span>\ 的目录<br><br><span class="hljs-number">2020</span>/<span class="hljs-number">01</span>/<span class="hljs-number">13</span>  <span class="hljs-number">03</span>:<span class="hljs-number">23</span>    <span class="hljs-params">&lt;DIR&gt;</span>          EFI<br>               <span class="hljs-number">0</span> 个文件              <span class="hljs-number">0</span> 字节<br>               <span class="hljs-number">1</span> 个目录    <span class="hljs-number">171</span>,<span class="hljs-number">151</span>,<span class="hljs-number">360</span> 可用字节<br></code></pre></td></tr></table></figure>
-
 <ol start="4">
 <li>进入<code>EFI</code>文件夹，<code>cd EFI</code></li>
 <li>输入<code>dir</code>查看<code>EFI</code>文件夹中文件内容</li>
 </ol>
 <figure class="highlight awk"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><code class="hljs awk"><br>L:\EFI&gt;dir<br> 驱动器 L 中的卷没有标签。<br> 卷的序列号是 <span class="hljs-number">3</span>A1C-<span class="hljs-number">7752</span><br><br> L:\EFI 的目录<br><br><span class="hljs-number">2019</span><span class="hljs-regexp">/12/</span><span class="hljs-number">23</span>  <span class="hljs-number">10</span>:<span class="hljs-number">19</span>    &lt;DIR&gt;          .<br><span class="hljs-number">2019</span><span class="hljs-regexp">/12/</span><span class="hljs-number">23</span>  <span class="hljs-number">10</span>:<span class="hljs-number">19</span>    &lt;DIR&gt;          ..<br><span class="hljs-number">2019</span><span class="hljs-regexp">/12/</span><span class="hljs-number">23</span>  <span class="hljs-number">10</span>:<span class="hljs-number">19</span>    &lt;DIR&gt;          Microsoft<br><span class="hljs-number">2020</span><span class="hljs-regexp">/01/</span><span class="hljs-number">13</span>  <span class="hljs-number">03</span>:<span class="hljs-number">24</span>    &lt;DIR&gt;          Boot<br><span class="hljs-number">2020</span><span class="hljs-regexp">/01/</span><span class="hljs-number">13</span>  <span class="hljs-number">03</span>:<span class="hljs-number">24</span>    &lt;DIR&gt;          ubuntu<br>               <span class="hljs-number">0</span> 个文件              <span class="hljs-number">0</span> 字节<br>               <span class="hljs-number">5</span> 个目录    <span class="hljs-number">171</span>,<span class="hljs-number">151</span>,<span class="hljs-number">360</span> 可用字节<br></code></pre></td></tr></table></figure>
-
 <ol start="6">
 <li>删除<code>ubuntu</code>文件夹，输入命令<code>rmdir /S ubuntu</code></li>
 </ol>
 <figure class="highlight awk"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br></pre></td><td class="code"><pre><code class="hljs awk"><br>L:\EFI&gt;rmdir /S ubuntu<br>ubuntu, 是否确认(Y/N)? Y<br><br>L:\EFI&gt;dir<br> 驱动器 L 中的卷没有标签。<br> 卷的序列号是 <span class="hljs-number">3</span>A1C-<span class="hljs-number">7752</span><br><br> L:\EFI 的目录<br><br><span class="hljs-number">2019</span><span class="hljs-regexp">/12/</span><span class="hljs-number">23</span>  <span class="hljs-number">10</span>:<span class="hljs-number">19</span>    &lt;DIR&gt;          .<br><span class="hljs-number">2019</span><span class="hljs-regexp">/12/</span><span class="hljs-number">23</span>  <span class="hljs-number">10</span>:<span class="hljs-number">19</span>    &lt;DIR&gt;          ..<br><span class="hljs-number">2019</span><span class="hljs-regexp">/12/</span><span class="hljs-number">23</span>  <span class="hljs-number">10</span>:<span class="hljs-number">19</span>    &lt;DIR&gt;          Microsoft<br><span class="hljs-number">2020</span><span class="hljs-regexp">/01/</span><span class="hljs-number">13</span>  <span class="hljs-number">03</span>:<span class="hljs-number">24</span>    &lt;DIR&gt;          Boot<br>               <span class="hljs-number">0</span> 个文件              <span class="hljs-number">0</span> 字节<br>               <span class="hljs-number">4</span> 个目录    <span class="hljs-number">174</span>,<span class="hljs-number">960</span>,<span class="hljs-number">640</span> 可用字节<br></code></pre></td></tr></table></figure>
-
 <blockquote>
 <p>假设您只有两个操作系统（Win 10 和 Ubuntu），您现在应该能够直接启动到 Windows 而不会碰到黑色的 grub 屏幕。</p>
 </blockquote>
-<h4 id="测试"><a href="#测试" class="headerlink" title="测试"></a>测试</h4><ul>
+<h4 id="测试">测试</h4>
+<ul>
 <li>重启计算机，计算机正常启动，跳过了grub</li>
 </ul>
-<h4 id="删除EFI分区盘符"><a href="#删除EFI分区盘符" class="headerlink" title="删除EFI分区盘符"></a>删除EFI分区盘符</h4><blockquote>
+<h4 id="删除EFI分区盘符">删除EFI分区盘符</h4>
+<blockquote>
 <p>正常情况下重启后L磁盘就没有了，如果没有重启或重启后还在可以手动删除</p>
 </blockquote>
 <ol>
@@ -395,7 +393,8 @@
 <li>启动<code>diskpart</code>工具</li>
 <li><code>remove letter=L</code></li>
 </ol>
-<h3 id="参考资料"><a href="#参考资料" class="headerlink" title="参考资料"></a>参考资料</h3><ul>
+<h3 id="参考资料">参考资料</h3>
+<ul>
 <li><a target="_blank" rel="noopener" href="https://askubuntu.com/questions/429610/uninstall-grub-and-use-windows-bootloader">https://askubuntu.com/questions/429610/uninstall-grub-and-use-windows-bootloader</a></li>
 <li><a target="_blank" rel="noopener" href="https://blog.csdn.net/bubbleyang/article/details/98469145">https://blog.csdn.net/bubbleyang/article/details/98469145</a></li>
 </ul>

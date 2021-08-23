@@ -310,138 +310,145 @@
 <p>大型程序常常会运行在性能强劲的服务器上，但是此时程序的调试又成了难办的事情，于是产生了远程调试的需求，本文介绍WingIDE远程调试配置方法。</p>
 </blockquote>
 <span id="more"></span>
-
-<h2 id="环境描述"><a href="#环境描述" class="headerlink" title="环境描述"></a>环境描述</h2><ul>
-<li><p>WingIDE 版本需求 6.++/ 7.++ ,我的是 7.2.0</p>
+<h2 id="环境描述">环境描述</h2>
+<ul>
+<li>
+<p>WingIDE 版本需求 6.<ins>/ 7.</ins> ,我的是 7.2.0</p>
 </li>
-<li><p>本地操作系统 Win10</p>
+<li>
+<p>本地操作系统 Win10</p>
 </li>
-<li><p>远程服务器操作系统 Ubuntu 16.04</p>
+<li>
+<p>远程服务器操作系统 Ubuntu 16.04</p>
 </li>
-<li><p>安装 putty</p>
+<li>
+<p>安装 putty</p>
 </li>
-<li><p>解决方案：使用ssh协议通信，实现远程调试</p>
+<li>
+<p>解决方案：使用ssh协议通信，实现远程调试</p>
 </li>
 </ul>
-<h2 id="环境配置"><a href="#环境配置" class="headerlink" title="环境配置"></a>环境配置</h2><h3 id="安装SSH服务"><a href="#安装SSH服务" class="headerlink" title="安装SSH服务"></a>安装SSH服务</h3><blockquote>
+<h2 id="环境配置">环境配置</h2>
+<h3 id="安装SSH服务">安装SSH服务</h3>
+<blockquote>
 <p>查看服务是否安装：</p>
 </blockquote>
 <figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs shell">sudo ps -e |grep ssh<br></code></pre></td></tr></table></figure>
-
 <blockquote>
 <p>返回带有 sshd 的条目即为已经安装</p>
 </blockquote>
 <figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><code class="hljs shell"><span class="hljs-meta">$</span><span class="bash"> ps -e |grep ssh</span><br>   37 ?        00:00:00 sshd<br>16013 ?        00:00:00 sshd<br>16588 ?        00:00:00 sshd<br></code></pre></td></tr></table></figure>
-
 <blockquote>
 <p>否则安装SSH服务</p>
 </blockquote>
 <figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs shell">sudo apt-get install openssh-server<br></code></pre></td></tr></table></figure>
-
-<h3 id="生成SSH密钥对"><a href="#生成SSH密钥对" class="headerlink" title="生成SSH密钥对"></a>生成SSH密钥对</h3><blockquote>
+<h3 id="生成SSH密钥对">生成SSH密钥对</h3>
+<blockquote>
 <p>在本地Win10（运行wingIDE的环境）使用ssh-keygen生成SSH密钥</p>
 </blockquote>
 <figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs shell"><span class="hljs-meta">$</span><span class="bash"> ssh-keygen -t rsa</span><br></code></pre></td></tr></table></figure>
-
 <blockquote>
 <p>此时在 C -&gt; Users -&gt; Admin（用户名） -&gt; .ssh 文件夹下会生成 <code>id_rsa</code>和<code>id_rsa.pub</code>两个密钥文件，其中 <code>id_rsa</code>为私钥，无论如何不能交给别人。</p>
 </blockquote>
-<h3 id="远程主机配置SSH密钥"><a href="#远程主机配置SSH密钥" class="headerlink" title="远程主机配置SSH密钥"></a>远程主机配置SSH密钥</h3><blockquote>
+<h3 id="远程主机配置SSH密钥">远程主机配置SSH密钥</h3>
+<blockquote>
 <p>将刚刚生成的公钥文件<code>id_rsa.pub</code>复制到远程主机 <code>~/.ssh</code>文件夹中，并添加到<code>~/.ssh/authorized_keys</code>里。</p>
 <p>假设你的<code>id_rsa.pub</code>文件在<code>.ssh</code>文件夹中而且名称为<code>rsa_temp.pub</code></p>
 </blockquote>
 <figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><code class="hljs shell">cat ~/.ssh/rsa_temp.pub &gt;&gt; ~/.ssh/authorized_keys<br>rm  ~/.ssh/rsa_temp.pub<br></code></pre></td></tr></table></figure>
-
 <blockquote>
 <p>此时你的本机Win10系统ssh连接远程主机已经不再需要输入密码进行身份验证。</p>
 <p>可以使用ssh命令测试是否配置成功，过程中询问是否继续连接，输入 <code>yes</code>即可：</p>
 </blockquote>
 <figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br></pre></td><td class="code"><pre><code class="hljs shell">ssh -p 3722 root@192.168.10.80 #-p为端口 一般来说ssh常用端口默认是22<br><span class="hljs-meta"></span><br><span class="hljs-meta">-----&gt;</span><span class="bash"></span><br><span class="bash">The authenticity of host <span class="hljs-string">&#x27;[192.168.10.80]:3722 ([192.168.10.80]:3722)&#x27;</span> can<span class="hljs-string">&#x27;t be established.</span></span><br>ECDSA key fingerprint is SHA256:qCIsaqEa6wNy0daSgBxxxxxxxxxxxxxxxxxxxxxx.<br>Are you sure you want to continue connecting (yes/no/[fingerprint])? yes<br>Warning: Permanently added &#x27;[192.168.10.80]:3722&#x27; (ECDSA) to the list of known hosts.<br>Welcome to Ubuntu 16.04.6 LTS (GNU/Linux 4.4.0-142-generic x86_64)<br><br> * Documentation:  https://help.ubuntu.com<br> * Management:     https://landscape.canonical.com<br> * Support:        https://ubuntu.com/advantage<br>Last login: Thu May 14 08:20:47 2020 from 192.168.10.213<br> * Starting OpenBSD Secure Shell server sshd                             [ OK ]<br>root@fc6fa7bb6824:~#<br><br></code></pre></td></tr></table></figure>
-
 <blockquote>
 <p>此时我们已经可以用SSH连接两个操作系统，即已经完成了理论层面的配置，接下来进入具体操作阶段。</p>
 </blockquote>
-<h2 id="远程调试配置"><a href="#远程调试配置" class="headerlink" title="远程调试配置"></a>远程调试配置</h2><blockquote>
+<h2 id="远程调试配置">远程调试配置</h2>
+<blockquote>
 <p>此处解释一下，WingIDE在连接远程服务器时需要配置连接信息，而这个信息可以在putty中保存，也就是说，只要putty中保存的参数可以连接成功，那么这套配置就可以用于wingIDE的远程调试。</p>
 </blockquote>
-<h3 id="私钥文件id-rsa转换成putty的ppk格式"><a href="#私钥文件id-rsa转换成putty的ppk格式" class="headerlink" title="私钥文件id_rsa转换成putty的ppk格式"></a>私钥文件id_rsa转换成putty的ppk格式</h3><blockquote>
+<h3 id="私钥文件id-rsa转换成putty的ppk格式">私钥文件id_rsa转换成putty的ppk格式</h3>
+<blockquote>
 <p>putty需要ppk格式的私钥文件，生成方法如下：</p>
 </blockquote>
 <ul>
 <li>运行puttygen （在putty同位置文件夹内）</li>
 </ul>
-<p><img src="https://photos.zywvvd.com/matrixtime/20200514191003.png" srcset="/img/loading.gif" lazyload></p>
+<p><img src="https://photos.zywvvd.com/matrixtime/20200514191003.png" srcset="/img/loading.gif" lazyload alt=""></p>
 <ul>
 <li>选择<code>Conversions</code>菜单项中的<code>Import key</code>选项：</li>
 </ul>
-<p><img src="https://photos.zywvvd.com/matrixtime/20200514191136.png" srcset="/img/loading.gif" lazyload></p>
+<p><img src="https://photos.zywvvd.com/matrixtime/20200514191136.png" srcset="/img/loading.gif" lazyload alt=""></p>
 <ul>
 <li>选择生成的id_rsa文件</li>
 <li>在puttygen的界面上点击<code>Save private key</code>按钮就可以把私钥转换为ppk的格式了（不要点<code>Generate</code>）</li>
 </ul>
-<h3 id="在putty配置远程连接信息"><a href="#在putty配置远程连接信息" class="headerlink" title="在putty配置远程连接信息"></a>在putty配置远程连接信息</h3><blockquote>
+<h3 id="在putty配置远程连接信息">在putty配置远程连接信息</h3>
+<blockquote>
 <p>打开putty</p>
 </blockquote>
 <ul>
 <li>配置 Session ：</li>
 </ul>
-<p><img src="https://photos.zywvvd.com/matrixtime/20200514190333.png" srcset="/img/loading.gif" lazyload></p>
+<p><img src="https://photos.zywvvd.com/matrixtime/20200514190333.png" srcset="/img/loading.gif" lazyload alt=""></p>
 <blockquote>
 <p>主要配置IP和端口号，在Saved Sessions里配置可以区分的名字，之后供WingIDE调用</p>
 </blockquote>
 <ul>
 <li>配置 Connection-Data选项卡，在自动登录用户名处填入需要自动登录的用户名（我的是root）</li>
 </ul>
-<p><img src="https://photos.zywvvd.com/matrixtime/20200514192550.png" srcset="/img/loading.gif" lazyload></p>
+<p><img src="https://photos.zywvvd.com/matrixtime/20200514192550.png" srcset="/img/loading.gif" lazyload alt=""></p>
 <ul>
 <li>配置 Connection-SSH-Auth选项卡，浏览选择刚刚生成的私钥ppk文件：</li>
 </ul>
-<p><img src="https://photos.zywvvd.com/matrixtime/20200514192014.png" srcset="/img/loading.gif" lazyload></p>
+<p><img src="https://photos.zywvvd.com/matrixtime/20200514192014.png" srcset="/img/loading.gif" lazyload alt=""></p>
 <ul>
 <li>回到Session，点击<code>Save</code>保存当前配置到<code>test_3722</code>中：</li>
 </ul>
-<p><img src="https://photos.zywvvd.com/matrixtime/20200514192711.png" srcset="/img/loading.gif" lazyload></p>
+<p><img src="https://photos.zywvvd.com/matrixtime/20200514192711.png" srcset="/img/loading.gif" lazyload alt=""></p>
 <ul>
 <li>此后每次打开putty双击我们的<code>test_3722</code>即可连接到远程服务器：</li>
 </ul>
-<p><img src="https://photos.zywvvd.com/matrixtime/20200514193220.png" srcset="/img/loading.gif" lazyload></p>
-<h3 id="配置WingIDE"><a href="#配置WingIDE" class="headerlink" title="配置WingIDE"></a>配置WingIDE</h3><blockquote>
+<p><img src="https://photos.zywvvd.com/matrixtime/20200514193220.png" srcset="/img/loading.gif" lazyload alt=""></p>
+<h3 id="配置WingIDE">配置WingIDE</h3>
+<blockquote>
 <p>距离成功仅一步之遥。</p>
 <p>打开WingIDE， Project -&gt; New Project</p>
 </blockquote>
-<p><img src="https://photos.zywvvd.com/matrixtime/20200514193933.png" srcset="/img/loading.gif" lazyload></p>
+<p><img src="https://photos.zywvvd.com/matrixtime/20200514193933.png" srcset="/img/loading.gif" lazyload alt=""></p>
 <blockquote>
 <p>其中 Identifier 为该工程的名称， Host Name为我们刚刚保存的Putty名称，点击<code>OK</code>。</p>
 </blockquote>
 <ul>
 <li>此时可以选择保存工程，也可以一会再说</li>
 </ul>
-<p><img src="https://photos.zywvvd.com/matrixtime/20200514194133.png" srcset="/img/loading.gif" lazyload></p>
+<p><img src="https://photos.zywvvd.com/matrixtime/20200514194133.png" srcset="/img/loading.gif" lazyload alt=""></p>
 <ul>
 <li>在远程的默认python路径往往不是我们需要的，我的常用python在conda的一个自建的环境中，可以指定其为wingIDE的默认远程python环境：</li>
 </ul>
-<p><img src="https://photos.zywvvd.com/matrixtime/20200514194516.png" srcset="/img/loading.gif" lazyload></p>
+<p><img src="https://photos.zywvvd.com/matrixtime/20200514194516.png" srcset="/img/loading.gif" lazyload alt=""></p>
 <ul>
 <li>随后一路OK，出现此对话框说明配置成功：</li>
 </ul>
-<p><img src="https://photos.zywvvd.com/matrixtime/20200514194611.png" srcset="/img/loading.gif" lazyload></p>
+<p><img src="https://photos.zywvvd.com/matrixtime/20200514194611.png" srcset="/img/loading.gif" lazyload alt=""></p>
 <ul>
 <li>重启python shell 可以在本地看到远程的python shell：</li>
 </ul>
-<p><img src="https://photos.zywvvd.com/matrixtime/20200514194723.png" srcset="/img/loading.gif" lazyload></p>
+<p><img src="https://photos.zywvvd.com/matrixtime/20200514194723.png" srcset="/img/loading.gif" lazyload alt=""></p>
 <ul>
 <li>可以简单通过操作系统验证是否配置成远程python</li>
 </ul>
-<p><img src="https://photos.zywvvd.com/matrixtime/20200514194830.png" srcset="/img/loading.gif" lazyload></p>
+<p><img src="https://photos.zywvvd.com/matrixtime/20200514194830.png" srcset="/img/loading.gif" lazyload alt=""></p>
 <ul>
 <li>在project中可以加入远程的工程</li>
 </ul>
-<p><img src="https://photos.zywvvd.com/matrixtime/20200514194908.png" srcset="/img/loading.gif" lazyload></p>
-<p><img src="https://photos.zywvvd.com/matrixtime/20200514195000.png" srcset="/img/loading.gif" lazyload></p>
+<p><img src="https://photos.zywvvd.com/matrixtime/20200514194908.png" srcset="/img/loading.gif" lazyload alt=""></p>
+<p><img src="https://photos.zywvvd.com/matrixtime/20200514195000.png" srcset="/img/loading.gif" lazyload alt=""></p>
 <blockquote>
 <p>可以本地修改远程代码，并运行调试：</p>
 </blockquote>
-<p><img src="https://photos.zywvvd.com/matrixtime/20200514195140.png" srcset="/img/loading.gif" lazyload></p>
+<p><img src="https://photos.zywvvd.com/matrixtime/20200514195140.png" srcset="/img/loading.gif" lazyload alt=""></p>
 <link rel="stylesheet" href="/css/spoiler.css" type="text/css"><script src="/js/spoiler.js" type="text/javascript" async></script>
             </div>
             <hr>

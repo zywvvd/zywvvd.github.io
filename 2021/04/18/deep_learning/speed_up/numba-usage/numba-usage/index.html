@@ -310,8 +310,8 @@
 <p>本文介绍GPU编程的一些重要概念。</p>
 </blockquote>
 <span id="more"></span>
-
-<h3 id="GPU编程"><a href="#GPU编程" class="headerlink" title="GPU编程"></a>GPU编程</h3><blockquote>
+<h3 id="GPU编程">GPU编程</h3>
+<blockquote>
 <p>GPU编程与CPU编程的思考角度不尽相同，举皮皮鲁老师的一个例子：</p>
 </blockquote>
 <p>以加法计算为例，CPU就像大学数学教授，GPU就像几千个小学生，现在需要不借助外界，只通过纸笔，对2000个数字进行加法计算，得到1000个加法结果，在这个过程中，大学教授要协调指挥小学生完成任务。</p>
@@ -324,29 +324,35 @@
 <li>1000个小学生同时计算，得到1000个结果数字，写到纸上，返回给大学教授。</li>
 </ol>
 <p>实际上，CUDA并行算法和上面的流程基本相似，就是设计核函数，在存储上合理分配数据，告知GPU以一定的并行度执行配置来并行计算。核函数的设计与所要解决的问题本身高度相关。</p>
-<h3 id="主机与设备"><a href="#主机与设备" class="headerlink" title="主机与设备"></a>主机与设备</h3><p>在CUDA中，CPU和主存被称为<strong>主机（Host）</strong>，GPU和显存（显卡内存）被称为<strong>设备（Device）</strong>，CPU无法直接读取显存数据，GPU无法直接读取主存数据，主机与设备必须通过总线（Bus）相互通信。</p>
-<p><img src="https://photos.zywvvd.com/image_canglan/20210418004055.png" srcset="/img/loading.gif" lazyload></p>
-<h3 id="GPU程序与CPU程序的区别"><a href="#GPU程序与CPU程序的区别" class="headerlink" title="GPU程序与CPU程序的区别"></a>GPU程序与CPU程序的区别</h3><h4 id="CPU程序"><a href="#CPU程序" class="headerlink" title="CPU程序"></a>CPU程序</h4><ol>
+<h3 id="主机与设备">主机与设备</h3>
+<p>在CUDA中，CPU和主存被称为<strong>主机（Host）</strong>，GPU和显存（显卡内存）被称为<strong>设备（Device）</strong>，CPU无法直接读取显存数据，GPU无法直接读取主存数据，主机与设备必须通过总线（Bus）相互通信。</p>
+<p><img src="https://photos.zywvvd.com/image_canglan/20210418004055.png" srcset="/img/loading.gif" lazyload alt=""></p>
+<h3 id="GPU程序与CPU程序的区别">GPU程序与CPU程序的区别</h3>
+<h4 id="CPU程序">CPU程序</h4>
+<ol>
 <li>初始化。</li>
 <li>CPU计算。</li>
 <li>得到计算结果。</li>
 </ol>
-<p><img src="https://photos.zywvvd.com/image_canglan/20210418010401.png" srcset="/img/loading.gif" lazyload></p>
-<h4 id="GPU程序"><a href="#GPU程序" class="headerlink" title="GPU程序"></a>GPU程序</h4><ol>
+<p><img src="https://photos.zywvvd.com/image_canglan/20210418010401.png" srcset="/img/loading.gif" lazyload alt=""></p>
+<h4 id="GPU程序">GPU程序</h4>
+<ol>
 <li>初始化，并将必要的数据拷贝到GPU设备的显存上。</li>
 <li>CPU调用GPU函数，启动GPU多个核心同时进行计算。</li>
 <li>CPU与GPU异步计算。</li>
 <li>将GPU计算结果拷贝回主机端，得到计算结果</li>
 </ol>
-<p><img src="https://photos.zywvvd.com/image_canglan/20210418010429.png" srcset="/img/loading.gif" lazyload></p>
-<h3 id="Thread层次结构"><a href="#Thread层次结构" class="headerlink" title="Thread层次结构"></a>Thread层次结构</h3><p>在进行GPU并行编程时，需要定义执行配置来告知以怎样的方式去并行执行核函数。CUDA将核函数所定义的运算称为<strong>线程（Thread）</strong>，多个线程组成一个<strong>块（Block）</strong>，多个块组成<strong>网格（Grid）</strong>。这样一个Grid可以定义成千上万个线程，也就解决了并行执行上万次操作的问题。</p>
-<p><img src="https://photos.zywvvd.com/image_canglan/20210418012102.png" srcset="/img/loading.gif" lazyload></p>
+<p><img src="https://photos.zywvvd.com/image_canglan/20210418010429.png" srcset="/img/loading.gif" lazyload alt=""></p>
+<h3 id="Thread层次结构">Thread层次结构</h3>
+<p>在进行GPU并行编程时，需要定义执行配置来告知以怎样的方式去并行执行核函数。CUDA将核函数所定义的运算称为<strong>线程（Thread）</strong>，多个线程组成一个<strong>块（Block）</strong>，多个块组成<strong>网格（Grid）</strong>。这样一个Grid可以定义成千上万个线程，也就解决了并行执行上万次操作的问题。</p>
+<p><img src="https://photos.zywvvd.com/image_canglan/20210418012102.png" srcset="/img/loading.gif" lazyload alt=""></p>
 <p>实际上，线程（Thread）是一个编程上的软件概念。从硬件来看，Thread运行在一个CUDA核心上，多个Thread组成的Block运行在Streaming Multiprocessor（SM），多个Block组成的Grid运行在一个GPU显卡上。</p>
 <p><img src="https://photos.zywvvd.com/image_canglan/20210418012441.png" srcset="/img/loading.gif" lazyload alt="Thread运行在一个核心上，Block运行在SM上，Grid运行在整个GPU卡上">)</p>
 <p>CUDA提供了一系列内置变量，以记录Thread和Block的大小及索引下标。以<code>[2, 4]</code>这样的配置为例：<code>blockDim.x</code>变量表示Block的大小是4，即每个Block有4个Thread，<code>threadIdx.x</code>变量是一个从0到<code>blockDim.x - 1</code>（4-1=3）的索引下标，记录这是第几个Thread；<code>gridDim.x</code>变量表示Grid的大小是2，即每个Grid有2个Block，<code>blockIdx.x</code>变量是一个从0到<code>gridDim.x - 1</code>（2-1=1）的索引下标，记录这是第几个Block。</p>
 <p>某个Thread在整个Grid中的位置编号为：<code>threadIdx.x + blockIdx.x * blockDim.x</code>。</p>
-<p><img src="https://photos.zywvvd.com/image_canglan/20210418012608.png" srcset="/img/loading.gif" lazyload></p>
-<h3 id="Block大小设置"><a href="#Block大小设置" class="headerlink" title="Block大小设置"></a>Block大小设置</h3><p>不同的执行配置会影响GPU程序的速度，一般需要多次调试才能找到较好的执行配置，在实际编程中，执行配置<code>[gridDim, blockDim]</code>应参考下面的方法：</p>
+<p><img src="https://photos.zywvvd.com/image_canglan/20210418012608.png" srcset="/img/loading.gif" lazyload alt=""></p>
+<h3 id="Block大小设置">Block大小设置</h3>
+<p>不同的执行配置会影响GPU程序的速度，一般需要多次调试才能找到较好的执行配置，在实际编程中，执行配置<code>[gridDim, blockDim]</code>应参考下面的方法：</p>
 <ul>
 <li>Block运行在SM上，不同硬件架构（Turing、Volta、Pascal…）的CUDA核心数不同，一般需要根据当前硬件来设置Block的大小<code>blockDim</code>（执行配置中第二个参数）。一个Block中的Thread数最好是32、128、256的倍数。注意，限于当前硬件的设计，Block大小不能超过1024。</li>
 <li>Grid的大小<code>gridDim</code>（执行配置中第一个参数），即一个Grid中Block的个数可以由总次数<code>N</code>除以<code>blockDim</code>，并向上取整。</li>
@@ -354,21 +360,20 @@
 <p>例如，我们想并行启动1000个Thread，可以将blockDim设置为128，<code>1000 ÷ 128 = 7.8</code>，向上取整为8。使用时，执行配置可以写成<code>gpuWork[8, 128]()</code>，CUDA共启动<code>8 * 128 = 1024</code>个Thread，实际计算时只使用前1000个Thread，多余的24个Thread不进行计算。</p>
 <p>这几个变量比较容易混淆，再次明确一下：<code>blockDim</code>是Block中Thread的个数，一个Block中的<code>threadIdx</code>最大不超过<code>blockDim</code>；<code>gridDim</code>是Grid中Block的个数，一个Grid中的<code>blockIdx</code>最大不超过<code>gridDim</code>。</p>
 <p>以上讨论中，Block和Grid大小均是一维，实际编程使用的执行配置常常更复杂，Block和Grid的大小可以设置为二维甚至三维：</p>
-<p><img src="https://photos.zywvvd.com/image_canglan/20210418013021.png" srcset="/img/loading.gif" lazyload alt="*二维Block和Grid设置*"></p>
-<p>一个二维的执行配置如上图所示，其中，每个Block有(3 * 4)个Thread，每个Grid有(2 * 3)个Block。 二维块大小为 *(Dx, Dy)*，某个线程号 <em>(x, y)</em> 的公式为 **(x + y Dx)**；三维块大小为 <em>(Dx, Dy, Dz)<em>，某个线程号</em>(x, y, z)</em> 的公式为 **(x + y Dx + z Dx Dy)**。各个内置变量中<code>.x</code> <code>.y</code>和<code>.z</code>为不同维度下的值。</p>
+<p><img src="https://photos.zywvvd.com/image_canglan/20210418013021.png" srcset="/img/loading.gif" lazyload alt="二维Block和Grid设置"></p>
+<p>一个二维的执行配置如上图所示，其中，每个Block有(3 * 4)个Thread，每个Grid有(2 * 3)个Block。 二维块大小为 <em>(Dx, Dy)</em>，某个线程号 <em>(x, y)</em> 的公式为 <strong>(x + y Dx)</strong>；三维块大小为 <em>(Dx, Dy, Dz)</em>，某个线程号*(x, y, z)* 的公式为 <strong>(x + y Dx + z Dx Dy)</strong>。各个内置变量中<code>.x</code> <code>.y</code>和<code>.z</code>为不同维度下的值。</p>
 <p>例如，一个二维配置，某个线程在矩阵中的位置可以表示为：</p>
 <figure class="highlight ini"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><code class="hljs ini"><span class="hljs-attr">col</span> = cuda.threadIdx.y + cuda.blockDim.y * cuda.blockIdx.y<br><span class="hljs-attr">row</span> = cuda.threadIdx.x + cuda.blockDim.x * cuda.blockIdx.x<br></code></pre></td></tr></table></figure>
-
 <p>如何将二维Block映射到自己的数据上并没有固定的映射方法，一般情况将<code>.x</code>映射为矩阵的行，将<code>.y</code>映射为矩阵的列。Numba提供了一个更简单的方法帮我们计算线程的编号：</p>
 <figure class="highlight maxima"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs maxima"><span class="hljs-built_in">row</span>, <span class="hljs-built_in">col</span> = cuda.<span class="hljs-built_in">grid</span>(<span class="hljs-number">2</span>)<br></code></pre></td></tr></table></figure>
-
 <p>其中，参数2表示这是一个2维的执行配置。1维或3维的时候，可以将参数改为1或3。</p>
 <p>对应的执行配置也要改为二维：</p>
 <figure class="highlight apache"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><code class="hljs apache"><span class="hljs-attribute">threads_per_block</span> = (<span class="hljs-number">16</span>, <span class="hljs-number">16</span>)<br><span class="hljs-attribute">blocks_per_grid</span> = (<span class="hljs-number">32</span>, <span class="hljs-number">32</span>)<br><span class="hljs-attribute">gpu_kernel</span>[blocks_per_grid, threads_per_block]<br></code></pre></td></tr></table></figure>
-
 <p><code>(16, 16)</code>的二维Block是一个常用的配置，共256个线程。之前也曾提到过，每个Block的Thread个数最好是128、256或512，这与GPU的硬件架构高度相关。</p>
-<h3 id="内存分配"><a href="#内存分配" class="headerlink" title="内存分配"></a>内存分配</h3><p>前文提到，GPU计算时直接从显存中读取数据，因此每当计算时要将数据从主存拷贝到显存上，用CUDA的术语来说就是要把数据从主机端拷贝到设备端。用小学生计算的例子来解释，大学教授需要将计算任务写在纸上，分发给各组小学生。CUDA强大之处在于它能自动将数据从主机和设备间相互拷贝，不需要程序员在代码中写明。这种方法对编程者来说非常方便，不必对原有的CPU代码做大量改动。</p>
-<h3 id="参考资料"><a href="#参考资料" class="headerlink" title="参考资料"></a>参考资料</h3><ul>
+<h3 id="内存分配">内存分配</h3>
+<p>前文提到，GPU计算时直接从显存中读取数据，因此每当计算时要将数据从主存拷贝到显存上，用CUDA的术语来说就是要把数据从主机端拷贝到设备端。用小学生计算的例子来解释，大学教授需要将计算任务写在纸上，分发给各组小学生。CUDA强大之处在于它能自动将数据从主机和设备间相互拷贝，不需要程序员在代码中写明。这种方法对编程者来说非常方便，不必对原有的CPU代码做大量改动。</p>
+<h3 id="参考资料">参考资料</h3>
+<ul>
 <li><a target="_blank" rel="noopener" href="https://lulaoshi.info/gpu/python-cuda/cuda-intro.html">https://lulaoshi.info/gpu/python-cuda/cuda-intro.html</a></li>
 </ul>
 <link rel="stylesheet" href="/css/spoiler.css" type="text/css"><script src="/js/spoiler.js" type="text/javascript" async></script>
