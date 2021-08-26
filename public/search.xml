@@ -39,28 +39,92 @@
 <h3 id="简介">简介</h3>
 <p>Transformer 架构早已在自然语言处理任务中得到广泛应用，但在计算机视觉领域中仍然受到限制。在计算机视觉领域，注意力要么与卷积网络结合使用，要么用来代替卷积网络的某些组件，同时保持其整体架构不变。</p>
 <p>VIT在研究中表明，视觉网络对 CNN 的依赖不是必需的，当直接面对图像块序列时，transformer 也能很好地执行图像分类任务。而且可以获得与当前最优卷积网络相媲美的结果，而且训练所需的计算资源大大减少。</p>
-<details>
-    <summary> 原始论文 《AN IMAGE IS WORTH 16X16 WORDS: TRANSFORMERS FOR IMAGE RECOGNITION AT SCALE》 </summary>
-<iframe src='/js/pdfjs/web/viewer.html?file=https://photos.zywvvd.com/vvd-dell-2021-win-10/20210821162706.pdf' style='width:100%;height:500px'></iframe>
-</details>
-<h3 id="工作框架">工作框架</h3>
+<h3 id="工作流程">工作流程</h3>
 <p><img src="https://photos.zywvvd.com/vvd-dell-2021-win-10/20210821163801.png" alt=""></p>
 <blockquote>
 <p>VIT 的目的是将 NLP 中的 Transformer 引入到视觉领域，并得到 Transformer 在原有领域中的性能收益，因此基础架构尽可能照搬了原始 Transformer。</p>
 </blockquote>
-<ol>
-<li>图像变形</li>
-</ol>
+<h4 id="1-图像变形">1. 图像变形</h4>
 <p>由于序列模型输入是1D向量，为了将2D图像应用Transormer，将图像 $ \mathbf{x} \in \mathbb{R}^{H \times W \times C} $进行 reshape ,得到$ \mathbf{x_p} \in \mathbb{R}^{N \times (P^2·C) } $</p>
-<blockquote>
-<p>$H,W$是图像的高和宽，$C$为原始图像通道，rgb的情况下 $C$ 为3</p>
-<p>将原图分为一个个$P\times P$的小图，这样小图的个数为 $N = HW/P^2$</p>
-<p>这样输入由3D转为2D数据，理解为$N$组特征向量，可以套用 transorfer 的流程了</p>
-</blockquote>
+<ul>
+<li>$H,W$是图像的高和宽，$C$为原始图像通道，rgb的情况下 $C$ 为3</li>
+<li>将原图分为一个个 $P\times P$ 的小图，这样小图的个数为 $N = HW/P^2$</li>
+<li>这样输入由3D转为2D数据，理解为$N$组特征向量，可以套用 transormer 的流程了</li>
+<li>输入的数据此时表示为：</li>
+</ul>
+<p>$$<br>
+[x _ { p } ^ { 1 }  ; x _ { p } ^ { 2 }  ; \cdots ; x _ { p } ^ { N } ],\mathbf{x}_{p}^{i}  \in \mathbb{R}<sup>{P</sup>2·C}<br>
+$$</p>
+<h4 id="2-维度投影">2. 维度投影</h4>
+<p>Transformer 的隐藏特征维度定死为 $D$，而当前每个输入 patch 块的维度为 $P^2C$</p>
+<ul>
+<li>设计了一个可以学习的矩阵 $ E \in \mathbb{R}<sup>{\left(P</sup>{2} \cdot C\right) \times D} $，每个块经过投影后，得到 $ \mathbf{x}_{p}^{i} \mathbf{E} \in \mathbb{R}^{D}$</li>
+<li>此时N个小patch数据可以表示为：</li>
+</ul>
+<p>$$<br>
+[x _ { p } ^ { 1 } E ; x _ { p } ^ { 2 } E ; \cdots ; x _ { p } ^ { N } E],\mathbf{x}_{p}^{i} \mathbf{E} \in \mathbb{R}^{D}<br>
+$$</p>
+<h4 id="3-token">3.token</h4>
+<p>类似BERT的 token，在输入图像块序列的起始位置添加一个可以学习的序列，$ \mathbf{x}_{\text {class }} \in \mathbb{R}^{D}$</p>
+<ul>
+<li>那么现在输入序列（$N+1$ 组）可以表示为：</li>
+</ul>
+<p>$$<br>
+[x_{class};x _ { p } ^ { 1 } E ; x _ { p } ^ { 2 } E ; \cdots ; x _ { p } ^ { N } E]<br>
+$$</p>
+<h4 id="4-位置编码">4.位置编码</h4>
+<p>将位置 embedding 添加到每个图像块中，以保留位置信息。文章中使用了标准的1D位置编码（2D没有性能收益）。</p>
+<ul>
+<li>位置编码用$E_{pos}$表示，$ {E}_{p o s} \in \mathbb{R}^{(N+1) \times D} $</li>
+<li>叠加了位置编码信息的图像块作为编码器的输入，用$\mathbf{z}_0$表示：</li>
+</ul>
+<p>$$<br>
+\mathbf{z}<em>{0}=\left[\mathbf{x}</em>{\text {class }} ; \mathbf{x}<em>{p}^{1} \mathbf{E} ; \mathbf{x}</em>{p}^{2} \mathbf{E} ; \cdots ; \mathbf{x}<em>{p}^{N} \mathbf{E}\right]+\mathbf{E}</em>{p o s}, \quad \mathbf{E} \in \mathbb{R}<sup>{\left(P</sup>{2} \cdot C\right) \times D}, \mathbf{E}_{p o s} \in \mathbb{R}^{(N+1) \times D}<br>
+$$</p>
+<h4 id="5-Transformer-编码">5.Transformer 编码</h4>
+<p>得到初始输入$\mathbf{z}_0$后，数据会经过$L$轮特征提取，对于已经获得到的第$l=0…L-1$，层特征$\mathbf{z}_l$，需要分别经过多头自注意力模块(MSA)和一个全连接层(MLP)，在经过二者前都需要进行层归一化（LN)，每个模块结束会经历残差连接。</p>
+<ul>
+<li>
+<p>得到特征：<br>
+$$<br>
+\mathbf{z}_l,0 \le l \le L-1<br>
+$$</p>
+</li>
+<li>
+<p>经过MSA模块，提取特征得到 $\mathbf{z} ^ { \prime }_{l+1}$：</p>
+</li>
+</ul>
+<p>$$<br>
+\mathbf{z} ^ { \prime }<em>{l+1}=\operatorname{MSA}\left(\operatorname{LN}\left(\mathbf{z}</em>{l}\right)\right)+\mathbf{z}_{l}<br>
+$$</p>
+<ul>
+<li>将$\mathbf{z} ^ { \prime }<em>{l+1}$ 送入MLP模块，得到$\mathbf{z}</em>{l+1}$:</li>
+</ul>
+<p>$$<br>
+\mathbf{z}<em>{l+1}=\mathrm{MLP}\left(\mathrm{LN}\left(\mathbf{z}^{\prime}{ }</em>{l+1}\right)\right)+\mathbf{z}^{\prime}_{l}<br>
+$$</p>
+<h4 id="6-图像表示">6.图像表示</h4>
+<p>将$\mathbf{x}<em>{\text {class }}$经过$L$轮特征提取后得到的结果$ \mathbf{z}</em>{L}^{0} $通过层归一化得到图像表示$\mathbf{y}$：</p>
+<p>$$<br>
+\mathbf{y}=\mathrm{LN}\left(\mathbf{z}_{L}^{0}\right)<br>
+$$</p>
+<h3 id="模型规模">模型规模</h3>
+<p><img src="https://photos.zywvvd.com/vvd-dell-2021-win-10/20210826234127.png" alt=""></p>
+<h3 id="实验结果">实验结果</h3>
+<p><img src="https://photos.zywvvd.com/vvd-dell-2021-win-10/20210826234237.png" alt=""></p>
+<h3 id="结论">结论</h3>
+<p>ViT工作将Transformer从NLP带到了视觉领域，而且获得了不俗的性能，以较低的预训练成本在大多数识别基准上达到了最先进的水平。</p>
+<h3 id="原始论文">原始论文</h3>
+<details>
+    <summary> 《AN IMAGE IS WORTH 16X16 WORDS: TRANSFORMERS FOR IMAGE RECOGNITION AT SCALE》 </summary>
+<iframe src='/js/pdfjs/web/viewer.html?file=https://photos.zywvvd.com/vvd-dell-2021-win-10/20210821162706.pdf' style='width:100%;height:500px'></iframe>
+</details>
 <h3 id="参考资料">参考资料</h3>
 <ul>
 <li><a href="https://zhuanlan.zhihu.com/p/273652295">https://zhuanlan.zhihu.com/p/273652295</a></li>
 <li><a href="https://blog.csdn.net/qq_16236875/article/details/108964948">https://blog.csdn.net/qq_16236875/article/details/108964948</a></li>
+<li><a href="https://zhuanlan.zhihu.com/p/48508221">https://zhuanlan.zhihu.com/p/48508221</a></li>
+<li><a href="https://zhuanlan.zhihu.com/p/359071701">https://zhuanlan.zhihu.com/p/359071701</a></li>
 </ul>
 <link rel="stylesheet" href="/css/spoiler.css" type="text/css"><script src="/js/spoiler.js" type="text/javascript" async></script>]]></content>
       <categories>
@@ -6494,6 +6558,92 @@ $$</p>
       </tags>
   </entry>
   <entry>
+    <title>信息论 - 交叉熵</title>
+    <url>/2021/05/29/information-theory/cross-entropy-KL-divergence/cross-entropy/</url>
+    <content><![CDATA[<blockquote>
+<p>交叉熵（Cross Entropy）是Shannon信息论中一个重要概念，主要用于度量两个概率分布间的差异性信息。</p>
+</blockquote>
+<span id="more"></span>
+<h3 id="定义">定义</h3>
+<p>在信息论中，交叉熵（Cross Entropy）是表示两个概率分布p,q，其中p表示真实分布，q表示非真实分布，在相同的一组事件中，其中，用非真实分布q来表示某个事件发生所需要的平均比特数。。</p>
+<ul>
+<li>假设现在有一个样本集中两个概率分布p,q，其中p为真实分布，q为非真实分布。假如，按照真实分布p来衡量识别一个样本所需要的编码长度的期望为：</li>
+</ul>
+<p>$$<br>
+\mathrm{H}(\mathrm{p})=\sum_{i} p(i) \cdot \log \left(\frac{1}{p(i)}\right)<br>
+$$</p>
+<ul>
+<li>
+<p>但是，如果采用错误的分布q来表示来自真实分布p的平均编码长度，则应该是:<br>
+$$<br>
+\mathrm{H}(\mathrm{p}, \mathrm{q})=\sum_{i} p(i) \cdot \log \left(\frac{1}{q(i)}\right)<br>
+$$</p>
+</li>
+<li>
+<p>此时就将H(p,q)称之为交叉嫡。交叉嫡的计算方式如下:</p>
+<ul>
+<li>对于离散变量采用以下的方式计算:<br>
+$$<br>
+\mathrm{H}(\mathrm{p}, \mathrm{q})=\sum_{x} p(x) \cdot \log   \left(\frac{1}{q(x)}\right)<br>
+$$</li>
+<li>对于连续变量采用以下的方式计算:</li>
+</ul>
+</li>
+</ul>
+<p>$$<br>
+\mathrm{H}(\mathrm{p}, \mathrm{q})=-\int_{X} P(x) \log Q(x) d r(x)=E_{p}[-\log Q]<br>
+$$</p>
+<h3 id="含义">含义</h3>
+<ul>
+<li>交叉熵可以看作真实分布的熵与估计分布与真实分布的KL散度的和</li>
+</ul>
+<p>$$<br>
+H(P, Q)=H§+D_{K L}(P | Q)=-\mathbb{E}_{X \sim P(X)} \log Q(x)<br>
+$$</p>
+<ul>
+<li>KL散度不对称，不同分布熵值不同，因此交叉熵不对称</li>
+<li>交叉嫡刻画了使用错误分布 $ Q $ 来表示真实分布 $ P $ 中的样本的平均编码长度。</li>
+<li>$ D_{K L(P|| Q)} $ 刻画了错误分布 $ Q $ 编码真实分布 $ P $ 带来的平均编码长度的增量。</li>
+</ul>
+<h3 id="示例">示例</h3>
+<blockquote>
+<p>交叉熵在深度学习的损失函数中得到广泛应用</p>
+</blockquote>
+<p>真实数据分布（标签）为$Y$，预测分布为$P$</p>
+<p>事实上我们用的交叉熵为$H(Y,P)$，即使用Y的分布，用P的编码方式度量信息熵大小</p>
+<ul>
+<li>二分类时</li>
+</ul>
+<p>$$<br>
+L=\frac{1}{N} \sum_{i} L_{i}=\frac{1}{N} \sum_{i}-\left[y_{i} \cdot \log \left(p_{i}\right)+\left(1-y_{i}\right) \cdot \log \left(1-p_{i}\right)\right]<br>
+$$</p>
+<blockquote>
+<p>其中: $ y_{i}$ 表示样本 $ i $ 的label, 正类为 1, 负类为 0 $ p_{i} \longrightarrow $ 表示样本 $ i $ 预测为正的概率</p>
+</blockquote>
+<ul>
+<li>多分类</li>
+</ul>
+<p>$$<br>
+L=\frac{1}{N} \sum_{i} L_{i}=\frac{1}{N} \sum_{i}-\sum_{c=1}^{M} y_{i c} \log \left(p_{i c}\right)<br>
+$$</p>
+<blockquote>
+<p>至于为什么不用$H(P,Y)$，可能是因为$y$的值很容易取到0，超出了$log$运算的变量取值范围无法计算吧（个人猜测）</p>
+</blockquote>
+<h3 id="参考资料">参考资料</h3>
+<ul>
+<li><a href="http://www.huaxiaozhuan.com/%E6%95%B0%E5%AD%A6%E5%9F%BA%E7%A1%80/chapters/2_probability.html">http://www.huaxiaozhuan.com/数学基础/chapters/2_probability.html</a></li>
+<li><a href="https://baike.baidu.com/item/%E4%BA%A4%E5%8F%89%E7%86%B5/8983241?fr=aladdin">https://baike.baidu.com/item/交叉熵/8983241?fr=aladdin</a></li>
+<li><a href="https://zhuanlan.zhihu.com/p/35709485">https://zhuanlan.zhihu.com/p/35709485</a></li>
+</ul>
+<link rel="stylesheet" href="/css/spoiler.css" type="text/css"><script src="/js/spoiler.js" type="text/javascript" async></script>]]></content>
+      <categories>
+        <category>information theory</category>
+      </categories>
+      <tags>
+        <tag>information theory</tag>
+      </tags>
+  </entry>
+  <entry>
     <title>信息论 - KL散度</title>
     <url>/2021/05/29/information-theory/cross-entropy-KL-divergence/KL-divergence/</url>
     <content><![CDATA[<blockquote>
@@ -6597,92 +6747,6 @@ $$
 <li>
 <p><a href="https://www.cnblogs.com/hxsyl/p/4910218.html">https://www.cnblogs.com/hxsyl/p/4910218.html</a></p>
 </li>
-</ul>
-<link rel="stylesheet" href="/css/spoiler.css" type="text/css"><script src="/js/spoiler.js" type="text/javascript" async></script>]]></content>
-      <categories>
-        <category>information theory</category>
-      </categories>
-      <tags>
-        <tag>information theory</tag>
-      </tags>
-  </entry>
-  <entry>
-    <title>信息论 - 交叉熵</title>
-    <url>/2021/05/29/information-theory/cross-entropy-KL-divergence/cross-entropy/</url>
-    <content><![CDATA[<blockquote>
-<p>交叉熵（Cross Entropy）是Shannon信息论中一个重要概念，主要用于度量两个概率分布间的差异性信息。</p>
-</blockquote>
-<span id="more"></span>
-<h3 id="定义">定义</h3>
-<p>在信息论中，交叉熵（Cross Entropy）是表示两个概率分布p,q，其中p表示真实分布，q表示非真实分布，在相同的一组事件中，其中，用非真实分布q来表示某个事件发生所需要的平均比特数。。</p>
-<ul>
-<li>假设现在有一个样本集中两个概率分布p,q，其中p为真实分布，q为非真实分布。假如，按照真实分布p来衡量识别一个样本所需要的编码长度的期望为：</li>
-</ul>
-<p>$$<br>
-\mathrm{H}(\mathrm{p})=\sum_{i} p(i) \cdot \log \left(\frac{1}{p(i)}\right)<br>
-$$</p>
-<ul>
-<li>
-<p>但是，如果采用错误的分布q来表示来自真实分布p的平均编码长度，则应该是:<br>
-$$<br>
-\mathrm{H}(\mathrm{p}, \mathrm{q})=\sum_{i} p(i) \cdot \log \left(\frac{1}{q(i)}\right)<br>
-$$</p>
-</li>
-<li>
-<p>此时就将H(p,q)称之为交叉嫡。交叉嫡的计算方式如下:</p>
-<ul>
-<li>对于离散变量采用以下的方式计算:<br>
-$$<br>
-\mathrm{H}(\mathrm{p}, \mathrm{q})=\sum_{x} p(x) \cdot \log   \left(\frac{1}{q(x)}\right)<br>
-$$</li>
-<li>对于连续变量采用以下的方式计算:</li>
-</ul>
-</li>
-</ul>
-<p>$$<br>
-\mathrm{H}(\mathrm{p}, \mathrm{q})=-\int_{X} P(x) \log Q(x) d r(x)=E_{p}[-\log Q]<br>
-$$</p>
-<h3 id="含义">含义</h3>
-<ul>
-<li>交叉熵可以看作真实分布的熵与估计分布与真实分布的KL散度的和</li>
-</ul>
-<p>$$<br>
-H(P, Q)=H§+D_{K L}(P | Q)=-\mathbb{E}_{X \sim P(X)} \log Q(x)<br>
-$$</p>
-<ul>
-<li>KL散度不对称，不同分布熵值不同，因此交叉熵不对称</li>
-<li>交叉嫡刻画了使用错误分布 $ Q $ 来表示真实分布 $ P $ 中的样本的平均编码长度。</li>
-<li>$ D_{K L(P|| Q)} $ 刻画了错误分布 $ Q $ 编码真实分布 $ P $ 带来的平均编码长度的增量。</li>
-</ul>
-<h3 id="示例">示例</h3>
-<blockquote>
-<p>交叉熵在深度学习的损失函数中得到广泛应用</p>
-</blockquote>
-<p>真实数据分布（标签）为$Y$，预测分布为$P$</p>
-<p>事实上我们用的交叉熵为$H(Y,P)$，即使用Y的分布，用P的编码方式度量信息熵大小</p>
-<ul>
-<li>二分类时</li>
-</ul>
-<p>$$<br>
-L=\frac{1}{N} \sum_{i} L_{i}=\frac{1}{N} \sum_{i}-\left[y_{i} \cdot \log \left(p_{i}\right)+\left(1-y_{i}\right) \cdot \log \left(1-p_{i}\right)\right]<br>
-$$</p>
-<blockquote>
-<p>其中: $ y_{i}$ 表示样本 $ i $ 的label, 正类为 1, 负类为 0 $ p_{i} \longrightarrow $ 表示样本 $ i $ 预测为正的概率</p>
-</blockquote>
-<ul>
-<li>多分类</li>
-</ul>
-<p>$$<br>
-L=\frac{1}{N} \sum_{i} L_{i}=\frac{1}{N} \sum_{i}-\sum_{c=1}^{M} y_{i c} \log \left(p_{i c}\right)<br>
-$$</p>
-<blockquote>
-<p>至于为什么不用$H(P,Y)$，可能是因为$y$的值很容易取到0，超出了$log$运算的变量取值范围无法计算吧（个人猜测）</p>
-</blockquote>
-<h3 id="参考资料">参考资料</h3>
-<ul>
-<li><a href="http://www.huaxiaozhuan.com/%E6%95%B0%E5%AD%A6%E5%9F%BA%E7%A1%80/chapters/2_probability.html">http://www.huaxiaozhuan.com/数学基础/chapters/2_probability.html</a></li>
-<li><a href="https://baike.baidu.com/item/%E4%BA%A4%E5%8F%89%E7%86%B5/8983241?fr=aladdin">https://baike.baidu.com/item/交叉熵/8983241?fr=aladdin</a></li>
-<li><a href="https://zhuanlan.zhihu.com/p/35709485">https://zhuanlan.zhihu.com/p/35709485</a></li>
 </ul>
 <link rel="stylesheet" href="/css/spoiler.css" type="text/css"><script src="/js/spoiler.js" type="text/javascript" async></script>]]></content>
       <categories>
@@ -10437,6 +10501,13 @@ applet2.inject('ggbApplet2');};
 <li>添加路径到Path环境变量中（如一切工作正常可以不着急添加）：</li>
 </ul>
 <figure class="highlight taggerscript"><table><tr><td class="code"><pre><code class="hljs taggerscript">C:<span class="hljs-symbol">\P</span>rogram Files<span class="hljs-symbol">\N</span>VIDIA GPU Computing Toolkit<span class="hljs-symbol">\C</span>UDA<span class="hljs-symbol">\v</span>10.2<span class="hljs-symbol">\l</span>ib<span class="hljs-symbol">\x</span>64<br>C:<span class="hljs-symbol">\P</span>rogram Files<span class="hljs-symbol">\N</span>VIDIA GPU Computing Toolkit<span class="hljs-symbol">\C</span>UDA<span class="hljs-symbol">\v</span>10.2<span class="hljs-symbol">\i</span>nclude<br>C:<span class="hljs-symbol">\P</span>rogram Files<span class="hljs-symbol">\N</span>VIDIA GPU Computing Toolkit<span class="hljs-symbol">\C</span>UDA<span class="hljs-symbol">\v</span>10.2<span class="hljs-symbol">\e</span>xtras<span class="hljs-symbol">\C</span>UPTI<span class="hljs-symbol">\l</span>ib64<br>C:<span class="hljs-symbol">\P</span>rogramData<span class="hljs-symbol">\N</span>VIDIA Corporation<span class="hljs-symbol">\C</span>UDA Samples<span class="hljs-symbol">\v</span>10.2<span class="hljs-symbol">\b</span>in<span class="hljs-symbol">\w</span>in64<br>C:<span class="hljs-symbol">\P</span>rogramData<span class="hljs-symbol">\N</span>VIDIA Corporation<span class="hljs-symbol">\C</span>UDA Samples<span class="hljs-symbol">\v</span>10.2<span class="hljs-symbol">\c</span>ommon<span class="hljs-symbol">\l</span>ib<span class="hljs-symbol">\x</span>64<br></code></pre></td></tr></table></figure>
+<h4 id="可能遇到的错误">可能遇到的错误</h4>
+<figure class="highlight coq"><table><tr><td class="code"><pre><code class="hljs coq">nsight <span class="hljs-built_in">compute</span> 安装失败<br></code></pre></td></tr></table></figure>
+<ul>
+<li>失败原因不明</li>
+<li>可以不选择 <code>nsight compute</code> 继续安装</li>
+<li>CUDA仍可以成功安装使用</li>
+</ul>
 <h4 id="测试CUDA">测试CUDA</h4>
 <ul>
 <li>打开cmd</li>
@@ -23506,6 +23577,10 @@ $$</p>
 <blockquote>
 <p><code>-a</code> 参数设置修改文件后不需要执行 git add 命令，直接来提交。</p>
 </blockquote>
+<figure class="highlight pgsql"><table><tr><td class="code"><pre><code class="hljs pgsql">git <span class="hljs-keyword">commit</span> <span class="hljs-comment">--amend</span><br></code></pre></td></tr></table></figure>
+<blockquote>
+<p>修改刚刚提交的注释信息</p>
+</blockquote>
 <p><strong>注</strong>：首次提交必须设置用户信息的名称和邮箱。</p>
 <h4 id="git-checkout">git checkout</h4>
 <blockquote>
@@ -26635,19 +26710,19 @@ $$</p>
 <li>申请leancloud账号，<a href="https://www.leancloud.cn/">官网链接</a>。</li>
 <li>登录leancloud，进入控制台点击创建应用。</li>
 </ul>
-<img src="/2020/02/28/hexo-theme/next/6_add_valine_comments/add-valine-comments/chuangjianyingyong.png" class="" title="创建应用">
+<p><img src="https://photos.zywvvd.com/win11-mt/20210826094248.png" alt=""></p>
 <ul>
 <li>填写应用名称，选择开发版</li>
 </ul>
-<img src="/2020/02/28/hexo-theme/next/6_add_valine_comments/add-valine-comments/chuangjian.png" class="" title="创建应用">
+<p><img src="https://photos.zywvvd.com/win11-mt/20210826094305.png" alt=""></p>
 <ul>
 <li>创建成功后点击应用右上角的<code>齿轮</code>进入应用设置</li>
 </ul>
-<img src="/2020/02/28/hexo-theme/next/6_add_valine_comments/add-valine-comments/chilun.png" class="" title="创建设置">
+<p><img src="https://photos.zywvvd.com/win11-mt/20210826094322.png" alt=""></p>
 <ul>
 <li>设置选项卡中选择<code>应用 Keys</code>，右边AppID和AppKey就是我们需要的标识和密钥。</li>
 </ul>
-<img src="/2020/02/28/hexo-theme/next/6_add_valine_comments/add-valine-comments/keys.png" class="" title="应用 Keys">
+<p><img src="https://photos.zywvvd.com/win11-mt/20210826094340.png" alt=""></p>
 <h2 id="本地设置">本地设置</h2>
 <blockquote>
 <p>在Next<code>主题配置文件</code>中修改valine字段内的值，将enable设置为true，将刚刚得到的AppID和AppKey填入相应字段中。</p>
@@ -26669,8 +26744,8 @@ $$</p>
 <blockquote>
 <p>Next V7.7.1 已经集成了相关程序包，不需要额外安装，只要填入AppID和AppKey就好，否则容易出现各种奇怪的问题（别问我怎么知道的）</p>
 </blockquote>
-<img src="/2020/02/28/hexo-theme/next/6_add_valine_comments/add-valine-comments/valine.png" class="" title="评论测试">
-<img src="/2020/02/28/hexo-theme/next/6_add_valine_comments/add-valine-comments/post.png" class="" title="评论统计">
+<p><img src="https://photos.zywvvd.com/win11-mt/20210826094358.png" alt=""></p>
+<p><img src="https://photos.zywvvd.com/win11-mt/20210826094417.png" alt=""></p>
 <h2 id="数据安全">数据安全</h2>
 <blockquote>
 <p>可选操作：在【Leancloud】 -&gt; 【设置】 -&gt; 【安全中心】 -&gt; 【Web 安全域名】把你的域名加进去，可防止数据被篡改。</p>
@@ -26680,16 +26755,16 @@ $$</p>
 <p>这个字段生成过程和其他不一样，定义的变量在post下的comments下的valine，修改zh-Hans.yml</p>
 </blockquote>
 <figure class="highlight yml"><table><tr><td class="code"><pre><code class="hljs yml"><span class="hljs-attr">post:</span><br>  <span class="hljs-attr">comments:</span><br>    <span class="hljs-attr">valine:</span> <span class="hljs-string">评论次数</span> <br></code></pre></td></tr></table></figure>
-<img src="/2020/02/28/hexo-theme/next/6_add_valine_comments/add-valine-comments/fanyi.png" class="" title="Valine翻译">
+<p><img src="https://photos.zywvvd.com/win11-mt/20210826094435.png" alt=""></p>
 <h2 id="源码踪迹">源码踪迹</h2>
 <blockquote>
 <p>相关的Valine评论数生成的源文件是<code>themes -&gt; next -&gt; scripts -&gt; filters -&gt; comment -&gt; valine.js</code></p>
 </blockquote>
-<img src="/2020/02/28/hexo-theme/next/6_add_valine_comments/add-valine-comments/valinejs.png" class="" title="valine.js">
+<p><img src="https://photos.zywvvd.com/win11-mt/20210826094501.png" alt=""></p>
 <blockquote>
 <p>该函数在同文件夹下的<code>common.js</code>文件内</p>
 </blockquote>
-<img src="/2020/02/28/hexo-theme/next/6_add_valine_comments/add-valine-comments/commonjs.png" class="" title="common.js">
+<p><img src="https://photos.zywvvd.com/win11-mt/20210826094449.png" alt=""></p>
 <blockquote>
 <p>因此在zh-Hans.yml中定义post.comments.valine 变量的翻译字段</p>
 </blockquote>
@@ -26713,7 +26788,8 @@ $$</p>
 <p>在<code>主题配置文件</code>中修改footer字段的since：</p>
 </blockquote>
 <figure class="highlight yml"><table><tr><td class="code"><pre><code class="hljs yml"><span class="hljs-attr">footer:</span><br>  <span class="hljs-comment"># Specify the date when the site was setup. If not defined, current year will be used.</span><br>  <span class="hljs-attr">since:</span> <span class="hljs-number">2019</span><br></code></pre></td></tr></table></figure>
-<img src="/2020/02/28/hexo-theme/next/5_settings/next-settings/since.png" class="" title="效果展示"><link rel="stylesheet" href="/css/spoiler.css" type="text/css"><script src="/js/spoiler.js" type="text/javascript" async></script>]]></content>
+<p><img src="https://photos.zywvvd.com/win11-mt/20210826094211.png" alt=""></p>
+<link rel="stylesheet" href="/css/spoiler.css" type="text/css"><script src="/js/spoiler.js" type="text/javascript" async></script>]]></content>
       <categories>
         <category>Next</category>
       </categories>
@@ -26733,8 +26809,8 @@ $$</p>
 <p>修改<code>主题配置文件</code>不蒜子<code>enable</code>的开关为<code>true</code>：</p>
 </blockquote>
 <figure class="highlight yml"><table><tr><td class="code"><pre><code class="hljs yml"><span class="hljs-comment"># Show Views / Visitors of the website / page with busuanzi.</span><br><span class="hljs-comment"># Get more information on http://ibruce.info/2015/04/04/busuanzi</span><br><span class="hljs-attr">busuanzi_count:</span><br>  <span class="hljs-attr">enable:</span> <span class="hljs-literal">true</span><br>  <span class="hljs-attr">total_visitors:</span> <span class="hljs-literal">true</span><br>  <span class="hljs-attr">total_visitors_icon:</span> <span class="hljs-string">user</span><br>  <span class="hljs-attr">total_views:</span> <span class="hljs-literal">true</span><br>  <span class="hljs-attr">total_views_icon:</span> <span class="hljs-string">eye</span><br>  <span class="hljs-attr">post_views:</span> <span class="hljs-literal">true</span><br>  <span class="hljs-attr">post_views_icon:</span> <span class="hljs-string">eye</span><br></code></pre></td></tr></table></figure>
-<img src="/2020/02/28/hexo-theme/next/4_add_viewers/viewers/post.png" class="" title="文章阅读数">
-<img src="/2020/02/28/hexo-theme/next/4_add_viewers/viewers/footer.png" class="" title="访客与阅读总量">
+<p><img src="https://photos.zywvvd.com/win11-mt/20210826093824.png" alt=""></p>
+<p><img src="https://photos.zywvvd.com/win11-mt/20210826093835.png" alt=""></p>
 <h3 id="统计失效时的调整方法">统计失效时的调整方法</h3>
 <blockquote>
 <p>有时数据统计会失效，此时删除hexo根目录的<code>db.json</code>，执行命令：</p>
@@ -26753,14 +26829,15 @@ $$</p>
 <p>可以调整<code>主题配置文件</code>：</p>
 </blockquote>
 <figure class="highlight yml"><table><tr><td class="code"><pre><code class="hljs yml"><span class="hljs-comment"># Post wordcount display settings</span><br><span class="hljs-comment"># Dependencies: https://github.com/theme-next/hexo-symbols-count-time</span><br><span class="hljs-attr">symbols_count_time:</span><br>  <span class="hljs-attr">separated_meta:</span> <span class="hljs-literal">true</span>  <span class="hljs-comment"># 是否换行显示 字数统计 及 阅读时长</span><br>  <span class="hljs-attr">item_text_post:</span> <span class="hljs-literal">true</span>  <span class="hljs-comment"># 文章 字数统计 阅读时长 使用图标 还是 文本表示</span><br>  <span class="hljs-attr">item_text_total:</span> <span class="hljs-literal">true</span> <span class="hljs-comment"># 博客底部统计 字数统计 阅读时长 使用图标 还是 文本表示</span><br>  <span class="hljs-attr">awl:</span> <span class="hljs-number">4</span><br>  <span class="hljs-attr">wpm:</span> <span class="hljs-number">275</span><br></code></pre></td></tr></table></figure>
-<img src="/2020/02/28/hexo-theme/next/4_add_viewers/viewers/words.png" class="" title="字符统计、阅读时间">
+<p><img src="https://photos.zywvvd.com/win11-mt/20210826093735.png" alt=""></p>
 <h2 id="对应词条翻译">对应词条翻译</h2>
 <blockquote>
 <p>对上述词条翻译找了好久，终于摸索出来了，在此贡献给大家，在zh-Hans.yml中加入：</p>
 </blockquote>
 <figure class="highlight yml"><table><tr><td class="code"><pre><code class="hljs yml"><span class="hljs-attr">post:</span><br>  <span class="hljs-attr">views:</span> <span class="hljs-string">阅读次数</span><br><span class="hljs-attr">symbols_count_time:</span><br>  <span class="hljs-attr">time:</span> <span class="hljs-string">阅读时长</span><br>  <span class="hljs-attr">count:</span> <span class="hljs-string">本文字数</span><br>  <span class="hljs-attr">count_total:</span> <span class="hljs-string">站点总字数</span><br>  <span class="hljs-attr">time_total:</span> <span class="hljs-string">站点阅读时长</span><br></code></pre></td></tr></table></figure>
-<img src="/2020/02/28/hexo-theme/next/4_add_viewers/viewers/header-zh.png" class="" title="post翻译">
-<img src="/2020/02/28/hexo-theme/next/4_add_viewers/viewers/footer-zh.png" class="" title="footer翻译"><link rel="stylesheet" href="/css/spoiler.css" type="text/css"><script src="/js/spoiler.js" type="text/javascript" async></script>]]></content>
+<p><img src="https://photos.zywvvd.com/win11-mt/20210826093753.png" alt=""></p>
+<p><img src="https://photos.zywvvd.com/win11-mt/20210826093808.png" alt=""></p>
+<link rel="stylesheet" href="/css/spoiler.css" type="text/css"><script src="/js/spoiler.js" type="text/javascript" async></script>]]></content>
       <categories>
         <category>Next</category>
       </categories>
@@ -26814,9 +26891,10 @@ $$</p>
 <blockquote>
 <p>此时相应的内容会被翻译成设定的文字</p>
 </blockquote>
-<img src="/2020/02/28/hexo-theme/next/3_translate/translate/xiaoguo.png" class="" title="翻译后的页面">
-<img src="/2020/02/28/hexo-theme/next/3_translate/translate/header-zh.png" class="" title="翻译后的页面">
-<img src="/2020/02/28/hexo-theme/next/3_translate/translate/xiaoguo2.png" class="" title="翻译后的页面"><link rel="stylesheet" href="/css/spoiler.css" type="text/css"><script src="/js/spoiler.js" type="text/javascript" async></script>]]></content>
+<p><img src="https://photos.zywvvd.com/win11-mt/20210825094751.png" alt=""></p>
+<p><img src="https://photos.zywvvd.com/win11-mt/20210825094803.png" alt=""></p>
+<p><img src="https://photos.zywvvd.com/win11-mt/20210825094818.png" alt=""></p>
+<link rel="stylesheet" href="/css/spoiler.css" type="text/css"><script src="/js/spoiler.js" type="text/javascript" async></script>]]></content>
       <categories>
         <category>Next</category>
       </categories>
@@ -26841,7 +26919,6 @@ $$</p>
 </blockquote>
 <p><img src="https://photos.zywvvd.com/vvd-dell-2021-win-10/20210823232507.png" alt=""></p>
 <h2 id="添加页面">添加页面</h2>
-<p><img src="H:%5Ccodes%5CVVD_Hexo%5Csource_posts%5Chexo-theme%5Cnext%5C2_add_pages%5Cadd-tags-about-categories-page%5Cbefore.png" alt="before"></p>
 <h3 id="添加-tags">添加 tags</h3>
 <blockquote>
 <p>在hexo目录的终端输入命令新建文章，layout设置为page，文章名称为tags</p>
