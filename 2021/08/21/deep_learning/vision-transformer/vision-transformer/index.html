@@ -301,7 +301,7 @@ Transformer是nlp领域的常见模型了，在Attention is All You Need一文�
             
               <p class="note note-info">
                 
-                  本文最后更新于：2021年8月26日 晚上
+                  本文最后更新于：2021年8月27日 晚上
                 
               </p>
             
@@ -326,13 +326,16 @@ Transformer是nlp领域的常见模型了，在Attention is All You Need一文�
 <li>这样输入由3D转为2D数据，理解为$N$组特征向量，可以套用 transormer 的流程了</li>
 <li>输入的数据此时表示为：</li>
 </ul>
-<p>$$<br>
-[x _ { p } ^ { 1 }  ; x _ { p } ^ { 2 }  ; \cdots ; x _ { p } ^ { N } ],\mathbf{x}_{p}^{i}  \in \mathbb{R}<sup>{P</sup>2·C}<br>
-$$</p>
+
+$$
+[x _ { p } ^ { 1 }  ; x _ { p } ^ { 2 }  ; \cdots ; x _ { p } ^ { N } ],\mathbf{x}_{p}^{i}  \in \mathbb{R}^{P^2·C}
+$$
+
+
 <h4 id="2-维度投影">2. 维度投影</h4>
 <p>Transformer 的隐藏特征维度定死为 $D$，而当前每个输入 patch 块的维度为 $P^2C$</p>
 <ul>
-<li>设计了一个可以学习的矩阵 $ E \in \mathbb{R}<sup>{\left(P</sup>{2} \cdot C\right) \times D} $，每个块经过投影后，得到 $ \mathbf{x}_{p}^{i} \mathbf{E} \in \mathbb{R}^{D}$</li>
+<li>设计了一个可以学习的矩阵 $ E \in \mathbb{R}^{\left(P^{2} \cdot C\right) \times D} $，每个块经过投影后，得到 $ \mathbf{x}_{p}^{i} \mathbf{E} \in \mathbb{R}^{D}$</li>
 <li>此时N个小patch数据可以表示为：</li>
 </ul>
 <p>$$<br>
@@ -352,9 +355,12 @@ $$</p>
 <li>位置编码用$E_{pos}$表示，$ {E}_{p o s} \in \mathbb{R}^{(N+1) \times D} $</li>
 <li>叠加了位置编码信息的图像块作为编码器的输入，用$\mathbf{z}_0$表示：</li>
 </ul>
-<p>$$<br>
-\mathbf{z}<em>{0}=\left[\mathbf{x}</em>{\text {class }} ; \mathbf{x}<em>{p}^{1} \mathbf{E} ; \mathbf{x}</em>{p}^{2} \mathbf{E} ; \cdots ; \mathbf{x}<em>{p}^{N} \mathbf{E}\right]+\mathbf{E}</em>{p o s}, \quad \mathbf{E} \in \mathbb{R}<sup>{\left(P</sup>{2} \cdot C\right) \times D}, \mathbf{E}_{p o s} \in \mathbb{R}^{(N+1) \times D}<br>
-$$</p>
+
+$$
+\mathbf{z}_{0}=\left[\mathbf{x}_{\text {class }} ; \mathbf{x}_{p}^{1} \mathbf{E} ; \mathbf{x}_{p}^{2} \mathbf{E} ; \cdots ; \mathbf{x}_{p}^{N} \mathbf{E}\right]+\mathbf{E}_{p o s}, \quad \mathbf{E} \in \mathbb{R}^{\left(P^{2} \cdot C\right) \times D}, \mathbf{E}_{p o s} \in \mathbb{R}^{(N+1) \times D}
+$$
+
+
 <h4 id="5-Transformer-编码">5.Transformer 编码</h4>
 <p>得到初始输入$\mathbf{z}_0$后，数据会经过$L$轮特征提取，对于已经获得到的第$l=0…L-1$，层特征$\mathbf{z}_l$，需要分别经过多头自注意力模块(MSA)和一个全连接层(MLP)，在经过二者前都需要进行层归一化（LN)，每个模块结束会经历残差连接。</p>
 <ul>
@@ -368,18 +374,24 @@ $$</p>
 <p>经过MSA模块，提取特征得到 $\mathbf{z} ^ { \prime }_{l+1}$：</p>
 </li>
 </ul>
-<p>$$<br>
-\mathbf{z} ^ { \prime }<em>{l+1}=\operatorname{MSA}\left(\operatorname{LN}\left(\mathbf{z}</em>{l}\right)\right)+\mathbf{z}_{l}<br>
-$$</p>
+
+$$
+\mathbf{z} ^ { \prime }_{l+1}=\operatorname{MSA}\left(\operatorname{LN}\left(\mathbf{z}_{l}\right)\right)+\mathbf{z}_{l}
+$$
+
+
 <ul>
-<li>将$\mathbf{z} ^ { \prime }<em>{l+1}$ 送入MLP模块，得到$\mathbf{z}</em>{l+1}$:</li>
+<li>将$\mathbf{z} ^ { \prime }_{l+1}$ 送入MLP模块，得到$\mathbf{z}_{l+1}$:</li>
 </ul>
-<p>$$<br>
-\mathbf{z}<em>{l+1}=\mathrm{MLP}\left(\mathrm{LN}\left(\mathbf{z}^{\prime}{ }</em>{l+1}\right)\right)+\mathbf{z}^{\prime}_{l}<br>
-$$</p>
+
+$$
+ \mathbf{z}_{l+1}=\mathrm{MLP}\left(\mathrm{LN}\left(\mathbf{z}^{\prime}{ }_{l+1}\right)\right)+\mathbf{z}^{\prime}_{l} 
+$$
+
+
 <h4 id="6-图像表示">6.图像表示</h4>
-<p>将$\mathbf{x}<em>{\text {class }}$经过$L$轮特征提取后得到的结果$ \mathbf{z}</em>{L}^{0} $通过层归一化得到图像表示$\mathbf{y}$：</p>
-<p>$$<br>
+<p>将$\mathbf{x} _ { class }$经过$L$轮特征提取后得到的结果 $ \mathbf{z} _ {L}^{0} $ 通过层归一化得到图像表示 $\mathbf{y}$，也就是图像的分类信息：<br>
+$$<br>
 \mathbf{y}=\mathrm{LN}\left(\mathbf{z}_{L}^{0}\right)<br>
 $$</p>
 <h3 id="模型规模">模型规模</h3>
@@ -391,7 +403,7 @@ $$</p>
 <h3 id="原始论文">原始论文</h3>
 <details>
     <summary> 《AN IMAGE IS WORTH 16X16 WORDS: TRANSFORMERS FOR IMAGE RECOGNITION AT SCALE》 </summary>
-<iframe src='/js/pdfjs/web/viewer.html?file=https://photos.zywvvd.com/vvd-dell-2021-win-10/20210821162706.pdf' style='width:100%;height:500px'></iframe>
+<iframe src='/js/pdfjs/web/viewer.html?file=https://photos.zywvvd.com/vvd-dell-2021-win-10/20210821162706.pdf' style='width:100%;height:800px'></iframe>
 </details>
 <h3 id="参考资料">参考资料</h3>
 <ul>
