@@ -1,0 +1,832 @@
+
+
+<!DOCTYPE html>
+<html lang="zh-CN" data-default-color-scheme=&#34;auto&#34;>
+<script type="text/javascript" src="/vvd_js/jquery.js"></script>
+
+
+
+<head>
+  <meta charset="UTF-8">
+  <link rel="apple-touch-icon" sizes="76x76" href="/img/favicon.png">
+  <link rel="icon" href="/img/favicon.png">
+  <meta name="viewport"
+        content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, shrink-to-fit=no">
+  <meta http-equiv="x-ua-compatible" content="ie=edge">
+  
+  <meta name="theme-color" content="#2f4154">
+  <meta name="description" content="
+蒙特卡洛方法可以近似计算某个概率值，计算结果随着实验次数增加而愈加精确，本文记录相关内容。
+">
+  <meta name="author" content="Yiwei Zhang">
+  <meta name="keywords" content="人工智能, 深度学习, 个人博客, 机器学习">
+  
+  <title>蒙特卡洛（Monte Carlo）方法 - 又见苍岚</title>
+
+  <link  rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@4.6.0/dist/css/bootstrap.min.css" />
+
+
+  <link  rel="stylesheet" href="https://cdn.jsdelivr.net/npm/github-markdown-css@4.0.0/github-markdown.min.css" />
+  <link  rel="stylesheet" href="/lib/hint/hint.min.css" />
+
+  
+    
+    
+      
+      <link  rel="stylesheet" href="https://cdn.jsdelivr.net/npm/highlight.js@10.7.2/styles/github-gist.min.css" />
+    
+  
+
+  
+    <link  rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fancyapps/fancybox@3.5.7/dist/jquery.fancybox.min.css" />
+  
+
+
+
+<!-- 主题依赖的图标库，不要自行修改 -->
+
+<link rel="stylesheet" href="//at.alicdn.com/t/font_1749284_ba1fz6golrf.css">
+
+
+
+<link rel="stylesheet" href="//at.alicdn.com/t/font_1736178_kmeydafke9r.css">
+
+
+<link  rel="stylesheet" href="/css/main.css" />
+
+<!-- 自定义样式保持在最底部 -->
+
+
+  <script id="fluid-configs">
+    var Fluid = window.Fluid || {};
+    var CONFIG = {"hostname":"www.zywvvd.com","root":"/","version":"1.8.11","typing":{"enable":true,"typeSpeed":70,"cursorChar":"_","loop":false},"anchorjs":{"enable":true,"element":"h1,h2,h3,h4,h5,h6","placement":"right","visible":"hover","icon":""},"progressbar":{"enable":true,"height_px":3,"color":"#29d","options":{"showSpinner":false,"trickleSpeed":100}},"copy_btn":true,"image_zoom":{"enable":true,"img_url_replace":["",""]},"toc":{"enable":true,"headingSelector":"h1,h2,h3,h4,h5,h6","collapseDepth":0},"lazyload":{"enable":true,"loading_img":"/img/loading.gif","onlypost":false,"offset_factor":2},"web_analytics":{"enable":false,"baidu":null,"google":null,"gtag":null,"tencent":{"sid":null,"cid":null},"woyaola":null,"cnzz":null,"leancloud":{"app_id":null,"app_key":null,"server_url":null}},"search_path":"/local-search.xml"};
+  </script>
+  <script  src="/js/utils.js" ></script>
+  <script  src="/js/color-schema.js" ></script>
+<meta name="generator" content="Hexo 5.4.0"><link rel="alternate" href="/atom.xml" title="又见苍岚" type="application/atom+xml">
+</head>
+
+
+<body>
+
+  <header style="height: 70vh;">
+    <nav id="navbar" class="navbar fixed-top  navbar-expand-lg navbar-dark scrolling-navbar">
+  <div class="container">
+    <a class="navbar-brand"
+       href="/">&nbsp;<strong>CangLan</strong>&nbsp;</a>
+
+    <button id="navbar-toggler-btn" class="navbar-toggler" type="button" data-toggle="collapse"
+            data-target="#navbarSupportedContent"
+            aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
+      <div class="animated-icon"><span></span><span></span><span></span></div>
+    </button>
+
+    <!-- Collapsible content -->
+    <div class="collapse navbar-collapse" id="navbarSupportedContent">
+      <ul class="navbar-nav ml-auto text-center">
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/">
+                <i class="iconfont icon-home-fill"></i>
+                首页
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/archives/">
+                <i class="iconfont icon-archive-fill"></i>
+                归档
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/categories/">
+                <i class="iconfont icon-category-fill"></i>
+                分类
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/tags/">
+                <i class="iconfont icon-tags-fill"></i>
+                标签
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/about/">
+                <i class="iconfont icon-user-fill"></i>
+                关于
+              </a>
+            </li>
+          
+        
+        
+          <li class="nav-item" id="search-btn">
+            <a class="nav-link" target="_self" data-toggle="modal" data-target="#modalSearch">&nbsp;<i
+                class="iconfont icon-search"></i>&nbsp;</a>
+          </li>
+        
+        
+          <li class="nav-item" id="color-toggle-btn">
+            <a class="nav-link" target="_self">&nbsp;<i
+                class="iconfont icon-dark" id="color-toggle-icon"></i>&nbsp;</a>
+          </li>
+        
+      </ul>
+    </div>
+  </div>
+</nav>
+
+		<div class="banner" id="banner" parallax=true
+			 style="background: url('https://photos.zywvvd.com/vvd-dell-2021-win-10/20210812235004.jpg') no-repeat center center;
+			   background-size: cover;">
+
+      <div class="full-bg-img" >
+
+		
+		<div id="banner_video_insert">
+		</div>
+		<script>
+						
+			var ua = navigator.userAgent;
+			var ipad = ua.match(/(iPad).*OS\s([\d_]+)/),
+				isIphone = !ipad && ua.match(/(iPhone\sOS)\s([\d_]+)/),
+				isAndroid = ua.match(/(Android)\s+([\d.]+)/),
+				isMobile = isIphone || isAndroid;
+
+			function set_video_attr(id){
+				
+				var height = document.body.children[0].clientHeight
+
+				var width = document.body.children[0].clientWidth
+
+				var video_item = document.getElementById(id);
+
+				if (height / width < 0.56){
+					video_item.setAttribute('width', '100%');
+					video_item.setAttribute('height', 'auto');
+				} else {
+					video_item.setAttribute('height', '100%');
+					video_item.setAttribute('width', 'auto');
+				}
+			}
+
+			$.getJSON('/vvd_js/video_url.json', function(data){
+				if (!isMobile){
+					var video_list_length = data.length
+					var seed = Math.random()
+					index = Math.floor(seed * video_list_length)
+					
+					video_url = data[index]
+					video_html_res = "<video id='video_item' style='position: absolute;' muted='muted' src=" + video_url + " autoplay='autoplay' loop='loop'></video>"
+
+					document.getElementById("banner_video_insert").innerHTML = video_html_res;
+					set_video_attr('video_item')
+				}
+
+			});
+
+			if (!isMobile){
+				window.onresize = function(){
+					set_video_attr('video_item')
+					}
+				}
+			</script>
+
+		
+
+        <div class="mask flex-center" style="background-color: rgba(0, 0, 0, 0.3)">
+          <div class="page-header text-center fade-in-up">
+            <span class="h2" id="subtitle" title="蒙特卡洛（Monte Carlo）方法">
+              
+            </span>
+
+            
+              <div class="mt-3">
+  
+    <span class="post-meta mr-2">
+      <i class="iconfont icon-author" aria-hidden="true"></i>
+      Yiwei Zhang
+    </span>
+  
+  
+    <span class="post-meta">
+      <i class="iconfont icon-date-fill" aria-hidden="true"></i>
+      <time datetime="2021-07-26 22:57" pubdate>
+        2021年7月26日 晚上
+      </time>
+    </span>
+  
+</div>
+
+<div class="mt-1">
+  
+    
+    <span class="post-meta mr-2">
+      <i class="iconfont icon-chart"></i>
+      442 字
+    </span>
+  
+
+  
+    
+    <span class="post-meta mr-2">
+      <i class="iconfont icon-clock-fill"></i>
+      
+      
+      5
+       分钟
+    </span>
+  
+
+  
+  
+    
+      <!-- 不蒜子统计文章PV -->
+      <span id="busuanzi_container_page_pv" style="display: none">
+        <i class="iconfont icon-eye" aria-hidden="true"></i>
+        <span id="busuanzi_value_page_pv"></span> 次
+      </span>
+    
+  
+</div>
+
+            
+          </div>
+
+          
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <main>
+    
+      
+
+<div class="container-fluid nopadding-x">
+  <div class="row nomargin-x">
+    <div class="d-none d-lg-block col-lg-2"></div>
+    <div class="col-lg-8 nopadding-x-md">
+      <div class="container nopadding-x-md" id="board-ctn">
+        <div class="py-5" id="board">
+          <article class="post-content mx-auto">
+            <!-- SEO header -->
+            <h1 style="display: none">蒙特卡洛（Monte Carlo）方法</h1>
+            
+              <p class="note note-info">
+                
+                  本文最后更新于：2021年8月31日 晚上
+                
+              </p>
+            
+            <div class="markdown-body">
+              <blockquote>
+<p>蒙特卡洛方法可以近似计算某个概率值，计算结果随着实验次数增加而愈加精确，本文记录相关内容。</p>
+</blockquote>
+<span id="more"></span>
+<h3 id="简介">简介</h3>
+<ol>
+<li>
+<p>蒙特卡洛方法<code>Monte Carlo</code> 可以通过采用随机投点法来求解不规则图形的面积。</p>
+<p>求解结果并不是一个精确值，而是一个近似值。当投点的数量越来越大时，该近似值也越接近真实值。</p>
+</li>
+<li>
+<p>蒙特卡洛方法也可以用于根据概率分布来随机采样的任务。</p>
+</li>
+</ol>
+<h3 id="布丰投针">布丰投针</h3>
+<p>布丰投针问题是1777年法国科学家布丰提出的一种计算圆周率的方法：随机投针法。</p>
+<h4 id="执行步骤">执行步骤</h4>
+<ul>
+<li>首先取一张白纸，在上面绘制许多条间距为$d$ 的平行线。</li>
+<li>取一根长度为$l , l \lt d$的针，随机地向纸上投掷$n$次，观测针与直线相交的次数，记做 $m$。</li>
+<li>计算针与直线相交的概率 $p=\frac{m}{n}$。因此有：</li>
+</ul>
+<p>$$<br>
+\pi = 2 \frac { n \times l } { m \times d }<br>
+$$</p>
+<h4 id="相交概率证明">相交概率证明</h4>
+<p>由于向纸上投针是完全随机的, 因此用二维随机变量 $ (X, Y) $​ 来确定针在纸上的具体位置。其中:</p>
+<ul>
+<li>
+<p>$ X $​ 表示针的中点到平行线的距离，它是 $ [0, d / 2] $​ 之间的均匀分布。</p>
+</li>
+<li>
+<p>$ Y $​ 表示针与平行线的夹角， 它是 $ \left[0, \frac{\pi}{2}\right] $​ 之间的均匀分布。</p>
+</li>
+</ul>
+<p><img src="https://photos.zywvvd.com/vvd-dell-2021-win-10/20210726231250.png" srcset="/img/loading.gif" lazyload alt=""></p>
+<ul>
+<li>当 $ X&lt;\frac{l}{2} \sin Y $ 时，针与直线相交。</li>
+<li>由于 $ X, Y $​ 相互独立， 因此有概率密度函数：</li>
+</ul>
+
+$$
+p(X=x, Y=y)=\left\{\begin{array}{ll}
+  \frac{4}{\pi d}, & 0 \leq x \leq d / 2,0 \leq y \leq \pi / 2 \\
+  0, & \text { else }
+  \end{array}\right.
+$$
+
+<ul>
+<li>因此，针与直线相交的概率为：</li>
+</ul>
+
+$$
+P\left\{X<\frac{l}{2} \sin Y\right\}=\iint_{x<\frac{l}{2} \sin y} p(x, y) d x d y=\int_{x=0}^{x=\frac{1}{2} \sin y} \int_{y=0}^{y=\pi / 2} \frac{4}{\pi d} d x d y=\frac{2 l}{\pi d}
+$$
+
+<ul>
+<li>根据 $ \frac{2 l}{\pi d}=\frac{m}{n} $​ 即可得证。</li>
+</ul>
+<h3 id="蒙特卡洛积分">蒙特卡洛积分</h3>
+<blockquote>
+<p>对于函数 $ f(x) $, 其在区间 $ [a, b] $ 上的积分 $ \int_{a}^{b} f(x) d x $ 可以采用两种方法来求解: <code>投点法</code>、<code>期望法</code>。</p>
+</blockquote>
+<h4 id="投点法">投点法</h4>
+<ul>
+<li>
+<p>对函数 $ f(x) $​, 对其求积分等价于求它的曲线下方的面积。</p>
+</li>
+<li>
+<p>定义一个常数 $M$，使得 $ M&gt;\max _{a \leq x \leq b} f(x) $，该常数在区间 $ [a, b] $上的面积就是矩形面积 $ M(b-a) $​​​.</p>
+</li>
+<li>
+<p>随机向矩形框中随机的、均匀的投点，设落在函数$ f(x) $下方的点为绿色，落在$ f(x) $和$M$之间的点为红色。</p>
+</li>
+<li>
+<p>则有：<strong>落在$ f(x) $下方的点的概率等于$ f(x) $的面积比上矩形框的面积</strong> 。</p>
+</li>
+<li>
+<p>从 $ [a, b] $​ 之间的均匀分布中采样 $ x_{0} $​, 从 $ [0, M] $​ 之见的均匀分布中采样 $ y_{0}, \quad\left(x_{0}, y_{0}\right) $​ 构成一个 随机点。</p>
+</li>
+<li>
+<p>若 $ y_{0} \leq f\left(x_{0}\right) $, 则说明该随机点在函数 $ f(x) $ 下方，染成绿色。</p>
+</li>
+<li>
+<p>若 $ f\left(x_{0}\right)&lt;y_{0} \leq M $, 则说明该随机点在函数 $ f(x) $​​ 上方，染成红色。</p>
+</li>
+<li>
+<p>假设绿色点有$n_1$个，红色点有$n_2$个，总的点数为$n_1 + n_2$​ ，因此有：</p>
+</li>
+</ul>
+<p>$$<br>
+\int_{a}^{b} f(x) d x=\frac{n_{1}}{n_{1}+n_{2}} \times M(b-a)<br>
+$$</p>
+<p><img src="https://photos.zywvvd.com/vvd-dell-2021-win-10/%E6%9C%AA%E6%A0%87%E9%A2%98-1.jpg" srcset="/img/loading.gif" lazyload alt=""></p>
+<h4 id="期望法">期望法</h4>
+<ul>
+<li>假设需要求解积分$ I=\int_{a}^{b} f(x) d x $，则任意选择一个概率密度函数 $ p(x) $，其中$ p(x) $​满足条件:</li>
+</ul>
+
+$$
+\begin{array}{c}
+\int_{a}^{b} p(x) d x=1 \\
+\text { if } f(x) \neq 0 \text { then } p(x) \neq 0, \quad a \leq x \leq b
+\end{array}
+$$
+
+<ul>
+<li>令:</li>
+</ul>
+
+$$
+f^{*}(x)=\left\{\begin{array}{ll}
+\frac{f(x)}{p(x)}, & p(x) \neq 0 \\
+0, & p(x)=0
+\end{array}\right.
+$$
+
+<ul>
+<li>则有:</li>
+</ul>
+<p>$$<br>
+I=\int_{a}^{b} f(x) d x=\int_{a}^{b} f^{*}(x) p(x) d x<br>
+$$</p>
+<ul>
+<li>$I$刚好是一个期望：设随机变量 $ X $ 服从分布 $ X \sim p(x) $, 则 $ I=\mathbb{E}_{X \sim p}\left[f^{*}(X)\right] $</li>
+<li>则期望法求积分的步骤是：
+<ul>
+<li>任选一个满足条件的概率分布 $ p(x) $ 。</li>
+<li>根据 $ p(x) $, 生成一组服从分布 $ p(x) $ 的随机数 $ x_{1}, x_{2}, \cdots, x_{N} $ 。</li>
+<li>计算均值 $ \bar{I}=\frac{1}{N} \sum_{i=1}^{N} f^{*}\left(x_{i}\right) $, 并将 $ \bar{I} $ 作为 $ I $​ 的近似。</li>
+</ul>
+</li>
+<li>在期望法求积分中, 如果 $ a, b $ 均为有限值, 则 $ p(x) $ 可以取均匀分布的概率密度函数：</li>
+</ul>
+
+$$
+p(x)=\left\{\begin{array}{ll}\frac{1}{b-a}, & a \leq x \leq b \\ 0, & \text { else }\end{array}\right. 
+$$
+
+
+<p>​		此时 $ f^{*}(x)=(b-a) f(x), \quad \bar{I}=\frac{b-a}{N} \sum_{i=1}^{N} f\left(x_{i}\right) $​ 。</p>
+<ul>
+<li>其物理意义为: $ \frac{\sum_{i}^{N} f\left(x_{i}\right)}{N} $ 为在区间 $ [a, b] $ 上函数的平均高度, 乘以区间宽度 $ b-a $ 就是平均面积。</li>
+</ul>
+<p><img src="https://photos.zywvvd.com/vvd-dell-2021-win-10/%E6%9C%AA%E6%A0%87%E9%A2%98-2.jpg" srcset="/img/loading.gif" lazyload alt=""></p>
+<h3 id="蒙特卡洛采样">蒙特卡洛采样</h3>
+<p>采样问题的主要任务是：根据概率分布 $ p(x) $, 生成一组服从分布 $ p(x) $ 的随机数 $ x_{1}, x_{2}, \cdots . $​</p>
+<h4 id="均匀分布模拟-p-x-采样">均匀分布模拟$p(x)$采样</h4>
+<ul>
+<li>
+<p>如果 $ p(x) $ 就是均匀分布，则均匀分布的采样非常简单。</p>
+</li>
+<li>
+<p>如果 $ p(x) $ 是非均匀分布，则可以通过均匀分布的采样来实现。</p>
+</li>
+</ul>
+<ol>
+<li>
+<p>首先根据均匀分布 $ U(0,1) $ 随机生成一个样本 $ z_{i} $ 。</p>
+</li>
+<li>
+<p>设 $ \tilde{P}(x) $ 为概率分布 $ p(x) $ 的累计分布函数:</p>
+</li>
+</ol>
+<p>$$<br>
+\tilde{P}(x)=\int_{-\infty}^{x} p(z) d z<br>
+$$</p>
+<ol start="3">
+<li>令 $ z_{i}=\tilde{P}\left(x_{i}\right) $, 计算得到 $ x_{i}=\tilde{P}^{-1}\left(z_{i}\right) $, 其中 $ \tilde{P}^{-1} $ 为反函数, 则 $ x_{i} $ 为对 $ p(x) $ 的采样。</li>
+</ol>
+<p><img src="https://photos.zywvvd.com/vvd-dell-2021-win-10/20210731000211.png" srcset="/img/loading.gif" lazyload alt=""></p>
+<ol start="4">
+<li>通过均匀分布的采样的原理：假设随机变量$ Z, X $ 满足 $ Z=\tilde{P}(X) $, 则 $ X $ 的概率分布为:</li>
+</ol>
+<p>$$<br>
+p_{Z}(z) \frac{d}{d x} \tilde{P}(x)<br>
+$$</p>
+<ul>
+<li>因为 $ Z $ 是 $ [0,1] $ 上面的均匀分布，因此 $ p_{Z}(z)=1 ; \tilde{P}(x) $ 为概率分布 $ p(x) $ 的累计分布函数, 因此 $ \frac{d}{d x} \tilde{P}(x)=p_{X}(x) $ 。因此上式刚好等于 $ p(x) $, 即： $ x_{i} $ 服从概率分布 $ p(x) $​ 。</li>
+</ul>
+<ol start="5">
+<li>这其中有两个关键计算：</li>
+</ol>
+<ul>
+<li>根据 $ p(x) $, 计算累计分布函数 $ \tilde{P}(x)=\int_{-\infty}^{\pi} p(z) d z $ 。</li>
+<li>根据 $ z=\tilde{P}(x) $ 计算反函数 $ x=\tilde{P}^{-1}(z) $ 。</li>
+</ul>
+<blockquote>
+<p>如果累计分布函数无法计算，或者反函数难以求解，则该方法无法进行。</p>
+</blockquote>
+<h4 id="接受-拒绝采样">接受-拒绝采样</h4>
+<p>对于复杂的概率分布$p(x)$ ，难以通过均匀分布来实现采样。此时可以使用<code>接受-拒绝采样</code> 策略。</p>
+<ul>
+<li>首先选定一个容易采样的概率分布 $ q(x) $​ ，选择一个常数 $ k $​, 使得在定义域的所有位置都满足 $ p(x) \leq k \times q(x) $​ 。</li>
+<li>然后根据概率分布 $ q(x) $ 随机生成一个样本 $ x_{i} $ 。</li>
+<li>计算 $ \alpha_{i}=\frac{p\left(x_{i}\right)}{k q\left(x_{i}\right)} $, 以概率 $ \alpha_{i} $​​ 接受该样本。</li>
+</ul>
+<p><img src="https://photos.zywvvd.com/vvd-dell-2021-win-10/20210801210156.png" srcset="/img/loading.gif" lazyload alt=""></p>
+<h5 id="方法一">方法一</h5>
+<p>根据均匀分布$ U(0,1) $​随机生成一个点 $ u_{i} $​， 如果 $ u_{i} \leq \alpha_{i} $​​，则接受该样本；否则拒绝该样本。</p>
+<h5 id="方法二">方法二</h5>
+<p>根据均匀分布 $ U\left(0, k q\left(x_{i}\right)\right) $​ 生成一个随机点, 如果该点落在灰色区间$((p(x_{i}), k q(x_{i})]) $​则拒绝该样本；如果该点落在白色区间$ \left(\left[0, p\left(x_{i}\right)\right]\right) $​​则接受该样本。</p>
+<h5 id="不足">不足</h5>
+<p><code>接受-拒绝采样</code> 在高维的情况下会出现两个问题：</p>
+<ul>
+<li>合适的$q$ 分布比较难以找到。</li>
+<li>难以确定一个合理的$k$值。</li>
+</ul>
+<p>这两个问题会导致拒绝率很高，无效计算太多。</p>
+<h3 id="参考资料">参考资料</h3>
+<ul>
+<li><a target="_blank" rel="noopener" href="http://www.huaxiaozhuan.com/%E6%95%B0%E5%AD%A6%E5%9F%BA%E7%A1%80/chapters/4_monte_carlo.html">http://www.huaxiaozhuan.com/数学基础/chapters/4_monte_carlo.html</a></li>
+</ul>
+<link rel="stylesheet" href="/css/spoiler.css" type="text/css"><script src="/js/spoiler.js" type="text/javascript" async></script>
+            </div>
+            <hr>
+            <div>
+              <div class="post-metas mb-3">
+                
+                  <div class="post-meta mr-3">
+                    <i class="iconfont icon-category"></i>
+                    
+                      <a class="hover-with-bg" href="/categories/math/">math</a>
+                    
+                  </div>
+                
+                
+                  <div class="post-meta">
+                    <i class="iconfont icon-tags"></i>
+                    
+                      <a class="hover-with-bg" href="/tags/math/">math</a>
+                    
+                  </div>
+                
+              </div>
+              
+                <p class="note note-warning">
+                  
+                    本博客所有文章除特别声明外，均采用 <a target="_blank" href="https://creativecommons.org/licenses/by-sa/4.0/deed.zh" rel="nofollow noopener noopener">CC BY-SA 4.0 协议</a> ，转载请注明出处！
+                  
+                </p>
+              
+              
+                <div class="post-prevnext">
+                  <article class="post-prev col-6">
+                    
+                    
+                      <a href="/notes/tools/internet/network-cannot-connect/network-cannot-connect/">
+                        <i class="iconfont icon-arrowleft"></i>
+                        <span class="hidden-mobile">远程计算机或设备将不接受连接问题解决方案</span>
+                        <span class="visible-mobile">上一篇</span>
+                      </a>
+                    
+                  </article>
+                  <article class="post-next col-6">
+                    
+                    
+                      <a href="/notes/coding/language/halcon/halcon-20-11-install/halcon-20-11-install/">
+                        <span class="hidden-mobile">Halcon 20.11 安装使用记录</span>
+                        <span class="visible-mobile">下一篇</span>
+                        <i class="iconfont icon-arrowright"></i>
+                      </a>
+                    
+                  </article>
+                </div>
+              
+            </div>
+
+            
+              <!-- Comments -->
+              <article class="comments" id="comments" lazyload>
+                
+                  
+                
+                
+  <div id="waline"></div>
+  <script type="text/javascript">
+    Fluid.utils.loadComments('#waline', function() {
+      Fluid.utils.createScript('https://cdn.jsdelivr.net/npm/@waline/client@0.16.2/dist/Waline.min.js', function() {
+        var options = Object.assign(
+          {"serverURL":"https://waline-omejylskm-zywvvd.vercel.app","placeholder":"遗憾莫过于难忘你的背影，却找不到你来过的痕迹 ...","path":"window.location.pathname","avatar":"retro","meta":["nick","mail","link"],"pageSize":10,"lang":"zh-CN","highlight":true,"avatarCDN":"","avatarForce":false,"requiredFields":[],"emojiCDN":null,"emojiMaps":null,"anonymous":null},
+          {
+            el: '#waline',
+            path: window.location.pathname
+          }
+        )
+        new Waline(options);
+      });
+    });
+  </script>
+  <noscript>Please enable JavaScript to view the comments</noscript>
+
+
+              </article>
+            
+          </article>
+        </div>
+      </div>
+    </div>
+    
+      <div class="d-none d-lg-block col-lg-2 toc-container" id="toc-ctn">
+        <div id="toc">
+  <p class="toc-header"><i class="iconfont icon-list"></i>&nbsp;目录</p>
+  <div class="toc-body" id="toc-body"></div>
+</div>
+
+      </div>
+    
+  </div>
+</div>
+
+<!-- Custom -->
+
+  <div class="col-lg-7 mx-auto nopadding-x-md">
+    <div class="container custom post-custom mx-auto">
+      <img src="https://octodex.github.com/images/jetpacktocat.png" srcset="/img/loading.gif" lazyload class="rounded mx-auto d-block mt-5" style="width:150px; height:150px;">
+    </div>
+  </div>
+
+
+    
+
+    
+      <a id="scroll-top-button" href="#" role="button">
+        <i class="iconfont icon-arrowup" aria-hidden="true"></i>
+      </a>
+    
+
+    
+      <div class="modal fade" id="modalSearch" tabindex="-1" role="dialog" aria-labelledby="ModalLabel"
+     aria-hidden="true">
+  <div class="modal-dialog modal-dialog-scrollable modal-lg" role="document">
+    <div class="modal-content">
+      <div class="modal-header text-center">
+        <h4 class="modal-title w-100 font-weight-bold">搜索</h4>
+        <button type="button" id="local-search-close" class="close" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body mx-3">
+        <div class="md-form mb-5">
+          <input type="text" id="local-search-input" class="form-control validate">
+          <label data-error="x" data-success="v"
+                 for="local-search-input">关键词</label>
+        </div>
+        <div class="list-group" id="local-search-result"></div>
+      </div>
+    </div>
+  </div>
+</div>
+    
+
+    
+  </main>
+
+  <footer class="text-center mt-5 py-3">
+  <div class="footer-content">
+     <a href="https://hexo.io" target="_blank" rel="nofollow noopener"><span>Hexo</span></a> <i class="iconfont icon-love"></i> <a href="https://github.com/fluid-dev/hexo-theme-fluid" target="_blank" rel="nofollow noopener"><span>Fluid</span></a> <div style="font-size: 0.85rem"> <span id="timeDate">载入天数...</span> <span id="times">载入时分秒...</span> <script src="/vvd_js/duration.js"></script>
+<script async src="//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script> <span><br></span>	
+<span>总访客&nbsp<span id="busuanzi_value_site_uv"></span>&nbsp人 &nbsp</span>
+<span>访问总量&nbsp<span id="busuanzi_value_site_pv"></span>&nbsp次</span> <span id="busuanzi_value_page_pv"></span> </div> 
+  </div>
+  
+
+  
+  <!-- 备案信息 -->
+  <div class="beian">
+    <span>
+      <a href="http://beian.miit.gov.cn/" target="_blank" rel="nofollow noopener">
+        吉ICP备19007275号-1
+      </a>
+    </span>
+    
+      
+        <span>
+          <a
+            href="http://www.beian.gov.cn/portal/registerSystemInfo?recordcode=22020202000251"
+            rel="nofollow noopener"
+            class="beian-police"
+            target="_blank"
+          >
+            
+              <span style="visibility: hidden; width: 0">|</span>
+              <img src="/img/police_beian.png" srcset="/img/loading.gif" lazyload alt="police-icon"/>
+            
+            <span>22020202000251</span>
+          </a>
+        </span>
+      
+    
+  </div>
+
+
+  
+</footer>
+
+
+  <!-- SCRIPTS -->
+  
+  <script  src="https://cdn.jsdelivr.net/npm/nprogress@0.2.0/nprogress.min.js" ></script>
+  <link  rel="stylesheet" href="https://cdn.jsdelivr.net/npm/nprogress@0.2.0/nprogress.min.css" />
+
+  <script>
+    NProgress.configure({"showSpinner":false,"trickleSpeed":100})
+    NProgress.start()
+    window.addEventListener('load', function() {
+      NProgress.done();
+    })
+  </script>
+
+
+<script  src="https://cdn.jsdelivr.net/npm/jquery@3.6.0/dist/jquery.min.js" ></script>
+<script  src="https://cdn.jsdelivr.net/npm/bootstrap@4.6.0/dist/js/bootstrap.min.js" ></script>
+<script  src="/js/events.js" ></script>
+<script  src="/js/plugins.js" ></script>
+
+<!-- Plugins -->
+
+
+  
+    <script  src="/js/img-lazyload.js" ></script>
+  
+
+
+
+  
+
+
+
+  <script  src="https://cdn.jsdelivr.net/npm/tocbot@4.12.3/dist/tocbot.min.js" ></script>
+
+
+
+  <script  src="https://cdn.jsdelivr.net/npm/@fancyapps/fancybox@3.5.7/dist/jquery.fancybox.min.js" ></script>
+
+
+
+  <script  src="https://cdn.jsdelivr.net/npm/anchor-js@4.3.1/anchor.min.js" ></script>
+
+
+
+  <script defer src="https://cdn.jsdelivr.net/npm/clipboard@2.0.8/dist/clipboard.min.js" ></script>
+
+
+
+  <script  src="/js/local-search.js" ></script>
+
+
+
+  <script defer src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js" ></script>
+
+
+
+
+  <script  src="https://cdn.jsdelivr.net/npm/typed.js@2.0.12/lib/typed.min.js" ></script>
+  <script>
+    (function (window, document) {
+      var typing = Fluid.plugins.typing;
+      var title = document.getElementById('subtitle').title;
+      
+      typing(title)
+      
+    })(window, document);
+  </script>
+
+
+
+
+
+  
+
+  
+    <!-- MathJax -->
+    <script>
+      MathJax = {
+        tex: {
+          inlineMath: [['$', '$'], ['\\(', '\\)']]
+        },
+        options: {
+          renderActions: {
+            findScript: [10, doc => {
+              document.querySelectorAll('script[type^="math/tex"]').forEach(node => {
+                const display = !!node.type.match(/; *mode=display/);
+                const math = new doc.options.MathItem(node.textContent, doc.inputJax[0], display);
+                const text = document.createTextNode('');
+                node.parentNode.replaceChild(text, node);
+                math.start = { node: text, delim: '', n: 0 };
+                math.end = { node: text, delim: '', n: 0 };
+                doc.math.push(math);
+              });
+            }, '', false],
+            insertedScript: [200, () => {
+              document.querySelectorAll('mjx-container').forEach(node => {
+                let target = node.parentNode;
+                if (target.nodeName.toLowerCase() === 'li') {
+                  target.parentNode.classList.add('has-jax');
+                }
+              });
+            }, '', false]
+          }
+        }
+      };
+    </script>
+
+    <script async src="https://cdn.jsdelivr.net/npm/mathjax@3.1.4/es5/tex-svg.js" ></script>
+
+  
+
+
+
+
+
+
+
+
+
+
+
+<!-- 主题的启动项 保持在最底部 -->
+<script  src="/js/boot.js" ></script>
+
+
+<script src="/live2dw/lib/L2Dwidget.min.js?094cbace49a39548bed64abff5988b05"></script><script>L2Dwidget.init({"pluginRootPath":"live2dw/","pluginJsPath":"lib/","pluginModelPath":"assets/","tagMode":false,"log":false,"model":{"jsonPath":"/live2dw/assets/z16.model.json"},"display":{"position":"left","width":235,"height":440},"mobile":{"show":false},"react":{"opacity":0.7}});</script></body>
+</html>

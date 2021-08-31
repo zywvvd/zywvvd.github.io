@@ -1,0 +1,778 @@
+
+
+<!DOCTYPE html>
+<html lang="zh-CN" data-default-color-scheme=&#34;auto&#34;>
+<script type="text/javascript" src="/vvd_js/jquery.js"></script>
+
+
+
+<head>
+  <meta charset="UTF-8">
+  <link rel="apple-touch-icon" sizes="76x76" href="/img/favicon.png">
+  <link rel="icon" href="/img/favicon.png">
+  <meta name="viewport"
+        content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, shrink-to-fit=no">
+  <meta http-equiv="x-ua-compatible" content="ie=edge">
+  
+  <meta name="theme-color" content="#2f4154">
+  <meta name="description" content="
+numpy 和 pytorch tensor 存在内存是否连续的情况，对运行速度甚至网络运行结果都存在影响。
+">
+  <meta name="author" content="Yiwei Zhang">
+  <meta name="keywords" content="人工智能, 深度学习, 个人博客, 机器学习">
+  
+  <title>numpy 和 pytorch tensor 的内存连续性 contiguous - 又见苍岚</title>
+
+  <link  rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@4.6.0/dist/css/bootstrap.min.css" />
+
+
+  <link  rel="stylesheet" href="https://cdn.jsdelivr.net/npm/github-markdown-css@4.0.0/github-markdown.min.css" />
+  <link  rel="stylesheet" href="/lib/hint/hint.min.css" />
+
+  
+    
+    
+      
+      <link  rel="stylesheet" href="https://cdn.jsdelivr.net/npm/highlight.js@10.7.2/styles/github-gist.min.css" />
+    
+  
+
+  
+    <link  rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fancyapps/fancybox@3.5.7/dist/jquery.fancybox.min.css" />
+  
+
+
+
+<!-- 主题依赖的图标库，不要自行修改 -->
+
+<link rel="stylesheet" href="//at.alicdn.com/t/font_1749284_ba1fz6golrf.css">
+
+
+
+<link rel="stylesheet" href="//at.alicdn.com/t/font_1736178_kmeydafke9r.css">
+
+
+<link  rel="stylesheet" href="/css/main.css" />
+
+<!-- 自定义样式保持在最底部 -->
+
+
+  <script id="fluid-configs">
+    var Fluid = window.Fluid || {};
+    var CONFIG = {"hostname":"www.zywvvd.com","root":"/","version":"1.8.11","typing":{"enable":true,"typeSpeed":70,"cursorChar":"_","loop":false},"anchorjs":{"enable":true,"element":"h1,h2,h3,h4,h5,h6","placement":"right","visible":"hover","icon":""},"progressbar":{"enable":true,"height_px":3,"color":"#29d","options":{"showSpinner":false,"trickleSpeed":100}},"copy_btn":true,"image_zoom":{"enable":true,"img_url_replace":["",""]},"toc":{"enable":true,"headingSelector":"h1,h2,h3,h4,h5,h6","collapseDepth":0},"lazyload":{"enable":true,"loading_img":"/img/loading.gif","onlypost":false,"offset_factor":2},"web_analytics":{"enable":false,"baidu":null,"google":null,"gtag":null,"tencent":{"sid":null,"cid":null},"woyaola":null,"cnzz":null,"leancloud":{"app_id":null,"app_key":null,"server_url":null}},"search_path":"/local-search.xml"};
+  </script>
+  <script  src="/js/utils.js" ></script>
+  <script  src="/js/color-schema.js" ></script>
+<meta name="generator" content="Hexo 5.4.0"><link rel="alternate" href="/atom.xml" title="又见苍岚" type="application/atom+xml">
+</head>
+
+
+<body>
+
+  <header style="height: 70vh;">
+    <nav id="navbar" class="navbar fixed-top  navbar-expand-lg navbar-dark scrolling-navbar">
+  <div class="container">
+    <a class="navbar-brand"
+       href="/">&nbsp;<strong>CangLan</strong>&nbsp;</a>
+
+    <button id="navbar-toggler-btn" class="navbar-toggler" type="button" data-toggle="collapse"
+            data-target="#navbarSupportedContent"
+            aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
+      <div class="animated-icon"><span></span><span></span><span></span></div>
+    </button>
+
+    <!-- Collapsible content -->
+    <div class="collapse navbar-collapse" id="navbarSupportedContent">
+      <ul class="navbar-nav ml-auto text-center">
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/">
+                <i class="iconfont icon-home-fill"></i>
+                首页
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/archives/">
+                <i class="iconfont icon-archive-fill"></i>
+                归档
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/categories/">
+                <i class="iconfont icon-category-fill"></i>
+                分类
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/tags/">
+                <i class="iconfont icon-tags-fill"></i>
+                标签
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/about/">
+                <i class="iconfont icon-user-fill"></i>
+                关于
+              </a>
+            </li>
+          
+        
+        
+          <li class="nav-item" id="search-btn">
+            <a class="nav-link" target="_self" data-toggle="modal" data-target="#modalSearch">&nbsp;<i
+                class="iconfont icon-search"></i>&nbsp;</a>
+          </li>
+        
+        
+          <li class="nav-item" id="color-toggle-btn">
+            <a class="nav-link" target="_self">&nbsp;<i
+                class="iconfont icon-dark" id="color-toggle-icon"></i>&nbsp;</a>
+          </li>
+        
+      </ul>
+    </div>
+  </div>
+</nav>
+
+		<div class="banner" id="banner" parallax=true
+			 style="background: url('https://photos.zywvvd.com/vvd-dell-2021-win-10/20210812235004.jpg') no-repeat center center;
+			   background-size: cover;">
+
+      <div class="full-bg-img" >
+
+		
+		<div id="banner_video_insert">
+		</div>
+		<script>
+						
+			var ua = navigator.userAgent;
+			var ipad = ua.match(/(iPad).*OS\s([\d_]+)/),
+				isIphone = !ipad && ua.match(/(iPhone\sOS)\s([\d_]+)/),
+				isAndroid = ua.match(/(Android)\s+([\d.]+)/),
+				isMobile = isIphone || isAndroid;
+
+			function set_video_attr(id){
+				
+				var height = document.body.children[0].clientHeight
+
+				var width = document.body.children[0].clientWidth
+
+				var video_item = document.getElementById(id);
+
+				if (height / width < 0.56){
+					video_item.setAttribute('width', '100%');
+					video_item.setAttribute('height', 'auto');
+				} else {
+					video_item.setAttribute('height', '100%');
+					video_item.setAttribute('width', 'auto');
+				}
+			}
+
+			$.getJSON('/vvd_js/video_url.json', function(data){
+				if (!isMobile){
+					var video_list_length = data.length
+					var seed = Math.random()
+					index = Math.floor(seed * video_list_length)
+					
+					video_url = data[index]
+					video_html_res = "<video id='video_item' style='position: absolute;' muted='muted' src=" + video_url + " autoplay='autoplay' loop='loop'></video>"
+
+					document.getElementById("banner_video_insert").innerHTML = video_html_res;
+					set_video_attr('video_item')
+				}
+
+			});
+
+			if (!isMobile){
+				window.onresize = function(){
+					set_video_attr('video_item')
+					}
+				}
+			</script>
+
+		
+
+        <div class="mask flex-center" style="background-color: rgba(0, 0, 0, 0.3)">
+          <div class="page-header text-center fade-in-up">
+            <span class="h2" id="subtitle" title="numpy 和 pytorch tensor 的内存连续性 contiguous">
+              
+            </span>
+
+            
+              <div class="mt-3">
+  
+    <span class="post-meta mr-2">
+      <i class="iconfont icon-author" aria-hidden="true"></i>
+      Yiwei Zhang
+    </span>
+  
+  
+    <span class="post-meta">
+      <i class="iconfont icon-date-fill" aria-hidden="true"></i>
+      <time datetime="2021-08-02 15:41" pubdate>
+        2021年8月2日 下午
+      </time>
+    </span>
+  
+</div>
+
+<div class="mt-1">
+  
+    
+    <span class="post-meta mr-2">
+      <i class="iconfont icon-chart"></i>
+      1.7k 字
+    </span>
+  
+
+  
+    
+    <span class="post-meta mr-2">
+      <i class="iconfont icon-clock-fill"></i>
+      
+      
+      23
+       分钟
+    </span>
+  
+
+  
+  
+    
+      <!-- 不蒜子统计文章PV -->
+      <span id="busuanzi_container_page_pv" style="display: none">
+        <i class="iconfont icon-eye" aria-hidden="true"></i>
+        <span id="busuanzi_value_page_pv"></span> 次
+      </span>
+    
+  
+</div>
+
+            
+          </div>
+
+          
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <main>
+    
+      
+
+<div class="container-fluid nopadding-x">
+  <div class="row nomargin-x">
+    <div class="d-none d-lg-block col-lg-2"></div>
+    <div class="col-lg-8 nopadding-x-md">
+      <div class="container nopadding-x-md" id="board-ctn">
+        <div class="py-5" id="board">
+          <article class="post-content mx-auto">
+            <!-- SEO header -->
+            <h1 style="display: none">numpy 和 pytorch tensor 的内存连续性 contiguous</h1>
+            
+              <p class="note note-info">
+                
+                  本文最后更新于：2021年8月31日 晚上
+                
+              </p>
+            
+            <div class="markdown-body">
+              <blockquote>
+<p>numpy 和 pytorch tensor 存在内存是否连续的情况，对运行速度甚至网络运行结果都存在影响。</p>
+</blockquote>
+<span id="more"></span>
+<h3 id="含义">含义</h3>
+<ul>
+<li><strong>contiguous</strong> 本身是形容词**，**表示连续的。所谓<code>contiguous array</code>，指的是数组在内存中存放的地址也是连续的（注意内存地址实际是一维的），即访问数组中的下一个元素，直接移动到内存中的下一个地址就可以。</li>
+<li>在numpy和torch的数据结构中，都有表示变量是否在内存中数据连续存储的概念。</li>
+<li>连续存储又分为按照<strong>行优先（<strong>C order</strong>）<strong>和按照</strong>列优先（<strong>Fortran order</strong>）</strong></li>
+</ul>
+<h4 id="行优先-C-order">行优先  <strong>C order</strong></h4>
+<p>行是指多维数组一维展开的方式，对应的是列优先。C/C++中使用的是行优先方式（row major），Matlab、Fortran使用的是列优先方式（column major），PyTorch中Tensor底层实现是C，也是使用行优先顺序，因此也称为 <code>C order</code>。</p>
+<ul>
+<li>Pascal, C，C++，Python都是行优先存储的。</li>
+</ul>
+<h4 id="列优先-Fortran-order">列优先 <strong>Fortran order</strong></h4>
+<p>而<code>Fortran Order</code>则指的是列优先的顺序（Column-major Order)，即内存中同列的元素存在一起。</p>
+<ul>
+<li>Fortran，MatLab是列优先存储的。</li>
+</ul>
+<h3 id="数据举例">数据举例</h3>
+<h4 id="行优先">行优先</h4>
+<p>考虑一个2维数组<code>arr = np.arange(12).reshape(3,4)</code>。这个数组看起来结构是这样的：</p>
+<p><img src="https://photos.zywvvd.com/win11-mt/20210803165543.png" srcset="/img/loading.gif" lazyload alt=""></p>
+<p>在计算机的内存里，数组<code>arr</code>实际存储是像下图所示的：</p>
+<p><img src="https://photos.zywvvd.com/win11-mt/20210803165644.png" srcset="/img/loading.gif" lazyload alt=""></p>
+<p>这意味着<code>arr</code>是<code>C连续的</code>（<code>C contiguous</code>)的，因为在内存是行优先的，即某个元素在内存中的下一个位置存储的是它同行的下一个值。</p>
+<blockquote>
+<p>如果想要向下移动一列，则只需要跳过3个块既可（例如，从0到4只需要跳过1,2和3）。</p>
+</blockquote>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><code class="hljs python"><span class="hljs-keyword">import</span> numpy <span class="hljs-keyword">as</span> np<br><br><span class="hljs-keyword">if</span> __name__ == <span class="hljs-string">&#x27;__main__&#x27;</span>:<br>    arr = np.arange(<span class="hljs-number">12</span>).reshape(<span class="hljs-number">3</span>, <span class="hljs-number">4</span>)<br>    <span class="hljs-built_in">print</span>(arr.flags)<br>    <span class="hljs-built_in">print</span>(arr)<br><br>    <span class="hljs-keyword">pass</span><br></code></pre></td></tr></table></figure>
+<ul>
+<li>输出：</li>
+</ul>
+<figure class="highlight yaml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><code class="hljs yaml">  <span class="hljs-attr">C_CONTIGUOUS :</span> <span class="hljs-literal">True</span><br>  <span class="hljs-attr">F_CONTIGUOUS :</span> <span class="hljs-literal">False</span><br>  <span class="hljs-attr">OWNDATA :</span> <span class="hljs-literal">False</span><br>  <span class="hljs-attr">WRITEABLE :</span> <span class="hljs-literal">True</span><br>  <span class="hljs-attr">ALIGNED :</span> <span class="hljs-literal">True</span><br>  <span class="hljs-attr">WRITEBACKIFCOPY :</span> <span class="hljs-literal">False</span><br>  <span class="hljs-attr">UPDATEIFCOPY :</span> <span class="hljs-literal">False</span><br><br>[[ <span class="hljs-number">0</span>  <span class="hljs-number">1</span>  <span class="hljs-number">2</span>  <span class="hljs-number">3</span>]<br> [ <span class="hljs-number">4</span>  <span class="hljs-number">5</span>  <span class="hljs-number">6</span>  <span class="hljs-number">7</span>]<br> [ <span class="hljs-number">8</span>  <span class="hljs-number">9</span> <span class="hljs-number">10</span> <span class="hljs-number">11</span>]]<br></code></pre></td></tr></table></figure>
+<ul>
+<li>C_CONTIGUOUS 为 True 表示该矩阵行连续</li>
+</ul>
+<blockquote>
+<p>也就是其中的行 [ 0  1  2  3] 在内存中连续，那么 [0 4 8] 就不会连续了，因此 F_CONTIGUOUS 为 False</p>
+</blockquote>
+<h4 id="列优先">列优先</h4>
+<p>上述数组的转置<code>arr.T</code>则没有了C连续特性，因为同一行中的相邻元素现在并不是在内存中相邻存储的了:</p>
+<p><img src="https://photos.zywvvd.com/win11-mt/20210803171239.png" srcset="/img/loading.gif" lazyload alt=""></p>
+<blockquote>
+<p>这里要说明一下，如果直接用这些值创建的numpy变量是连续的，因为Python默认 C order，新创建的numpy都是行优先的</p>
+<p>但是我们创建arr时是以 0 - 11 为顺序创建的，其中[0 1 2 3] [4 5 6 7] [8 9 10 11]连续，矩阵转置后只改变引用，内存数据并不发生变化</p>
+<p>类似的操作如numpy 的 <code>slice</code>、<code>transpose</code>、<code>转置</code> 或 tensor中的 <code>permute</code> 等操作都可能导致改变之前数据与内存的行连续状况</p>
+</blockquote>
+<ul>
+<li>转置后，内存上仍然是 [0 1 2 3] [4 5 6 7] [8 9 10 11]连续，在当前矩阵上就是列连续，因此这是个Fortran order 连续的矩阵</li>
+</ul>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><code class="hljs python"><span class="hljs-keyword">import</span> numpy <span class="hljs-keyword">as</span> np<br><br><span class="hljs-keyword">if</span> __name__ == <span class="hljs-string">&#x27;__main__&#x27;</span>:<br>    arr = np.arange(<span class="hljs-number">12</span>).reshape(<span class="hljs-number">3</span>, <span class="hljs-number">4</span>)<br>    arr = arr.T<br>    <span class="hljs-built_in">print</span>(arr.flags)<br>    <span class="hljs-built_in">print</span>(arr)<br><br>    <span class="hljs-keyword">pass</span><br></code></pre></td></tr></table></figure>
+<ul>
+<li>输出：</li>
+</ul>
+<figure class="highlight yaml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><code class="hljs yaml">  <span class="hljs-attr">C_CONTIGUOUS :</span> <span class="hljs-literal">False</span><br>  <span class="hljs-attr">F_CONTIGUOUS :</span> <span class="hljs-literal">True</span><br>  <span class="hljs-attr">OWNDATA :</span> <span class="hljs-literal">False</span><br>  <span class="hljs-attr">WRITEABLE :</span> <span class="hljs-literal">True</span><br>  <span class="hljs-attr">ALIGNED :</span> <span class="hljs-literal">True</span><br>  <span class="hljs-attr">WRITEBACKIFCOPY :</span> <span class="hljs-literal">False</span><br>  <span class="hljs-attr">UPDATEIFCOPY :</span> <span class="hljs-literal">False</span><br><br>[[ <span class="hljs-number">0</span>  <span class="hljs-number">4</span>  <span class="hljs-number">8</span>]<br> [ <span class="hljs-number">1</span>  <span class="hljs-number">5</span>  <span class="hljs-number">9</span>]<br> [ <span class="hljs-number">2</span>  <span class="hljs-number">6</span> <span class="hljs-number">10</span>]<br> [ <span class="hljs-number">3</span>  <span class="hljs-number">7</span> <span class="hljs-number">11</span>]]<br></code></pre></td></tr></table></figure>
+<h3 id="查看连续性">查看连续性</h3>
+<h4 id="numpy">numpy</h4>
+<ul>
+<li>可以使用 <code>data.contiguous</code> 、<code>data.c_contiguous</code>、 <code>data.f_contiguous</code> 属性</li>
+<li>或者使用 <code>flags</code> 属性</li>
+</ul>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><code class="hljs python"><span class="hljs-keyword">import</span> numpy <span class="hljs-keyword">as</span> np<br><br><br><span class="hljs-keyword">if</span> __name__ == <span class="hljs-string">&#x27;__main__&#x27;</span>:<br>    arr = np.arange(<span class="hljs-number">12</span>).reshape(<span class="hljs-number">3</span>, <span class="hljs-number">4</span>)<br><br>    <span class="hljs-built_in">print</span>(arr.data.contiguous)  <span class="hljs-comment"># True</span><br>    <span class="hljs-built_in">print</span>(arr.data.c_contiguous)  <span class="hljs-comment"># True</span><br>    <span class="hljs-built_in">print</span>(arr.data.f_contiguous)  <span class="hljs-comment"># False</span><br><br>    <span class="hljs-built_in">print</span>(arr.flags)<br>    <span class="hljs-built_in">print</span>(arr)<br><br>    <span class="hljs-keyword">pass</span><br><br></code></pre></td></tr></table></figure>
+<ul>
+<li>输出</li>
+</ul>
+<figure class="highlight yaml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><code class="hljs yaml"><span class="hljs-literal">True</span><br><span class="hljs-literal">True</span><br><span class="hljs-literal">False</span><br>  <span class="hljs-attr">C_CONTIGUOUS :</span> <span class="hljs-literal">True</span><br>  <span class="hljs-attr">F_CONTIGUOUS :</span> <span class="hljs-literal">False</span><br>  <span class="hljs-attr">OWNDATA :</span> <span class="hljs-literal">False</span><br>  <span class="hljs-attr">WRITEABLE :</span> <span class="hljs-literal">True</span><br>  <span class="hljs-attr">ALIGNED :</span> <span class="hljs-literal">True</span><br>  <span class="hljs-attr">WRITEBACKIFCOPY :</span> <span class="hljs-literal">False</span><br>  <span class="hljs-attr">UPDATEIFCOPY :</span> <span class="hljs-literal">False</span><br><br>[[ <span class="hljs-number">0</span>  <span class="hljs-number">1</span>  <span class="hljs-number">2</span>  <span class="hljs-number">3</span>]<br> [ <span class="hljs-number">4</span>  <span class="hljs-number">5</span>  <span class="hljs-number">6</span>  <span class="hljs-number">7</span>]<br> [ <span class="hljs-number">8</span>  <span class="hljs-number">9</span> <span class="hljs-number">10</span> <span class="hljs-number">11</span>]]<br></code></pre></td></tr></table></figure>
+<h4 id="pytorch">pytorch</h4>
+<ul>
+<li>pytorch 的 tensor 有方法 <code>is_contiguous</code> 用来查看是否 C 连续</li>
+</ul>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><code class="hljs python"><span class="hljs-keyword">import</span> torch<br><span class="hljs-keyword">import</span> numpy <span class="hljs-keyword">as</span> np<br><br><br><span class="hljs-keyword">if</span> __name__ == <span class="hljs-string">&#x27;__main__&#x27;</span>:<br>    arr = np.arange(<span class="hljs-number">12</span>).reshape(<span class="hljs-number">3</span>, <span class="hljs-number">4</span>)<br>    ten = torch.from_numpy(arr)<br><br>    <span class="hljs-built_in">print</span>(ten.is_contiguous())  <span class="hljs-comment"># True</span><br><br>    ten_t = torch.from_numpy(arr.T)<br>    <span class="hljs-built_in">print</span>(ten_t.is_contiguous())  <span class="hljs-comment"># False</span><br><br>    <span class="hljs-keyword">pass</span><br><br></code></pre></td></tr></table></figure>
+<ul>
+<li>输出</li>
+</ul>
+<figure class="highlight ada"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><code class="hljs ada"><span class="hljs-literal">True</span><br><span class="hljs-literal">False</span><br></code></pre></td></tr></table></figure>
+<h3 id="产生的影响">产生的影响</h3>
+<h4 id="性能影响">性能影响</h4>
+<p>从性能上来说，获取内存中相邻的地址比不相邻的地址速度要快很多（从RAM读取一个数值的时候可以连着一起读一块地址中的数值，并且可以保存在Cache中），这意味着对连续数组的操作会快很多。</p>
+<blockquote>
+<p>由于<code>arr</code>是C连续的，因此对其进行行操作比进行列操作速度要快</p>
+<p>通常来说</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs python">np.<span class="hljs-built_in">sum</span>(arr, axis=<span class="hljs-number">1</span>) <span class="hljs-comment"># 按行求和</span><br></code></pre></td></tr></table></figure>
+<p>会比</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs python">np.<span class="hljs-built_in">sum</span>(arr, axis=<span class="hljs-number">0</span>) <span class="hljs-comment"># 按列求和</span><br></code></pre></td></tr></table></figure>
+<p>稍微快些。</p>
+<p>同理，在<code>arr.T</code>上，列操作比行操作会快些。</p>
+</blockquote>
+<h4 id="结果影响">结果影响</h4>
+<blockquote>
+<p>其实写这篇博客的原因，就是我的onnx模型对于完全相同数据的tensor产生了完全不同的表现，险些三观俱碎。挣扎了几个小时后发现原来是数据的连续性在作祟。</p>
+</blockquote>
+<ul>
+<li>对 pyhton 中算法平台的影响</li>
+</ul>
+<table>
+<thead>
+<tr>
+<th>平台</th>
+<th>影响</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>numpy</td>
+<td>计算不连续的变量，结果不会受到影响</td>
+</tr>
+<tr>
+<td>pytorch</td>
+<td>输入不连续的tensor，结果不会受到影响</td>
+</tr>
+<tr>
+<td>onnx</td>
+<td>输入不连续的tensor，<strong>结果直接爆炸</strong></td>
+</tr>
+</tbody>
+</table>
+<ul>
+<li>在 python 的 tensor 中，如果不是C连续的tensor，在执行 <code>view</code> 方法时会报错：</li>
+</ul>
+<figure class="highlight maxima"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><code class="hljs maxima">invalid argument <span class="hljs-number">2</span>: <span class="hljs-built_in">view</span> size <span class="hljs-built_in">is</span> <span class="hljs-keyword">not</span> compatible with input tensor&#x27;s size <span class="hljs-keyword">and</span> stride (<span class="hljs-built_in">at</span> least one <span class="hljs-built_in">dimension</span> <br>spans across two contiguous subspaces). Call .contiguous() before .<span class="hljs-built_in">view</span>(). <br></code></pre></td></tr></table></figure>
+<ul>
+<li>在 numpy 中某些需要连续的操作在遇到不连续的变量时也会报错：</li>
+</ul>
+<figure class="highlight smali"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><code class="hljs smali">ValueError: some of the strides of a given numpy<span class="hljs-built_in"> array </span>are negative.<br>This is currently<span class="hljs-built_in"> not </span>supported, but will be added in future releases.<br></code></pre></td></tr></table></figure>
+<h4 id="连带影响">连带影响</h4>
+<ul>
+<li>不连续的numpy转为tensor后也是不连续的</li>
+<li>不连续的tensor转为numpy后也是不连续的</li>
+</ul>
+<h3 id="修正连续性">修正连续性</h3>
+<p>变量可以通过重新开辟空间，将数据连续拷贝进去的方法将不连续的数据变成某种连续方式。</p>
+<h4 id="numpy-2">numpy</h4>
+<ul>
+<li>numpy 变量中连续性可以用自带的函数修正，不连续的变量通过函数 <code>np.ascontiguousarray(arr)</code>变为C连续，<code>np.asfortranarray(arr)</code>变为Fortran连续</li>
+</ul>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br></pre></td><td class="code"><pre><code class="hljs python"><span class="hljs-keyword">import</span> numpy <span class="hljs-keyword">as</span> np<br><br><br><span class="hljs-keyword">if</span> __name__ == <span class="hljs-string">&#x27;__main__&#x27;</span>:<br>    arr = np.arange(<span class="hljs-number">12</span>).reshape(<span class="hljs-number">3</span>, <span class="hljs-number">2</span>, <span class="hljs-number">2</span>)<br>    <span class="hljs-built_in">print</span>(arr.data.c_contiguous)  <span class="hljs-comment"># True arr C连续</span><br><br>    tran_arr = arr.transpose(<span class="hljs-number">2</span>, <span class="hljs-number">0</span>, <span class="hljs-number">1</span>)<br>    <span class="hljs-built_in">print</span>(tran_arr.data.contiguous)  <span class="hljs-comment"># False tran_arr不连续</span><br><br>    c_arr = np.ascontiguousarray(tran_arr)  <span class="hljs-comment"># 变为 C 连续</span><br>    <span class="hljs-built_in">print</span>(c_arr.flags)<br><br>    f_arr = np.asfortranarray(tran_arr)  <span class="hljs-comment"># 变为 Fortran 连续</span><br>    <span class="hljs-built_in">print</span>(f_arr.flags)<br><br>    <span class="hljs-keyword">pass</span><br><br></code></pre></td></tr></table></figure>
+<ul>
+<li>输出：</li>
+</ul>
+<figure class="highlight yaml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br></pre></td><td class="code"><pre><code class="hljs yaml"><span class="hljs-literal">True</span><br><span class="hljs-literal">False</span><br>  <span class="hljs-attr">C_CONTIGUOUS :</span> <span class="hljs-literal">True</span><br>  <span class="hljs-attr">F_CONTIGUOUS :</span> <span class="hljs-literal">False</span><br>  <span class="hljs-attr">OWNDATA :</span> <span class="hljs-literal">True</span><br>  <span class="hljs-attr">WRITEABLE :</span> <span class="hljs-literal">True</span><br>  <span class="hljs-attr">ALIGNED :</span> <span class="hljs-literal">True</span><br>  <span class="hljs-attr">WRITEBACKIFCOPY :</span> <span class="hljs-literal">False</span><br>  <span class="hljs-attr">UPDATEIFCOPY :</span> <span class="hljs-literal">False</span><br><br>  <span class="hljs-attr">C_CONTIGUOUS :</span> <span class="hljs-literal">False</span><br>  <span class="hljs-attr">F_CONTIGUOUS :</span> <span class="hljs-literal">True</span><br>  <span class="hljs-attr">OWNDATA :</span> <span class="hljs-literal">True</span><br>  <span class="hljs-attr">WRITEABLE :</span> <span class="hljs-literal">True</span><br>  <span class="hljs-attr">ALIGNED :</span> <span class="hljs-literal">True</span><br>  <span class="hljs-attr">WRITEBACKIFCOPY :</span> <span class="hljs-literal">False</span><br>  <span class="hljs-attr">UPDATEIFCOPY :</span> <span class="hljs-literal">False</span><br></code></pre></td></tr></table></figure>
+<h4 id="pytorch-2">pytorch</h4>
+<ul>
+<li>pytorch 的 tensor 在python中运行，需要C连续的变量，因此只有C连续的函数 <code>contiguous()</code></li>
+</ul>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br></pre></td><td class="code"><pre><code class="hljs python"><span class="hljs-keyword">import</span> torch<br><span class="hljs-keyword">import</span> numpy <span class="hljs-keyword">as</span> np<br><br><br><span class="hljs-keyword">if</span> __name__ == <span class="hljs-string">&#x27;__main__&#x27;</span>:<br>    arr = np.arange(<span class="hljs-number">12</span>).reshape(<span class="hljs-number">3</span>, <span class="hljs-number">2</span>, <span class="hljs-number">2</span>)<br><br>    tran_arr = arr.transpose(<span class="hljs-number">2</span>, <span class="hljs-number">0</span>, <span class="hljs-number">1</span>)<br>    <span class="hljs-built_in">print</span>(tran_arr.data.contiguous)  <span class="hljs-comment"># False tran_arr不连续</span><br><br>    ten = torch.from_numpy(tran_arr)<br>    <span class="hljs-built_in">print</span>(ten.is_contiguous())  <span class="hljs-comment"># False 不连续的numpy产生不连续的tensor</span><br><br>    c_ten = ten.contiguous()<br>    <span class="hljs-built_in">print</span>(c_ten.is_contiguous())  <span class="hljs-comment"># True Tensor变成连续的</span><br><br>    c_ten_arr = c_ten.numpy()<br>    <span class="hljs-built_in">print</span>(c_ten_arr.flags)  <span class="hljs-comment"># tensor 的连续函数结果是变成C连续的变量</span><br><br>    <span class="hljs-keyword">pass</span><br><br></code></pre></td></tr></table></figure>
+<ul>
+<li>输出</li>
+</ul>
+<figure class="highlight yaml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><code class="hljs yaml"><span class="hljs-literal">False</span><br><span class="hljs-literal">False</span><br><span class="hljs-literal">True</span><br>  <span class="hljs-attr">C_CONTIGUOUS :</span> <span class="hljs-literal">True</span><br>  <span class="hljs-attr">F_CONTIGUOUS :</span> <span class="hljs-literal">False</span><br>  <span class="hljs-attr">OWNDATA :</span> <span class="hljs-literal">False</span><br>  <span class="hljs-attr">WRITEABLE :</span> <span class="hljs-literal">True</span><br>  <span class="hljs-attr">ALIGNED :</span> <span class="hljs-literal">True</span><br>  <span class="hljs-attr">WRITEBACKIFCOPY :</span> <span class="hljs-literal">False</span><br>  <span class="hljs-attr">UPDATEIFCOPY :</span> <span class="hljs-literal">False</span><br></code></pre></td></tr></table></figure>
+<h3 id="参考资料">参考资料</h3>
+<ul>
+<li><a target="_blank" rel="noopener" href="https://zhuanlan.zhihu.com/p/64551412">https://zhuanlan.zhihu.com/p/64551412</a></li>
+<li><a target="_blank" rel="noopener" href="https://www.cnblogs.com/peixu/articles/13455350.html">https://www.cnblogs.com/peixu/articles/13455350.html</a></li>
+<li><a target="_blank" rel="noopener" href="https://www.cnblogs.com/sdu20112013/p/11981793.html">https://www.cnblogs.com/sdu20112013/p/11981793.html</a></li>
+<li><a target="_blank" rel="noopener" href="https://zhuanlan.zhihu.com/p/59767914">https://zhuanlan.zhihu.com/p/59767914</a></li>
+<li><a target="_blank" rel="noopener" href="https://stackoverflow.com/questions/51304154/check-if-numpy-array-is-contiguous">https://stackoverflow.com/questions/51304154/check-if-numpy-array-is-contiguous</a></li>
+</ul>
+<link rel="stylesheet" href="/css/spoiler.css" type="text/css"><script src="/js/spoiler.js" type="text/javascript" async></script>
+            </div>
+            <hr>
+            <div>
+              <div class="post-metas mb-3">
+                
+                  <div class="post-meta mr-3">
+                    <i class="iconfont icon-category"></i>
+                    
+                      <a class="hover-with-bg" href="/categories/deep-learning/">deep_learning</a>
+                    
+                  </div>
+                
+                
+                  <div class="post-meta">
+                    <i class="iconfont icon-tags"></i>
+                    
+                      <a class="hover-with-bg" href="/tags/deep-learning/">deep_learning</a>
+                    
+                  </div>
+                
+              </div>
+              
+                <p class="note note-warning">
+                  
+                    本博客所有文章除特别声明外，均采用 <a target="_blank" href="https://creativecommons.org/licenses/by-sa/4.0/deed.zh" rel="nofollow noopener noopener">CC BY-SA 4.0 协议</a> ，转载请注明出处！
+                  
+                </p>
+              
+              
+                <div class="post-prevnext">
+                  <article class="post-prev col-6">
+                    
+                    
+                      <a href="/notes/coding/language/python/python-threading/python-threading/">
+                        <i class="iconfont icon-arrowleft"></i>
+                        <span class="hidden-mobile">Python - 多线程</span>
+                        <span class="visible-mobile">上一篇</span>
+                      </a>
+                    
+                  </article>
+                  <article class="post-next col-6">
+                    
+                    
+                      <a href="/notes/tools/nodejs-install-error/nodejs-install-error/">
+                        <span class="hidden-mobile">Node.js npm 安装包 unable to verify the first certificate 错误解决方案</span>
+                        <span class="visible-mobile">下一篇</span>
+                        <i class="iconfont icon-arrowright"></i>
+                      </a>
+                    
+                  </article>
+                </div>
+              
+            </div>
+
+            
+              <!-- Comments -->
+              <article class="comments" id="comments" lazyload>
+                
+                  
+                
+                
+  <div id="waline"></div>
+  <script type="text/javascript">
+    Fluid.utils.loadComments('#waline', function() {
+      Fluid.utils.createScript('https://cdn.jsdelivr.net/npm/@waline/client@0.16.2/dist/Waline.min.js', function() {
+        var options = Object.assign(
+          {"serverURL":"https://waline-omejylskm-zywvvd.vercel.app","placeholder":"遗憾莫过于难忘你的背影，却找不到你来过的痕迹 ...","path":"window.location.pathname","avatar":"retro","meta":["nick","mail","link"],"pageSize":10,"lang":"zh-CN","highlight":true,"avatarCDN":"","avatarForce":false,"requiredFields":[],"emojiCDN":null,"emojiMaps":null,"anonymous":null},
+          {
+            el: '#waline',
+            path: window.location.pathname
+          }
+        )
+        new Waline(options);
+      });
+    });
+  </script>
+  <noscript>Please enable JavaScript to view the comments</noscript>
+
+
+              </article>
+            
+          </article>
+        </div>
+      </div>
+    </div>
+    
+      <div class="d-none d-lg-block col-lg-2 toc-container" id="toc-ctn">
+        <div id="toc">
+  <p class="toc-header"><i class="iconfont icon-list"></i>&nbsp;目录</p>
+  <div class="toc-body" id="toc-body"></div>
+</div>
+
+      </div>
+    
+  </div>
+</div>
+
+<!-- Custom -->
+
+  <div class="col-lg-7 mx-auto nopadding-x-md">
+    <div class="container custom post-custom mx-auto">
+      <img src="https://octodex.github.com/images/jetpacktocat.png" srcset="/img/loading.gif" lazyload class="rounded mx-auto d-block mt-5" style="width:150px; height:150px;">
+    </div>
+  </div>
+
+
+    
+
+    
+      <a id="scroll-top-button" href="#" role="button">
+        <i class="iconfont icon-arrowup" aria-hidden="true"></i>
+      </a>
+    
+
+    
+      <div class="modal fade" id="modalSearch" tabindex="-1" role="dialog" aria-labelledby="ModalLabel"
+     aria-hidden="true">
+  <div class="modal-dialog modal-dialog-scrollable modal-lg" role="document">
+    <div class="modal-content">
+      <div class="modal-header text-center">
+        <h4 class="modal-title w-100 font-weight-bold">搜索</h4>
+        <button type="button" id="local-search-close" class="close" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body mx-3">
+        <div class="md-form mb-5">
+          <input type="text" id="local-search-input" class="form-control validate">
+          <label data-error="x" data-success="v"
+                 for="local-search-input">关键词</label>
+        </div>
+        <div class="list-group" id="local-search-result"></div>
+      </div>
+    </div>
+  </div>
+</div>
+    
+
+    
+  </main>
+
+  <footer class="text-center mt-5 py-3">
+  <div class="footer-content">
+     <a href="https://hexo.io" target="_blank" rel="nofollow noopener"><span>Hexo</span></a> <i class="iconfont icon-love"></i> <a href="https://github.com/fluid-dev/hexo-theme-fluid" target="_blank" rel="nofollow noopener"><span>Fluid</span></a> <div style="font-size: 0.85rem"> <span id="timeDate">载入天数...</span> <span id="times">载入时分秒...</span> <script src="/vvd_js/duration.js"></script>
+<script async src="//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script> <span><br></span>	
+<span>总访客&nbsp<span id="busuanzi_value_site_uv"></span>&nbsp人 &nbsp</span>
+<span>访问总量&nbsp<span id="busuanzi_value_site_pv"></span>&nbsp次</span> <span id="busuanzi_value_page_pv"></span> </div> 
+  </div>
+  
+
+  
+  <!-- 备案信息 -->
+  <div class="beian">
+    <span>
+      <a href="http://beian.miit.gov.cn/" target="_blank" rel="nofollow noopener">
+        吉ICP备19007275号-1
+      </a>
+    </span>
+    
+      
+        <span>
+          <a
+            href="http://www.beian.gov.cn/portal/registerSystemInfo?recordcode=22020202000251"
+            rel="nofollow noopener"
+            class="beian-police"
+            target="_blank"
+          >
+            
+              <span style="visibility: hidden; width: 0">|</span>
+              <img src="/img/police_beian.png" srcset="/img/loading.gif" lazyload alt="police-icon"/>
+            
+            <span>22020202000251</span>
+          </a>
+        </span>
+      
+    
+  </div>
+
+
+  
+</footer>
+
+
+  <!-- SCRIPTS -->
+  
+  <script  src="https://cdn.jsdelivr.net/npm/nprogress@0.2.0/nprogress.min.js" ></script>
+  <link  rel="stylesheet" href="https://cdn.jsdelivr.net/npm/nprogress@0.2.0/nprogress.min.css" />
+
+  <script>
+    NProgress.configure({"showSpinner":false,"trickleSpeed":100})
+    NProgress.start()
+    window.addEventListener('load', function() {
+      NProgress.done();
+    })
+  </script>
+
+
+<script  src="https://cdn.jsdelivr.net/npm/jquery@3.6.0/dist/jquery.min.js" ></script>
+<script  src="https://cdn.jsdelivr.net/npm/bootstrap@4.6.0/dist/js/bootstrap.min.js" ></script>
+<script  src="/js/events.js" ></script>
+<script  src="/js/plugins.js" ></script>
+
+<!-- Plugins -->
+
+
+  
+    <script  src="/js/img-lazyload.js" ></script>
+  
+
+
+
+  
+
+
+
+  <script  src="https://cdn.jsdelivr.net/npm/tocbot@4.12.3/dist/tocbot.min.js" ></script>
+
+
+
+  <script  src="https://cdn.jsdelivr.net/npm/@fancyapps/fancybox@3.5.7/dist/jquery.fancybox.min.js" ></script>
+
+
+
+  <script  src="https://cdn.jsdelivr.net/npm/anchor-js@4.3.1/anchor.min.js" ></script>
+
+
+
+  <script defer src="https://cdn.jsdelivr.net/npm/clipboard@2.0.8/dist/clipboard.min.js" ></script>
+
+
+
+  <script  src="/js/local-search.js" ></script>
+
+
+
+  <script defer src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js" ></script>
+
+
+
+
+  <script  src="https://cdn.jsdelivr.net/npm/typed.js@2.0.12/lib/typed.min.js" ></script>
+  <script>
+    (function (window, document) {
+      var typing = Fluid.plugins.typing;
+      var title = document.getElementById('subtitle').title;
+      
+      typing(title)
+      
+    })(window, document);
+  </script>
+
+
+
+
+
+  
+
+  
+    <!-- MathJax -->
+    <script>
+      MathJax = {
+        tex: {
+          inlineMath: [['$', '$'], ['\\(', '\\)']]
+        },
+        options: {
+          renderActions: {
+            findScript: [10, doc => {
+              document.querySelectorAll('script[type^="math/tex"]').forEach(node => {
+                const display = !!node.type.match(/; *mode=display/);
+                const math = new doc.options.MathItem(node.textContent, doc.inputJax[0], display);
+                const text = document.createTextNode('');
+                node.parentNode.replaceChild(text, node);
+                math.start = { node: text, delim: '', n: 0 };
+                math.end = { node: text, delim: '', n: 0 };
+                doc.math.push(math);
+              });
+            }, '', false],
+            insertedScript: [200, () => {
+              document.querySelectorAll('mjx-container').forEach(node => {
+                let target = node.parentNode;
+                if (target.nodeName.toLowerCase() === 'li') {
+                  target.parentNode.classList.add('has-jax');
+                }
+              });
+            }, '', false]
+          }
+        }
+      };
+    </script>
+
+    <script async src="https://cdn.jsdelivr.net/npm/mathjax@3.1.4/es5/tex-svg.js" ></script>
+
+  
+
+
+
+
+
+
+
+
+
+
+
+<!-- 主题的启动项 保持在最底部 -->
+<script  src="/js/boot.js" ></script>
+
+
+<script src="/live2dw/lib/L2Dwidget.min.js?094cbace49a39548bed64abff5988b05"></script><script>L2Dwidget.init({"pluginRootPath":"live2dw/","pluginJsPath":"lib/","pluginModelPath":"assets/","tagMode":false,"log":false,"model":{"jsonPath":"/live2dw/assets/z16.model.json"},"display":{"position":"left","width":235,"height":440},"mobile":{"show":false},"react":{"opacity":0.7}});</script></body>
+</html>

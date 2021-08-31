@@ -1,0 +1,728 @@
+
+
+<!DOCTYPE html>
+<html lang="zh-CN" data-default-color-scheme=&#34;auto&#34;>
+<script type="text/javascript" src="/vvd_js/jquery.js"></script>
+
+
+
+<head>
+  <meta charset="UTF-8">
+  <link rel="apple-touch-icon" sizes="76x76" href="/img/favicon.png">
+  <link rel="icon" href="/img/favicon.png">
+  <meta name="viewport"
+        content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, shrink-to-fit=no">
+  <meta http-equiv="x-ua-compatible" content="ie=edge">
+  
+  <meta name="theme-color" content="#2f4154">
+  <meta name="description" content="
+Numba是一个针对Python的开源JIT编译器，由Anaconda公司主导开发，可以对Python原生代码进行CPU和GPU加速。Numba对NumPy数组和函数非常友好。
+">
+  <meta name="author" content="Yiwei Zhang">
+  <meta name="keywords" content="人工智能, 深度学习, 个人博客, 机器学习">
+  
+  <title>Python CUDA 编程 - 2 - Numba 简介 - 又见苍岚</title>
+
+  <link  rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@4.6.0/dist/css/bootstrap.min.css" />
+
+
+  <link  rel="stylesheet" href="https://cdn.jsdelivr.net/npm/github-markdown-css@4.0.0/github-markdown.min.css" />
+  <link  rel="stylesheet" href="/lib/hint/hint.min.css" />
+
+  
+    
+    
+      
+      <link  rel="stylesheet" href="https://cdn.jsdelivr.net/npm/highlight.js@10.7.2/styles/github-gist.min.css" />
+    
+  
+
+  
+    <link  rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fancyapps/fancybox@3.5.7/dist/jquery.fancybox.min.css" />
+  
+
+
+
+<!-- 主题依赖的图标库，不要自行修改 -->
+
+<link rel="stylesheet" href="//at.alicdn.com/t/font_1749284_ba1fz6golrf.css">
+
+
+
+<link rel="stylesheet" href="//at.alicdn.com/t/font_1736178_kmeydafke9r.css">
+
+
+<link  rel="stylesheet" href="/css/main.css" />
+
+<!-- 自定义样式保持在最底部 -->
+
+
+  <script id="fluid-configs">
+    var Fluid = window.Fluid || {};
+    var CONFIG = {"hostname":"www.zywvvd.com","root":"/","version":"1.8.11","typing":{"enable":true,"typeSpeed":70,"cursorChar":"_","loop":false},"anchorjs":{"enable":true,"element":"h1,h2,h3,h4,h5,h6","placement":"right","visible":"hover","icon":""},"progressbar":{"enable":true,"height_px":3,"color":"#29d","options":{"showSpinner":false,"trickleSpeed":100}},"copy_btn":true,"image_zoom":{"enable":true,"img_url_replace":["",""]},"toc":{"enable":true,"headingSelector":"h1,h2,h3,h4,h5,h6","collapseDepth":0},"lazyload":{"enable":true,"loading_img":"/img/loading.gif","onlypost":false,"offset_factor":2},"web_analytics":{"enable":false,"baidu":null,"google":null,"gtag":null,"tencent":{"sid":null,"cid":null},"woyaola":null,"cnzz":null,"leancloud":{"app_id":null,"app_key":null,"server_url":null}},"search_path":"/local-search.xml"};
+  </script>
+  <script  src="/js/utils.js" ></script>
+  <script  src="/js/color-schema.js" ></script>
+<meta name="generator" content="Hexo 5.4.0"><link rel="alternate" href="/atom.xml" title="又见苍岚" type="application/atom+xml">
+</head>
+
+
+<body>
+
+  <header style="height: 70vh;">
+    <nav id="navbar" class="navbar fixed-top  navbar-expand-lg navbar-dark scrolling-navbar">
+  <div class="container">
+    <a class="navbar-brand"
+       href="/">&nbsp;<strong>CangLan</strong>&nbsp;</a>
+
+    <button id="navbar-toggler-btn" class="navbar-toggler" type="button" data-toggle="collapse"
+            data-target="#navbarSupportedContent"
+            aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
+      <div class="animated-icon"><span></span><span></span><span></span></div>
+    </button>
+
+    <!-- Collapsible content -->
+    <div class="collapse navbar-collapse" id="navbarSupportedContent">
+      <ul class="navbar-nav ml-auto text-center">
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/">
+                <i class="iconfont icon-home-fill"></i>
+                首页
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/archives/">
+                <i class="iconfont icon-archive-fill"></i>
+                归档
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/categories/">
+                <i class="iconfont icon-category-fill"></i>
+                分类
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/tags/">
+                <i class="iconfont icon-tags-fill"></i>
+                标签
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/about/">
+                <i class="iconfont icon-user-fill"></i>
+                关于
+              </a>
+            </li>
+          
+        
+        
+          <li class="nav-item" id="search-btn">
+            <a class="nav-link" target="_self" data-toggle="modal" data-target="#modalSearch">&nbsp;<i
+                class="iconfont icon-search"></i>&nbsp;</a>
+          </li>
+        
+        
+          <li class="nav-item" id="color-toggle-btn">
+            <a class="nav-link" target="_self">&nbsp;<i
+                class="iconfont icon-dark" id="color-toggle-icon"></i>&nbsp;</a>
+          </li>
+        
+      </ul>
+    </div>
+  </div>
+</nav>
+
+		<div class="banner" id="banner" parallax=true
+			 style="background: url('https://photos.zywvvd.com/vvd-dell-2021-win-10/20210812235004.jpg') no-repeat center center;
+			   background-size: cover;">
+
+      <div class="full-bg-img" >
+
+		
+		<div id="banner_video_insert">
+		</div>
+		<script>
+						
+			var ua = navigator.userAgent;
+			var ipad = ua.match(/(iPad).*OS\s([\d_]+)/),
+				isIphone = !ipad && ua.match(/(iPhone\sOS)\s([\d_]+)/),
+				isAndroid = ua.match(/(Android)\s+([\d.]+)/),
+				isMobile = isIphone || isAndroid;
+
+			function set_video_attr(id){
+				
+				var height = document.body.children[0].clientHeight
+
+				var width = document.body.children[0].clientWidth
+
+				var video_item = document.getElementById(id);
+
+				if (height / width < 0.56){
+					video_item.setAttribute('width', '100%');
+					video_item.setAttribute('height', 'auto');
+				} else {
+					video_item.setAttribute('height', '100%');
+					video_item.setAttribute('width', 'auto');
+				}
+			}
+
+			$.getJSON('/vvd_js/video_url.json', function(data){
+				if (!isMobile){
+					var video_list_length = data.length
+					var seed = Math.random()
+					index = Math.floor(seed * video_list_length)
+					
+					video_url = data[index]
+					video_html_res = "<video id='video_item' style='position: absolute;' muted='muted' src=" + video_url + " autoplay='autoplay' loop='loop'></video>"
+
+					document.getElementById("banner_video_insert").innerHTML = video_html_res;
+					set_video_attr('video_item')
+				}
+
+			});
+
+			if (!isMobile){
+				window.onresize = function(){
+					set_video_attr('video_item')
+					}
+				}
+			</script>
+
+		
+
+        <div class="mask flex-center" style="background-color: rgba(0, 0, 0, 0.3)">
+          <div class="page-header text-center fade-in-up">
+            <span class="h2" id="subtitle" title="Python CUDA 编程 - 2 - Numba 简介">
+              
+            </span>
+
+            
+              <div class="mt-3">
+  
+    <span class="post-meta mr-2">
+      <i class="iconfont icon-author" aria-hidden="true"></i>
+      Yiwei Zhang
+    </span>
+  
+  
+    <span class="post-meta">
+      <i class="iconfont icon-date-fill" aria-hidden="true"></i>
+      <time datetime="2021-04-15 23:58" pubdate>
+        2021年4月15日 晚上
+      </time>
+    </span>
+  
+</div>
+
+<div class="mt-1">
+  
+    
+    <span class="post-meta mr-2">
+      <i class="iconfont icon-chart"></i>
+      2.3k 字
+    </span>
+  
+
+  
+    
+    <span class="post-meta mr-2">
+      <i class="iconfont icon-clock-fill"></i>
+      
+      
+      26
+       分钟
+    </span>
+  
+
+  
+  
+    
+      <!-- 不蒜子统计文章PV -->
+      <span id="busuanzi_container_page_pv" style="display: none">
+        <i class="iconfont icon-eye" aria-hidden="true"></i>
+        <span id="busuanzi_value_page_pv"></span> 次
+      </span>
+    
+  
+</div>
+
+            
+          </div>
+
+          
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <main>
+    
+      
+
+<div class="container-fluid nopadding-x">
+  <div class="row nomargin-x">
+    <div class="d-none d-lg-block col-lg-2"></div>
+    <div class="col-lg-8 nopadding-x-md">
+      <div class="container nopadding-x-md" id="board-ctn">
+        <div class="py-5" id="board">
+          <article class="post-content mx-auto">
+            <!-- SEO header -->
+            <h1 style="display: none">Python CUDA 编程 - 2 - Numba 简介</h1>
+            
+              <p class="note note-info">
+                
+                  本文最后更新于：2021年8月31日 晚上
+                
+              </p>
+            
+            <div class="markdown-body">
+              <blockquote>
+<p>Numba是一个针对Python的开源JIT编译器，由Anaconda公司主导开发，可以对Python原生代码进行CPU和GPU加速。Numba对NumPy数组和函数非常友好。</p>
+</blockquote>
+<span id="more"></span>
+<h3 id="Numba简介">Numba简介</h3>
+<blockquote>
+<p>计算机只能执行二进制的机器码，C、C++等编译型语言依靠编译器将源代码转化为可执行文件后才能运行，Python、Java等解释型语言使用解释器将源代码翻译后在虚拟机上执行。对于Python，由于解释器的存在，其执行效率比C语言慢几倍甚至几十倍。</p>
+</blockquote>
+<p><img src="https://photos.zywvvd.com/image_canglan/20210416001939.png" srcset="/img/loading.gif" lazyload alt="以C语言为基准，不同编程语言性能测试比较"></p>
+<blockquote>
+<p>C语言经过几十年的发展，优化已经达到了极致。以C语言为基准，大多数解释语言，如Python、R会慢十倍甚至一百倍。Julia这个解释语言是个“奇葩”，因为它采用了JIT编译技术。</p>
+</blockquote>
+<ul>
+<li>我们平时研发深度学习重度依赖 python，除了numpy矩阵运算速度快以外执行效率并不够高</li>
+<li>解决Python执行效率低的问题，一种解决办法是使用C/C<ins>语言重写Python函数，但是这要求程序员对C/C</ins>语言熟悉，且调试速度慢</li>
+<li>另外一种非常方便快捷的解决办法就是使用<code>Just-In-Time（JIT）</code>技术</li>
+</ul>
+<h3 id="Python解释器工作原理">Python解释器工作原理</h3>
+<blockquote>
+<p>Python是一门解释语言，Python为我们提供了基于硬件和操作系统的一个虚拟机，并使用解释器将源代码转化为虚拟机可执行的字节码。字节码在虚拟机上执行，得到结果。</p>
+</blockquote>
+<p><img src="https://photos.zywvvd.com/image_canglan/20210416002635.png" srcset="/img/loading.gif" lazyload alt="Python解释器工作原理"></p>
+<ul>
+<li>我们使用<code>python example.py</code>来执行一份源代码时，Python解释器会在后台启动一个字节码编译器（Bytecode Compiler），将源代码转换为字节码</li>
+<li>字节码是一种只能运行在虚拟机上的文件，Python的字节码默认后缀为<code>.pyc</code></li>
+<li>Python生成<code>.pyc</code>后一般放在内存中继续使用，并不是每次都将<code>.pyc</code>文件保存到磁盘上</li>
+<li>pyc字节码通过Python虚拟机与硬件交互</li>
+<li>虚拟机的出现导致程序和硬件之间增加了中间层，运行效率大打折扣</li>
+<li>在虚拟机上再运行一个其他系统，经常感觉速度下降，体验变差，这与Python虚拟机导致程序运行慢是一个原理</li>
+</ul>
+<h3 id="Just-In-Time（JIT）">Just-In-Time（JIT）</h3>
+<blockquote>
+<p>Just-In-Time（JIT）技术为解释语言提供了一种优化，它能克服上述效率问题，极大提升代码执行速度，同时保留Python语言的易用性。</p>
+<p>使用JIT技术时，JIT编译器将Python源代码编译成机器直接可以执行的机器语言，并可以直接在CPU等硬件上运行。这样就跳过了原来的虚拟机，执行速度几乎与用C语言编程速度并无二致。</p>
+</blockquote>
+<h3 id="Python-Numba">Python Numba</h3>
+<blockquote>
+<p>Numba是一个针对Python的开源JIT编译器，由Anaconda公司主导开发，可以对Python原生代码进行CPU和GPU加速。Numba对NumPy数组和函数非常友好。</p>
+</blockquote>
+<h4 id="简介">简介</h4>
+<p>官方文档：<a target="_blank" rel="noopener" href="http://numba.pydata.org/numba-doc/latest/reference/pysupported.html">http://numba.pydata.org/numba-doc/latest/reference/pysupported.html</a></p>
+<p>使用Numba非常方便，只需要在Python原生函数上增加一个装饰器（Decorator）。Numba会将这些函数使用即时编译JIT方式编译成机器码，这些代码将以近乎机器码的速度运行。</p>
+<p>目前，Numba对以下环境进行了支持：</p>
+<ul>
+<li>操作系统：Windows（32位和64位），macOS，Linux（32位和64位）</li>
+<li>CPU微架构：x86，x86_64，ppc64，armv7l和armv8l</li>
+<li>GPU：NVIDIA CUDA和AMD ROCm</li>
+<li>CPython</li>
+<li>NumPy 1.15以后的版本</li>
+</ul>
+<h4 id="安装方法">安装方法</h4>
+<p>使用<code>conda</code>安装Numba：</p>
+<figure class="highlight cmake"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs cmake">$ conda <span class="hljs-keyword">install</span> numba<br></code></pre></td></tr></table></figure>
+<p>或者使用<code>pip</code>安装：</p>
+<figure class="highlight cmake"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs cmake">$ pip <span class="hljs-keyword">install</span> numba<br></code></pre></td></tr></table></figure>
+<h4 id="使用方法">使用方法</h4>
+<blockquote>
+<p>使用时，只需要在原来的函数上添加一行”注释”：</p>
+</blockquote>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br></pre></td><td class="code"><pre><code class="hljs python"><span class="hljs-keyword">from</span> numba <span class="hljs-keyword">import</span> jit<br><span class="hljs-keyword">import</span> numpy <span class="hljs-keyword">as</span> np<br><br>SIZE = <span class="hljs-number">2000</span><br>x = np.random.random((SIZE, SIZE))<br><br><span class="hljs-string">&quot;&quot;&quot;</span><br><span class="hljs-string">给定n*n矩阵，对矩阵每个元素计算tanh值，然后求和。</span><br><span class="hljs-string">因为要循环矩阵中的每个元素，计算复杂度为 n*n。</span><br><span class="hljs-string">&quot;&quot;&quot;</span><br><span class="hljs-meta">@jit</span><br><span class="hljs-function"><span class="hljs-keyword">def</span> <span class="hljs-title">jit_tan_sum</span>(<span class="hljs-params">a</span>):</span>   <span class="hljs-comment"># 函数在被调用时编译成机器语言</span><br>    tan_sum = <span class="hljs-number">0</span><br>    <span class="hljs-keyword">for</span> i <span class="hljs-keyword">in</span> <span class="hljs-built_in">range</span>(SIZE):   <span class="hljs-comment"># Numba 支持循环</span><br>        <span class="hljs-keyword">for</span> j <span class="hljs-keyword">in</span> <span class="hljs-built_in">range</span>(SIZE):<br>            tan_sum += np.tanh(a[i, j])   <span class="hljs-comment"># Numba 支持绝大多数NumPy函数</span><br>    <span class="hljs-keyword">return</span> tan_sum<br><br><span class="hljs-built_in">print</span>(jit_tan_sum(x))<br></code></pre></td></tr></table></figure>
+<blockquote>
+<p>我们只需要在原来的代码上添加一行<code>@jit</code>，即可将一个函数编译成机器码，其他地方都不需要更改。<code>@</code>符号装饰了原来的代码，所以称类似写法为<strong>装饰器</strong>。</p>
+</blockquote>
+<h4 id="使用场景">使用场景</h4>
+<blockquote>
+<p>Numba简单到只需要在函数上加一个装饰就能加速程序，但也有缺点。目前Numba只支持了Python原生函数和部分NumPy函数，其他一些场景可能不适用。</p>
+</blockquote>
+<ul>
+<li>比如类似pandas这样的库是更高层次的封装，Numba其实不能理解它里面做了什么，所以无法对其加速。一些大家经常用的机器学习框架，如<code>scikit-learn</code>，<code>tensorflow</code>，<code>pytorch</code>等，已经做了大量的优化，不适合再使用Numba做加速。</li>
+<li>此外，Numba不支持：
+<ul>
+<li><code>try...except</code> 异常处理</li>
+<li><code>with</code> 语句</li>
+<li>类定义<code>class</code></li>
+<li><code>yield from</code></li>
+</ul>
+</li>
+</ul>
+<h4 id="Numba-工作模式">Numba 工作模式</h4>
+<ul>
+<li>Numba的<code>@jit</code>装饰器就像自动驾驶，用户不需要关注到底是如何优化的，Numba去尝试进行优化，如果发现不支持，那么Numba会继续用Python原来的方法去执行该函数，即<em>图 Python解释器工作原理</em>中左侧部分。这种模式被称为<code>object</code>模式。前文提到的pandas的例子，Numba发现无法理解里面的内容，于是自动进入了<code>object</code>模式。<code>object</code>模式还是和原生的Python一样慢，还有可能比原来更慢。</li>
+<li>Numba真正优秀之处在于其<code>nopython</code>模式。将装饰器改为<code>@jit(nopython=True)</code>或者<code>@njit</code>，Numba会假设你已经对所加速的函数非常了解，强制使用加速的方式，不会进入<code>object</code>模式，如编译不成功，则直接抛出异常。<code>nopython</code>的名字会有点歧义，我们可以理解为不使用很慢的Python，强制进入<em>图 Python解释器工作原理</em>中右侧部分。</li>
+</ul>
+<blockquote>
+<p>实践上，一般推荐将代码中计算密集的部分作为单独的函数提出来，并使用<code>nopython</code>方式优化，这样可以保证我们能使用到Numba的加速功能。其余部分还是使用Python原生代码，在计算加速的前提下，避免过长的编译时间。Numba可以与NumPy紧密结合，两者一起，常常能够得到近乎C语言的速度。尽管Numba不能直接优化pandas，但是我们可以将pandas中处理数据的<code>for</code>循环作为单独的函数提出来，再使用Numba加速。</p>
+</blockquote>
+<h3 id="编译开销">编译开销</h3>
+<blockquote>
+<p>编译源代码需要一定的时间。C/C++等编译型语言要提前把整个程序先编译好，再执行可执行文件。Numba库提供的是一种懒编译（Lazy Compilation）技术，即在运行过程中第一次发现代码中有<code>@jit</code>，才将该代码块编译。用到的时候才编译，看起来比较懒，所以叫懒编译。</p>
+</blockquote>
+<p>使用Numba时，总时间 = 编译时间 + 运行时间。相比所能节省的计算时间，编译的时间开销很小，所以物有所值。对于一个需要多次调用的Numba函数，只需要编译一次，后面再调用时就不需要编译了。</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br></pre></td><td class="code"><pre><code class="hljs python"><span class="hljs-keyword">from</span> numba <span class="hljs-keyword">import</span> jit<br><span class="hljs-keyword">import</span> numpy <span class="hljs-keyword">as</span> np<br><span class="hljs-keyword">import</span> time<br><br>SIZE = <span class="hljs-number">2000</span><br>x = np.random.random((SIZE, SIZE))<br><br><span class="hljs-string">&quot;&quot;&quot;</span><br><span class="hljs-string">给定n*n矩阵，对矩阵每个元素计算tanh值，然后求和。</span><br><span class="hljs-string">因为要循环矩阵中的每个元素，计算复杂度为 n*n。</span><br><span class="hljs-string">&quot;&quot;&quot;</span><br><span class="hljs-meta">@jit</span><br><span class="hljs-function"><span class="hljs-keyword">def</span> <span class="hljs-title">jit_tan_sum</span>(<span class="hljs-params">a</span>):</span>   <span class="hljs-comment"># 函数在被调用时编译成机器语言</span><br>    tan_sum = <span class="hljs-number">0</span><br>    <span class="hljs-keyword">for</span> i <span class="hljs-keyword">in</span> <span class="hljs-built_in">range</span>(SIZE):   <span class="hljs-comment"># Numba 支持循环</span><br>        <span class="hljs-keyword">for</span> j <span class="hljs-keyword">in</span> <span class="hljs-built_in">range</span>(SIZE):<br>            tan_sum += np.tanh(a[i, j])   <span class="hljs-comment"># Numba 支持绝大多数NumPy函数</span><br>    <span class="hljs-keyword">return</span> tan_sum<br><br><span class="hljs-comment"># 总时间 = 编译时间 + 运行时间</span><br>start = time.time()<br>jit_tan_sum(x)<br>end = time.time()<br><span class="hljs-built_in">print</span>(<span class="hljs-string">&quot;Elapsed (with compilation) = %s&quot;</span> % (end - start))<br><br><span class="hljs-comment"># Numba将加速的代码缓存下来</span><br><span class="hljs-comment"># 总时间 = 运行时间</span><br>start = time.time()<br>jit_tan_sum(x)<br>end = time.time()<br><span class="hljs-built_in">print</span>(<span class="hljs-string">&quot;Elapsed (after compilation) = %s&quot;</span> % (end - start))<br></code></pre></td></tr></table></figure>
+<p>代码中两次调用Numba优化函数，第一次执行时需要编译，第二次使用缓存的代码，运行时间将大大缩短：</p>
+<figure class="highlight apache"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><code class="hljs apache"><span class="hljs-attribute">Elapsed</span> (with compilation) = <span class="hljs-number">0</span>.<span class="hljs-number">49199914932250977</span><br><span class="hljs-attribute">Elapsed</span> (after compilation) = <span class="hljs-number">0</span>.<span class="hljs-number">0364077091217041</span><br></code></pre></td></tr></table></figure>
+<h3 id="类型推断编译加速">类型推断编译加速</h3>
+<blockquote>
+<p>原生Python速度慢的另一个重要原因是变量类型不确定。声明一个变量的语法很简单，如<code>a = 1</code>，但没有指定<code>a</code>到底是一个整数和一个浮点小数。Python解释器要进行大量的类型推断，会非常耗时。</p>
+<p>引入Numba后，Numba也要推断输入输出的类型，才能转化为机器码。针对这个问题，Numba给出了名为Eager Compilation的优化方式。</p>
+</blockquote>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><code class="hljs python"><span class="hljs-keyword">from</span> numba <span class="hljs-keyword">import</span> jit, int32<br><br><span class="hljs-meta">@jit(<span class="hljs-params"><span class="hljs-string">&quot;int32(int32, int32)&quot;</span>, nopython=<span class="hljs-literal">True</span></span>)</span><br><span class="hljs-function"><span class="hljs-keyword">def</span> <span class="hljs-title">f2</span>(<span class="hljs-params">x, y</span>):</span><br>    <span class="hljs-keyword">return</span> x + y<br></code></pre></td></tr></table></figure>
+<p><code>@jit(int32(int32, int32))</code>告知Numba你的函数在使用什么样的输入和输出，括号内是输入，括号左侧是输出。这样不会加快执行速度，但是会加快编译速度，可以更快将函数编译到机器码上。</p>
+<h3 id="参考资料">参考资料</h3>
+<ul>
+<li><a target="_blank" rel="noopener" href="https://lulaoshi.info/gpu/python-cuda/numba.html">https://lulaoshi.info/gpu/python-cuda/numba.html</a></li>
+</ul>
+<link rel="stylesheet" href="/css/spoiler.css" type="text/css"><script src="/js/spoiler.js" type="text/javascript" async></script>
+            </div>
+            <hr>
+            <div>
+              <div class="post-metas mb-3">
+                
+                  <div class="post-meta mr-3">
+                    <i class="iconfont icon-category"></i>
+                    
+                      <a class="hover-with-bg" href="/categories/Deep-Learning/">Deep Learning</a>
+                    
+                      <a class="hover-with-bg" href="/categories/Deep-Learning/CUDA/">CUDA</a>
+                    
+                  </div>
+                
+                
+                  <div class="post-meta">
+                    <i class="iconfont icon-tags"></i>
+                    
+                      <a class="hover-with-bg" href="/tags/Deep-Learning/">Deep Learning</a>
+                    
+                      <a class="hover-with-bg" href="/tags/CUDA/">CUDA</a>
+                    
+                  </div>
+                
+              </div>
+              
+                <p class="note note-warning">
+                  
+                    本博客所有文章除特别声明外，均采用 <a target="_blank" href="https://creativecommons.org/licenses/by-sa/4.0/deed.zh" rel="nofollow noopener noopener">CC BY-SA 4.0 协议</a> ，转载请注明出处！
+                  
+                </p>
+              
+              
+                <div class="post-prevnext">
+                  <article class="post-prev col-6">
+                    
+                    
+                      <a href="/notes/coding/environment/openssl-not-found/openssl-not-found/">
+                        <i class="iconfont icon-arrowleft"></i>
+                        <span class="hidden-mobile">无法定位程序输入点 OPENSSL_sk_new_reserve 于动态链接库Anaconda3\Library\bin\libssl-1_1-x64.dll上”的解决办法</span>
+                        <span class="visible-mobile">上一篇</span>
+                      </a>
+                    
+                  </article>
+                  <article class="post-next col-6">
+                    
+                    
+                      <a href="/notes/coding/environment/pip-env-install-off-line/pip-env-install-off-line/">
+                        <span class="hidden-mobile">使用 pip 离线复制 python 运行环境</span>
+                        <span class="visible-mobile">下一篇</span>
+                        <i class="iconfont icon-arrowright"></i>
+                      </a>
+                    
+                  </article>
+                </div>
+              
+            </div>
+
+            
+              <!-- Comments -->
+              <article class="comments" id="comments" lazyload>
+                
+                  
+                
+                
+  <div id="waline"></div>
+  <script type="text/javascript">
+    Fluid.utils.loadComments('#waline', function() {
+      Fluid.utils.createScript('https://cdn.jsdelivr.net/npm/@waline/client@0.16.2/dist/Waline.min.js', function() {
+        var options = Object.assign(
+          {"serverURL":"https://waline-omejylskm-zywvvd.vercel.app","placeholder":"遗憾莫过于难忘你的背影，却找不到你来过的痕迹 ...","path":"window.location.pathname","avatar":"retro","meta":["nick","mail","link"],"pageSize":10,"lang":"zh-CN","highlight":true,"avatarCDN":"","avatarForce":false,"requiredFields":[],"emojiCDN":null,"emojiMaps":null,"anonymous":null},
+          {
+            el: '#waline',
+            path: window.location.pathname
+          }
+        )
+        new Waline(options);
+      });
+    });
+  </script>
+  <noscript>Please enable JavaScript to view the comments</noscript>
+
+
+              </article>
+            
+          </article>
+        </div>
+      </div>
+    </div>
+    
+      <div class="d-none d-lg-block col-lg-2 toc-container" id="toc-ctn">
+        <div id="toc">
+  <p class="toc-header"><i class="iconfont icon-list"></i>&nbsp;目录</p>
+  <div class="toc-body" id="toc-body"></div>
+</div>
+
+      </div>
+    
+  </div>
+</div>
+
+<!-- Custom -->
+
+  <div class="col-lg-7 mx-auto nopadding-x-md">
+    <div class="container custom post-custom mx-auto">
+      <img src="https://octodex.github.com/images/jetpacktocat.png" srcset="/img/loading.gif" lazyload class="rounded mx-auto d-block mt-5" style="width:150px; height:150px;">
+    </div>
+  </div>
+
+
+    
+
+    
+      <a id="scroll-top-button" href="#" role="button">
+        <i class="iconfont icon-arrowup" aria-hidden="true"></i>
+      </a>
+    
+
+    
+      <div class="modal fade" id="modalSearch" tabindex="-1" role="dialog" aria-labelledby="ModalLabel"
+     aria-hidden="true">
+  <div class="modal-dialog modal-dialog-scrollable modal-lg" role="document">
+    <div class="modal-content">
+      <div class="modal-header text-center">
+        <h4 class="modal-title w-100 font-weight-bold">搜索</h4>
+        <button type="button" id="local-search-close" class="close" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body mx-3">
+        <div class="md-form mb-5">
+          <input type="text" id="local-search-input" class="form-control validate">
+          <label data-error="x" data-success="v"
+                 for="local-search-input">关键词</label>
+        </div>
+        <div class="list-group" id="local-search-result"></div>
+      </div>
+    </div>
+  </div>
+</div>
+    
+
+    
+  </main>
+
+  <footer class="text-center mt-5 py-3">
+  <div class="footer-content">
+     <a href="https://hexo.io" target="_blank" rel="nofollow noopener"><span>Hexo</span></a> <i class="iconfont icon-love"></i> <a href="https://github.com/fluid-dev/hexo-theme-fluid" target="_blank" rel="nofollow noopener"><span>Fluid</span></a> <div style="font-size: 0.85rem"> <span id="timeDate">载入天数...</span> <span id="times">载入时分秒...</span> <script src="/vvd_js/duration.js"></script>
+<script async src="//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script> <span><br></span>	
+<span>总访客&nbsp<span id="busuanzi_value_site_uv"></span>&nbsp人 &nbsp</span>
+<span>访问总量&nbsp<span id="busuanzi_value_site_pv"></span>&nbsp次</span> <span id="busuanzi_value_page_pv"></span> </div> 
+  </div>
+  
+
+  
+  <!-- 备案信息 -->
+  <div class="beian">
+    <span>
+      <a href="http://beian.miit.gov.cn/" target="_blank" rel="nofollow noopener">
+        吉ICP备19007275号-1
+      </a>
+    </span>
+    
+      
+        <span>
+          <a
+            href="http://www.beian.gov.cn/portal/registerSystemInfo?recordcode=22020202000251"
+            rel="nofollow noopener"
+            class="beian-police"
+            target="_blank"
+          >
+            
+              <span style="visibility: hidden; width: 0">|</span>
+              <img src="/img/police_beian.png" srcset="/img/loading.gif" lazyload alt="police-icon"/>
+            
+            <span>22020202000251</span>
+          </a>
+        </span>
+      
+    
+  </div>
+
+
+  
+</footer>
+
+
+  <!-- SCRIPTS -->
+  
+  <script  src="https://cdn.jsdelivr.net/npm/nprogress@0.2.0/nprogress.min.js" ></script>
+  <link  rel="stylesheet" href="https://cdn.jsdelivr.net/npm/nprogress@0.2.0/nprogress.min.css" />
+
+  <script>
+    NProgress.configure({"showSpinner":false,"trickleSpeed":100})
+    NProgress.start()
+    window.addEventListener('load', function() {
+      NProgress.done();
+    })
+  </script>
+
+
+<script  src="https://cdn.jsdelivr.net/npm/jquery@3.6.0/dist/jquery.min.js" ></script>
+<script  src="https://cdn.jsdelivr.net/npm/bootstrap@4.6.0/dist/js/bootstrap.min.js" ></script>
+<script  src="/js/events.js" ></script>
+<script  src="/js/plugins.js" ></script>
+
+<!-- Plugins -->
+
+
+  
+    <script  src="/js/img-lazyload.js" ></script>
+  
+
+
+
+  
+
+
+
+  <script  src="https://cdn.jsdelivr.net/npm/tocbot@4.12.3/dist/tocbot.min.js" ></script>
+
+
+
+  <script  src="https://cdn.jsdelivr.net/npm/@fancyapps/fancybox@3.5.7/dist/jquery.fancybox.min.js" ></script>
+
+
+
+  <script  src="https://cdn.jsdelivr.net/npm/anchor-js@4.3.1/anchor.min.js" ></script>
+
+
+
+  <script defer src="https://cdn.jsdelivr.net/npm/clipboard@2.0.8/dist/clipboard.min.js" ></script>
+
+
+
+  <script  src="/js/local-search.js" ></script>
+
+
+
+  <script defer src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js" ></script>
+
+
+
+
+  <script  src="https://cdn.jsdelivr.net/npm/typed.js@2.0.12/lib/typed.min.js" ></script>
+  <script>
+    (function (window, document) {
+      var typing = Fluid.plugins.typing;
+      var title = document.getElementById('subtitle').title;
+      
+      typing(title)
+      
+    })(window, document);
+  </script>
+
+
+
+
+
+  
+
+  
+    <!-- MathJax -->
+    <script>
+      MathJax = {
+        tex: {
+          inlineMath: [['$', '$'], ['\\(', '\\)']]
+        },
+        options: {
+          renderActions: {
+            findScript: [10, doc => {
+              document.querySelectorAll('script[type^="math/tex"]').forEach(node => {
+                const display = !!node.type.match(/; *mode=display/);
+                const math = new doc.options.MathItem(node.textContent, doc.inputJax[0], display);
+                const text = document.createTextNode('');
+                node.parentNode.replaceChild(text, node);
+                math.start = { node: text, delim: '', n: 0 };
+                math.end = { node: text, delim: '', n: 0 };
+                doc.math.push(math);
+              });
+            }, '', false],
+            insertedScript: [200, () => {
+              document.querySelectorAll('mjx-container').forEach(node => {
+                let target = node.parentNode;
+                if (target.nodeName.toLowerCase() === 'li') {
+                  target.parentNode.classList.add('has-jax');
+                }
+              });
+            }, '', false]
+          }
+        }
+      };
+    </script>
+
+    <script async src="https://cdn.jsdelivr.net/npm/mathjax@3.1.4/es5/tex-svg.js" ></script>
+
+  
+
+
+
+
+
+
+
+
+
+
+
+<!-- 主题的启动项 保持在最底部 -->
+<script  src="/js/boot.js" ></script>
+
+
+<script src="/live2dw/lib/L2Dwidget.min.js?094cbace49a39548bed64abff5988b05"></script><script>L2Dwidget.init({"pluginRootPath":"live2dw/","pluginJsPath":"lib/","pluginModelPath":"assets/","tagMode":false,"log":false,"model":{"jsonPath":"/live2dw/assets/z16.model.json"},"display":{"position":"left","width":235,"height":440},"mobile":{"show":false},"react":{"opacity":0.7}});</script></body>
+</html>
