@@ -1,6 +1,474 @@
 <?xml version="1.0" encoding="utf-8"?>
 <search>
   <entry>
+    <title>Fluid -10- Waline 添加 GitHub 社交登录</title>
+    <url>/notes/hexo/theme/fluid/fluid-github-login/fluid-github-login/</url>
+    <content><![CDATA[<blockquote>
+<p>Waline 支持本地注册和 GitHub 社交登录，本地注册对小站来说就有点鸡肋了。本文记录 Waline 添加 GitHub 社交登陆的方法。</p>
+</blockquote>
+<span id="more"></span>
+<p>官网文档：<a href="https://waline.js.org/guide/server/socials.html#github">https://waline.js.org/guide/server/socials.html#github</a></p>
+<h3 id="设置方法">设置方法</h3>
+<ol>
+<li>开启 GitHub 账号登录功能需要配置 GitHub OAuth 密钥。点击 <a href="https://github.com/settings/applications/new">Register a new OAuth application</a> 进入 GitHub OAuth 应用申请页面。</li>
+</ol>
+<p>配置注意事项如下:</p>
+<ul>
+<li>Application name: 应用名称，会在用户授权时显示，推荐使用博客名称。</li>
+<li>Homepage URL: 应用主页地址，会在用户授权时显示，推荐使用博客地址。</li>
+<li>Appcation description: 应用描述，会在用户授权时显示，非必填项。</li>
+<li>Authorization callback URL: 应用的回调地址，登录时需要使用。填入 <code>&lt;serverURL&gt;/oauth/github</code> 其中 <code>&lt;serverURL&gt;</code> 是你的 Waline 服务端地址。</li>
+</ul>
+<ol start="2">
+<li>填写完成后点击 Register application 即可成功创建。页面中会显示 Client ID。点击 Client secrets 栏右边的 Generate a new client secret 按钮则可以获取到该应用的 Client secrets。</li>
+</ol>
+<blockquote>
+<p>显示在 GitHub的  <code>Settings -&gt; Developer settings -&gt; OAuth Apps -&gt; 又见苍岚</code></p>
+</blockquote>
+<p><img src="https://photos.zywvvd.com/win11-mt/20210902192858.png" alt=""></p>
+<ol start="3">
+<li>使用以上信息配置环境变量，重新部署。</li>
+</ol>
+<table>
+<thead>
+<tr>
+<th>环境变量名称</th>
+<th>备注</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>GITHUB_ID</code></td>
+<td>对应 GitHub OAuth App 中的 Client ID</td>
+</tr>
+<tr>
+<td><code>GITHUB_SECRET</code></td>
+<td>对应 GitHub OAuth App 中的 Client secrets</td>
+</tr>
+</tbody>
+</table>
+<p><img src="https://photos.zywvvd.com/win11-mt/20210902193449.png" alt=""></p>
+<ol start="4">
+<li>这里面有个比较烦人的事情，在创建GtiHub应用时填写了一个链接，生成了 ID 和 Key 之后用来填到 Vercel 中，但是重新部署后这个服务端链接又变了，所以我们需要将新的服务端链接填回到GitHub中</li>
+</ol>
+<p><img src="https://photos.zywvvd.com/win11-mt/20210902195309.png" alt=""></p>
+<ol start="5">
+<li>之后即可使用 GitHub 登录。</li>
+</ol>
+<p><img src="https://photos.zywvvd.com/win11-mt/20210902202409.png" alt=""></p>
+<h3 id="参考资料">参考资料</h3>
+<ul>
+<li><a href="https://waline.js.org/guide/server/socials.html#github">https://waline.js.org/guide/server/socials.html#github</a></li>
+</ul>
+<link rel="stylesheet" href="/css/spoiler.css" type="text/css"><script src="/js/spoiler.js" type="text/javascript" async></script>]]></content>
+      <categories>
+        <category>Fluid</category>
+      </categories>
+      <tags>
+        <tag>Fluid</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>Fliud -9- 为文章增加 Waline 评论数统计信息显示</title>
+    <url>/notes/hexo/theme/fluid/fliud-comments-count/fliud-comments-count/</url>
+    <content><![CDATA[<blockquote>
+<p>之前我们升级了 <a href="/notes/hexo/theme/fluid/fluid-update-to-waline1-3-4/fluid-update-to-waline1-3-4">Waline 到 1.3.4</a>，已经获得了统计文章浏览量和评论数的能力。本文将该数据显示在文章标题处。</p>
+</blockquote>
+<span id="more"></span>
+<h3 id="先置条件">先置条件</h3>
+<ul>
+<li>
+<p><a href="/notes/hexo/theme/fluid/fluid-waline/fluid-waline">应用 Waline 评论系统</a></p>
+</li>
+<li>
+<p><a href="/notes/hexo/theme/fluid/fluid-update-to-waline1-3-4/fluid-update-to-waline1-3-4">升级 Waline 到 1.3.4</a></p>
+</li>
+</ul>
+<h3 id="修改思路">修改思路</h3>
+<ul>
+<li>添加计数相关内容</li>
+<li>设置 container，默认隐藏</li>
+<li>在创建完 Waline 实例后设置 container 可见</li>
+</ul>
+<h3 id="修改主题">修改主题</h3>
+<h4 id="修改-post-meta-ejs">修改 post-meta.ejs</h4>
+<p>修改 <code>themes -&gt; fluid -&gt; layout -&gt; _partial -&gt; post-meta.ejs</code></p>
+<figure class="highlight html"><table><tr><td class="code"><pre><code class="hljs html">  &lt;% if (theme.post.meta.views.source === &#x27;leancloud&#x27;) &#123; %&gt;<br>    <span class="hljs-comment">&lt;!-- LeanCloud 统计文章PV --&gt;</span><br>    <span class="hljs-tag">&lt;<span class="hljs-name">span</span> <span class="hljs-attr">id</span>=<span class="hljs-string">&quot;leancloud-page-views-container&quot;</span> <span class="hljs-attr">class</span>=<span class="hljs-string">&quot;post-meta&quot;</span> <span class="hljs-attr">style</span>=<span class="hljs-string">&quot;display: none&quot;</span>&gt;</span><br>      <span class="hljs-tag">&lt;<span class="hljs-name">i</span> <span class="hljs-attr">class</span>=<span class="hljs-string">&quot;iconfont icon-eye&quot;</span> <span class="hljs-attr">aria-hidden</span>=<span class="hljs-string">&quot;true&quot;</span>&gt;</span><span class="hljs-tag">&lt;/<span class="hljs-name">i</span>&gt;</span><br>      &lt;%- views_texts[0] %&gt;<span class="hljs-tag">&lt;<span class="hljs-name">span</span> <span class="hljs-attr">id</span>=<span class="hljs-string">&quot;leancloud-page-views&quot;</span>&gt;</span><span class="hljs-tag">&lt;/<span class="hljs-name">span</span>&gt;</span>&lt;%- views_texts[1] %&gt;<br><br><span class="hljs-tag">&lt;<span class="hljs-name">span</span> <span class="hljs-attr">id</span>=<span class="hljs-string">&quot;waline-comment-count-container&quot;</span> <span class="hljs-attr">style</span>=<span class="hljs-string">&quot;display: none&quot;</span>&gt;</span><br>	&amp;nbsp<br>	<span class="hljs-tag">&lt;<span class="hljs-name">i</span> <span class="hljs-attr">class</span>=<span class="hljs-string">&quot;iconfont icon-comment&quot;</span> <span class="hljs-attr">aria-hidden</span>=<span class="hljs-string">&quot;true&quot;</span>&gt;</span><span class="hljs-tag">&lt;/<span class="hljs-name">i</span>&gt;</span><br>	<span class="hljs-tag">&lt;<span class="hljs-name">span</span> <span class="hljs-attr">id</span>=<span class="hljs-string">&quot;test_id_visitor&quot;</span>&gt;</span><span class="hljs-tag">&lt;/<span class="hljs-name">span</span>&gt;</span><br><span class="hljs-tag">&lt;/<span class="hljs-name">span</span>&gt;</span><br><br><span class="hljs-tag">&lt;<span class="hljs-name">script</span>&gt;</span><span class="javascript"></span><br><span class="javascript">	path = <span class="hljs-built_in">window</span>.location.pathname</span><br><span class="javascript">	<span class="hljs-built_in">console</span>.log(path)</span><br><span class="javascript">	video_html_res = <span class="hljs-string">&quot;&lt;span id=&#x27;&quot;</span> + path + <span class="hljs-string">&quot;&#x27; class=&#x27;waline-comment-count&#x27;&gt;&lt;/span&gt;&amp;nbsp评论&quot;</span></span><br><span class="javascript">	<span class="hljs-built_in">console</span>.log(video_html_res)</span><br><span class="javascript">	<span class="hljs-built_in">document</span>.getElementById(<span class="hljs-string">&quot;test_id_visitor&quot;</span>).innerHTML = video_html_res;</span><br><span class="javascript"></span><span class="hljs-tag">&lt;/<span class="hljs-name">script</span>&gt;</span><br><br>    <span class="hljs-tag">&lt;/<span class="hljs-name">span</span>&gt;</span><br></code></pre></td></tr></table></figure>
+<ul>
+<li>其中第 7 -19 行是需要添加的</li>
+</ul>
+<h4 id="修改-waline-ejs">修改 waline.ejs</h4>
+<ul>
+<li>修改 <code>themes -&gt; fluid -&gt; layout -&gt; _partial -&gt; comments -&gt; waline.ejs</code></li>
+</ul>
+<figure class="highlight js"><table><tr><td class="code"><pre><code class="hljs js"><span class="hljs-keyword">new</span> Waline(options);<br><br>wa_ccc = <span class="hljs-string">&quot;waline-comment-count-container&quot;</span><br><span class="hljs-keyword">var</span> i=<span class="hljs-built_in">document</span>.getElementById(wa_ccc)<br>i.style.display = <span class="hljs-string">&#x27;inline&#x27;</span><br><br></code></pre></td></tr></table></figure>
+<ul>
+<li>其中第3 行之后加在 <code>new Waline(options);</code> 之后</li>
+</ul>
+<h3 id="效果示例">效果示例</h3>
+<p><img src="https://photos.zywvvd.com/win11-mt/20210902173656.png" alt=""></p>
+<blockquote>
+<p>不得已改了源码，有些丑陋，之后努力优雅实现一下</p>
+</blockquote>
+<h3 id="参考资料">参考资料</h3>
+<ul>
+<li><a href="https://waline.js.org/">https://waline.js.org/</a></li>
+</ul>
+<link rel="stylesheet" href="/css/spoiler.css" type="text/css"><script src="/js/spoiler.js" type="text/javascript" async></script>]]></content>
+      <categories>
+        <category>Fluid</category>
+      </categories>
+      <tags>
+        <tag>Fluid</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>Fluid -8- 升级 Waline 到1.3.4</title>
+    <url>/notes/hexo/theme/fluid/fluid-update-to-waline1-3-4/fluid-update-to-waline1-3-4/</url>
+    <content><![CDATA[<blockquote>
+<p>Fluid 1.8.11 原装的 Waline 版本为 0.16.2，当前最新版本为 1.3.4 有了诸多更新，本文记录升级方法。</p>
+</blockquote>
+<span id="more"></span>
+<h3 id="简介">简介</h3>
+<p><a href="https://cdn.jsdelivr.net/npm/@waline/client@1.3.4/dist/">@waline/client</a> 已经发布了很多新版本</p>
+<p><img src="https://photos.zywvvd.com/win11-mt/20210902161653.png" alt=""></p>
+<ul>
+<li>新版调整了前端配置</li>
+<li>增加了新功能</li>
+<li>对我来说最实用的是暗色模式和评论数统计</li>
+</ul>
+<h3 id="升级方法">升级方法</h3>
+<p>fluid 已经把waline相关配置做得很好了，只需要稍加调整即可升级版本</p>
+<ul>
+<li>修改主题配置文件：</li>
+</ul>
+<figure class="highlight yml"><table><tr><td class="code"><pre><code class="hljs yml"><span class="hljs-attr">waline:</span> <span class="hljs-string">https://cdn.jsdelivr.net/npm/@waline/client@0.16.2/dist/</span><br> <span class="hljs-comment"># 改为：</span><br><span class="hljs-attr">waline:</span> <span class="hljs-string">https://cdn.jsdelivr.net/npm/@waline/client@1.3.4/dist/</span><br></code></pre></td></tr></table></figure>
+<ul>
+<li>此时我们的配置已经不再合适，需要略微调整：</li>
+</ul>
+<figure class="highlight yaml"><table><tr><td class="code"><pre><code class="hljs yaml"><span class="hljs-comment"># Waline</span><br><span class="hljs-comment"># 从 Valine 衍生而来，额外增加了服务端和多种功能</span><br><span class="hljs-comment"># Derived from Valine, with self-hosted service and new features</span><br><span class="hljs-comment"># See: https://waline.js.org/</span><br><span class="hljs-attr">waline:</span><br>  <span class="hljs-attr">serverURL:</span> <span class="hljs-string">&#x27;your-servelURL&#x27;</span><br>  <span class="hljs-attr">placeholder:</span> <span class="hljs-string">遗憾莫过于难忘你的背影，却找不到你来过的痕迹</span> <span class="hljs-string">...</span><br>  <span class="hljs-attr">highlight:</span> <span class="hljs-literal">true</span><br>  <span class="hljs-attr">avatarForce:</span> <span class="hljs-literal">false</span><br>  <span class="hljs-attr">dark:</span> <span class="hljs-string">&#x27;html[data-user-color-scheme=&quot;dark&quot;]&#x27;</span><br>  <span class="hljs-attr">visitor:</span> <span class="hljs-literal">true</span><br>  <span class="hljs-attr">avatarCDN:</span> <span class="hljs-string">&#x27;https://seccdn.libravatar.org/avatar/&#x27;</span><br><br></code></pre></td></tr></table></figure>
+<ul>
+<li>参数说明：</li>
+</ul>
+<table>
+<thead>
+<tr>
+<th>参数</th>
+<th>描述</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>serverURL</td>
+<td>Waline 配置得到的服务端链接</td>
+</tr>
+<tr>
+<td>placeholder</td>
+<td>评论板默认文字</td>
+</tr>
+<tr>
+<td>highlight</td>
+<td>代码高亮</td>
+</tr>
+<tr>
+<td>avatarForce</td>
+<td>是否强制重新加载头像，官方不建议True</td>
+</tr>
+<tr>
+<td>dark</td>
+<td>适用于 fluid 主题的黑暗模式设置方式</td>
+</tr>
+<tr>
+<td>visitor</td>
+<td>开启访问统计</td>
+</tr>
+<tr>
+<td>avatarCDN</td>
+<td>头像地址来源</td>
+</tr>
+</tbody>
+</table>
+<ul>
+<li>具体最新更多配置参考 <a href="https://waline.js.org/reference/client.html#%E5%89%8D%E7%AB%AF%E9%85%8D%E7%BD%AE">waline官网</a></li>
+</ul>
+<details>
+    <summary>配置信息</summary>
+<h3 id="前端配置">前端配置</h3>
+<h4 id="el">el</h4>
+<ul>
+<li>类型: <code>string | HTMLElement</code></li>
+<li>必填: 否</li>
+</ul>
+<p>Waline 的初始化挂载器。必须是一个有效的 <strong>CSS 选择器</strong> 或 HTMLELement 对象。</p>
+<blockquote>
+<p>提示: 如果你只想使用浏览量统计功能，请不要设置该项。</p>
+</blockquote>
+<h4 id="serverURL">serverURL</h4>
+<ul>
+<li>类型: <code>string</code></li>
+<li>必填: 是</li>
+</ul>
+<p>Waline 的服务端地址。</p>
+<h4 id="path">path</h4>
+<ul>
+<li>类型: <code>string</code></li>
+<li>默认值: <code>window.location.pathname</code></li>
+<li>必填: 否</li>
+</ul>
+<p>当前 <em>文章页</em> 路径，用于区分不同的 <em>文章页</em>，以保证正确读取该 <em>文章页</em> 下的评论列表。</p>
+<p>可选值:</p>
+<ul>
+<li><code>window.location.pathname</code> (默认值，推荐)</li>
+<li><code>window.location.href</code></li>
+<li>自定义</li>
+</ul>
+<blockquote>
+<p>I. 请保证每个 <em>文章页</em> 路径的唯一性，否则可能会出现不同 <em>文章页</em> 下加载相同评论列表的情况。</p>
+<p>II. 如果值为 <code>window.location.href</code>，可能会出现随便加 <em>不同参数</em> 进入该页面，而被判断成新页面的情况。</p>
+</blockquote>
+<h4 id="lang">lang</h4>
+<ul>
+<li>类型: <code>string</code></li>
+<li>默认值: <code>'zh-CN'</code></li>
+<li>必填: 否</li>
+</ul>
+<p>多语言支持。</p>
+<p>可选值:</p>
+<ul>
+<li><code>'zh'</code></li>
+<li><code>'zh-CN'</code></li>
+<li><code>'zh-TW'</code></li>
+<li><code>'en'</code></li>
+<li><code>'en-US'</code></li>
+<li><code>'jp'</code></li>
+<li><code>'jp-JP'</code></li>
+</ul>
+<p>如需 <em>自定义语言</em>，请参考 <a href="https://waline.js.org/guide/client/i18n.html">i18n</a>。</p>
+<h4 id="visitor">visitor</h4>
+<ul>
+<li>类型: <code>boolean</code></li>
+<li>默认值: <code>false</code></li>
+<li>必填: 否</li>
+</ul>
+<p>文章访问量统计。</p>
+<h4 id="emoji">emoji</h4>
+<ul>
+<li>类型: <code>(string | EmojiInfo)[]</code></li>
+<li>默认值: <code>['https://cdn.jsdelivr.net/gh/walinejs/emojis/weibo']</code></li>
+</ul>
+<p>表情设置，详见 <a href="https://waline.js.org/guide/client/emoji.html">自定义表情</a></p>
+<h4 id="dark">dark</h4>
+<ul>
+<li>类型: <code>string</code></li>
+<li>必填: 否</li>
+</ul>
+<p>暗黑模式适配。</p>
+<ul>
+<li>设置 <code>'auto'</code> 会根据设备暗黑模式自适应。</li>
+<li>填入 CSS 选择器会在对应选择器生效时启用夜间模式。</li>
+</ul>
+<p>针对不同主题的例子</p>
+<ul>
+<li><strong>Docusaurus</strong>: 它会在 <code>&lt;html&gt;</code> 上通过设置 <code>data-theme=&quot;dark&quot;</code> 开启暗黑模式，那么你需要将 <code>dark</code> 选项设置为 <code>'html[data-theme=&quot;dark&quot;]'</code>。</li>
+<li><strong>hexo-theme-fluid</strong>: 它会在 <code>&lt;html&gt;</code> 上通过设置 <code>data-user-color-scheme=&quot;dark&quot;</code> 开启暗黑模式。那么你需要将 <code>dark</code> 选项设置为 <code>'html[data-user-color-scheme=&quot;dark&quot;]'</code>。</li>
+<li><strong>vuepress-theme-hope</strong>: 它会在 <code>&lt;body&gt;</code> 上添加<code>theme-dark</code> class 来开启暗黑模式。那么你需要将 <code>dark</code> 选项设置为 <code>body.theme-dark</code>。</li>
+</ul>
+<p>自定义样式与暗黑模式详见 <a href="https://waline.js.org/guide/client/style.html">自定义样式</a>。</p>
+<h4 id="meta">meta</h4>
+<ul>
+<li>类型: <code>string[]</code></li>
+<li>默认值: <code>['nick', 'mail', 'link']</code></li>
+<li>必填: 否</li>
+</ul>
+<p>评论者相关属性。可选值: <code>'nick'</code>, <code>'mail'</code>, <code>'link'</code></p>
+<h4 id="requiredMeta">requiredMeta</h4>
+<ul>
+<li>类型: <code>string[]</code></li>
+<li>默认值: <code>[]</code></li>
+<li>必填: 否</li>
+</ul>
+<p>设置<strong>必填项</strong>，默认匿名，可选值:</p>
+<ul>
+<li><code>[]</code></li>
+<li><code>['nick']</code></li>
+<li><code>['nick', 'mail']</code></li>
+</ul>
+<h4 id="login">login</h4>
+<ul>
+<li>类型: <code>string</code></li>
+<li>默认值: <code>'enable'</code></li>
+<li>必填: 否</li>
+</ul>
+<p>登录模式状态，可选值:</p>
+<ul>
+<li><code>'enable'</code>: 启用登录 (默认)</li>
+<li><code>'disable'</code>: 禁用登录，用户只能填写信息评论</li>
+<li><code>'force'</code>: 强制登录，用户必须注册并登录才可发布评论</li>
+</ul>
+<h4 id="avatar">avatar</h4>
+<ul>
+<li>类型: <code>string</code></li>
+<li>默认值: <code>mp</code></li>
+<li>必填: 否</li>
+</ul>
+<p><a href="http://cn.gravatar.com/">Gravatar</a> 头像展示方式。</p>
+<p>可选值:</p>
+<ul>
+<li><code>''</code></li>
+<li><code>'mp'</code></li>
+<li><code>'identicon'</code></li>
+<li><code>'monsterid'</code></li>
+<li><code>'wavatar'</code></li>
+<li><code>'retro'</code></li>
+<li><code>'robohash'</code></li>
+<li><code>'hide'</code></li>
+</ul>
+<p>更多信息，请查看 <a href="https://waline.js.org/guide/client/avatar.html">头像配置</a>。</p>
+<h4 id="wordLimit">wordLimit</h4>
+<ul>
+<li>类型: <code>number | [number, number]</code></li>
+<li>默认值: <code>0</code></li>
+<li>必要性: <code>false</code></li>
+</ul>
+<p>评论字数限制。填入单个数字时为最大字数限制。设置为 <code>0</code> 时无限制。</p>
+<h4 id="pageSize">pageSize</h4>
+<ul>
+<li>类型: <code>number</code></li>
+<li>默认值: <code>10</code></li>
+<li>必填: 否</li>
+</ul>
+<p>评论列表分页，每页条数。</p>
+<h4 id="avatarCDN">avatarCDN</h4>
+<ul>
+<li>类型: <code>string</code></li>
+<li>默认值: <code>https://seccdn.libravatar.org/avatar/</code></li>
+<li>必填: 否</li>
+</ul>
+<p>设置头像 CDN 地址。可使用任何与 <a href="http://cn.gravatar.com/">Gravatar在新窗口打开</a> API 兼容的服务。</p>
+<h4 id="avatarForce">avatarForce</h4>
+<ul>
+<li>类型: <code>boolean</code></li>
+<li>默认值: <code>false</code></li>
+<li>必填: 否</li>
+</ul>
+<p>每次访问是否<strong>强制</strong>拉取最新的<em>评论列表头像</em></p>
+<blockquote>
+<p>不推荐设置为 <code>true</code>，目前的<em>评论列表头像</em>会自动带上 <code>Waline</code> 的版本号</p>
+</blockquote>
+<h4 id="uploadImage">uploadImage</h4>
+<ul>
+<li>类型: <code>Function | false</code></li>
+<li>必填: 否</li>
+</ul>
+<p>自定义图片上传方法，方便更好的存储图片。方法执行时会将图片对象传入。</p>
+<p>你可以设置为 <code>false</code> 以禁用图片上传功能。</p>
+<h4 id="highlight">highlight</h4>
+<ul>
+<li>类型: <code>boolean</code></li>
+<li>默认值: <code>true</code></li>
+<li>必填: 否</li>
+</ul>
+<p><strong>代码高亮</strong>，默认开启，若不需要，请手动关闭</p>
+<h4 id="mathTagSupport">mathTagSupport</h4>
+<ul>
+<li>类型: <code>boolean</code></li>
+<li>默认值: <code>false</code></li>
+<li>必填: 否</li>
+</ul>
+<p>是否注入核外样式以兼容 <code>&lt;math&gt;</code> 显示。</p>
+<h4 id="copyright">copyright</h4>
+<ul>
+<li>类型: <code>boolean</code></li>
+<li>默认值: <code>true</code></li>
+<li>必填: 否</li>
+</ul>
+<p>是否显示页脚版权信息。</p>
+<p>提示</p>
+<p>我们希望你保持打开以支持 Waline</p>
+<h3 id="废弃的-API">废弃的 API</h3>
+<p>以下 API 仍然有效，但它们会在 V2 版本中移除</p>
+<h4 id="langMode">langMode</h4>
+<p>已过时</p>
+<p>请使用 <code>locale</code></p>
+<ul>
+<li>类型: <code>Locale</code></li>
+<li>必填: 否</li>
+</ul>
+<p>自定义语言。</p>
+<h4 id="placeholder">placeholder</h4>
+<p>已过时</p>
+<p>请使用 <code>locale.placeholder</code></p>
+<ul>
+<li>类型: <code>string</code></li>
+<li>默认值: <code>'Just Go GO'</code></li>
+<li>必填: 否</li>
+</ul>
+<p>评论框 <strong>占位提示符</strong>。</p>
+<h4 id="emojiCDN">emojiCDN</h4>
+<p>已过时</p>
+<p>请使用 <code>emoji</code></p>
+<ul>
+<li>类型: <code>string</code></li>
+<li>默认值: <code>https://img.t.sinajs.cn/t4/appstyle/expression/ext/normal/</code></li>
+<li>必填: 否</li>
+</ul>
+<p>设置<strong>表情包 CDN</strong>，参考<a href="https://waline.js.org/guide/client/emoji.html">自定义表情</a></p>
+<h4 id="emojiMaps">emojiMaps</h4>
+<p>已过时</p>
+<p>请使用 <code>emoji</code></p>
+<ul>
+<li>类型: <code>Object</code></li>
+<li>默认值: <code>微博表情包</code></li>
+<li>必填: 否</li>
+</ul>
+<p>设置<strong>表情包映射</strong>，参考<a href="https://waline.js.org/guide/client/emoji.html">自定义表情</a></p>
+<h4 id="requiredFields">requiredFields</h4>
+<p>已过时</p>
+<p>请使用 <code>requiredMeta</code></p>
+<h4 id="anonymous">anonymous</h4>
+<p>已过时</p>
+<p>请使用 <code>login</code></p>
+<ul>
+<li>类型: <code>boolean</code></li>
+<li>必填: 否</li>
+</ul>
+<p>是否允许登录评论。默认情况是两者都支持，设置为 <code>true</code> 表示仅支持匿名评论，<code>false</code> 表示仅支持登录评论。</p>
+<h4 id="copyRight">copyRight</h4>
+<p>已废弃</p>
+<p>请使用 <code>copyright</code></p>
+</details>
+<h3 id="升级效果">升级效果</h3>
+<ul>
+<li>版本升级</li>
+</ul>
+<p><img src="https://photos.zywvvd.com/win11-mt/20210902164421.png" alt=""></p>
+<ul>
+<li>协调的黑暗模式</li>
+</ul>
+<p><img src="https://photos.zywvvd.com/win11-mt/20210902164457.png" alt=""></p>
+<ul>
+<li>新头像</li>
+</ul>
+<p><img src="https://photos.zywvvd.com/win11-mt/20210902164537.png" alt=""></p>
+<ul>
+<li>访问统计（该功能当前只是后台开始计数，当前配置完成不会显示评论数，需要后续修改）</li>
+</ul>
+<p><img src="https://photos.zywvvd.com/win11-mt/20210902164602.png" alt=""></p>
+<h3 id="参考资料">参考资料</h3>
+<ul>
+<li><a href="https://waline.js.org/">https://waline.js.org/</a></li>
+<li><a href="https://cdn.jsdelivr.net/npm/@waline/client@1.3.4/dist/">https://cdn.jsdelivr.net/npm/@waline/client@1.3.4/dist/</a></li>
+<li><a href="https://waline.js.org/reference/client.html#%E5%89%8D%E7%AB%AF%E9%85%8D%E7%BD%AE">https://waline.js.org/reference/client.html#前端配置</a></li>
+</ul>
+<link rel="stylesheet" href="/css/spoiler.css" type="text/css"><script src="/js/spoiler.js" type="text/javascript" async></script>]]></content>
+      <categories>
+        <category>Fluid</category>
+      </categories>
+      <tags>
+        <tag>Fluid</tag>
+      </tags>
+  </entry>
+  <entry>
     <title>Fluid -7- 增加 Waline 微信通知</title>
     <url>/notes/hexo/theme/fluid/fluid-wechat-notify/fluid-wechat-notify/</url>
     <content><![CDATA[<blockquote>
@@ -259,8 +727,12 @@
 <ul>
 <li>看板娘与不蒜子冲突</li>
 <li>不蒜子可以成功加载，看板娘出现就会干掉不蒜子的结果</li>
+<li>貌似是会将  <code>busuanzi_container_page_pv</code>, <code>busuanzi_container_site_uv</code>， <code>busuanzi_container_site_pv</code> 三个值的<code>style: display</code>设置为 none</li>
+<li>导致事实上不蒜子计数了，但是显示不出来</li>
 </ul>
 <h3 id="解决方案">解决方案</h3>
+<h4 id="方案一">方案一</h4>
+<p>重新手动加载不蒜子，在 <code>footer</code> 添加总访问量计数</p>
 <ul>
 <li>
 <p>在footer手动重新加载不蒜子统计结果</p>
@@ -273,6 +745,63 @@
 <blockquote>
 <p>其中包含了 fluid 链接、站点运行时间、访问量统计</p>
 </blockquote>
+<h5 id="存在的问题">存在的问题</h5>
+<ul>
+<li>该方法重新在footer加载了不蒜子，但是原始不蒜子没有关闭，使得网页计数会 double</li>
+<li>破坏了原始设计架构，不很优雅</li>
+<li>不蒜子计数并不稳定</li>
+<li>文章统计数还是会消失</li>
+</ul>
+<h4 id="方案二">方案二</h4>
+<p>在方案一的基础上修改方案，放弃手动添加计数，使用原生计数</p>
+<ul>
+<li>打开 <code>themes -&gt; fluid -&gt; layout -&gt; _partial -&gt; post-meta.ejs</code></li>
+<li>修改 <code>&lt;span id=&quot;busuanzi_container_page_pv&quot; style=&quot;display: none&quot;&gt;</code> 为：</li>
+</ul>
+<figure class="highlight routeros"><table><tr><td class="code"><pre><code class="hljs routeros">&lt;span <span class="hljs-attribute">id</span>=<span class="hljs-string">&quot;busuanzi_container_page_pv_&quot;</span> <span class="hljs-attribute">style</span>=<span class="hljs-string">&quot;display: true&quot;</span>&gt;<br></code></pre></td></tr></table></figure>
+<ul>
+<li>打开<code>themes -&gt; fluid -&gt; layout -&gt; _partial -&gt; statistics.ejs</code></li>
+<li>修改 <code>&lt;span id=&quot;busuanzi_container_site_pv&quot; style=&quot;display: none&quot;&gt;</code>  和 <code>&lt;span id=&quot;busuanzi_container_site_uv&quot; style=&quot;display: none&quot;&gt;</code> 为：</li>
+</ul>
+<figure class="highlight routeros"><table><tr><td class="code"><pre><code class="hljs routeros">&lt;span <span class="hljs-attribute">id</span>=<span class="hljs-string">&quot;busuanzi_container_site_pv_&quot;</span> <span class="hljs-attribute">style</span>=<span class="hljs-string">&quot;display: true&quot;</span>&gt;<br><span class="hljs-comment"># 和</span><br>&lt;span <span class="hljs-attribute">id</span>=<span class="hljs-string">&quot;busuanzi_container_site_uv_&quot;</span> <span class="hljs-attribute">style</span>=<span class="hljs-string">&quot;display: true&quot;</span>&gt;<br></code></pre></td></tr></table></figure>
+<blockquote>
+<p>思路为 无脑显示这两个 <code>span</code>，同时破坏原始id，使得其 style 不会被修改为隐藏</p>
+</blockquote>
+<h5 id="相对方案一优势">相对方案一优势</h5>
+<ul>
+<li>解决了重复计数的问题</li>
+<li>不用在 footer 加上丑陋的代码</li>
+<li>出现了文章阅读量计数</li>
+</ul>
+<h5 id="存在的问题-2">存在的问题</h5>
+<ul>
+<li>修改源代码，也没有优雅到哪去</li>
+<li>不蒜子计数不稳定，经常会空着显示在那里，略显尴尬</li>
+</ul>
+<h4 id="方案三">方案三</h4>
+<p>方案二已经是不蒜子计数的极限，万恶之源就是不蒜子不太行了，于是换掉不蒜子使用 leancloud</p>
+<ul>
+<li>修改主题配置文件，文章计数 source 使用 leancloud</li>
+</ul>
+<figure class="highlight yml"><table><tr><td class="code"><pre><code class="hljs yml"><span class="hljs-comment"># 浏览量计数</span><br><span class="hljs-comment"># Number of visits</span><br><span class="hljs-attr">views:</span><br>  <span class="hljs-attr">enable:</span> <span class="hljs-literal">true</span><br>  <span class="hljs-comment"># 统计数据来源</span><br>  <span class="hljs-comment"># Data Source</span><br>  <span class="hljs-comment"># Options: busuanzi | leancloud</span><br>  <span class="hljs-attr">source:</span> <span class="hljs-string">&quot;leancloud&quot;</span><br>  <span class="hljs-attr">format:</span> <span class="hljs-string">&quot;&#123;&#125; 次&quot;</span><br></code></pre></td></tr></table></figure>
+<ul>
+<li>修改主题配置文件，访问计数 source 使用 leancloud</li>
+</ul>
+<figure class="highlight yml"><table><tr><td class="code"><pre><code class="hljs yml"><span class="hljs-comment"># 展示网站的 PV、UV 统计数</span><br><span class="hljs-comment"># Display website PV and UV statistics</span><br><span class="hljs-attr">statistics:</span><br>  <span class="hljs-attr">enable:</span> <span class="hljs-literal">true</span><br><br>  <span class="hljs-comment"># 统计数据来源，使用 leancloud 需要设置 `web_analytics: leancloud` 中的参数；使用 busuanzi 不需要额外设置，但是有时不稳定，另外本地运行时 busuanzi 显示统计数据很大属于正常现象，部署后会正常</span><br>  <span class="hljs-comment"># Data source. If use leancloud, you need to set the parameter in `web_analytics: leancloud`</span><br>  <span class="hljs-comment"># Options: busuanzi | leancloud</span><br>  <span class="hljs-attr">source:</span> <span class="hljs-string">&quot;leancloud&quot;</span><br><br>  <span class="hljs-comment"># 页面显示的文本，&#123;&#125;是数字的占位符（必须包含)，下同</span><br>  <span class="hljs-comment"># Displayed text, &#123;&#125; is a placeholder for numbers (must be included), the same below</span><br>  <span class="hljs-attr">pv_format:</span> <span class="hljs-string">&quot;总访问量 &#123;&#125; 次&quot;</span><br>  <span class="hljs-attr">uv_format:</span> <span class="hljs-string">&quot;总访客数 &#123;&#125; 人&quot;</span><br></code></pre></td></tr></table></figure>
+<ul>
+<li>修改主题配置文件，配置 leancloud <code>app_id</code>， <code>app_key</code>和 <code>server_url</code></li>
+</ul>
+<figure class="highlight yml"><table><tr><td class="code"><pre><code class="hljs yml"><span class="hljs-comment"># LeanCloud 计数统计，可用于 PV UV 展示，如果 `web_analytics: enable` 没有开启，PV UV 展示只会查询不会增加</span><br><span class="hljs-comment"># LeanCloud count statistics, which can be used for PV UV display. If `web_analytics: enable` is false, PV UV display will only query and not increase</span><br><span class="hljs-attr">leancloud:</span><br>  <span class="hljs-attr">app_id:</span> <span class="hljs-string">xxxxxxxxxxxx</span><br>  <span class="hljs-attr">app_key:</span> <span class="hljs-string">xxxxxxxxxxxxxxxx</span><br>  <span class="hljs-comment"># REST API 服务器地址，国际版不填</span><br>  <span class="hljs-comment"># Only the Chinese mainland users need to set</span><br>  <span class="hljs-attr">server_url:</span> <span class="hljs-string">xxxxxxxxxxxxxxxxx</span><br></code></pre></td></tr></table></figure>
+<blockquote>
+<p>优雅地解决了问题</p>
+</blockquote>
+<h5 id="相对方案二优势">相对方案二优势</h5>
+<ul>
+<li>计数稳定，反应快</li>
+<li>不会和live2d冲突</li>
+<li>不修改源码，优雅得很</li>
+<li>访问统计和文章统计都在</li>
+</ul>
 <h3 id="参考资料">参考资料</h3>
 <ul>
 <li><a href="https://www.zywvvd.com/hexo-theme/next/13_busuanzi_fix_for_live2d/next-busuanzi-fix-live2d/">https://www.zywvvd.com/hexo-theme/next/13_busuanzi_fix_for_live2d/next-busuanzi-fix-live2d/</a></li>
@@ -1754,7 +2283,7 @@ $$</p>
 <h4 id="random-seed-n">random.seed(n)</h4>
 <p>可以使得随机数发生器以 $n$ 为种子产生随后的序列</p>
 <ul>
-<li>当运行 <code>random.seed()</code> 时表面使用当前系统时间作为随机种子，也就是随机重置随机数发生器</li>
+<li>当运行 <code>random.seed()</code> 时表明使用当前系统时间作为随机种子，也就是随机重置随机数发生器</li>
 </ul>
 <figure class="highlight python"><table><tr><td class="code"><pre><code class="hljs python"><span class="hljs-keyword">import</span> random<br><br><br><span class="hljs-function"><span class="hljs-keyword">def</span> <span class="hljs-title">get_random_num</span>(<span class="hljs-params">tag</span>):</span><br>    random.seed()<br>    <span class="hljs-keyword">for</span> _ <span class="hljs-keyword">in</span> <span class="hljs-built_in">range</span>(<span class="hljs-number">100</span>):<br>        random.random()<br>    <span class="hljs-built_in">print</span>(tag)<br>    <span class="hljs-built_in">print</span>(random.random())<br><br><br><span class="hljs-keyword">if</span> __name__ == <span class="hljs-string">&#x27;__main__&#x27;</span>:<br><br>    <span class="hljs-keyword">for</span> index <span class="hljs-keyword">in</span> <span class="hljs-built_in">range</span>(<span class="hljs-number">5</span>):<br>        get_random_num(index)<br></code></pre></td></tr></table></figure>
 <blockquote>
@@ -1795,7 +2324,7 @@ $$</p>
 <p>输出</p>
 </blockquote>
 <figure class="highlight clean"><table><tr><td class="code"><pre><code class="hljs clean">############  单线程  ###########<br><span class="hljs-number">0</span> - <span class="hljs-number">0.15376246243379788</span><br><span class="hljs-number">1</span> - <span class="hljs-number">0.15376246243379788</span><br><span class="hljs-number">2</span> - <span class="hljs-number">0.15376246243379788</span><br><span class="hljs-number">3</span> - <span class="hljs-number">0.15376246243379788</span><br><span class="hljs-number">4</span> - <span class="hljs-number">0.15376246243379788</span><br>############  多线程  ###########<br><span class="hljs-number">0</span> - <span class="hljs-number">0.37956604279157746</span><br><span class="hljs-number">4</span> - <span class="hljs-number">0.5552055004170326</span><br><span class="hljs-number">2</span> - <span class="hljs-number">0.40568119200883823</span><br><span class="hljs-number">3</span> - <span class="hljs-number">0.09736679342311894</span><br><span class="hljs-number">1</span> - <span class="hljs-number">0.9874404365309796</span><br></code></pre></td></tr></table></figure>
-<p>可以看到多线程输出的还是纷乱的随机数，表面设置状态还是会受到多线程的干扰</p>
+<p>可以看到多线程输出的还是纷乱的随机数，表明设置状态还是会受到多线程的干扰</p>
 <p><strong>得出综合结论: python自带 random 模块线程不安全</strong></p>
 <h3 id="numpy-random">numpy.random</h3>
 <p>numpy 也存在 seed 和 state 两种随机数状态设定策略</p>
@@ -6896,9 +7425,12 @@ $$</p>
 <ul>
 <li><a href="https://www.zywvvd.com/image_processing/laplace-operator/laplace-operator/">拉普拉斯算子  Laplacian</a></li>
 </ul>
-<p>$$<br>
-\quad \Delta f=\frac{\partial^{2} f}{\partial x<sup>{2}}+\frac{\partial</sup>{2} f}{\partial y^{2}}<br>
-$$</p>
+
+$$
+\quad \Delta f=\frac{\partial^{2} f}{\partial x^{2}}+\frac{\partial^{2} f}{\partial y^{2}}
+$$
+
+
 <ul>
 <li>散度 Divergence</li>
 </ul>
