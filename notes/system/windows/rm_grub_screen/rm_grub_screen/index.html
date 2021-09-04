@@ -1,0 +1,760 @@
+
+
+<!DOCTYPE html>
+<html lang="zh-CN" data-default-color-scheme=&#34;auto&#34;>
+<script type="text/javascript" src="/vvd_js/jquery.js"></script>
+
+
+
+<head>
+  <meta charset="UTF-8">
+  <link rel="apple-touch-icon" sizes="76x76" href="/img/favicon.png">
+  <link rel="icon" href="/img/favicon.png">
+  <meta name="viewport"
+        content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, shrink-to-fit=no">
+  <meta http-equiv="x-ua-compatible" content="ie=edge">
+  
+  <meta name="theme-color" content="#2f4154">
+  <meta name="description" content="
+曾经在原始Win10下装了双系统，开机时用 grub 选择启动哪个系统。随后又把linux删了，但是grub启动还在，每次开机都要选择一下，很麻烦，本文记录删除grub启动的方法。
+">
+  <meta name="author" content="Yiwei Zhang">
+  <meta name="keywords" content="人工智能, 深度学习, 个人博客, 机器学习">
+  
+  <title>Windows 10 删除 grub 引导 - 又见苍岚</title>
+
+  <link  rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@4.6.0/dist/css/bootstrap.min.css" />
+
+
+  <link  rel="stylesheet" href="https://cdn.jsdelivr.net/npm/github-markdown-css@4.0.0/github-markdown.min.css" />
+  <link  rel="stylesheet" href="/lib/hint/hint.min.css" />
+
+  
+    
+    
+      
+      <link  rel="stylesheet" href="https://cdn.jsdelivr.net/npm/highlight.js@10.7.2/styles/github-gist.min.css" />
+    
+  
+
+  
+    <link  rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fancyapps/fancybox@3.5.7/dist/jquery.fancybox.min.css" />
+  
+
+
+
+<!-- 主题依赖的图标库，不要自行修改 -->
+
+<link rel="stylesheet" href="//at.alicdn.com/t/font_1749284_ba1fz6golrf.css">
+
+
+
+<link rel="stylesheet" href="//at.alicdn.com/t/font_1736178_kmeydafke9r.css">
+
+
+<link  rel="stylesheet" href="/css/main.css" />
+
+<!-- 自定义样式保持在最底部 -->
+
+
+  <script id="fluid-configs">
+    var Fluid = window.Fluid || {};
+    var CONFIG = {"hostname":"www.zywvvd.com","root":"/","version":"1.8.11","typing":{"enable":true,"typeSpeed":70,"cursorChar":"_","loop":false},"anchorjs":{"enable":true,"element":"h1,h2,h3,h4,h5,h6","placement":"right","visible":"hover","icon":""},"progressbar":{"enable":true,"height_px":3,"color":"#29d","options":{"showSpinner":false,"trickleSpeed":100}},"copy_btn":true,"image_zoom":{"enable":true,"img_url_replace":["",""]},"toc":{"enable":true,"headingSelector":"h1,h2,h3,h4,h5,h6","collapseDepth":0},"lazyload":{"enable":true,"loading_img":"/img/loading.gif","onlypost":false,"offset_factor":2},"web_analytics":{"enable":true,"baidu":null,"google":null,"gtag":null,"tencent":{"sid":null,"cid":null},"woyaola":null,"cnzz":null,"leancloud":{"app_id":"OLRteWxoct1JkWm3Pe9BDYEK-gzGzoHsz","app_key":"YBKiC6SE5hpWUmy0WIyegCrM","server_url":"https://waline.zywvvd.com"}},"search_path":"/local-search.xml"};
+  </script>
+  <script  src="/js/utils.js" ></script>
+  <script  src="/js/color-schema.js" ></script>
+<meta name="generator" content="Hexo 5.4.0"><link rel="alternate" href="/atom.xml" title="又见苍岚" type="application/atom+xml">
+</head>
+
+
+<body>
+		
+  <header style="height: 70vh;">
+    <nav id="navbar" class="navbar fixed-top  navbar-expand-lg navbar-dark scrolling-navbar">
+  <div class="container">
+    <a class="navbar-brand"
+       href="/">&nbsp;<strong>CangLan</strong>&nbsp;</a>
+
+    <button id="navbar-toggler-btn" class="navbar-toggler" type="button" data-toggle="collapse"
+            data-target="#navbarSupportedContent"
+            aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
+      <div class="animated-icon"><span></span><span></span><span></span></div>
+    </button>
+
+    <!-- Collapsible content -->
+    <div class="collapse navbar-collapse" id="navbarSupportedContent">
+      <ul class="navbar-nav ml-auto text-center">
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/">
+                <i class="iconfont icon-home-fill"></i>
+                首页
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/archives/">
+                <i class="iconfont icon-archive-fill"></i>
+                归档
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/categories/">
+                <i class="iconfont icon-category-fill"></i>
+                分类
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/tags/">
+                <i class="iconfont icon-tags-fill"></i>
+                标签
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/about/">
+                <i class="iconfont icon-user-fill"></i>
+                关于
+              </a>
+            </li>
+          
+        
+        
+          <li class="nav-item" id="search-btn">
+            <a class="nav-link" target="_self" data-toggle="modal" data-target="#modalSearch">&nbsp;<i
+                class="iconfont icon-search"></i>&nbsp;</a>
+          </li>
+        
+        
+          <li class="nav-item" id="color-toggle-btn">
+            <a class="nav-link" target="_self">&nbsp;<i
+                class="iconfont icon-dark" id="color-toggle-icon"></i>&nbsp;</a>
+          </li>
+        
+      </ul>
+    </div>
+  </div>
+</nav>
+
+		<div class="banner" id="banner" parallax=true
+			 style="background: url('https://photos.zywvvd.com/vvd-dell-2021-win-10/20210812235004.jpg') no-repeat center center;
+			   background-size: cover;">
+
+      <div class="full-bg-img" >
+
+		
+		<div id="banner_video_insert">
+		</div>
+		<script>
+						
+			var ua = navigator.userAgent;
+			var ipad = ua.match(/(iPad).*OS\s([\d_]+)/),
+				isIphone = !ipad && ua.match(/(iPhone\sOS)\s([\d_]+)/),
+				isAndroid = ua.match(/(Android)\s+([\d.]+)/),
+				isMobile = isIphone || isAndroid;
+
+			function set_video_attr(id){
+				
+				var height = document.body.children[0].clientHeight
+
+				var width = document.body.children[0].clientWidth
+
+				var video_item = document.getElementById(id);
+
+				if (height / width < 0.56){
+					video_item.setAttribute('width', '100%');
+					video_item.setAttribute('height', 'auto');
+				} else {
+					video_item.setAttribute('height', '100%');
+					video_item.setAttribute('width', 'auto');
+				}
+			}
+
+			$.getJSON('/vvd_js/video_url.json', function(data){
+				if (!isMobile){
+					var video_list_length = data.length
+					var seed = Math.random()
+					index = Math.floor(seed * video_list_length)
+					
+					video_url = data[index]
+					video_html_res = "<video id='video_item' style='position: absolute;' muted='muted' src=" + video_url + " autoplay='autoplay' loop='loop'></video>"
+
+					document.getElementById("banner_video_insert").innerHTML = video_html_res;
+					set_video_attr('video_item')
+				}
+
+			});
+
+			if (!isMobile){
+				window.onresize = function(){
+					set_video_attr('video_item')
+					}
+				}
+			</script>
+
+		
+
+        <div class="mask flex-center" style="background-color: rgba(0, 0, 0, 0.3)">
+          <div class="page-header text-center fade-in-up">
+            <span class="h2" id="subtitle" title="Windows 10 删除 grub 引导">
+              
+            </span>
+
+            
+              <div class="mt-3">
+  
+    <span class="post-meta mr-2">
+      <i class="iconfont icon-author" aria-hidden="true"></i>
+      Yiwei Zhang
+    </span>
+  
+  
+    <span class="post-meta">
+      <i class="iconfont icon-date-fill" aria-hidden="true"></i>
+      <time datetime="2021-06-03 10:22" pubdate>
+        2021年6月3日 上午
+      </time>
+    </span>
+  
+</div>
+
+<div class="mt-1">
+  
+    
+    <span class="post-meta mr-2">
+      <i class="iconfont icon-chart"></i>
+      1.1k 字
+    </span>
+  
+
+  
+    
+    <span class="post-meta mr-2">
+      <i class="iconfont icon-clock-fill"></i>
+      
+      
+      14
+       分钟
+    </span>
+  
+
+  
+  
+    
+      <!-- LeanCloud 统计文章PV -->
+      <span id="leancloud-page-views-container" class="post-meta" style="display: none">
+        <i class="iconfont icon-eye" aria-hidden="true"></i>
+        <span id="leancloud-page-views"></span> 次
+
+		<span id="waline-comment-count-container" style="display: none">
+			&nbsp
+			<i class="iconfont icon-comment" aria-hidden="true"></i>
+			<span id="test_id_visitor"></span>
+		</span>
+		
+		<script>
+			path = window.location.pathname
+			console.log(path)
+			video_html_res = "<span id='" + path + "' class='waline-comment-count'></span>&nbsp评论"
+			console.log(video_html_res)
+			document.getElementById("test_id_visitor").innerHTML = video_html_res;
+		</script>
+
+      </span>
+    
+  
+</div>
+
+            
+          </div>
+
+          
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <main>
+    
+      
+
+<div class="container-fluid nopadding-x">
+  <div class="row nomargin-x">
+    <div class="d-none d-lg-block col-lg-2"></div>
+    <div class="col-lg-8 nopadding-x-md">
+      <div class="container nopadding-x-md" id="board-ctn">
+        <div class="py-5" id="board">
+          <article class="post-content mx-auto">
+            <!-- SEO header -->
+            <h1 style="display: none">Windows 10 删除 grub 引导</h1>
+            
+              <p class="note note-info">
+                
+                  本文最后更新于：2021年9月5日 凌晨
+                
+              </p>
+            
+            <div class="markdown-body">
+              <blockquote>
+<p>曾经在原始Win10下装了双系统，开机时用 grub 选择启动哪个系统。随后又把linux删了，但是grub启动还在，每次开机都要选择一下，很麻烦，本文记录删除grub启动的方法。</p>
+</blockquote>
+<span id="more"></span>
+<h3 id="工作原理">工作原理</h3>
+<ul>
+<li>本文的内容适用于和我一样经历的电脑，一定脱离grub后自己可以启动的那种才行，即：<strong>原始Windows</strong> -&gt; <strong>双系统，自带 grub</strong> -&gt; <strong>需要删除grub</strong></li>
+<li>安装双系统时会在Win的启动区安装grub，这样就算删除了双系统grub也是要运行的</li>
+<li>解决思路就是找到这个grub直接删掉，然后就会使用原来的Win引导自动启动系统</li>
+</ul>
+<h3 id="操作流程">操作流程</h3>
+<h4 id="具象化启动磁盘">具象化启动磁盘</h4>
+<blockquote>
+<p>我们需要修改系统启动磁盘的信息，这部分磁盘默认都是隐藏的，我们无法操作，因此需要将他们映射到某个盘符，便于我们修改</p>
+</blockquote>
+<ol>
+<li>启动<code>cmd.exe</code></li>
+<li>在<code>cmd</code>中运行<code>diskpart</code>命令，启动<code>diskpart</code>工具</li>
+<li>在<code>diskpart</code>中运行<code>list disk</code></li>
+</ol>
+<figure class="highlight jboss-cli"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><code class="hljs jboss-cli">DISKPART&gt; list disk<br><br>  磁盘 <span class="hljs-comment">###  状态           大小     可用     Dyn  Gpt</span><br>  <span class="hljs-params">--------</span>  <span class="hljs-params">-------------</span>  <span class="hljs-params">-------</span>  <span class="hljs-params">-------</span>  <span class="hljs-params">---</span>  <span class="hljs-params">---</span><br>  磁盘 0    联机              111 GB  3072 KB        *<br>  磁盘 1    联机              931 GB      0 B        *<br></code></pre></td></tr></table></figure>
+<blockquote>
+<p>我的磁盘0是Win系统磁盘</p>
+</blockquote>
+<ol start="4">
+<li>选择boot文件所在的磁盘，运行命令<code>sel disk X</code>（我的是0，大家根据各自情况填入）</li>
+</ol>
+<figure class="highlight mipsasm"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><code class="hljs mipsasm"><span class="hljs-keyword">DISKPART&gt; </span>sel <span class="hljs-keyword">disk </span><span class="hljs-number">0</span><br><br>磁盘 <span class="hljs-number">0</span> 现在是所选磁盘。<br></code></pre></td></tr></table></figure>
+<ol start="5">
+<li>运行命令<code>list vol</code></li>
+</ol>
+<blockquote>
+<p>查看磁盘上的所有分区（卷）（EFI卷将被格式化为FAT，其他卷将被格式化为NTFS）</p>
+</blockquote>
+<figure class="highlight jboss-cli"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><code class="hljs jboss-cli"><br>DISKPART&gt; list vol<br><br>  卷 <span class="hljs-comment">###      LTR  标签         FS     类型        大小     状态       信息</span><br>  <span class="hljs-params">----------</span>  <span class="hljs-params">---</span>  <span class="hljs-params">-----------</span>  <span class="hljs-params">-----</span>  <span class="hljs-params">----------</span>  <span class="hljs-params">-------</span>  <span class="hljs-params">---------</span>  <span class="hljs-params">--------</span><br>  卷     0     C                NTFS   磁盘分区          74 GB  正常         启动<br>  卷     1     D   代码区          NTFS   磁盘分区          28 GB  正常         页面文件<br>  卷     2     L                FAT32  磁盘分区         200 MB  正常         系统<br>  卷     3                      NTFS   磁盘分区         588 MB  正常         已隐藏<br>  卷     4     E                NTFS   磁盘分区         234 GB  正常<br>  卷     5     F                NTFS   磁盘分区         465 GB  正常<br>  卷     6                      FAT32  磁盘分区         513 MB  正常         已隐藏<br></code></pre></td></tr></table></figure>
+<ol start="6">
+<li>选择EFI分区，启动信息都在上面，运行命令<code>sel vol X</code></li>
+</ol>
+<blockquote>
+<p>X 就是后面写着系统的那个卷的标号（我的是2）</p>
+</blockquote>
+<figure class="highlight armasm"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><code class="hljs armasm"><span class="hljs-symbol">DISKPART</span>&gt; <span class="hljs-keyword">sel</span> vol <span class="hljs-number">2</span><br><br>卷 <span class="hljs-number">2</span> 是所选卷。<br></code></pre></td></tr></table></figure>
+<ol start="7">
+<li>将其映射到某个盘符上<code>assign letter=L:</code>（L是我电脑上没有使用的盘符，不要忘了有冒号）</li>
+</ol>
+<blockquote>
+<p>此时会多一个L磁盘，第一步就成功了</p>
+<p>打是打不开的，而且这部分文件最好不要轻举妄动，可能一不小心就启动不起来了</p>
+</blockquote>
+<h4 id="删除ubuntu引导文件夹">删除ubuntu引导文件夹</h4>
+<blockquote>
+<p>我们已经把引导磁盘抓出来了，删除grub引导文件就可以了</p>
+</blockquote>
+<ol>
+<li>以<strong>系统管理员身份</strong>启动<code>cmd.exe</code></li>
+<li>输入<code>L:</code>，进入L磁盘</li>
+<li>输入<code>dir</code>命令，查看当前磁盘目录</li>
+</ol>
+<blockquote>
+<p>这一步就是为了检查我们此时操作是否正确，正常的话应该只有一个名为<code>EFI</code>的文件夹</p>
+</blockquote>
+<figure class="highlight dts"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><code class="hljs dts"><span class="hljs-symbol"></span><br><span class="hljs-symbol">L:</span>\&gt;dir<br> 驱动器 L 中的卷没有标签。<br> 卷的序列号是 <span class="hljs-number">3</span>A1C<span class="hljs-number">-7752</span><br><span class="hljs-symbol"></span><br><span class="hljs-symbol"> L:</span>\ 的目录<br><br><span class="hljs-number">2020</span>/<span class="hljs-number">01</span>/<span class="hljs-number">13</span>  <span class="hljs-number">03</span>:<span class="hljs-number">23</span>    <span class="hljs-params">&lt;DIR&gt;</span>          EFI<br>               <span class="hljs-number">0</span> 个文件              <span class="hljs-number">0</span> 字节<br>               <span class="hljs-number">1</span> 个目录    <span class="hljs-number">171</span>,<span class="hljs-number">151</span>,<span class="hljs-number">360</span> 可用字节<br></code></pre></td></tr></table></figure>
+<ol start="4">
+<li>进入<code>EFI</code>文件夹，<code>cd EFI</code></li>
+<li>输入<code>dir</code>查看<code>EFI</code>文件夹中文件内容</li>
+</ol>
+<figure class="highlight awk"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><code class="hljs awk"><br>L:\EFI&gt;dir<br> 驱动器 L 中的卷没有标签。<br> 卷的序列号是 <span class="hljs-number">3</span>A1C-<span class="hljs-number">7752</span><br><br> L:\EFI 的目录<br><br><span class="hljs-number">2019</span><span class="hljs-regexp">/12/</span><span class="hljs-number">23</span>  <span class="hljs-number">10</span>:<span class="hljs-number">19</span>    &lt;DIR&gt;          .<br><span class="hljs-number">2019</span><span class="hljs-regexp">/12/</span><span class="hljs-number">23</span>  <span class="hljs-number">10</span>:<span class="hljs-number">19</span>    &lt;DIR&gt;          ..<br><span class="hljs-number">2019</span><span class="hljs-regexp">/12/</span><span class="hljs-number">23</span>  <span class="hljs-number">10</span>:<span class="hljs-number">19</span>    &lt;DIR&gt;          Microsoft<br><span class="hljs-number">2020</span><span class="hljs-regexp">/01/</span><span class="hljs-number">13</span>  <span class="hljs-number">03</span>:<span class="hljs-number">24</span>    &lt;DIR&gt;          Boot<br><span class="hljs-number">2020</span><span class="hljs-regexp">/01/</span><span class="hljs-number">13</span>  <span class="hljs-number">03</span>:<span class="hljs-number">24</span>    &lt;DIR&gt;          ubuntu<br>               <span class="hljs-number">0</span> 个文件              <span class="hljs-number">0</span> 字节<br>               <span class="hljs-number">5</span> 个目录    <span class="hljs-number">171</span>,<span class="hljs-number">151</span>,<span class="hljs-number">360</span> 可用字节<br></code></pre></td></tr></table></figure>
+<ol start="6">
+<li>删除<code>ubuntu</code>文件夹，输入命令<code>rmdir /S ubuntu</code></li>
+</ol>
+<figure class="highlight awk"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br></pre></td><td class="code"><pre><code class="hljs awk"><br>L:\EFI&gt;rmdir /S ubuntu<br>ubuntu, 是否确认(Y/N)? Y<br><br>L:\EFI&gt;dir<br> 驱动器 L 中的卷没有标签。<br> 卷的序列号是 <span class="hljs-number">3</span>A1C-<span class="hljs-number">7752</span><br><br> L:\EFI 的目录<br><br><span class="hljs-number">2019</span><span class="hljs-regexp">/12/</span><span class="hljs-number">23</span>  <span class="hljs-number">10</span>:<span class="hljs-number">19</span>    &lt;DIR&gt;          .<br><span class="hljs-number">2019</span><span class="hljs-regexp">/12/</span><span class="hljs-number">23</span>  <span class="hljs-number">10</span>:<span class="hljs-number">19</span>    &lt;DIR&gt;          ..<br><span class="hljs-number">2019</span><span class="hljs-regexp">/12/</span><span class="hljs-number">23</span>  <span class="hljs-number">10</span>:<span class="hljs-number">19</span>    &lt;DIR&gt;          Microsoft<br><span class="hljs-number">2020</span><span class="hljs-regexp">/01/</span><span class="hljs-number">13</span>  <span class="hljs-number">03</span>:<span class="hljs-number">24</span>    &lt;DIR&gt;          Boot<br>               <span class="hljs-number">0</span> 个文件              <span class="hljs-number">0</span> 字节<br>               <span class="hljs-number">4</span> 个目录    <span class="hljs-number">174</span>,<span class="hljs-number">960</span>,<span class="hljs-number">640</span> 可用字节<br></code></pre></td></tr></table></figure>
+<blockquote>
+<p>假设您只有两个操作系统（Win 10 和 Ubuntu），您现在应该能够直接启动到 Windows 而不会碰到黑色的 grub 屏幕。</p>
+</blockquote>
+<h4 id="测试">测试</h4>
+<ul>
+<li>重启计算机，计算机正常启动，跳过了grub</li>
+</ul>
+<h4 id="删除EFI分区盘符">删除EFI分区盘符</h4>
+<blockquote>
+<p>正常情况下重启后L磁盘就没有了，如果没有重启或重启后还在可以手动删除</p>
+</blockquote>
+<ol>
+<li>启动<code>cmd.exe</code></li>
+<li>启动<code>diskpart</code>工具</li>
+<li><code>remove letter=L</code></li>
+</ol>
+<h3 id="参考资料">参考资料</h3>
+<ul>
+<li><a target="_blank" rel="noopener" href="https://askubuntu.com/questions/429610/uninstall-grub-and-use-windows-bootloader">https://askubuntu.com/questions/429610/uninstall-grub-and-use-windows-bootloader</a></li>
+<li><a target="_blank" rel="noopener" href="https://blog.csdn.net/bubbleyang/article/details/98469145">https://blog.csdn.net/bubbleyang/article/details/98469145</a></li>
+</ul>
+<link rel="stylesheet" href="/css/spoiler.css" type="text/css"><script src="/js/spoiler.js" type="text/javascript" async></script>
+            </div>
+            <hr>
+            <div>
+              <div class="post-metas mb-3">
+                
+                  <div class="post-meta mr-3">
+                    <i class="iconfont icon-category"></i>
+                    
+                      <a class="hover-with-bg" href="/categories/Windows/">Windows</a>
+                    
+                  </div>
+                
+                
+                  <div class="post-meta">
+                    <i class="iconfont icon-tags"></i>
+                    
+                      <a class="hover-with-bg" href="/tags/Windows/">Windows</a>
+                    
+                  </div>
+                
+              </div>
+              
+                <p class="note note-warning">
+                  
+                    本博客所有文章除特别声明外，均采用 <a target="_blank" href="https://creativecommons.org/licenses/by-sa/4.0/deed.zh" rel="nofollow noopener noopener">CC BY-SA 4.0 协议</a> ，转载请注明出处！
+                  
+                </p>
+              
+              
+                <div class="post-prevnext">
+                  <article class="post-prev col-6">
+                    
+                    
+                      <a href="/notes/study/image_processing/laplace_operator/laplace_operator/">
+                        <i class="iconfont icon-arrowleft"></i>
+                        <span class="hidden-mobile">Laplace(拉普拉斯)算子</span>
+                        <span class="visible-mobile">上一篇</span>
+                      </a>
+                    
+                  </article>
+                  <article class="post-next col-6">
+                    
+                    
+                      <a href="/notes/study/image_processing/image_operators/image_operators/">
+                        <span class="hidden-mobile">图像边缘检测——一阶微分算子 Roberts、Sobel、Prewitt、Kirsch、Robinson</span>
+                        <span class="visible-mobile">下一篇</span>
+                        <i class="iconfont icon-arrowright"></i>
+                      </a>
+                    
+                  </article>
+                </div>
+              
+            </div>
+
+            
+              <!-- Comments -->
+              <article class="comments" id="comments" lazyload>
+                
+                  
+                
+                
+  <div id="waline"></div>
+  <script type="text/javascript">
+    Fluid.utils.loadComments('#waline', function() {
+      Fluid.utils.createScript('https://cdn.jsdelivr.net/npm/@waline/client@1.3.4/dist/Waline.min.js', function() {
+        var options = Object.assign(
+          {"serverURL":"https://waline-rfm2e9uss-zywvvd.vercel.app/","placeholder":"遗憾莫过于难忘你的背影，却找不到你来过的痕迹 ...","path":"window.location.pathname","avatar":"monsterid","meta":["nick","mail","link"],"pageSize":10,"lang":"zh-CN","highlight":true,"avatarCDN":"https://seccdn.libravatar.org/avatar/","avatarForce":false,"requiredFields":[],"emojiCDN":null,"emojiMaps":null,"anonymous":null,"dark":"html[data-user-color-scheme=\"dark\"]","visitor":true},
+          {
+            el: '#waline',
+            path: window.location.pathname
+          }
+        )
+        new Waline(options);
+		
+		wa_ccc = "waline-comment-count-container"
+		var i=document.getElementById(wa_ccc)
+		i.style.display = 'inline'
+
+      });
+    });
+  </script>
+  <noscript>Please enable JavaScript to view the comments</noscript>
+
+
+              </article>
+            
+          </article>
+        </div>
+      </div>
+    </div>
+    
+      <div class="d-none d-lg-block col-lg-2 toc-container" id="toc-ctn">
+        <div id="toc">
+  <p class="toc-header"><i class="iconfont icon-list"></i>&nbsp;目录</p>
+  <div class="toc-body" id="toc-body"></div>
+</div>
+
+      </div>
+    
+  </div>
+</div>
+
+<!-- Custom -->
+
+
+    
+
+    
+      <a id="scroll-top-button" href="#" role="button">
+        <i class="iconfont icon-arrowup" aria-hidden="true"></i>
+      </a>
+    
+
+    
+      <div class="modal fade" id="modalSearch" tabindex="-1" role="dialog" aria-labelledby="ModalLabel"
+     aria-hidden="true">
+  <div class="modal-dialog modal-dialog-scrollable modal-lg" role="document">
+    <div class="modal-content">
+      <div class="modal-header text-center">
+        <h4 class="modal-title w-100 font-weight-bold">搜索</h4>
+        <button type="button" id="local-search-close" class="close" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body mx-3">
+        <div class="md-form mb-5">
+          <input type="text" id="local-search-input" class="form-control validate">
+          <label data-error="x" data-success="v"
+                 for="local-search-input">关键词</label>
+        </div>
+        <div class="list-group" id="local-search-result"></div>
+      </div>
+    </div>
+  </div>
+</div>
+    
+
+    
+  </main>
+
+  <footer class="text-center mt-5 py-3">
+  <div class="footer-content">
+     <a href="https://hexo.io" target="_blank" rel="nofollow noopener"><span>Hexo</span></a> <i class="iconfont icon-love"></i> <a href="https://github.com/fluid-dev/hexo-theme-fluid" target="_blank" rel="nofollow noopener"><span>Fluid</span></a> <div style="font-size: 0.85rem"> <span id="timeDate">载入天数...</span> <span id="times">载入时分秒...</span> <script src="/vvd_js/duration.js"></script> </div> 
+  </div>
+  
+  <div class="statistics">
+    
+    
+
+    
+      
+        <!-- LeanCloud 统计PV -->
+        <span id="leancloud-site-pv-container" style="display: none">
+            总访问量 
+            <span id="leancloud-site-pv"></span>
+             次
+          </span>
+      
+      
+        <!-- LeanCloud 统计UV -->
+        <span id="leancloud-site-uv-container" style="display: none">
+            总访客数 
+            <span id="leancloud-site-uv"></span>
+             人
+          </span>
+      
+
+    
+  </div>
+
+
+  
+  <!-- 备案信息 -->
+  <div class="beian">
+    <span>
+      <a href="http://beian.miit.gov.cn/" target="_blank" rel="nofollow noopener">
+        吉ICP备19007275号-1
+      </a>
+    </span>
+    
+      
+        <span>
+          <a
+            href="http://www.beian.gov.cn/portal/registerSystemInfo?recordcode=22020202000251"
+            rel="nofollow noopener"
+            class="beian-police"
+            target="_blank"
+          >
+            
+              <span style="visibility: hidden; width: 0">|</span>
+              <img src="/img/police_beian.png" srcset="/img/loading.gif" lazyload alt="police-icon"/>
+            
+            <span>22020202000251</span>
+          </a>
+        </span>
+      
+    
+  </div>
+
+
+  
+</footer>
+
+
+  <!-- SCRIPTS -->
+  
+  <script  src="https://cdn.jsdelivr.net/npm/nprogress@0.2.0/nprogress.min.js" ></script>
+  <link  rel="stylesheet" href="https://cdn.jsdelivr.net/npm/nprogress@0.2.0/nprogress.min.css" />
+
+  <script>
+    NProgress.configure({"showSpinner":false,"trickleSpeed":100})
+    NProgress.start()
+    window.addEventListener('load', function() {
+      NProgress.done();
+    })
+  </script>
+
+
+<script  src="https://cdn.jsdelivr.net/npm/jquery@3.6.0/dist/jquery.min.js" ></script>
+<script  src="https://cdn.jsdelivr.net/npm/bootstrap@4.6.0/dist/js/bootstrap.min.js" ></script>
+<script  src="/js/events.js" ></script>
+<script  src="/js/plugins.js" ></script>
+
+<!-- Plugins -->
+
+
+  
+    <script  src="/js/img-lazyload.js" ></script>
+  
+
+
+
+  
+
+
+
+  <script  src="https://cdn.jsdelivr.net/npm/tocbot@4.12.3/dist/tocbot.min.js" ></script>
+
+
+
+  <script  src="https://cdn.jsdelivr.net/npm/@fancyapps/fancybox@3.5.7/dist/jquery.fancybox.min.js" ></script>
+
+
+
+  <script  src="https://cdn.jsdelivr.net/npm/anchor-js@4.3.1/anchor.min.js" ></script>
+
+
+
+  <script defer src="https://cdn.jsdelivr.net/npm/clipboard@2.0.8/dist/clipboard.min.js" ></script>
+
+
+
+  <script  src="/js/local-search.js" ></script>
+
+
+
+
+  <script defer src="/js/leancloud.js" ></script>
+
+
+
+  <script  src="https://cdn.jsdelivr.net/npm/typed.js@2.0.12/lib/typed.min.js" ></script>
+  <script>
+    (function (window, document) {
+      var typing = Fluid.plugins.typing;
+      var title = document.getElementById('subtitle').title;
+      
+      typing(title)
+      
+    })(window, document);
+  </script>
+
+
+
+
+
+  
+
+  
+    <!-- MathJax -->
+    <script>
+      MathJax = {
+        tex: {
+          inlineMath: [['$', '$'], ['\\(', '\\)']]
+        },
+        options: {
+          renderActions: {
+            findScript: [10, doc => {
+              document.querySelectorAll('script[type^="math/tex"]').forEach(node => {
+                const display = !!node.type.match(/; *mode=display/);
+                const math = new doc.options.MathItem(node.textContent, doc.inputJax[0], display);
+                const text = document.createTextNode('');
+                node.parentNode.replaceChild(text, node);
+                math.start = { node: text, delim: '', n: 0 };
+                math.end = { node: text, delim: '', n: 0 };
+                doc.math.push(math);
+              });
+            }, '', false],
+            insertedScript: [200, () => {
+              document.querySelectorAll('mjx-container').forEach(node => {
+                let target = node.parentNode;
+                if (target.nodeName.toLowerCase() === 'li') {
+                  target.parentNode.classList.add('has-jax');
+                }
+              });
+            }, '', false]
+          }
+        }
+      };
+    </script>
+
+    <script async src="https://cdn.jsdelivr.net/npm/mathjax@3.1.4/es5/tex-svg.js" ></script>
+
+  
+
+
+
+
+
+
+
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+
+
+
+
+<!-- 主题的启动项 保持在最底部 -->
+<script  src="/js/boot.js" ></script>
+
+
+<script src="/live2dw/lib/L2Dwidget.min.js?094cbace49a39548bed64abff5988b05"></script><script>L2Dwidget.init({"pluginRootPath":"live2dw/","pluginJsPath":"lib/","pluginModelPath":"assets/","tagMode":false,"log":false,"model":{"jsonPath":"/live2dw/assets/z16.model.json"},"display":{"position":"left","width":235,"height":440},"mobile":{"show":false},"react":{"opacity":0.7}});</script></body>
+</html>

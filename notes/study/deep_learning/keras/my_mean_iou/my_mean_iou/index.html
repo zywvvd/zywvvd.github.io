@@ -1,0 +1,703 @@
+
+
+<!DOCTYPE html>
+<html lang="zh-CN" data-default-color-scheme=&#34;auto&#34;>
+<script type="text/javascript" src="/vvd_js/jquery.js"></script>
+
+
+
+<head>
+  <meta charset="UTF-8">
+  <link rel="apple-touch-icon" sizes="76x76" href="/img/favicon.png">
+  <link rel="icon" href="/img/favicon.png">
+  <meta name="viewport"
+        content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, shrink-to-fit=no">
+  <meta http-equiv="x-ua-compatible" content="ie=edge">
+  
+  <meta name="theme-color" content="#2f4154">
+  <meta name="description" content="
+Keras训练网络过程中需要实时观察性能，mean iou不是keras自带的评估函数，tf的又觉得不好用，自己写了一个，经过测试没有问题，本文记录自定义keras mean iou评估的实现方法。
+">
+  <meta name="author" content="Yiwei Zhang">
+  <meta name="keywords" content="人工智能, 深度学习, 个人博客, 机器学习">
+  
+  <title>Keras 分割网络自定义评估函数 - mean iou - 又见苍岚</title>
+
+  <link  rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@4.6.0/dist/css/bootstrap.min.css" />
+
+
+  <link  rel="stylesheet" href="https://cdn.jsdelivr.net/npm/github-markdown-css@4.0.0/github-markdown.min.css" />
+  <link  rel="stylesheet" href="/lib/hint/hint.min.css" />
+
+  
+    
+    
+      
+      <link  rel="stylesheet" href="https://cdn.jsdelivr.net/npm/highlight.js@10.7.2/styles/github-gist.min.css" />
+    
+  
+
+  
+    <link  rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fancyapps/fancybox@3.5.7/dist/jquery.fancybox.min.css" />
+  
+
+
+
+<!-- 主题依赖的图标库，不要自行修改 -->
+
+<link rel="stylesheet" href="//at.alicdn.com/t/font_1749284_ba1fz6golrf.css">
+
+
+
+<link rel="stylesheet" href="//at.alicdn.com/t/font_1736178_kmeydafke9r.css">
+
+
+<link  rel="stylesheet" href="/css/main.css" />
+
+<!-- 自定义样式保持在最底部 -->
+
+
+  <script id="fluid-configs">
+    var Fluid = window.Fluid || {};
+    var CONFIG = {"hostname":"www.zywvvd.com","root":"/","version":"1.8.11","typing":{"enable":true,"typeSpeed":70,"cursorChar":"_","loop":false},"anchorjs":{"enable":true,"element":"h1,h2,h3,h4,h5,h6","placement":"right","visible":"hover","icon":""},"progressbar":{"enable":true,"height_px":3,"color":"#29d","options":{"showSpinner":false,"trickleSpeed":100}},"copy_btn":true,"image_zoom":{"enable":true,"img_url_replace":["",""]},"toc":{"enable":true,"headingSelector":"h1,h2,h3,h4,h5,h6","collapseDepth":0},"lazyload":{"enable":true,"loading_img":"/img/loading.gif","onlypost":false,"offset_factor":2},"web_analytics":{"enable":true,"baidu":null,"google":null,"gtag":null,"tencent":{"sid":null,"cid":null},"woyaola":null,"cnzz":null,"leancloud":{"app_id":"OLRteWxoct1JkWm3Pe9BDYEK-gzGzoHsz","app_key":"YBKiC6SE5hpWUmy0WIyegCrM","server_url":"https://waline.zywvvd.com"}},"search_path":"/local-search.xml"};
+  </script>
+  <script  src="/js/utils.js" ></script>
+  <script  src="/js/color-schema.js" ></script>
+<meta name="generator" content="Hexo 5.4.0"><link rel="alternate" href="/atom.xml" title="又见苍岚" type="application/atom+xml">
+</head>
+
+
+<body>
+		
+  <header style="height: 70vh;">
+    <nav id="navbar" class="navbar fixed-top  navbar-expand-lg navbar-dark scrolling-navbar">
+  <div class="container">
+    <a class="navbar-brand"
+       href="/">&nbsp;<strong>CangLan</strong>&nbsp;</a>
+
+    <button id="navbar-toggler-btn" class="navbar-toggler" type="button" data-toggle="collapse"
+            data-target="#navbarSupportedContent"
+            aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
+      <div class="animated-icon"><span></span><span></span><span></span></div>
+    </button>
+
+    <!-- Collapsible content -->
+    <div class="collapse navbar-collapse" id="navbarSupportedContent">
+      <ul class="navbar-nav ml-auto text-center">
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/">
+                <i class="iconfont icon-home-fill"></i>
+                首页
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/archives/">
+                <i class="iconfont icon-archive-fill"></i>
+                归档
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/categories/">
+                <i class="iconfont icon-category-fill"></i>
+                分类
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/tags/">
+                <i class="iconfont icon-tags-fill"></i>
+                标签
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/about/">
+                <i class="iconfont icon-user-fill"></i>
+                关于
+              </a>
+            </li>
+          
+        
+        
+          <li class="nav-item" id="search-btn">
+            <a class="nav-link" target="_self" data-toggle="modal" data-target="#modalSearch">&nbsp;<i
+                class="iconfont icon-search"></i>&nbsp;</a>
+          </li>
+        
+        
+          <li class="nav-item" id="color-toggle-btn">
+            <a class="nav-link" target="_self">&nbsp;<i
+                class="iconfont icon-dark" id="color-toggle-icon"></i>&nbsp;</a>
+          </li>
+        
+      </ul>
+    </div>
+  </div>
+</nav>
+
+		<div class="banner" id="banner" parallax=true
+			 style="background: url('https://photos.zywvvd.com/vvd-dell-2021-win-10/20210812235004.jpg') no-repeat center center;
+			   background-size: cover;">
+
+      <div class="full-bg-img" >
+
+		
+		<div id="banner_video_insert">
+		</div>
+		<script>
+						
+			var ua = navigator.userAgent;
+			var ipad = ua.match(/(iPad).*OS\s([\d_]+)/),
+				isIphone = !ipad && ua.match(/(iPhone\sOS)\s([\d_]+)/),
+				isAndroid = ua.match(/(Android)\s+([\d.]+)/),
+				isMobile = isIphone || isAndroid;
+
+			function set_video_attr(id){
+				
+				var height = document.body.children[0].clientHeight
+
+				var width = document.body.children[0].clientWidth
+
+				var video_item = document.getElementById(id);
+
+				if (height / width < 0.56){
+					video_item.setAttribute('width', '100%');
+					video_item.setAttribute('height', 'auto');
+				} else {
+					video_item.setAttribute('height', '100%');
+					video_item.setAttribute('width', 'auto');
+				}
+			}
+
+			$.getJSON('/vvd_js/video_url.json', function(data){
+				if (!isMobile){
+					var video_list_length = data.length
+					var seed = Math.random()
+					index = Math.floor(seed * video_list_length)
+					
+					video_url = data[index]
+					video_html_res = "<video id='video_item' style='position: absolute;' muted='muted' src=" + video_url + " autoplay='autoplay' loop='loop'></video>"
+
+					document.getElementById("banner_video_insert").innerHTML = video_html_res;
+					set_video_attr('video_item')
+				}
+
+			});
+
+			if (!isMobile){
+				window.onresize = function(){
+					set_video_attr('video_item')
+					}
+				}
+			</script>
+
+		
+
+        <div class="mask flex-center" style="background-color: rgba(0, 0, 0, 0.3)">
+          <div class="page-header text-center fade-in-up">
+            <span class="h2" id="subtitle" title="Keras 分割网络自定义评估函数 - mean iou">
+              
+            </span>
+
+            
+              <div class="mt-3">
+  
+    <span class="post-meta mr-2">
+      <i class="iconfont icon-author" aria-hidden="true"></i>
+      Yiwei Zhang
+    </span>
+  
+  
+    <span class="post-meta">
+      <i class="iconfont icon-date-fill" aria-hidden="true"></i>
+      <time datetime="2020-05-25 20:22" pubdate>
+        2020年5月25日 晚上
+      </time>
+    </span>
+  
+</div>
+
+<div class="mt-1">
+  
+    
+    <span class="post-meta mr-2">
+      <i class="iconfont icon-chart"></i>
+      666 字
+    </span>
+  
+
+  
+    
+    <span class="post-meta mr-2">
+      <i class="iconfont icon-clock-fill"></i>
+      
+      
+      11
+       分钟
+    </span>
+  
+
+  
+  
+    
+      <!-- LeanCloud 统计文章PV -->
+      <span id="leancloud-page-views-container" class="post-meta" style="display: none">
+        <i class="iconfont icon-eye" aria-hidden="true"></i>
+        <span id="leancloud-page-views"></span> 次
+
+		<span id="waline-comment-count-container" style="display: none">
+			&nbsp
+			<i class="iconfont icon-comment" aria-hidden="true"></i>
+			<span id="test_id_visitor"></span>
+		</span>
+		
+		<script>
+			path = window.location.pathname
+			console.log(path)
+			video_html_res = "<span id='" + path + "' class='waline-comment-count'></span>&nbsp评论"
+			console.log(video_html_res)
+			document.getElementById("test_id_visitor").innerHTML = video_html_res;
+		</script>
+
+      </span>
+    
+  
+</div>
+
+            
+          </div>
+
+          
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <main>
+    
+      
+
+<div class="container-fluid nopadding-x">
+  <div class="row nomargin-x">
+    <div class="d-none d-lg-block col-lg-2"></div>
+    <div class="col-lg-8 nopadding-x-md">
+      <div class="container nopadding-x-md" id="board-ctn">
+        <div class="py-5" id="board">
+          <article class="post-content mx-auto">
+            <!-- SEO header -->
+            <h1 style="display: none">Keras 分割网络自定义评估函数 - mean iou</h1>
+            
+              <p class="note note-info">
+                
+                  本文最后更新于：2021年9月5日 凌晨
+                
+              </p>
+            
+            <div class="markdown-body">
+              <blockquote>
+<p>Keras训练网络过程中需要实时观察性能，mean iou不是keras自带的评估函数，tf的又觉得不好用，自己写了一个，经过测试没有问题，本文记录自定义keras mean iou评估的实现方法。</p>
+</blockquote>
+<span id="more"></span>
+<h2 id="计算-IoU">计算 IoU</h2>
+<blockquote>
+<p>用numpy计算的，作为IoU的ground truth用作测试使用：</p>
+</blockquote>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><code class="hljs python"><span class="hljs-function"><span class="hljs-keyword">def</span> <span class="hljs-title">iou_numpy</span>(<span class="hljs-params">y_true,y_pred</span>):</span><br>    <br>    intersection = np.<span class="hljs-built_in">sum</span>(np.multiply(y_true.astype(<span class="hljs-string">&#x27;bool&#x27;</span>),y_pred == <span class="hljs-number">1</span>))<br>    union = np.<span class="hljs-built_in">sum</span>((y_true.astype(<span class="hljs-string">&#x27;bool&#x27;</span>)+y_pred.astype(<span class="hljs-string">&#x27;bool&#x27;</span>))&gt;<span class="hljs-number">0</span>)    <br>    <br>    <span class="hljs-keyword">return</span> intersection/union<br></code></pre></td></tr></table></figure>
+<blockquote>
+<p>keras metric IoU</p>
+</blockquote>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br></pre></td><td class="code"><pre><code class="hljs python"><span class="hljs-function"><span class="hljs-keyword">def</span> <span class="hljs-title">iou_keras</span>(<span class="hljs-params">y_true, y_pred</span>):</span><br>    <span class="hljs-string">&quot;&quot;&quot;</span><br><span class="hljs-string">    Return the Intersection over Union (IoU).</span><br><span class="hljs-string">    Args:</span><br><span class="hljs-string">        y_true: the expected y values as a one-hot</span><br><span class="hljs-string">        y_pred: the predicted y values as a one-hot or softmax output</span><br><span class="hljs-string">    Returns:</span><br><span class="hljs-string">        the IoU for the given label</span><br><span class="hljs-string">    &quot;&quot;&quot;</span><br>    label = <span class="hljs-number">1</span><br>    <span class="hljs-comment"># extract the label values using the argmax operator then</span><br>    <span class="hljs-comment"># calculate equality of the predictions and truths to the label</span><br>    y_true = K.cast(K.equal(y_true, label), K.floatx())<br>    y_pred = K.cast(K.equal(y_pred, label), K.floatx())<br>    <span class="hljs-comment"># calculate the |intersection| (AND) of the labels</span><br>    intersection = K.<span class="hljs-built_in">sum</span>(y_true * y_pred)<br>    <span class="hljs-comment"># calculate the |union| (OR) of the labels</span><br>    union = K.<span class="hljs-built_in">sum</span>(y_true) + K.<span class="hljs-built_in">sum</span>(y_pred) - intersection<br>    <span class="hljs-comment"># avoid divide by zero - if the union is zero, return 1</span><br>    <span class="hljs-comment"># otherwise, return the intersection over union</span><br>    <span class="hljs-keyword">return</span> K.switch(K.equal(union, <span class="hljs-number">0</span>), <span class="hljs-number">1.0</span>, intersection / union)<br></code></pre></td></tr></table></figure>
+<h2 id="计算-mean-IoU">计算 mean IoU</h2>
+<blockquote>
+<p>mean IoU 简便起见，选取 (0,1,0.05) 作为不同的IoU阈值，计算平均IoU</p>
+<p>numpy 真实值计算</p>
+</blockquote>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><code class="hljs python"><span class="hljs-function"><span class="hljs-keyword">def</span> <span class="hljs-title">mean_iou_numpy</span>(<span class="hljs-params">y_true,y_pred</span>):</span><br>    <br>    iou_list = []<br>    <span class="hljs-keyword">for</span> thre <span class="hljs-keyword">in</span> <span class="hljs-built_in">list</span>(np.arange(<span class="hljs-number">0.0000001</span>,<span class="hljs-number">0.99</span>,<span class="hljs-number">0.05</span>)):<br>        y_pred_temp = y_pred &gt;= thre<br>        iou = iou_numpy(y_true, y_pred_temp)<br>        iou_list.append(iou)<br><br>    <span class="hljs-keyword">return</span> np.mean(iou_list)<br></code></pre></td></tr></table></figure>
+<blockquote>
+<p>Keras  mean IoU</p>
+</blockquote>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br></pre></td><td class="code"><pre><code class="hljs python"><span class="hljs-function"><span class="hljs-keyword">def</span> <span class="hljs-title">mean_iou_keras</span>(<span class="hljs-params">y_true, y_pred</span>):</span><br>    <span class="hljs-string">&quot;&quot;&quot;</span><br><span class="hljs-string">    Return the mean Intersection over Union (IoU).</span><br><span class="hljs-string">    Args:</span><br><span class="hljs-string">        y_true: the expected y values as a one-hot</span><br><span class="hljs-string">        y_pred: the predicted y values as a one-hot or softmax output</span><br><span class="hljs-string">    Returns:</span><br><span class="hljs-string">        the mean IoU</span><br><span class="hljs-string">    &quot;&quot;&quot;</span><br>    label = <span class="hljs-number">1</span><br>    <span class="hljs-comment"># extract the label values using the argmax operator then</span><br>    <span class="hljs-comment"># calculate equality of the predictions and truths to the label</span><br>    y_true = K.cast(K.equal(y_true, label), K.floatx())<br>    <br>    mean_iou = K.variable(<span class="hljs-number">0</span>)<br>    <br>    thre_list = <span class="hljs-built_in">list</span>(np.arange(<span class="hljs-number">0.0000001</span>,<span class="hljs-number">0.99</span>,<span class="hljs-number">0.05</span>))<br>    <br>    <span class="hljs-keyword">for</span> thre <span class="hljs-keyword">in</span> thre_list:<br>        <br>        y_pred_temp = K.cast(y_pred &gt;= thre, K.floatx())<br>        y_pred_temp = K.cast(K.equal(y_pred_temp, label), K.floatx())<br>        <span class="hljs-comment"># calculate the |intersection| (AND) of the labels</span><br>        intersection = K.<span class="hljs-built_in">sum</span>(y_true * y_pred_temp)<br>        <span class="hljs-comment"># calculate the |union| (OR) of the labels</span><br>        union = K.<span class="hljs-built_in">sum</span>(y_true) + K.<span class="hljs-built_in">sum</span>(y_pred_temp) - intersection<br>        iou = K.switch(K.equal(union, <span class="hljs-number">0</span>), <span class="hljs-number">1.0</span>, intersection / union)<br>        mean_iou = mean_iou + iou<br>    <br>    <span class="hljs-keyword">return</span> mean_iou / <span class="hljs-built_in">len</span>(thre_list)<br></code></pre></td></tr></table></figure>
+<h2 id="测试">测试</h2>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br></pre></td><td class="code"><pre><code class="hljs python"><span class="hljs-comment">## 随机生成预测值</span><br>y_true_np = np.ones([<span class="hljs-number">10</span>,<span class="hljs-number">10</span>])<br>y_pred_np = np.random.rand(<span class="hljs-number">10</span>,<span class="hljs-number">10</span>)<br><br><span class="hljs-comment">## 真实IoU值</span><br><span class="hljs-built_in">print</span>(<span class="hljs-string">f&#x27; iou : <span class="hljs-subst">&#123;iou_numpy(y_true_np, y_pred_np)&#125;</span>&#x27;</span>)<br><span class="hljs-built_in">print</span>(<span class="hljs-string">f&#x27; mean_iou_numpy : <span class="hljs-subst">&#123;mean_iou_numpy(y_true_np, y_pred_np)&#125;</span>&#x27;</span>)<br><br>y_true = tf.Variable(y_true_np)<br>y_pred = tf.Variable(y_pred_np)<br><br><span class="hljs-comment">## 计算节点</span><br>iou_res = iou_keras (y_true, y_pred)<br>m_iou_res = mean_iou_keras (y_true, y_pred)<br><br><span class="hljs-comment">## 变量初始化</span><br>init_op = tf.global_variables_initializer()<br><br><span class="hljs-keyword">with</span> tf.Session() <span class="hljs-keyword">as</span> sess:<br>    sess.run(init_op)<br>    <br>    <span class="hljs-comment">## 由于存在误差，结果在0.0000001范围内即可认为相同</span><br>    <br>    result = sess.run(iou_res)<br>    <span class="hljs-built_in">print</span>(<span class="hljs-string">f&#x27;result : <span class="hljs-subst">&#123;result&#125;</span> \nsame with ground truth: <span class="hljs-subst">&#123;<span class="hljs-built_in">abs</span>(iou_numpy(y_true_np, y_pred_np) - result)&lt; <span class="hljs-number">0.0000001</span>&#125;</span>&#x27;</span>)<br>    <br>    result = sess.run(m_iou_res)<br>    <span class="hljs-built_in">print</span>(<span class="hljs-string">f&#x27;result : <span class="hljs-subst">&#123;result&#125;</span> \nsame with ground truth: <span class="hljs-subst">&#123;<span class="hljs-built_in">abs</span>(mean_iou_numpy(y_true_np, y_pred_np) - result) &lt; <span class="hljs-number">0.0000001</span>&#125;</span>&#x27;</span>)   <br></code></pre></td></tr></table></figure>
+<blockquote>
+<p>输出：</p>
+</blockquote>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><code class="hljs python">iou : <span class="hljs-number">0.0</span><br>mean_iou_numpy : <span class="hljs-number">0.5295</span><br>result : <span class="hljs-number">0.0</span> <br>same <span class="hljs-keyword">with</span> ground truth: <span class="hljs-literal">True</span><br>result : <span class="hljs-number">0.5295000076293945</span> <br>same <span class="hljs-keyword">with</span> ground truth: <span class="hljs-literal">True</span><br></code></pre></td></tr></table></figure>
+<h3 id="源码下载">源码下载</h3>
+<p><a target="_blank" rel="noopener" href="https://github.com/zywvvd/Python_Practise">https://github.com/zywvvd/Python_Practise</a></p>
+<link rel="stylesheet" href="/css/spoiler.css" type="text/css"><script src="/js/spoiler.js" type="text/javascript" async></script>
+            </div>
+            <hr>
+            <div>
+              <div class="post-metas mb-3">
+                
+                  <div class="post-meta mr-3">
+                    <i class="iconfont icon-category"></i>
+                    
+                      <a class="hover-with-bg" href="/categories/Deep-Learning/">Deep_Learning</a>
+                    
+                      <a class="hover-with-bg" href="/categories/Deep-Learning/Keras/">Keras</a>
+                    
+                  </div>
+                
+                
+                  <div class="post-meta">
+                    <i class="iconfont icon-tags"></i>
+                    
+                      <a class="hover-with-bg" href="/tags/Deep-Learning/">Deep_Learning</a>
+                    
+                      <a class="hover-with-bg" href="/tags/Keras/">Keras</a>
+                    
+                  </div>
+                
+              </div>
+              
+                <p class="note note-warning">
+                  
+                    本博客所有文章除特别声明外，均采用 <a target="_blank" href="https://creativecommons.org/licenses/by-sa/4.0/deed.zh" rel="nofollow noopener noopener">CC BY-SA 4.0 协议</a> ，转载请注明出处！
+                  
+                </p>
+              
+              
+                <div class="post-prevnext">
+                  <article class="post-prev col-6">
+                    
+                    
+                      <a href="/notes/study/deep_learning/keras/keras_sclice_data/keras_sclice_data/">
+                        <i class="iconfont icon-arrowleft"></i>
+                        <span class="hidden-mobile">Keras 在网络中自定义切割数据层</span>
+                        <span class="visible-mobile">上一篇</span>
+                      </a>
+                    
+                  </article>
+                  <article class="post-next col-6">
+                    
+                    
+                      <a href="/notes/study/deep_learning/keras/keras_multi_metrics/keras_multi_metrics/">
+                        <span class="hidden-mobile">Keras 模型多输出 loss weight metrics 设置</span>
+                        <span class="visible-mobile">下一篇</span>
+                        <i class="iconfont icon-arrowright"></i>
+                      </a>
+                    
+                  </article>
+                </div>
+              
+            </div>
+
+            
+              <!-- Comments -->
+              <article class="comments" id="comments" lazyload>
+                
+                  
+                
+                
+  <div id="waline"></div>
+  <script type="text/javascript">
+    Fluid.utils.loadComments('#waline', function() {
+      Fluid.utils.createScript('https://cdn.jsdelivr.net/npm/@waline/client@1.3.4/dist/Waline.min.js', function() {
+        var options = Object.assign(
+          {"serverURL":"https://waline-rfm2e9uss-zywvvd.vercel.app/","placeholder":"遗憾莫过于难忘你的背影，却找不到你来过的痕迹 ...","path":"window.location.pathname","avatar":"monsterid","meta":["nick","mail","link"],"pageSize":10,"lang":"zh-CN","highlight":true,"avatarCDN":"https://seccdn.libravatar.org/avatar/","avatarForce":false,"requiredFields":[],"emojiCDN":null,"emojiMaps":null,"anonymous":null,"dark":"html[data-user-color-scheme=\"dark\"]","visitor":true},
+          {
+            el: '#waline',
+            path: window.location.pathname
+          }
+        )
+        new Waline(options);
+		
+		wa_ccc = "waline-comment-count-container"
+		var i=document.getElementById(wa_ccc)
+		i.style.display = 'inline'
+
+      });
+    });
+  </script>
+  <noscript>Please enable JavaScript to view the comments</noscript>
+
+
+              </article>
+            
+          </article>
+        </div>
+      </div>
+    </div>
+    
+      <div class="d-none d-lg-block col-lg-2 toc-container" id="toc-ctn">
+        <div id="toc">
+  <p class="toc-header"><i class="iconfont icon-list"></i>&nbsp;目录</p>
+  <div class="toc-body" id="toc-body"></div>
+</div>
+
+      </div>
+    
+  </div>
+</div>
+
+<!-- Custom -->
+
+
+    
+
+    
+      <a id="scroll-top-button" href="#" role="button">
+        <i class="iconfont icon-arrowup" aria-hidden="true"></i>
+      </a>
+    
+
+    
+      <div class="modal fade" id="modalSearch" tabindex="-1" role="dialog" aria-labelledby="ModalLabel"
+     aria-hidden="true">
+  <div class="modal-dialog modal-dialog-scrollable modal-lg" role="document">
+    <div class="modal-content">
+      <div class="modal-header text-center">
+        <h4 class="modal-title w-100 font-weight-bold">搜索</h4>
+        <button type="button" id="local-search-close" class="close" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body mx-3">
+        <div class="md-form mb-5">
+          <input type="text" id="local-search-input" class="form-control validate">
+          <label data-error="x" data-success="v"
+                 for="local-search-input">关键词</label>
+        </div>
+        <div class="list-group" id="local-search-result"></div>
+      </div>
+    </div>
+  </div>
+</div>
+    
+
+    
+  </main>
+
+  <footer class="text-center mt-5 py-3">
+  <div class="footer-content">
+     <a href="https://hexo.io" target="_blank" rel="nofollow noopener"><span>Hexo</span></a> <i class="iconfont icon-love"></i> <a href="https://github.com/fluid-dev/hexo-theme-fluid" target="_blank" rel="nofollow noopener"><span>Fluid</span></a> <div style="font-size: 0.85rem"> <span id="timeDate">载入天数...</span> <span id="times">载入时分秒...</span> <script src="/vvd_js/duration.js"></script> </div> 
+  </div>
+  
+  <div class="statistics">
+    
+    
+
+    
+      
+        <!-- LeanCloud 统计PV -->
+        <span id="leancloud-site-pv-container" style="display: none">
+            总访问量 
+            <span id="leancloud-site-pv"></span>
+             次
+          </span>
+      
+      
+        <!-- LeanCloud 统计UV -->
+        <span id="leancloud-site-uv-container" style="display: none">
+            总访客数 
+            <span id="leancloud-site-uv"></span>
+             人
+          </span>
+      
+
+    
+  </div>
+
+
+  
+  <!-- 备案信息 -->
+  <div class="beian">
+    <span>
+      <a href="http://beian.miit.gov.cn/" target="_blank" rel="nofollow noopener">
+        吉ICP备19007275号-1
+      </a>
+    </span>
+    
+      
+        <span>
+          <a
+            href="http://www.beian.gov.cn/portal/registerSystemInfo?recordcode=22020202000251"
+            rel="nofollow noopener"
+            class="beian-police"
+            target="_blank"
+          >
+            
+              <span style="visibility: hidden; width: 0">|</span>
+              <img src="/img/police_beian.png" srcset="/img/loading.gif" lazyload alt="police-icon"/>
+            
+            <span>22020202000251</span>
+          </a>
+        </span>
+      
+    
+  </div>
+
+
+  
+</footer>
+
+
+  <!-- SCRIPTS -->
+  
+  <script  src="https://cdn.jsdelivr.net/npm/nprogress@0.2.0/nprogress.min.js" ></script>
+  <link  rel="stylesheet" href="https://cdn.jsdelivr.net/npm/nprogress@0.2.0/nprogress.min.css" />
+
+  <script>
+    NProgress.configure({"showSpinner":false,"trickleSpeed":100})
+    NProgress.start()
+    window.addEventListener('load', function() {
+      NProgress.done();
+    })
+  </script>
+
+
+<script  src="https://cdn.jsdelivr.net/npm/jquery@3.6.0/dist/jquery.min.js" ></script>
+<script  src="https://cdn.jsdelivr.net/npm/bootstrap@4.6.0/dist/js/bootstrap.min.js" ></script>
+<script  src="/js/events.js" ></script>
+<script  src="/js/plugins.js" ></script>
+
+<!-- Plugins -->
+
+
+  
+    <script  src="/js/img-lazyload.js" ></script>
+  
+
+
+
+  
+
+
+
+  <script  src="https://cdn.jsdelivr.net/npm/tocbot@4.12.3/dist/tocbot.min.js" ></script>
+
+
+
+  <script  src="https://cdn.jsdelivr.net/npm/@fancyapps/fancybox@3.5.7/dist/jquery.fancybox.min.js" ></script>
+
+
+
+  <script  src="https://cdn.jsdelivr.net/npm/anchor-js@4.3.1/anchor.min.js" ></script>
+
+
+
+  <script defer src="https://cdn.jsdelivr.net/npm/clipboard@2.0.8/dist/clipboard.min.js" ></script>
+
+
+
+  <script  src="/js/local-search.js" ></script>
+
+
+
+
+  <script defer src="/js/leancloud.js" ></script>
+
+
+
+  <script  src="https://cdn.jsdelivr.net/npm/typed.js@2.0.12/lib/typed.min.js" ></script>
+  <script>
+    (function (window, document) {
+      var typing = Fluid.plugins.typing;
+      var title = document.getElementById('subtitle').title;
+      
+      typing(title)
+      
+    })(window, document);
+  </script>
+
+
+
+
+
+  
+
+  
+    <!-- MathJax -->
+    <script>
+      MathJax = {
+        tex: {
+          inlineMath: [['$', '$'], ['\\(', '\\)']]
+        },
+        options: {
+          renderActions: {
+            findScript: [10, doc => {
+              document.querySelectorAll('script[type^="math/tex"]').forEach(node => {
+                const display = !!node.type.match(/; *mode=display/);
+                const math = new doc.options.MathItem(node.textContent, doc.inputJax[0], display);
+                const text = document.createTextNode('');
+                node.parentNode.replaceChild(text, node);
+                math.start = { node: text, delim: '', n: 0 };
+                math.end = { node: text, delim: '', n: 0 };
+                doc.math.push(math);
+              });
+            }, '', false],
+            insertedScript: [200, () => {
+              document.querySelectorAll('mjx-container').forEach(node => {
+                let target = node.parentNode;
+                if (target.nodeName.toLowerCase() === 'li') {
+                  target.parentNode.classList.add('has-jax');
+                }
+              });
+            }, '', false]
+          }
+        }
+      };
+    </script>
+
+    <script async src="https://cdn.jsdelivr.net/npm/mathjax@3.1.4/es5/tex-svg.js" ></script>
+
+  
+
+
+
+
+
+
+
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+
+
+
+
+<!-- 主题的启动项 保持在最底部 -->
+<script  src="/js/boot.js" ></script>
+
+
+<script src="/live2dw/lib/L2Dwidget.min.js?094cbace49a39548bed64abff5988b05"></script><script>L2Dwidget.init({"pluginRootPath":"live2dw/","pluginJsPath":"lib/","pluginModelPath":"assets/","tagMode":false,"log":false,"model":{"jsonPath":"/live2dw/assets/z16.model.json"},"display":{"position":"left","width":235,"height":440},"mobile":{"show":false},"react":{"opacity":0.7}});</script></body>
+</html>
