@@ -1,0 +1,953 @@
+
+
+<!DOCTYPE html>
+<html lang="zh-CN" data-default-color-scheme=&#34;auto&#34;>
+<script type="text/javascript" src="/vvd_js/jquery.js"></script>
+
+
+
+<head>
+  <meta charset="UTF-8">
+  <link rel="apple-touch-icon" sizes="76x76" href="/img/favicon.png">
+  <link rel="icon" href="/img/favicon.png">
+  <meta name="viewport"
+        content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, shrink-to-fit=no">
+  <meta http-equiv="x-ua-compatible" content="ie=edge">
+  
+  <meta name="theme-color" content="#2f4154">
+  <meta name="description" content="
+Microsoft 和合作伙伴社区创建了 ONNX 作为表示机器学习模型的开放标准。 许多框架（包括 TensorFlow、PyTorch、SciKit-Learn、Keras、Chainer、MXNet、MATLAB 和 SparkML）中的模型都可以导出或转换为标准 ONNX 格式。 模型采用 ONNX 格式后，可在各种平台和设备上运行。
+本文记录Python 平台 ONNX-GPU 相关内">
+  <meta name="author" content="Yiwei Zhang">
+  <meta name="keywords" content="人工智能, 深度学习, 个人博客, 机器学习">
+  
+  <title>Python ONNX-GPU 使用记录 - 又见苍岚</title>
+
+  <link  rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@4.6.0/dist/css/bootstrap.min.css" />
+
+
+  <link  rel="stylesheet" href="https://cdn.jsdelivr.net/npm/github-markdown-css@4.0.0/github-markdown.min.css" />
+  <link  rel="stylesheet" href="/lib/hint/hint.min.css" />
+
+  
+    
+    
+      
+      <link  rel="stylesheet" href="https://cdn.jsdelivr.net/npm/highlight.js@10.7.2/styles/github-gist.min.css" />
+    
+  
+
+  
+    <link  rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fancyapps/fancybox@3.5.7/dist/jquery.fancybox.min.css" />
+  
+
+
+
+<!-- 主题依赖的图标库，不要自行修改 -->
+
+<link rel="stylesheet" href="//at.alicdn.com/t/font_1749284_ba1fz6golrf.css">
+
+
+
+<link rel="stylesheet" href="//at.alicdn.com/t/font_1736178_kmeydafke9r.css">
+
+
+<link  rel="stylesheet" href="/css/main.css" />
+
+<!-- 自定义样式保持在最底部 -->
+
+
+  <script id="fluid-configs">
+    var Fluid = window.Fluid || {};
+    var CONFIG = {"hostname":"www.zywvvd.com","root":"/","version":"1.8.11","typing":{"enable":true,"typeSpeed":70,"cursorChar":"_","loop":false},"anchorjs":{"enable":true,"element":"h1,h2,h3,h4,h5,h6","placement":"right","visible":"hover","icon":""},"progressbar":{"enable":true,"height_px":3,"color":"#29d","options":{"showSpinner":false,"trickleSpeed":100}},"copy_btn":true,"image_zoom":{"enable":true,"img_url_replace":["",""]},"toc":{"enable":true,"headingSelector":"h1,h2,h3,h4,h5,h6","collapseDepth":0},"lazyload":{"enable":true,"loading_img":"/img/loading.gif","onlypost":false,"offset_factor":2},"web_analytics":{"enable":true,"baidu":null,"google":null,"gtag":null,"tencent":{"sid":null,"cid":null},"woyaola":null,"cnzz":null,"leancloud":{"app_id":"OLRteWxoct1JkWm3Pe9BDYEK-gzGzoHsz","app_key":"YBKiC6SE5hpWUmy0WIyegCrM","server_url":"https://waline.zywvvd.com"}},"search_path":"/local-search.xml"};
+  </script>
+  <script  src="/js/utils.js" ></script>
+  <script  src="/js/color-schema.js" ></script>
+<meta name="generator" content="Hexo 5.4.0"><link rel="alternate" href="/atom.xml" title="又见苍岚" type="application/atom+xml">
+</head>
+
+
+<body>
+		
+  <header style="height: 70vh;">
+    <nav id="navbar" class="navbar fixed-top  navbar-expand-lg navbar-dark scrolling-navbar">
+  <div class="container">
+    <a class="navbar-brand"
+       href="/">&nbsp;<strong>CangLan</strong>&nbsp;</a>
+
+    <button id="navbar-toggler-btn" class="navbar-toggler" type="button" data-toggle="collapse"
+            data-target="#navbarSupportedContent"
+            aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
+      <div class="animated-icon"><span></span><span></span><span></span></div>
+    </button>
+
+    <!-- Collapsible content -->
+    <div class="collapse navbar-collapse" id="navbarSupportedContent">
+      <ul class="navbar-nav ml-auto text-center">
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/">
+                <i class="iconfont icon-home-fill"></i>
+                首页
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/archives/">
+                <i class="iconfont icon-archive-fill"></i>
+                归档
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/categories/">
+                <i class="iconfont icon-category-fill"></i>
+                分类
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/tags/">
+                <i class="iconfont icon-tags-fill"></i>
+                标签
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/about/">
+                <i class="iconfont icon-user-fill"></i>
+                关于
+              </a>
+            </li>
+          
+        
+        
+          <li class="nav-item" id="search-btn">
+            <a class="nav-link" target="_self" data-toggle="modal" data-target="#modalSearch">&nbsp;<i
+                class="iconfont icon-search"></i>&nbsp;</a>
+          </li>
+        
+        
+          <li class="nav-item" id="color-toggle-btn">
+            <a class="nav-link" target="_self">&nbsp;<i
+                class="iconfont icon-dark" id="color-toggle-icon"></i>&nbsp;</a>
+          </li>
+        
+      </ul>
+    </div>
+  </div>
+</nav>
+
+		<div class="banner" id="banner" parallax=true
+			 style="background: url('https://photos.zywvvd.com/vvd-dell-2021-win-10/20210812235004.jpg') no-repeat center center;
+			   background-size: cover;">
+
+      <div class="full-bg-img" >
+
+		
+		<div id="banner_video_insert">
+		</div>
+		<script>
+						
+			var ua = navigator.userAgent;
+			var ipad = ua.match(/(iPad).*OS\s([\d_]+)/),
+				isIphone = !ipad && ua.match(/(iPhone\sOS)\s([\d_]+)/),
+				isAndroid = ua.match(/(Android)\s+([\d.]+)/),
+				isMobile = isIphone || isAndroid;
+
+			function set_video_attr(id){
+				
+				var height = document.body.children[0].clientHeight
+
+				var width = document.body.children[0].clientWidth
+
+				var video_item = document.getElementById(id);
+
+				if (height / width < 0.56){
+					video_item.setAttribute('width', '100%');
+					video_item.setAttribute('height', 'auto');
+				} else {
+					video_item.setAttribute('height', '100%');
+					video_item.setAttribute('width', 'auto');
+				}
+			}
+
+			$.getJSON('/vvd_js/video_url.json', function(data){
+				if (!isMobile){
+					var video_list_length = data.length
+					var seed = Math.random()
+					index = Math.floor(seed * video_list_length)
+					
+					video_url = data[index]
+					video_html_res = "<video id='video_item' style='position: absolute;' muted='muted' src=" + video_url + " autoplay='autoplay' loop='loop'></video>"
+
+					document.getElementById("banner_video_insert").innerHTML = video_html_res;
+					set_video_attr('video_item')
+				}
+
+			});
+
+			if (!isMobile){
+				window.onresize = function(){
+					set_video_attr('video_item')
+					}
+				}
+			</script>
+
+		
+
+        <div class="mask flex-center" style="background-color: rgba(0, 0, 0, 0.3)">
+          <div class="page-header text-center fade-in-up">
+            <span class="h2" id="subtitle" title="Python ONNX-GPU 使用记录">
+              
+            </span>
+
+            
+              <div class="mt-3">
+  
+    <span class="post-meta mr-2">
+      <i class="iconfont icon-author" aria-hidden="true"></i>
+      Yiwei Zhang
+    </span>
+  
+  
+    <span class="post-meta">
+      <i class="iconfont icon-date-fill" aria-hidden="true"></i>
+      <time datetime="2021-05-28 11:18" pubdate>
+        2021年5月28日 上午
+      </time>
+    </span>
+  
+</div>
+
+<div class="mt-1">
+  
+    
+    <span class="post-meta mr-2">
+      <i class="iconfont icon-chart"></i>
+      910 字
+    </span>
+  
+
+  
+    
+    <span class="post-meta mr-2">
+      <i class="iconfont icon-clock-fill"></i>
+      
+      
+      15
+       分钟
+    </span>
+  
+
+  
+  
+    
+      <!-- LeanCloud 统计文章PV -->
+      <span id="leancloud-page-views-container" class="post-meta" style="display: none">
+        <i class="iconfont icon-eye" aria-hidden="true"></i>
+        <span id="leancloud-page-views"></span> 次
+
+		<span id="waline-comment-count-container" style="display: none">
+			&nbsp
+			<i class="iconfont icon-comment" aria-hidden="true"></i>
+			<span id="test_id_visitor"></span>
+		</span>
+		
+		<script>
+			path = window.location.pathname
+			console.log(path)
+			video_html_res = "<span id='" + path + "' class='waline-comment-count'></span>&nbsp评论"
+			console.log(video_html_res)
+			document.getElementById("test_id_visitor").innerHTML = video_html_res;
+		</script>
+
+      </span>
+    
+  
+</div>
+
+            
+          </div>
+
+          
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <main>
+    
+      
+
+<div class="container-fluid nopadding-x">
+  <div class="row nomargin-x">
+    <div class="d-none d-lg-block col-lg-2"></div>
+    <div class="col-lg-8 nopadding-x-md">
+      <div class="container nopadding-x-md" id="board-ctn">
+        <div class="py-5" id="board">
+          <article class="post-content mx-auto">
+            <!-- SEO header -->
+            <h1 style="display: none">Python ONNX-GPU 使用记录</h1>
+            
+              <p class="note note-info">
+                
+                  本文最后更新于：2021年9月5日 凌晨
+                
+              </p>
+            
+            <div class="markdown-body">
+              <blockquote>
+<p>Microsoft 和合作伙伴社区创建了 ONNX 作为表示机器学习模型的开放标准。 许多框架（包括 TensorFlow、PyTorch、SciKit-Learn、Keras、Chainer、MXNet、MATLAB 和 SparkML）中的模型都可以导出或转换为标准 ONNX 格式。 模型采用 ONNX 格式后，可在各种平台和设备上运行。<br>
+本文记录Python 平台 ONNX-GPU 相关内容。</p>
+</blockquote>
+<span id="more"></span>
+<h3 id="简介">简介</h3>
+<ul>
+<li>官网：<a target="_blank" rel="noopener" href="https://github.com/microsoft/onnxruntime">https://github.com/microsoft/onnxruntime</a></li>
+</ul>
+<p>ONNX Runtime是一个跨平台的推理和训练机器学习加速器。</p>
+<p>支持Linux和Windows平台CPU和GPU运算，对mac和手机终端也有相应支持。</p>
+<table>
+<thead>
+<tr>
+<th>System</th>
+<th>CPU</th>
+<th>GPU</th>
+<th>EPs</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Windows</td>
+<td><a target="_blank" rel="noopener" href="https://dev.azure.com/onnxruntime/onnxruntime/_build/latest?definitionId=9"><img src="https://camo.githubusercontent.com/be880d22fe303c2f6ffbe8d73f424d8ddeac9fcf532e3ec3627fdc180f183e1f/68747470733a2f2f6465762e617a7572652e636f6d2f6f6e6e7872756e74696d652f6f6e6e7872756e74696d652f5f617069732f6275696c642f7374617475732f57696e646f77732532304350552532304349253230506970656c696e653f6c6162656c3d57696e646f77732b435055" srcset="/img/loading.gif" lazyload alt="Build Status"></a></td>
+<td><a target="_blank" rel="noopener" href="https://dev.azure.com/onnxruntime/onnxruntime/_build/latest?definitionId=10"><img src="https://camo.githubusercontent.com/e33aca450d284558ffc63bf21927d447d01f488a1d7df6e090c6cbccf037cac5/68747470733a2f2f6465762e617a7572652e636f6d2f6f6e6e7872756e74696d652f6f6e6e7872756e74696d652f5f617069732f6275696c642f7374617475732f57696e646f77732532304750552532304349253230506970656c696e653f6c6162656c3d57696e646f77732b475055" srcset="/img/loading.gif" lazyload alt="Build Status"></a></td>
+<td><a target="_blank" rel="noopener" href="https://dev.azure.com/onnxruntime/onnxruntime/_build/latest?definitionId=47"><img src="https://camo.githubusercontent.com/2c2bd99ffe7f972aa4c183eba8544503a158714dd223a992988509815bdb1c11/68747470733a2f2f6465762e617a7572652e636f6d2f6f6e6e7872756e74696d652f6f6e6e7872756e74696d652f5f617069732f6275696c642f7374617475732f57696e646f777325323047505525323054656e736f7252542532304349253230506970656c696e653f6c6162656c3d57696e646f77732b4750552b54656e736f725254" srcset="/img/loading.gif" lazyload alt="Build Status"></a></td>
+</tr>
+<tr>
+<td>Linux</td>
+<td><a target="_blank" rel="noopener" href="https://dev.azure.com/onnxruntime/onnxruntime/_build/latest?definitionId=11"><img src="https://camo.githubusercontent.com/bcd33ff670e84f7132dd34ff37a8bd57ec1b1be818ac1b8cf34c132f7f10c87a/68747470733a2f2f6465762e617a7572652e636f6d2f6f6e6e7872756e74696d652f6f6e6e7872756e74696d652f5f617069732f6275696c642f7374617475732f4c696e75782532304350552532304349253230506970656c696e653f6c6162656c3d4c696e75782b435055" srcset="/img/loading.gif" lazyload alt="Build Status"></a> <a target="_blank" rel="noopener" href="https://dev.azure.com/onnxruntime/onnxruntime/_build/latest?definitionId=64"><img src="https://camo.githubusercontent.com/85426588bfb8fbf42f41aa0c32096b631efbb809dd0a936017732b04dab69a50/68747470733a2f2f6465762e617a7572652e636f6d2f6f6e6e7872756e74696d652f6f6e6e7872756e74696d652f5f617069732f6275696c642f7374617475732f4c696e75782532304350552532304d696e696d616c2532304275696c642532304532452532304349253230506970656c696e653f6c6162656c3d4c696e75782b4350552b4d696e696d616c2b4275696c64" srcset="/img/loading.gif" lazyload alt="Build Status"></a> <a target="_blank" rel="noopener" href="https://dev.azure.com/onnxruntime/onnxruntime/_build/latest?definitionId=110"><img src="https://camo.githubusercontent.com/8289099bfbf822bbc320451ed69cb7adb15607f8568ca7643752999a16a6533b/68747470733a2f2f6465762e617a7572652e636f6d2f6f6e6e7872756e74696d652f6f6e6e7872756e74696d652f5f617069732f6275696c642f7374617475732f4c696e75782532304350552532307836342532304e6f436f6e747269626f70732532304349253230506970656c696e653f6c6162656c3d4c696e75782b4350552b7836342b4e6f2b436f6e747269622b4f7073" srcset="/img/loading.gif" lazyload alt="Build Status"></a> <a target="_blank" rel="noopener" href="https://dev.azure.com/onnxruntime/onnxruntime/_build/latest?definitionId=78"><img src="https://camo.githubusercontent.com/50de544334d5d7f29061f1fb3f558227b1c3a3920f11de7934750f65960dfd34/68747470733a2f2f6465762e617a7572652e636f6d2f6f6e6e7872756e74696d652f6f6e6e7872756e74696d652f5f617069732f6275696c642f7374617475732f63656e746f73375f6370753f6c6162656c3d4c696e75782b43656e744f5337" srcset="/img/loading.gif" lazyload alt="Build Status"></a> <a target="_blank" rel="noopener" href="https://dev.azure.com/onnxruntime/onnxruntime/_build/latest?definitionId=86"><img src="https://camo.githubusercontent.com/066e8e60036d9e0aecdf3753c113f33f8697fda89ae9914acaea7f913a6e4769/68747470733a2f2f6465762e617a7572652e636f6d2f6f6e6e7872756e74696d652f6f6e6e7872756e74696d652f5f617069732f6275696c642f7374617475732f6f7274747261696e696e672d6c696e75782d63692d706970656c696e653f6c6162656c3d4c696e75782b4350552b547261696e696e67" srcset="/img/loading.gif" lazyload alt="Build Status"></a></td>
+<td><a target="_blank" rel="noopener" href="https://dev.azure.com/onnxruntime/onnxruntime/_build/latest?definitionId=12"><img src="https://camo.githubusercontent.com/72d213d439fccb5d33324bd00071daccacb8ab2df5323060af696e6f82ace6e8/68747470733a2f2f6465762e617a7572652e636f6d2f6f6e6e7872756e74696d652f6f6e6e7872756e74696d652f5f617069732f6275696c642f7374617475732f4c696e75782532304750552532304349253230506970656c696e653f6c6162656c3d4c696e75782b475055" srcset="/img/loading.gif" lazyload alt="Build Status"></a> <a target="_blank" rel="noopener" href="https://dev.azure.com/onnxruntime/onnxruntime/_build/latest?definitionId=45"><img src="https://camo.githubusercontent.com/f110d4576f50405da2854a1e9d1bba0c0627044c5ad82013e16449d22798f526/68747470733a2f2f6465762e617a7572652e636f6d2f6f6e6e7872756e74696d652f6f6e6e7872756e74696d652f5f617069732f6275696c642f7374617475732f4c696e757825323047505525323054656e736f7252542532304349253230506970656c696e653f6c6162656c3d4c696e75782b4750552b54656e736f725254" srcset="/img/loading.gif" lazyload alt="Build Status"></a> <a target="_blank" rel="noopener" href="https://dev.azure.com/onnxruntime/onnxruntime/_build/latest?definitionId=140"><img src="https://camo.githubusercontent.com/bc7f031f8438e7a661261d9c8967842d9793751ce2a3e0c9807b5248050f0de0/68747470733a2f2f6465762e617a7572652e636f6d2f6f6e6e7872756e74696d652f6f6e6e7872756e74696d652f5f617069732f6275696c642f7374617475732f6f7274747261696e696e672d64697374726962757465643f6c6162656c3d44697374726962757465642b547261696e696e67" srcset="/img/loading.gif" lazyload alt="Build Status"></a> <a target="_blank" rel="noopener" href="https://dev.azure.com/onnxruntime/onnxruntime/_build/latest?definitionId=84"><img src="https://camo.githubusercontent.com/a4c8f48b2efbd684894b44e682783b9ff03b23f05b5c4a597e1c8f14f60f36f9/68747470733a2f2f6465762e617a7572652e636f6d2f6f6e6e7872756e74696d652f6f6e6e7872756e74696d652f5f617069732f6275696c642f7374617475732f6f7274747261696e696e672d6c696e75782d6770752d63692d706970656c696e653f6c6162656c3d4c696e75782b4750552b547261696e696e67" srcset="/img/loading.gif" lazyload alt="Build Status"></a></td>
+<td><a target="_blank" rel="noopener" href="https://dev.azure.com/onnxruntime/onnxruntime/_build/latest?definitionId=110"><img src="https://camo.githubusercontent.com/787d2230b6d423bda5990762536e8f86c9dd948e7ce1185807c0d4439a35d91a/68747470733a2f2f6465762e617a7572652e636f6d2f6f6e6e7872756e74696d652f6f6e6e7872756e74696d652f5f617069732f6275696c642f7374617475732f4c696e75782532304e55504841522532304349253230506970656c696e653f6c6162656c3d4c696e75782b4e5550484152" srcset="/img/loading.gif" lazyload alt="Build Status"></a> <a target="_blank" rel="noopener" href="https://dev.azure.com/onnxruntime/onnxruntime/_build/latest?definitionId=108"><img src="https://camo.githubusercontent.com/5cf8f65642cc2a92b1bf086c85508cc1bbb97e7845c1ae2375bf7dc459e43f03/68747470733a2f2f6465762e617a7572652e636f6d2f6f6e6e7872756e74696d652f6f6e6e7872756e74696d652f5f617069732f6275696c642f7374617475732f4c696e75782532304f70656e56494e4f2532304349253230506970656c696e6525323076323f6c6162656c3d4c696e75782b4f70656e56494e4f" srcset="/img/loading.gif" lazyload alt="Build Status"></a></td>
+</tr>
+<tr>
+<td>Mac</td>
+<td><a target="_blank" rel="noopener" href="https://dev.azure.com/onnxruntime/onnxruntime/_build/latest?definitionId=13"><img src="https://camo.githubusercontent.com/ef7087dee28345cd8e82f7a064c57494abd10b7e686e3233f8b5051b9cded120/68747470733a2f2f6465762e617a7572652e636f6d2f6f6e6e7872756e74696d652f6f6e6e7872756e74696d652f5f617069732f6275696c642f7374617475732f4d61634f532532304349253230506970656c696e653f6c6162656c3d4d61634f532b435055" srcset="/img/loading.gif" lazyload alt="Build Status"></a> <a target="_blank" rel="noopener" href="https://dev.azure.com/onnxruntime/onnxruntime/_build/latest?definitionId=65"><img src="https://camo.githubusercontent.com/1aba99d56e516ed581f0559974642fd07e1ebcc1b9f7ca765542e5360f5969b4/68747470733a2f2f6465762e617a7572652e636f6d2f6f6e6e7872756e74696d652f6f6e6e7872756e74696d652f5f617069732f6275696c642f7374617475732f4d61634f532532304e6f436f6e747269626f70732532304349253230506970656c696e653f6c6162656c3d4d61634f532b4e6f436f6e747269626f7073" srcset="/img/loading.gif" lazyload alt="Build Status"></a></td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td>Android</td>
+<td></td>
+<td></td>
+<td><a target="_blank" rel="noopener" href="https://dev.azure.com/onnxruntime/onnxruntime/_build/latest?definitionId=53"><img src="https://camo.githubusercontent.com/dacddb7b5ea5a7748e13edd2e3264043cc2fafa941bccd47fb12f52d1b4f5681/68747470733a2f2f6465762e617a7572652e636f6d2f6f6e6e7872756e74696d652f6f6e6e7872756e74696d652f5f617069732f6275696c642f7374617475732f416e64726f69642532304349253230506970656c696e653f6c6162656c3d416e64726f6964" srcset="/img/loading.gif" lazyload alt="Build Status"></a></td>
+</tr>
+<tr>
+<td>iOS</td>
+<td></td>
+<td></td>
+<td><a target="_blank" rel="noopener" href="https://dev.azure.com/onnxruntime/onnxruntime/_build/latest?definitionId=134"><img src="https://camo.githubusercontent.com/15d5515030d3afc962dd5ba49171f26ffee4b70142869a65ceb3bd15d1fb449b/68747470733a2f2f6465762e617a7572652e636f6d2f6f6e6e7872756e74696d652f6f6e6e7872756e74696d652f5f617069732f6275696c642f7374617475732f694f532532304349253230506970656c696e653f6c6162656c3d694f53" srcset="/img/loading.gif" lazyload alt="Build Status"></a></td>
+</tr>
+<tr>
+<td>WebAssembly</td>
+<td></td>
+<td></td>
+<td><a target="_blank" rel="noopener" href="https://dev.azure.com/onnxruntime/onnxruntime/_build/latest?definitionId=161"><img src="https://camo.githubusercontent.com/4c63c39a9901a1b61ffe2183592a778aa3d70445d4ad4153bbfbb89c498efc4e/68747470733a2f2f6465762e617a7572652e636f6d2f6f6e6e7872756e74696d652f6f6e6e7872756e74696d652f5f617069732f6275696c642f7374617475732f57696e646f7773253230576562417373656d626c792532304349253230506970656c696e653f6c6162656c3d5741534d" srcset="/img/loading.gif" lazyload alt="Build Status"></a></td>
+</tr>
+</tbody>
+</table>
+<ul>
+<li><strong>ONNX Runtime inference</strong></li>
+</ul>
+<p>ONNX运行时推断可以实现更快的客户体验和更低的成本，支持来自深度学习框架（如PyTorch和TensorFlow/Keras）的模型，以及经典的机器学习库（如scikit learn、LightGBM、XGBoost等）。ONNX运行时与不同的硬件、驱动程序和操作系统兼容，并通过在适用的情况下利用硬件加速器以及图形优化和转换提供最佳性能。</p>
+<blockquote>
+<p>官方文档：<a target="_blank" rel="noopener" href="https://www.onnxruntime.ai/docs/#onnx-runtime-for-inferencing">https://www.onnxruntime.ai/docs/#onnx-runtime-for-inferencing</a></p>
+</blockquote>
+<p><strong>ONNX Runtime training</strong></p>
+<p>通过对现有PyTorch培训脚本进行单行添加，ONNX Runtime培训可加快多节点NVIDIA GPU上变压器模型的模型培训时间。</p>
+<blockquote>
+<p>官方文档：<a target="_blank" rel="noopener" href="https://www.onnxruntime.ai/docs/#onnx-runtime-for-training">https://www.onnxruntime.ai/docs/#onnx-runtime-for-training</a></p>
+</blockquote>
+<h3 id="安装">安装</h3>
+<ul>
+<li>在Python下安装，CPU版：</li>
+</ul>
+<figure class="highlight cmake"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs cmake">pip <span class="hljs-keyword">install</span> onnxruntime<br></code></pre></td></tr></table></figure>
+<ul>
+<li>在Python下安装，GPU版：</li>
+</ul>
+<figure class="highlight cmake"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs cmake">pip <span class="hljs-keyword">install</span> onnxruntime-gpu<br></code></pre></td></tr></table></figure>
+<h3 id="版本要求">版本要求</h3>
+<h4 id="onnx与onnxruntime版本关系">onnx与onnxruntime版本关系</h4>
+<blockquote>
+<p>官方链接：<a target="_blank" rel="noopener" href="https://github.com/microsoft/onnxruntime/blob/master/docs/Versioning.md#version-matrix">https://github.com/microsoft/onnxruntime/blob/master/docs/Versioning.md#version-matrix</a></p>
+</blockquote>
+<table>
+<thead>
+<tr>
+<th>ONNX Runtime release version</th>
+<th>ONNX release version</th>
+<th>ONNX opset version</th>
+<th>ONNX ML opset version</th>
+<th>Supported ONNX IR version</th>
+<th><a target="_blank" rel="noopener" href="https://docs.microsoft.com/en-us/windows/ai/windows-ml/release-notes/">Windows ML Availability</a></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>1.8.0</td>
+<td><strong>1.8</strong> down to 1.2</td>
+<td>13</td>
+<td>2</td>
+<td>7</td>
+<td>Windows AI 1.8+</td>
+</tr>
+<tr>
+<td>1.7.0</td>
+<td><strong>1.8</strong> down to 1.2</td>
+<td>13</td>
+<td>2</td>
+<td>7</td>
+<td>Windows AI 1.7+</td>
+</tr>
+<tr>
+<td>1.6.0</td>
+<td><strong>1.8</strong> down to 1.2</td>
+<td>13</td>
+<td>2</td>
+<td>7</td>
+<td>Windows AI 1.6+</td>
+</tr>
+<tr>
+<td>1.5.3</td>
+<td><strong>1.7</strong> down to 1.2</td>
+<td>12</td>
+<td>2</td>
+<td>7</td>
+<td>Windows AI 1.5+</td>
+</tr>
+<tr>
+<td>1.5.2</td>
+<td><strong>1.7</strong> down to 1.2</td>
+<td>12</td>
+<td>2</td>
+<td>7</td>
+<td>Windows AI 1.5+</td>
+</tr>
+<tr>
+<td>1.5.1</td>
+<td><strong>1.7</strong> down to 1.2</td>
+<td>12</td>
+<td>2</td>
+<td>7</td>
+<td>Windows AI 1.5+</td>
+</tr>
+<tr>
+<td>1.4.0</td>
+<td><strong>1.7</strong> down to 1.2</td>
+<td>12</td>
+<td>2</td>
+<td>7</td>
+<td>Windows AI 1.4+</td>
+</tr>
+<tr>
+<td>1.3.1</td>
+<td><strong>1.7</strong> down to 1.2</td>
+<td>12</td>
+<td>2</td>
+<td>7</td>
+<td>Windows AI 1.4+</td>
+</tr>
+<tr>
+<td>1.3.0</td>
+<td><strong>1.7</strong> down to 1.2</td>
+<td>12</td>
+<td>2</td>
+<td>7</td>
+<td>Windows AI 1.3+</td>
+</tr>
+<tr>
+<td>1.2.0 1.1.2 1.1.1 1.1.0</td>
+<td><strong>1.6</strong> down to 1.2</td>
+<td>11</td>
+<td>2</td>
+<td>6</td>
+<td>Windows AI 1.3+</td>
+</tr>
+<tr>
+<td>1.0.0</td>
+<td><strong>1.6</strong> down to 1.2</td>
+<td>11</td>
+<td>2</td>
+<td>6</td>
+<td>Windows AI 1.3+</td>
+</tr>
+<tr>
+<td>0.5.0</td>
+<td><strong>1.5</strong> down to 1.2</td>
+<td>10</td>
+<td>1</td>
+<td>5</td>
+<td>Windows AI 1.3+</td>
+</tr>
+<tr>
+<td>0.4.0</td>
+<td><strong>1.5</strong> down to 1.2</td>
+<td>10</td>
+<td>1</td>
+<td>5</td>
+<td>Windows AI 1.3+</td>
+</tr>
+<tr>
+<td>0.3.1 0.3.0</td>
+<td><strong>1.4</strong> down to 1.2</td>
+<td>9</td>
+<td>1</td>
+<td>3</td>
+<td>Windows 10 2004+</td>
+</tr>
+<tr>
+<td>0.2.1 0.2.0</td>
+<td><strong>1.3</strong> down to 1.2</td>
+<td>8</td>
+<td>1</td>
+<td>3</td>
+<td>Windows 10 1903+</td>
+</tr>
+<tr>
+<td>0.1.5 0.1.4</td>
+<td><strong>1.3</strong> down to 1.2</td>
+<td>8</td>
+<td>1</td>
+<td>3</td>
+<td>Windows 10 1809+</td>
+</tr>
+</tbody>
+</table>
+<h4 id="onnxruntime-与-CUDA-cuDNN版本要求">onnxruntime 与 CUDA cuDNN版本要求</h4>
+<blockquote>
+<p>官方链接：<a target="_blank" rel="noopener" href="https://www.onnxruntime.ai/docs/reference/execution-providers/CUDA-ExecutionProvider.html#requirements">https://www.onnxruntime.ai/docs/reference/execution-providers/CUDA-ExecutionProvider.html#requirements</a></p>
+</blockquote>
+<table>
+<thead>
+<tr>
+<th>ONNX Runtime</th>
+<th>CUDA</th>
+<th>cuDNN</th>
+<th>Notes</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>1.8</td>
+<td>11.0.3</td>
+<td>8.0.4 (Linux) 8.0.2.39 (Windows)</td>
+<td>libcudart 11.0.221 libcufft 10.2.1.245 libcurand 10.2.1.245 libcublasLt 11.2.0.252 libcublas 11.2.0.252 libcudnn 8.0.4 <a target="_blank" rel="noopener" href="http://libcupti.so">libcupti.so</a> 2020.1.1</td>
+</tr>
+<tr>
+<td>1.7</td>
+<td>11.0.3</td>
+<td>8.0.4 (Linux) 8.0.2.39 (Windows)</td>
+<td>libcudart 11.0.221 libcufft 10.2.1.245 libcurand 10.2.1.245 libcublasLt 11.2.0.252 libcublas 11.2.0.252 libcudnn 8.0.4</td>
+</tr>
+<tr>
+<td>1.5-1.6</td>
+<td>10.2</td>
+<td>8.0.3</td>
+<td>CUDA 11 can be built from source</td>
+</tr>
+<tr>
+<td>1.2-1.4</td>
+<td>10.1</td>
+<td>7.6.5</td>
+<td>Requires cublas10-10.2.1.243; cublas 10.1.x will not work</td>
+</tr>
+<tr>
+<td>1.0-1.1</td>
+<td>10.0</td>
+<td>7.6.4</td>
+<td>CUDA versions from 9.1 up to 10.1, and cuDNN versions from 7.1 up to 7.4 should also work with Visual Studio 2017</td>
+</tr>
+</tbody>
+</table>
+<h3 id="参考资料">参考资料</h3>
+<ul>
+<li><a target="_blank" rel="noopener" href="https://github.com/microsoft/onnxruntime">https://github.com/microsoft/onnxruntime</a></li>
+<li><a target="_blank" rel="noopener" href="https://blog.csdn.net/zxgmlcj/article/details/103279869">https://blog.csdn.net/zxgmlcj/article/details/103279869</a></li>
+<li><a target="_blank" rel="noopener" href="https://zhuanlan.zhihu.com/p/261307813">https://zhuanlan.zhihu.com/p/261307813</a></li>
+<li><a target="_blank" rel="noopener" href="https://github.com/open-mmlab/mmdetection/blob/master/docs/tutorials/pytorch2onnx.md">https://github.com/open-mmlab/mmdetection/blob/master/docs/tutorials/pytorch2onnx.md</a></li>
+<li><a target="_blank" rel="noopener" href="https://www.jianshu.com/p/3a51f7d3357f">https://www.jianshu.com/p/3a51f7d3357f</a></li>
+</ul>
+<link rel="stylesheet" href="/css/spoiler.css" type="text/css"><script src="/js/spoiler.js" type="text/javascript" async></script>
+            </div>
+            <hr>
+            <div>
+              <div class="post-metas mb-3">
+                
+                  <div class="post-meta mr-3">
+                    <i class="iconfont icon-category"></i>
+                    
+                      <a class="hover-with-bg" href="/categories/Deep-Learning/">Deep_Learning</a>
+                    
+                      <a class="hover-with-bg" href="/categories/Deep-Learning/Deploy/">Deploy</a>
+                    
+                  </div>
+                
+                
+                  <div class="post-meta">
+                    <i class="iconfont icon-tags"></i>
+                    
+                      <a class="hover-with-bg" href="/tags/Deep-Learning/">Deep_Learning</a>
+                    
+                      <a class="hover-with-bg" href="/tags/Deploy/">Deploy</a>
+                    
+                  </div>
+                
+              </div>
+              
+                <p class="note note-warning">
+                  
+                    本博客所有文章除特别声明外，均采用 <a target="_blank" href="https://creativecommons.org/licenses/by-sa/4.0/deed.zh" rel="nofollow noopener noopener">CC BY-SA 4.0 协议</a> ，转载请注明出处！
+                  
+                </p>
+              
+              
+                <div class="post-prevnext">
+                  <article class="post-prev col-6">
+                    
+                    
+                      <a href="/notes/study/information-theory/cross-entropy-KL-divergence/cross-entropy/">
+                        <i class="iconfont icon-arrowleft"></i>
+                        <span class="hidden-mobile">信息论 - 交叉熵</span>
+                        <span class="visible-mobile">上一篇</span>
+                      </a>
+                    
+                  </article>
+                  <article class="post-next col-6">
+                    
+                    
+                      <a href="/notes/study/information-theory/basic-knowledge/basic-knowledge/">
+                        <span class="hidden-mobile">信息论 - 基础概念</span>
+                        <span class="visible-mobile">下一篇</span>
+                        <i class="iconfont icon-arrowright"></i>
+                      </a>
+                    
+                  </article>
+                </div>
+              
+            </div>
+
+            
+              <!-- Comments -->
+              <article class="comments" id="comments" lazyload>
+                
+                  
+                
+                
+  <div id="waline"></div>
+  <script type="text/javascript">
+    Fluid.utils.loadComments('#waline', function() {
+      Fluid.utils.createScript('https://cdn.jsdelivr.net/npm/@waline/client@1.3.4/dist/Waline.min.js', function() {
+        var options = Object.assign(
+          {"serverURL":"https://waline-rfm2e9uss-zywvvd.vercel.app/","placeholder":"遗憾莫过于难忘你的背影，却找不到你来过的痕迹 ...","path":"window.location.pathname","avatar":"monsterid","meta":["nick","mail","link"],"pageSize":10,"lang":"zh-CN","highlight":true,"avatarCDN":"https://seccdn.libravatar.org/avatar/","avatarForce":false,"requiredFields":[],"emojiCDN":null,"emojiMaps":null,"anonymous":null,"dark":"html[data-user-color-scheme=\"dark\"]","visitor":true},
+          {
+            el: '#waline',
+            path: window.location.pathname
+          }
+        )
+        new Waline(options);
+		
+		wa_ccc = "waline-comment-count-container"
+		var i=document.getElementById(wa_ccc)
+		i.style.display = 'inline'
+
+      });
+    });
+  </script>
+  <noscript>Please enable JavaScript to view the comments</noscript>
+
+
+              </article>
+            
+          </article>
+        </div>
+      </div>
+    </div>
+    
+      <div class="d-none d-lg-block col-lg-2 toc-container" id="toc-ctn">
+        <div id="toc">
+  <p class="toc-header"><i class="iconfont icon-list"></i>&nbsp;目录</p>
+  <div class="toc-body" id="toc-body"></div>
+</div>
+
+      </div>
+    
+  </div>
+</div>
+
+<!-- Custom -->
+
+
+    
+
+    
+      <a id="scroll-top-button" href="#" role="button">
+        <i class="iconfont icon-arrowup" aria-hidden="true"></i>
+      </a>
+    
+
+    
+      <div class="modal fade" id="modalSearch" tabindex="-1" role="dialog" aria-labelledby="ModalLabel"
+     aria-hidden="true">
+  <div class="modal-dialog modal-dialog-scrollable modal-lg" role="document">
+    <div class="modal-content">
+      <div class="modal-header text-center">
+        <h4 class="modal-title w-100 font-weight-bold">搜索</h4>
+        <button type="button" id="local-search-close" class="close" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body mx-3">
+        <div class="md-form mb-5">
+          <input type="text" id="local-search-input" class="form-control validate">
+          <label data-error="x" data-success="v"
+                 for="local-search-input">关键词</label>
+        </div>
+        <div class="list-group" id="local-search-result"></div>
+      </div>
+    </div>
+  </div>
+</div>
+    
+
+    
+  </main>
+
+  <footer class="text-center mt-5 py-3">
+  <div class="footer-content">
+     <a href="https://hexo.io" target="_blank" rel="nofollow noopener"><span>Hexo</span></a> <i class="iconfont icon-love"></i> <a href="https://github.com/fluid-dev/hexo-theme-fluid" target="_blank" rel="nofollow noopener"><span>Fluid</span></a> <div style="font-size: 0.85rem"> <span id="timeDate">载入天数...</span> <span id="times">载入时分秒...</span> <script src="/vvd_js/duration.js"></script> </div> 
+  </div>
+  
+  <div class="statistics">
+    
+    
+
+    
+      
+        <!-- LeanCloud 统计PV -->
+        <span id="leancloud-site-pv-container" style="display: none">
+            总访问量 
+            <span id="leancloud-site-pv"></span>
+             次
+          </span>
+      
+      
+        <!-- LeanCloud 统计UV -->
+        <span id="leancloud-site-uv-container" style="display: none">
+            总访客数 
+            <span id="leancloud-site-uv"></span>
+             人
+          </span>
+      
+
+    
+  </div>
+
+
+  
+  <!-- 备案信息 -->
+  <div class="beian">
+    <span>
+      <a href="http://beian.miit.gov.cn/" target="_blank" rel="nofollow noopener">
+        吉ICP备19007275号-1
+      </a>
+    </span>
+    
+      
+        <span>
+          <a
+            href="http://www.beian.gov.cn/portal/registerSystemInfo?recordcode=22020202000251"
+            rel="nofollow noopener"
+            class="beian-police"
+            target="_blank"
+          >
+            
+              <span style="visibility: hidden; width: 0">|</span>
+              <img src="/img/police_beian.png" srcset="/img/loading.gif" lazyload alt="police-icon"/>
+            
+            <span>22020202000251</span>
+          </a>
+        </span>
+      
+    
+  </div>
+
+
+  
+</footer>
+
+
+  <!-- SCRIPTS -->
+  
+  <script  src="https://cdn.jsdelivr.net/npm/nprogress@0.2.0/nprogress.min.js" ></script>
+  <link  rel="stylesheet" href="https://cdn.jsdelivr.net/npm/nprogress@0.2.0/nprogress.min.css" />
+
+  <script>
+    NProgress.configure({"showSpinner":false,"trickleSpeed":100})
+    NProgress.start()
+    window.addEventListener('load', function() {
+      NProgress.done();
+    })
+  </script>
+
+
+<script  src="https://cdn.jsdelivr.net/npm/jquery@3.6.0/dist/jquery.min.js" ></script>
+<script  src="https://cdn.jsdelivr.net/npm/bootstrap@4.6.0/dist/js/bootstrap.min.js" ></script>
+<script  src="/js/events.js" ></script>
+<script  src="/js/plugins.js" ></script>
+
+<!-- Plugins -->
+
+
+  
+    <script  src="/js/img-lazyload.js" ></script>
+  
+
+
+
+  
+
+
+
+  <script  src="https://cdn.jsdelivr.net/npm/tocbot@4.12.3/dist/tocbot.min.js" ></script>
+
+
+
+  <script  src="https://cdn.jsdelivr.net/npm/@fancyapps/fancybox@3.5.7/dist/jquery.fancybox.min.js" ></script>
+
+
+
+  <script  src="https://cdn.jsdelivr.net/npm/anchor-js@4.3.1/anchor.min.js" ></script>
+
+
+
+  <script defer src="https://cdn.jsdelivr.net/npm/clipboard@2.0.8/dist/clipboard.min.js" ></script>
+
+
+
+  <script  src="/js/local-search.js" ></script>
+
+
+
+
+  <script defer src="/js/leancloud.js" ></script>
+
+
+
+  <script  src="https://cdn.jsdelivr.net/npm/typed.js@2.0.12/lib/typed.min.js" ></script>
+  <script>
+    (function (window, document) {
+      var typing = Fluid.plugins.typing;
+      var title = document.getElementById('subtitle').title;
+      
+      typing(title)
+      
+    })(window, document);
+  </script>
+
+
+
+
+
+  
+
+  
+    <!-- MathJax -->
+    <script>
+      MathJax = {
+        tex: {
+          inlineMath: [['$', '$'], ['\\(', '\\)']]
+        },
+        options: {
+          renderActions: {
+            findScript: [10, doc => {
+              document.querySelectorAll('script[type^="math/tex"]').forEach(node => {
+                const display = !!node.type.match(/; *mode=display/);
+                const math = new doc.options.MathItem(node.textContent, doc.inputJax[0], display);
+                const text = document.createTextNode('');
+                node.parentNode.replaceChild(text, node);
+                math.start = { node: text, delim: '', n: 0 };
+                math.end = { node: text, delim: '', n: 0 };
+                doc.math.push(math);
+              });
+            }, '', false],
+            insertedScript: [200, () => {
+              document.querySelectorAll('mjx-container').forEach(node => {
+                let target = node.parentNode;
+                if (target.nodeName.toLowerCase() === 'li') {
+                  target.parentNode.classList.add('has-jax');
+                }
+              });
+            }, '', false]
+          }
+        }
+      };
+    </script>
+
+    <script async src="https://cdn.jsdelivr.net/npm/mathjax@3.1.4/es5/tex-svg.js" ></script>
+
+  
+
+
+
+
+
+
+
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+
+
+
+
+<!-- 主题的启动项 保持在最底部 -->
+<script  src="/js/boot.js" ></script>
+
+
+<script src="/live2dw/lib/L2Dwidget.min.js?094cbace49a39548bed64abff5988b05"></script><script>L2Dwidget.init({"pluginRootPath":"live2dw/","pluginJsPath":"lib/","pluginModelPath":"assets/","tagMode":false,"log":false,"model":{"jsonPath":"/live2dw/assets/z16.model.json"},"display":{"position":"left","width":235,"height":440},"mobile":{"show":false},"react":{"opacity":0.7}});</script></body>
+</html>

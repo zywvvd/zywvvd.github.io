@@ -1,0 +1,992 @@
+
+
+<!DOCTYPE html>
+<html lang="zh-CN" data-default-color-scheme=&#34;auto&#34;>
+<script type="text/javascript" src="/vvd_js/jquery.js"></script>
+
+
+
+<head>
+  <meta charset="UTF-8">
+  <link rel="apple-touch-icon" sizes="76x76" href="/img/favicon.png">
+  <link rel="icon" href="/img/favicon.png">
+  <meta name="viewport"
+        content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, shrink-to-fit=no">
+  <meta http-equiv="x-ua-compatible" content="ie=edge">
+  
+  <meta name="theme-color" content="#2f4154">
+  <meta name="description" content="
+本文记录《机器视觉》 第三章第二节 —— 简单几何性质，一些学习笔记和个人理解，其中核心内容为二值图的转动惯量求解。
+">
+  <meta name="author" content="Yiwei Zhang">
+  <meta name="keywords" content="人工智能, 深度学习, 个人博客, 机器学习">
+  
+  <title>机器视觉 -3.2-  简单几何性质 - 又见苍岚</title>
+
+  <link  rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@4.6.0/dist/css/bootstrap.min.css" />
+
+
+  <link  rel="stylesheet" href="https://cdn.jsdelivr.net/npm/github-markdown-css@4.0.0/github-markdown.min.css" />
+  <link  rel="stylesheet" href="/lib/hint/hint.min.css" />
+
+  
+    
+    
+      
+      <link  rel="stylesheet" href="https://cdn.jsdelivr.net/npm/highlight.js@10.7.2/styles/github-gist.min.css" />
+    
+  
+
+  
+    <link  rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fancyapps/fancybox@3.5.7/dist/jquery.fancybox.min.css" />
+  
+
+
+
+<!-- 主题依赖的图标库，不要自行修改 -->
+
+<link rel="stylesheet" href="//at.alicdn.com/t/font_1749284_ba1fz6golrf.css">
+
+
+
+<link rel="stylesheet" href="//at.alicdn.com/t/font_1736178_kmeydafke9r.css">
+
+
+<link  rel="stylesheet" href="/css/main.css" />
+
+<!-- 自定义样式保持在最底部 -->
+
+
+  <script id="fluid-configs">
+    var Fluid = window.Fluid || {};
+    var CONFIG = {"hostname":"www.zywvvd.com","root":"/","version":"1.8.11","typing":{"enable":true,"typeSpeed":70,"cursorChar":"_","loop":false},"anchorjs":{"enable":true,"element":"h1,h2,h3,h4,h5,h6","placement":"right","visible":"hover","icon":""},"progressbar":{"enable":true,"height_px":3,"color":"#29d","options":{"showSpinner":false,"trickleSpeed":100}},"copy_btn":true,"image_zoom":{"enable":true,"img_url_replace":["",""]},"toc":{"enable":true,"headingSelector":"h1,h2,h3,h4,h5,h6","collapseDepth":0},"lazyload":{"enable":true,"loading_img":"/img/loading.gif","onlypost":false,"offset_factor":2},"web_analytics":{"enable":true,"baidu":null,"google":null,"gtag":null,"tencent":{"sid":null,"cid":null},"woyaola":null,"cnzz":null,"leancloud":{"app_id":"OLRteWxoct1JkWm3Pe9BDYEK-gzGzoHsz","app_key":"YBKiC6SE5hpWUmy0WIyegCrM","server_url":"https://waline.zywvvd.com"}},"search_path":"/local-search.xml"};
+  </script>
+  <script  src="/js/utils.js" ></script>
+  <script  src="/js/color-schema.js" ></script>
+<meta name="generator" content="Hexo 5.4.0"><link rel="alternate" href="/atom.xml" title="又见苍岚" type="application/atom+xml">
+</head>
+
+
+<body>
+		
+  <header style="height: 70vh;">
+    <nav id="navbar" class="navbar fixed-top  navbar-expand-lg navbar-dark scrolling-navbar">
+  <div class="container">
+    <a class="navbar-brand"
+       href="/">&nbsp;<strong>CangLan</strong>&nbsp;</a>
+
+    <button id="navbar-toggler-btn" class="navbar-toggler" type="button" data-toggle="collapse"
+            data-target="#navbarSupportedContent"
+            aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
+      <div class="animated-icon"><span></span><span></span><span></span></div>
+    </button>
+
+    <!-- Collapsible content -->
+    <div class="collapse navbar-collapse" id="navbarSupportedContent">
+      <ul class="navbar-nav ml-auto text-center">
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/">
+                <i class="iconfont icon-home-fill"></i>
+                首页
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/archives/">
+                <i class="iconfont icon-archive-fill"></i>
+                归档
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/categories/">
+                <i class="iconfont icon-category-fill"></i>
+                分类
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/tags/">
+                <i class="iconfont icon-tags-fill"></i>
+                标签
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/about/">
+                <i class="iconfont icon-user-fill"></i>
+                关于
+              </a>
+            </li>
+          
+        
+        
+          <li class="nav-item" id="search-btn">
+            <a class="nav-link" target="_self" data-toggle="modal" data-target="#modalSearch">&nbsp;<i
+                class="iconfont icon-search"></i>&nbsp;</a>
+          </li>
+        
+        
+          <li class="nav-item" id="color-toggle-btn">
+            <a class="nav-link" target="_self">&nbsp;<i
+                class="iconfont icon-dark" id="color-toggle-icon"></i>&nbsp;</a>
+          </li>
+        
+      </ul>
+    </div>
+  </div>
+</nav>
+
+		<div class="banner" id="banner" parallax=true
+			 style="background: url('https://photos.zywvvd.com/vvd-dell-2021-win-10/20210812235004.jpg') no-repeat center center;
+			   background-size: cover;">
+
+      <div class="full-bg-img" >
+
+		
+		<div id="banner_video_insert">
+		</div>
+		<script>
+						
+			var ua = navigator.userAgent;
+			var ipad = ua.match(/(iPad).*OS\s([\d_]+)/),
+				isIphone = !ipad && ua.match(/(iPhone\sOS)\s([\d_]+)/),
+				isAndroid = ua.match(/(Android)\s+([\d.]+)/),
+				isMobile = isIphone || isAndroid;
+
+			function set_video_attr(id){
+				
+				var height = document.body.children[0].clientHeight
+
+				var width = document.body.children[0].clientWidth
+
+				var video_item = document.getElementById(id);
+
+				if (height / width < 0.56){
+					video_item.setAttribute('width', '100%');
+					video_item.setAttribute('height', 'auto');
+				} else {
+					video_item.setAttribute('height', '100%');
+					video_item.setAttribute('width', 'auto');
+				}
+			}
+
+			$.getJSON('/vvd_js/video_url.json', function(data){
+				if (!isMobile){
+					var video_list_length = data.length
+					var seed = Math.random()
+					index = Math.floor(seed * video_list_length)
+					
+					video_url = data[index]
+					video_html_res = "<video id='video_item' style='position: absolute;' muted='muted' src=" + video_url + " autoplay='autoplay' loop='loop'></video>"
+
+					document.getElementById("banner_video_insert").innerHTML = video_html_res;
+					set_video_attr('video_item')
+				}
+
+			});
+
+			if (!isMobile){
+				window.onresize = function(){
+					set_video_attr('video_item')
+					}
+				}
+			</script>
+
+		
+
+        <div class="mask flex-center" style="background-color: rgba(0, 0, 0, 0.3)">
+          <div class="page-header text-center fade-in-up">
+            <span class="h2" id="subtitle" title="机器视觉 -3.2-  简单几何性质">
+              
+            </span>
+
+            
+              <div class="mt-3">
+  
+    <span class="post-meta mr-2">
+      <i class="iconfont icon-author" aria-hidden="true"></i>
+      Yiwei Zhang
+    </span>
+  
+  
+    <span class="post-meta">
+      <i class="iconfont icon-date-fill" aria-hidden="true"></i>
+      <time datetime="2021-08-27 17:09" pubdate>
+        2021年8月27日 下午
+      </time>
+    </span>
+  
+</div>
+
+<div class="mt-1">
+  
+    
+    <span class="post-meta mr-2">
+      <i class="iconfont icon-chart"></i>
+      2.5k 字
+    </span>
+  
+
+  
+    
+    <span class="post-meta mr-2">
+      <i class="iconfont icon-clock-fill"></i>
+      
+      
+      37
+       分钟
+    </span>
+  
+
+  
+  
+    
+      <!-- LeanCloud 统计文章PV -->
+      <span id="leancloud-page-views-container" class="post-meta" style="display: none">
+        <i class="iconfont icon-eye" aria-hidden="true"></i>
+        <span id="leancloud-page-views"></span> 次
+
+		<span id="waline-comment-count-container" style="display: none">
+			&nbsp
+			<i class="iconfont icon-comment" aria-hidden="true"></i>
+			<span id="test_id_visitor"></span>
+		</span>
+		
+		<script>
+			path = window.location.pathname
+			console.log(path)
+			video_html_res = "<span id='" + path + "' class='waline-comment-count'></span>&nbsp评论"
+			console.log(video_html_res)
+			document.getElementById("test_id_visitor").innerHTML = video_html_res;
+		</script>
+
+      </span>
+    
+  
+</div>
+
+            
+          </div>
+
+          
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <main>
+    
+      
+
+<div class="container-fluid nopadding-x">
+  <div class="row nomargin-x">
+    <div class="d-none d-lg-block col-lg-2"></div>
+    <div class="col-lg-8 nopadding-x-md">
+      <div class="container nopadding-x-md" id="board-ctn">
+        <div class="py-5" id="board">
+          <article class="post-content mx-auto">
+            <!-- SEO header -->
+            <h1 style="display: none">机器视觉 -3.2-  简单几何性质</h1>
+            
+              <p class="note note-info">
+                
+                  本文最后更新于：2021年9月5日 凌晨
+                
+              </p>
+            
+            <div class="markdown-body">
+              <blockquote>
+<p>本文记录<a target="_blank" rel="noopener" href="https://baike.baidu.com/item/%E6%9C%BA%E5%99%A8%E8%A7%86%E8%A7%89/18882401?fr=aladdin">《机器视觉》</a> 第三章第二节 —— 简单几何性质，一些学习笔记和个人理解，其中核心内容为二值图的转动惯量求解。</p>
+</blockquote>
+<span id="more"></span>
+<p>我们已经有了一组二值图，我们可以根据二值图来确定其表示物体的简单几何性质。</p>
+<h3 id="特征函数">特征函数</h3>
+<p>二值图的特征函数 $b(x, y)$比较简单，当$[x, y]$处有物体时值为1，否则为0</p>
+<h3 id="面积">面积</h3>
+<ul>
+<li>可以用特征函数求得二值图的面积$A$:</li>
+</ul>
+<p>$$<br>
+A=\iint_{I} b(x, y) d x d y  \tag{1}<br>
+$$</p>
+<blockquote>
+<p>可以认为是二值图的 0 阶矩的物理意义。</p>
+</blockquote>
+<h3 id="质心">质心</h3>
+<p><img src="https://photos.zywvvd.com/vvd-dell-2021-win-10/20210827225308.png" srcset="/img/loading.gif" lazyload alt=""></p>
+<p>空间位置按照密度加权平均即是质心的位置 $ (\bar{x}, \bar{y}) $：</p>
+<p>$$<br>
+\bar{x}  \iint _ { I } b ( x , y ) d x d y = \iint _ { I } x b ( x , y ) d x d y \tag{2}<br>
+$$</p>
+<p>$$<br>
+\bar { y } \iint _ { I } b ( x , y ) d x d y = \iint _ { I } y b ( x , y ) d x d y\tag{3}<br>
+$$</p>
+<blockquote>
+<p>可以认为是二值图的 1 阶矩（静力矩）物理意义。</p>
+</blockquote>
+<h3 id="朝向">朝向</h3>
+<p><img src="https://photos.zywvvd.com/vvd-dell-2021-win-10/20210827225334.png" srcset="/img/loading.gif" lazyload alt=""></p>
+<ul>
+<li>
+<p>如果我们想要知道二值图物体表示的朝向，则需要用到<strong>转动惯量</strong>的概念。如果找到了使得物体转动惯量最小的轴，那么这个轴向就是物体的朝向。</p>
+</li>
+<li>
+<p>在当前图像为二维的情况下，转动惯量是物体针对某条直线，将物体上的每个点到直线距离的平方按照密度计算积分，即得到了图像关于该轴向的转动惯量值。</p>
+</li>
+<li>
+<p>我们的任务是为给定的二值图物体找到使得其转动惯量最小的直线。</p>
+</li>
+<li>
+<p>转动惯量计算方法：</p>
+</li>
+</ul>
+<p>$$<br>
+E=\iint_{I} r^{2} b(x, y) d x d y \tag{4} \label{4}<br>
+$$</p>
+<ul>
+<li>其中 $r$ 表示二值图上的点到直线的距离，虽然还没有这条直线</li>
+</ul>
+<h4 id="直线建模">直线建模</h4>
+<p><img src="https://photos.zywvvd.com/vvd-dell-2021-win-10/20210827230017.png" srcset="/img/loading.gif" lazyload alt=""></p>
+<ul>
+<li>
+<p>为我们的目标直线建模，取2个参数</p>
+<ul>
+<li>原点到直线的距离 $\rho$</li>
+<li>直线和 $x$ 轴之间（沿逆时针方向）的夹角 $\theta$</li>
+</ul>
+</li>
+<li>
+<p>这种建模方式有一些方便之处：</p>
+<ul>
+<li>当坐标系平移或旋转时，这两个参数的变化是连续的</li>
+<li>当直线平行（或近似平行）于某个坐标轴时，用这两个参数来表示直线也不会产生问题（相比于：使用斜率和截距来表示直线的情况）</li>
+</ul>
+</li>
+<li>
+<p>使用这两个参数，可以将直线方程写为如下形式：</p>
+</li>
+</ul>
+<p>$$<br>
+x \sin \theta-y \cos \theta+\rho=0 \tag{5} \label{5}<br>
+$$</p>
+<ul>
+<li>在直线上，距离原点最近的点$ (-\rho \sin \theta,+\rho \cos \theta) $，通过这个点，沿着夹角 $\theta$ 运动任意距离$s$ 的点仍在直线上，因此可以将直线上任意一点$(x_0,y_0)$表示为：</li>
+</ul>
+<p>$$<br>
+\begin{array}  { l  }  { x _ {0 } = - \rho \sin \theta + s \cos \theta } \ { y _ {0} = + \rho \cos \theta + s \sin \theta } \end{array} \tag{6}  \label{6}<br>
+$$</p>
+<h4 id="最短距离">最短距离</h4>
+<ul>
+<li>回到我们的二值图，在给定直线方程的情况下，二值图上一点$(x,y)$，直线上距离其最近的点$(x_0,y_0)$，二者距离显然可以表示为：</li>
+</ul>
+
+$$
+r^{2}=\left(x-x_{0}\right)^{2}+\left(y-y_{0}\right)^{2} \tag{7} \label{7}
+$$
+
+
+<ul>
+<li>将直线上点公式$\eqref{6}$代入，得到：</li>
+</ul>
+
+$$
+r^{2}=x^{2}+y^{2}+\rho^{2}+2 \rho(x \sin \theta-y \cos \theta)-2 s(x \cos \theta+y \sin \theta)+s^{2} \tag{8} \label{8}
+$$
+
+
+<ul>
+<li>对于每个点，我们都需要解$\eqref{8}$这样的优化方程</li>
+<li>即给定了$x,y,\rho,\theta$，求解使得$r$最小的s$,我们在$$\eqref{8}$中对$s$求导，可得：</li>
+</ul>
+<p>$$<br>
+s=x \cos \theta+y \sin \theta  \tag{9} \label{9}<br>
+$$</p>
+<ul>
+<li>将$\eqref{9}$带入$\eqref{6}$，二值图上$(x,y)$到直线上距离最近的点$(x_0,y_0)$可得到关系为：</li>
+</ul>
+
+$$
+x-x_{0}=+\sin \theta(x \sin \theta-y \cos \theta+\rho) \\
+ y-y_{0}=-\cos \theta(x \sin \theta-y \cos \theta+\rho)   \tag{10} \label{10}
+$$
+
+
+<ul>
+<li>将$\eqref{10}$带入 $\eqref{7}$可得：</li>
+</ul>
+<p>$$<br>
+r^{2}=(x \sin \theta-y \cos \theta+\rho)^{2} \tag{11} \label{11}<br>
+$$</p>
+<ul>
+<li>此处可以看到，将某点$(x,y)$带入$\eqref{5}$，得到值的绝对值即为该点到直线的垂线（最短）距离。</li>
+</ul>
+<h4 id="二阶矩轴向通过质心">二阶矩轴向通过质心</h4>
+<ul>
+<li>我们已经得到了二值图上一点到任意直线的距离计算方法，将$\eqref{11}$带入$\eqref{4}$，得到：</li>
+</ul>
+
+$$
+\begin{aligned}
+E&=\iint_{I}(x \sin \theta-y \cos \theta+\rho)^{2} b(x, y) d x d y \\
+&=\iint_{I}[{(x\sin \theta  - y\cos \theta )^2} + {\rho ^2} + 2\rho (x\sin \theta  - y\cos \theta )]b(x,y)dxdy\\
+&=[{(x\sin \theta  - y\cos \theta )^2} + {\rho ^2}]\iint_{I}b(x,y)dxdy + 2\rho \sin \theta \iint_{I}xb(x,y)dxdy - 2\rho \cos \theta \iint_{I}{yb(x,y)dxdy}
+
+\end{aligned}
+\tag{12}
+$$
+
+
+<ul>
+<li>对$\rho$求导，并令倒数为0，得到：</li>
+</ul>
+<p>$$<br>
+(\bar{x} \sin \theta-\bar{y} \cos \theta+\rho) A=0\tag{13}<br>
+$$</p>
+<ul>
+<li>其中，A是区域面积，而是区域质心。因此，我们得到了结论：</li>
+</ul>
+<p>$$<br>
+最小二阶矩所对应的轴一定经过区域重心！<br>
+$$</p>
+<h4 id="确定轴向倾角">确定轴向倾角</h4>
+<p>我们已经确定该轴经过一个确定的点$ (\bar{x}, \bar{y}) $了，仅需要再确定直线倾角即可。</p>
+<ul>
+<li>将二值图平移到原点与质心重合的位置，那么我们要求得的就是一条穿过原点的直接倾角</li>
+<li>也就是直接去除 $\rho$ 参数的影响</li>
+<li>转动惯量计算方式如下：</li>
+</ul>
+<p>$$<br>
+E=\iint_{I}(x’ \sin \theta-y’ \cos \theta)^{2} b(x’, y’) d x’ d y’ \tag{14}<br>
+$$</p>
+<blockquote>
+<p>其中，我们定义平移后的二值图$I’$上点的坐标为$ ({x’}, {y’}) $。</p>
+</blockquote>
+<ul>
+<li>可以表示为：</li>
+</ul>
+
+$$
+\begin{array}{l}
+E=a \sin ^{2} \theta-b \sin \theta \cos \theta+c \cos ^{2} \theta \\
+其中：
+  a=\iint_{I^{\prime}}\left(x^{\prime}\right)^{2} b\left(x^{\prime}, y^{\prime}\right) d x^{\prime} d y^{\prime} \\
+ b=2 \iint_{I^{\prime}}\left(x^{\prime} y^{\prime}\right) b\left(x^{\prime}, y^{\prime}\right) d x^{\prime} d y^{\prime} \\
+ c=\iint_{I^{\prime}}\left(y^{\prime}\right)^{2} b\left(x^{\prime}, y^{\prime}\right) d x^{\prime} d y^{\prime} \\ 
+ \end{array}
+ \tag{15} 
+ \label{15}
+$$
+
+<ul>
+<li>即：</li>
+</ul>
+<p>$$<br>
+E=\frac{1}{2}(a+c)-\frac{1}{2}(a-c) \cos 2 \theta-\frac{1}{2} b \sin 2 \theta \tag{16}<br>
+$$</p>
+<ul>
+<li>上式对$\theta$求导，并令求导结果等于零</li>
+<li>假设$a≠c$，我们可以得到：</li>
+</ul>
+<p>$$<br>
+\tan 2 \theta=\frac{b}{a-c} \tag{17} \label{17}<br>
+$$</p>
+<ul>
+<li>因此除非出现$ b=0 $ 并且 $ a=c $ 的情况, 否则, 我们最终可以得到：</li>
+</ul>
+
+$$
+\begin{array}{l}
+\sin 2 \theta=\pm \frac{b}{\sqrt{b^{2}+(a-c)^{2}}} \quad  \\ \cos 2 \theta=\pm \frac{a-c}{\sqrt{b^{2}+(a-c)^{2}}}
+\end{array}
+\tag{18}
+$$
+
+<ul>
+<li>至此我们已经求出了使得该二值图转动惯量最小和最大的两个轴</li>
+<li>$E$​ 的的最小值和最大值的比值，给出了一些关于物体有“多么圆”的信息。对于直线，这个比值是0对于圆，这个比值是1。</li>
+</ul>
+<h3 id="拉格朗日">拉格朗日</h3>
+<p>从式$\eqref{15}$开始，事实上我们要解的就是一个带约束的优化方程组，可以使用拉格朗日乘数法求解：</p>
+
+$$
+\begin{array}{l}
+E = a{x^2} - bxy + c{y^2}\\
+s.t.{x^2} + {y^2}-1 = 0
+\end{array} \tag{19} \label{19}
+$$
+
+<ul>
+<li>将$E$设为$f(x,y)$，约束条件设为$g(x,y)=0$，构建拉格朗日方程：</li>
+</ul>
+<p>$$<br>
+L(x,y) = a{x^2} - bxy + c{y^2} + \lambda ({x^2} + {y^2}-1) \tag{20}<br>
+$$</p>
+<ul>
+<li>构造拉格朗日方程组：</li>
+</ul>
+
+$$
+\left\{ \begin{array}{l}
+\frac{{\partial f}}{{\partial x}} + \lambda \frac{{\partial g}}{{\partial x}} = 0\\
+\frac{{\partial f}}{{\partial y}} + \lambda \frac{{\partial g}}{{\partial y}} = 0\\
+g(x,y) = 0
+\end{array} \right. \to \left\{ \begin{array}{l}
+2ax - by + 2\lambda x = 0\\
+2{\rm{by}} - bx + 2\lambda y = 0\\
+{x^2} + {y^2} = 1
+\end{array} \right. \tag{21}
+$$
+
+<ul>
+<li>重新令 $x = sin\theta, y=con\theta$可得：</li>
+</ul>
+
+$$
+\begin{array}{l}
+2a - b\frac{1}{{\tan \theta }} = 2c - b\tan \theta \\
+b(ta{n^2}\theta  - 1) + 2(a - c)tan\theta  = 0\\
+\frac{b}{{a - c}} = \frac{{2\tan \theta }}{{{{\tan }^2}\theta  - 1}} = \tan 2\theta 
+\end{array} \tag{22}
+$$
+
+<ul>
+<li>即推出$\eqref{17}$相同结论。</li>
+</ul>
+<h3 id="特征向量">特征向量</h3>
+<p>可以将$\eqref{19}$看作是一个二次型优化问题，原带约束的方程可以写成：</p>
+
+$$
+\begin{array}{*{20}{l}}
+{E = {{\bf{s}}^T}{\bf{As}}}\\
+{s.t.1-{{\bf{s}}^T}{\bf{Is}} = 0}
+\end{array} \tag{23}
+$$
+
+<ul>
+<li>其中: ${\bf{s}} = \left( \begin{array}{l}
+  x\\
+  y
+  \end{array} \right)$，${\bf{A}} = \left( \begin{array}{l}
+  \begin{array}{*{20}{c}}
+  a&{\frac{b}{2}}
+  \end{array}\\
+  \begin{array}{*{20}{c}}
+  {\frac{b}{2}}&c
+  \end{array}
+  \end{array} \right)$，$\bf{I}$为二阶单位阵</li>
+<li>那么拉格朗日方程可以写成：</li>
+</ul>
+
+$$
+{L = {{\bf{s}}^T}{\bf{As}} - \lambda(1- {{\bf{s}}^T}{\bf{Is}}}) \tag{24}
+$$
+
+<ul>
+<li>$L$对$\bf{s}$的偏导数为0：</li>
+</ul>
+
+$$
+\begin{array}{l}
+\frac{{\partial L}}{{\partial {\bf{s}}}} = 2{\bf{As}} - 2\lambda {\bf{Is}} = 0\\
+{\bf{As}} = \lambda {\bf{s}}
+\end{array} \tag{25} \label{25}
+$$
+
+<ul>
+<li>而式$\eqref{25}$就是在寻找矩阵$\bf{A}$的特征向量和特征值。</li>
+<li>也就是说，对于给定的二值图，求解其对应的$a,b,c$，构造出矩阵$\bf{A}$，求解$\bf{A}$的特征向量即是寻找最大、最小转动惯量的方向。</li>
+<li>二者大小的比值也类似于特征值的比值，也就是矩阵的条件数。</li>
+</ul>
+<h3 id="参考示例">参考示例</h3>
+<ul>
+<li>示例图像：</li>
+</ul>
+<p><img src="https://photos.zywvvd.com/win11-mt/20210828172257.png" srcset="/img/loading.gif" lazyload alt=""></p>
+<ul>
+<li>示例程序</li>
+</ul>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br><span class="line">84</span><br></pre></td><td class="code"><pre><code class="hljs python"><span class="hljs-keyword">import</span> math<br><span class="hljs-keyword">import</span> cv2<br><br><span class="hljs-keyword">import</span> numpy <span class="hljs-keyword">as</span> np<br><br><span class="hljs-keyword">import</span> matplotlib.pyplot <span class="hljs-keyword">as</span> plt<br><span class="hljs-keyword">from</span> numpy.lib.function_base <span class="hljs-keyword">import</span> iterable<br><br><br><span class="hljs-function"><span class="hljs-keyword">def</span> <span class="hljs-title">vvd_round</span>(<span class="hljs-params">num</span>):</span><br>    <span class="hljs-keyword">if</span> iterable(num):<br>        <span class="hljs-keyword">return</span> np.<span class="hljs-built_in">round</span>(np.array(num)).astype(<span class="hljs-string">&#x27;int32&#x27;</span>).tolist()<br>    <span class="hljs-keyword">return</span> <span class="hljs-built_in">int</span>(<span class="hljs-built_in">round</span>(num))<br><br><br><span class="hljs-function"><span class="hljs-keyword">def</span> <span class="hljs-title">show_image</span>(<span class="hljs-params">image</span>):</span><br>    plt.imshow(image.astype(<span class="hljs-string">&#x27;uint8&#x27;</span>))<br>    plt.show()<br>    <span class="hljs-keyword">pass</span><br><br><br><span class="hljs-function"><span class="hljs-keyword">def</span> <span class="hljs-title">gravity_center</span>(<span class="hljs-params">mask</span>):</span><br>    Ys, Xs = mask.nonzero()<br>    A = (mask &gt; <span class="hljs-number">0</span>).<span class="hljs-built_in">sum</span>()<br>    C_X = (Xs).<span class="hljs-built_in">sum</span>() / A<br>    C_Y = (Ys).<span class="hljs-built_in">sum</span>() / A<br>    <span class="hljs-keyword">return</span> C_X, C_Y<br><br><br><span class="hljs-function"><span class="hljs-keyword">def</span> <span class="hljs-title">load_gray_image</span>(<span class="hljs-params">image_path</span>):</span><br>    image = cv2.imread(image_path)<br>    image = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)<br>    image = (image == <span class="hljs-number">0</span>).astype(<span class="hljs-string">&#x27;uint8&#x27;</span>) * <span class="hljs-number">255</span><br>    <span class="hljs-keyword">return</span> image<br><br><br><span class="hljs-function"><span class="hljs-keyword">def</span> <span class="hljs-title">moment_of_inertia</span>(<span class="hljs-params">mask, center</span>):</span><br>    temp_image = mask.copy().astype(<span class="hljs-string">&#x27;uint8&#x27;</span>) * <span class="hljs-number">128</span><br><br>    C_X, C_Y = center<br><br>    Ys, Xs = mask.nonzero()<br><br>    Ys = (Ys - C_Y) / <span class="hljs-number">100</span><br>    Xs = (Xs - C_X) / <span class="hljs-number">100</span><br><br>    a = (Xs * Xs).<span class="hljs-built_in">sum</span>()<br>    b = <span class="hljs-number">2</span> * (Xs * Ys).<span class="hljs-built_in">sum</span>()<br>    c = (Ys * Ys).<span class="hljs-built_in">sum</span>()<br><br>    <span class="hljs-keyword">if</span> b == <span class="hljs-number">0</span>:<br>        theta = <span class="hljs-number">0</span><br>    <span class="hljs-keyword">elif</span> a == c:<br>        theta = - np.pi * <span class="hljs-number">0.5</span> * <span class="hljs-number">0.5</span><br>    <span class="hljs-keyword">else</span>:<br>        theta = - math.atan(b / (a - c)) / <span class="hljs-number">2</span><br><br>    point_1 = vvd_round([C_X + math.cos(theta) * <span class="hljs-number">200</span>, C_Y - math.sin(theta) * <span class="hljs-number">200</span>])<br>    point_2 = vvd_round([C_X - math.cos(theta) * <span class="hljs-number">200</span>, C_Y + math.sin(theta) * <span class="hljs-number">200</span>])<br><br>    temp_image = cv2.line(temp_image.astype(<span class="hljs-string">&#x27;uint8&#x27;</span>), point_1, point_2, <span class="hljs-number">255</span>, <span class="hljs-number">2</span>)<br><br>    point_1 = vvd_round([C_X + math.cos(theta + <span class="hljs-number">0.5</span> * np.pi) * <span class="hljs-number">200</span>, C_Y - math.sin(theta + <span class="hljs-number">0.5</span> * np.pi) * <span class="hljs-number">200</span>])<br>    point_2 = vvd_round([C_X - math.cos(theta + <span class="hljs-number">0.5</span> * np.pi) * <span class="hljs-number">200</span>, C_Y + math.sin(theta + <span class="hljs-number">0.5</span> * np.pi) * <span class="hljs-number">200</span>])<br><br>    temp_image = cv2.line(temp_image.astype(<span class="hljs-string">&#x27;uint8&#x27;</span>), point_1, point_2, <span class="hljs-number">200</span>, <span class="hljs-number">2</span>)<br><br>    theta_1 = theta<br>    theta_2 = theta + <span class="hljs-number">0.5</span> * np.pi<br><br>    E_1 =(math.sin(theta_1)) ** <span class="hljs-number">2</span> * a - b * math.sin(theta_1) * math.cos(theta_1) + c * (math.cos(theta_1)) ** <span class="hljs-number">2</span><br>    E_2 =(math.sin(theta_2)) ** <span class="hljs-number">2</span> * a - b * math.sin(theta_2) * math.cos(theta_2) + c * (math.cos(theta_2)) ** <span class="hljs-number">2</span><br><br>    <span class="hljs-keyword">return</span> temp_image, <span class="hljs-built_in">min</span>(E_2, E_1) / <span class="hljs-built_in">max</span>(E_2, E_1, <span class="hljs-number">1</span>)<br><br><br><span class="hljs-keyword">if</span> __name__ == <span class="hljs-string">&#x27;__main__&#x27;</span>:<br>    image_path = <span class="hljs-string">&#x27;test.png&#x27;</span><br>    image = load_gray_image(image_path)<br>    center = gravity_center(image)<br>    temp_image, rate = moment_of_inertia(image, center)<br>    show_image(temp_image)<br>    <span class="hljs-keyword">pass</span><br><br></code></pre></td></tr></table></figure>
+<ul>
+<li>示例效果</li>
+</ul>
+<p><img src="https://photos.zywvvd.com/win11-mt/20210828172328.png" srcset="/img/loading.gif" lazyload alt=""></p>
+<h3 id="参考资料">参考资料</h3>
+<ul>
+<li>伯特霍尔德・霍恩著BERTHOLDKLAUSPAULHORN. 机器视觉[M]. 中国青年出版社, 2014.</li>
+</ul>
+<link rel="stylesheet" href="/css/spoiler.css" type="text/css"><script src="/js/spoiler.js" type="text/javascript" async></script>
+            </div>
+            <hr>
+            <div>
+              <div class="post-metas mb-3">
+                
+                  <div class="post-meta mr-3">
+                    <i class="iconfont icon-category"></i>
+                    
+                      <a class="hover-with-bg" href="/categories/Image-Processing/">Image_Processing</a>
+                    
+                      <a class="hover-with-bg" href="/categories/Image-Processing/Robot-vision/">Robot_vision</a>
+                    
+                  </div>
+                
+                
+                  <div class="post-meta">
+                    <i class="iconfont icon-tags"></i>
+                    
+                      <a class="hover-with-bg" href="/tags/Image-Processing/">Image_Processing</a>
+                    
+                      <a class="hover-with-bg" href="/tags/Robot-vision/">Robot_vision</a>
+                    
+                  </div>
+                
+              </div>
+              
+                <p class="note note-warning">
+                  
+                    本博客所有文章除特别声明外，均采用 <a target="_blank" href="https://creativecommons.org/licenses/by-sa/4.0/deed.zh" rel="nofollow noopener noopener">CC BY-SA 4.0 协议</a> ，转载请注明出处！
+                  
+                </p>
+              
+              
+                <div class="post-prevnext">
+                  <article class="post-prev col-6">
+                    
+                    
+                      <a href="/notes/study/deep-learning/transformer/transformer/">
+                        <i class="iconfont icon-arrowleft"></i>
+                        <span class="hidden-mobile">Transformer</span>
+                        <span class="visible-mobile">上一篇</span>
+                      </a>
+                    
+                  </article>
+                  <article class="post-next col-6">
+                    
+                    
+                      <a href="/notes/coding/python/pip-deny-error/pip-deny-error/">
+                        <span class="hidden-mobile">解决pip install出现“由于目标计算机积极拒绝，无法连接”的问题</span>
+                        <span class="visible-mobile">下一篇</span>
+                        <i class="iconfont icon-arrowright"></i>
+                      </a>
+                    
+                  </article>
+                </div>
+              
+            </div>
+
+            
+              <!-- Comments -->
+              <article class="comments" id="comments" lazyload>
+                
+                  
+                
+                
+  <div id="waline"></div>
+  <script type="text/javascript">
+    Fluid.utils.loadComments('#waline', function() {
+      Fluid.utils.createScript('https://cdn.jsdelivr.net/npm/@waline/client@1.3.4/dist/Waline.min.js', function() {
+        var options = Object.assign(
+          {"serverURL":"https://waline-rfm2e9uss-zywvvd.vercel.app/","placeholder":"遗憾莫过于难忘你的背影，却找不到你来过的痕迹 ...","path":"window.location.pathname","avatar":"monsterid","meta":["nick","mail","link"],"pageSize":10,"lang":"zh-CN","highlight":true,"avatarCDN":"https://seccdn.libravatar.org/avatar/","avatarForce":false,"requiredFields":[],"emojiCDN":null,"emojiMaps":null,"anonymous":null,"dark":"html[data-user-color-scheme=\"dark\"]","visitor":true},
+          {
+            el: '#waline',
+            path: window.location.pathname
+          }
+        )
+        new Waline(options);
+		
+		wa_ccc = "waline-comment-count-container"
+		var i=document.getElementById(wa_ccc)
+		i.style.display = 'inline'
+
+      });
+    });
+  </script>
+  <noscript>Please enable JavaScript to view the comments</noscript>
+
+
+              </article>
+            
+          </article>
+        </div>
+      </div>
+    </div>
+    
+      <div class="d-none d-lg-block col-lg-2 toc-container" id="toc-ctn">
+        <div id="toc">
+  <p class="toc-header"><i class="iconfont icon-list"></i>&nbsp;目录</p>
+  <div class="toc-body" id="toc-body"></div>
+</div>
+
+      </div>
+    
+  </div>
+</div>
+
+<!-- Custom -->
+
+
+    
+
+    
+      <a id="scroll-top-button" href="#" role="button">
+        <i class="iconfont icon-arrowup" aria-hidden="true"></i>
+      </a>
+    
+
+    
+      <div class="modal fade" id="modalSearch" tabindex="-1" role="dialog" aria-labelledby="ModalLabel"
+     aria-hidden="true">
+  <div class="modal-dialog modal-dialog-scrollable modal-lg" role="document">
+    <div class="modal-content">
+      <div class="modal-header text-center">
+        <h4 class="modal-title w-100 font-weight-bold">搜索</h4>
+        <button type="button" id="local-search-close" class="close" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body mx-3">
+        <div class="md-form mb-5">
+          <input type="text" id="local-search-input" class="form-control validate">
+          <label data-error="x" data-success="v"
+                 for="local-search-input">关键词</label>
+        </div>
+        <div class="list-group" id="local-search-result"></div>
+      </div>
+    </div>
+  </div>
+</div>
+    
+
+    
+  </main>
+
+  <footer class="text-center mt-5 py-3">
+  <div class="footer-content">
+     <a href="https://hexo.io" target="_blank" rel="nofollow noopener"><span>Hexo</span></a> <i class="iconfont icon-love"></i> <a href="https://github.com/fluid-dev/hexo-theme-fluid" target="_blank" rel="nofollow noopener"><span>Fluid</span></a> <div style="font-size: 0.85rem"> <span id="timeDate">载入天数...</span> <span id="times">载入时分秒...</span> <script src="/vvd_js/duration.js"></script> </div> 
+  </div>
+  
+  <div class="statistics">
+    
+    
+
+    
+      
+        <!-- LeanCloud 统计PV -->
+        <span id="leancloud-site-pv-container" style="display: none">
+            总访问量 
+            <span id="leancloud-site-pv"></span>
+             次
+          </span>
+      
+      
+        <!-- LeanCloud 统计UV -->
+        <span id="leancloud-site-uv-container" style="display: none">
+            总访客数 
+            <span id="leancloud-site-uv"></span>
+             人
+          </span>
+      
+
+    
+  </div>
+
+
+  
+  <!-- 备案信息 -->
+  <div class="beian">
+    <span>
+      <a href="http://beian.miit.gov.cn/" target="_blank" rel="nofollow noopener">
+        吉ICP备19007275号-1
+      </a>
+    </span>
+    
+      
+        <span>
+          <a
+            href="http://www.beian.gov.cn/portal/registerSystemInfo?recordcode=22020202000251"
+            rel="nofollow noopener"
+            class="beian-police"
+            target="_blank"
+          >
+            
+              <span style="visibility: hidden; width: 0">|</span>
+              <img src="/img/police_beian.png" srcset="/img/loading.gif" lazyload alt="police-icon"/>
+            
+            <span>22020202000251</span>
+          </a>
+        </span>
+      
+    
+  </div>
+
+
+  
+</footer>
+
+
+  <!-- SCRIPTS -->
+  
+  <script  src="https://cdn.jsdelivr.net/npm/nprogress@0.2.0/nprogress.min.js" ></script>
+  <link  rel="stylesheet" href="https://cdn.jsdelivr.net/npm/nprogress@0.2.0/nprogress.min.css" />
+
+  <script>
+    NProgress.configure({"showSpinner":false,"trickleSpeed":100})
+    NProgress.start()
+    window.addEventListener('load', function() {
+      NProgress.done();
+    })
+  </script>
+
+
+<script  src="https://cdn.jsdelivr.net/npm/jquery@3.6.0/dist/jquery.min.js" ></script>
+<script  src="https://cdn.jsdelivr.net/npm/bootstrap@4.6.0/dist/js/bootstrap.min.js" ></script>
+<script  src="/js/events.js" ></script>
+<script  src="/js/plugins.js" ></script>
+
+<!-- Plugins -->
+
+
+  
+    <script  src="/js/img-lazyload.js" ></script>
+  
+
+
+
+  
+
+
+
+  <script  src="https://cdn.jsdelivr.net/npm/tocbot@4.12.3/dist/tocbot.min.js" ></script>
+
+
+
+  <script  src="https://cdn.jsdelivr.net/npm/@fancyapps/fancybox@3.5.7/dist/jquery.fancybox.min.js" ></script>
+
+
+
+  <script  src="https://cdn.jsdelivr.net/npm/anchor-js@4.3.1/anchor.min.js" ></script>
+
+
+
+  <script defer src="https://cdn.jsdelivr.net/npm/clipboard@2.0.8/dist/clipboard.min.js" ></script>
+
+
+
+  <script  src="/js/local-search.js" ></script>
+
+
+
+
+  <script defer src="/js/leancloud.js" ></script>
+
+
+
+  <script  src="https://cdn.jsdelivr.net/npm/typed.js@2.0.12/lib/typed.min.js" ></script>
+  <script>
+    (function (window, document) {
+      var typing = Fluid.plugins.typing;
+      var title = document.getElementById('subtitle').title;
+      
+      typing(title)
+      
+    })(window, document);
+  </script>
+
+
+
+
+
+  
+
+  
+    <!-- MathJax -->
+    <script>
+      MathJax = {
+        tex: {
+          inlineMath: [['$', '$'], ['\\(', '\\)']]
+        },
+        options: {
+          renderActions: {
+            findScript: [10, doc => {
+              document.querySelectorAll('script[type^="math/tex"]').forEach(node => {
+                const display = !!node.type.match(/; *mode=display/);
+                const math = new doc.options.MathItem(node.textContent, doc.inputJax[0], display);
+                const text = document.createTextNode('');
+                node.parentNode.replaceChild(text, node);
+                math.start = { node: text, delim: '', n: 0 };
+                math.end = { node: text, delim: '', n: 0 };
+                doc.math.push(math);
+              });
+            }, '', false],
+            insertedScript: [200, () => {
+              document.querySelectorAll('mjx-container').forEach(node => {
+                let target = node.parentNode;
+                if (target.nodeName.toLowerCase() === 'li') {
+                  target.parentNode.classList.add('has-jax');
+                }
+              });
+            }, '', false]
+          }
+        }
+      };
+    </script>
+
+    <script async src="https://cdn.jsdelivr.net/npm/mathjax@3.1.4/es5/tex-svg.js" ></script>
+
+  
+
+
+
+
+
+
+
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+
+
+
+
+<!-- 主题的启动项 保持在最底部 -->
+<script  src="/js/boot.js" ></script>
+
+
+<script src="/live2dw/lib/L2Dwidget.min.js?094cbace49a39548bed64abff5988b05"></script><script>L2Dwidget.init({"pluginRootPath":"live2dw/","pluginJsPath":"lib/","pluginModelPath":"assets/","tagMode":false,"log":false,"model":{"jsonPath":"/live2dw/assets/z16.model.json"},"display":{"position":"left","width":235,"height":440},"mobile":{"show":false},"react":{"opacity":0.7}});</script></body>
+</html>
