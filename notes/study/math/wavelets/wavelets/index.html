@@ -1,0 +1,759 @@
+
+
+<!DOCTYPE html>
+<html lang="zh-CN" data-default-color-scheme=&#34;auto&#34;>
+<script type="text/javascript" src="/vvd_js/jquery.js"></script>
+
+
+
+<head>
+  <meta charset="UTF-8">
+  <link rel="apple-touch-icon" sizes="76x76" href="/img/favicon.png">
+  <link rel="icon" href="/img/favicon.png">
+  <meta name="viewport"
+        content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, shrink-to-fit=no">
+  <meta http-equiv="x-ua-compatible" content="ie=edge">
+  
+  <meta name="theme-color" content="#2f4154">
+  <meta name="description" content="
+本文按照傅里叶–&amp;gt;短时傅里叶变换–&amp;gt;小波变换的顺序，记录傅里叶变换到小波变换的演化过程。
+">
+  <meta name="author" content="Yiwei Zhang">
+  <meta name="keywords" content="人工智能, 深度学习, 个人博客, 机器学习">
+  
+  <title>傅里叶变换到小波变换 - 又见苍岚</title>
+
+  <link  rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@4.6.0/dist/css/bootstrap.min.css" />
+
+
+  <link  rel="stylesheet" href="https://cdn.jsdelivr.net/npm/github-markdown-css@4.0.0/github-markdown.min.css" />
+  <link  rel="stylesheet" href="/lib/hint/hint.min.css" />
+
+  
+    
+    
+      
+      <link  rel="stylesheet" href="https://cdn.jsdelivr.net/npm/highlight.js@10.7.2/styles/github-gist.min.css" />
+    
+  
+
+  
+    <link  rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fancyapps/fancybox@3.5.7/dist/jquery.fancybox.min.css" />
+  
+
+
+
+<!-- 主题依赖的图标库，不要自行修改 -->
+
+<link rel="stylesheet" href="//at.alicdn.com/t/font_1749284_ba1fz6golrf.css">
+
+
+
+<link rel="stylesheet" href="//at.alicdn.com/t/font_1736178_kmeydafke9r.css">
+
+
+<link  rel="stylesheet" href="/css/main.css" />
+
+<!-- 自定义样式保持在最底部 -->
+
+
+  <script id="fluid-configs">
+    var Fluid = window.Fluid || {};
+    var CONFIG = {"hostname":"www.zywvvd.com","root":"/","version":"1.8.11","typing":{"enable":true,"typeSpeed":70,"cursorChar":"_","loop":false},"anchorjs":{"enable":true,"element":"h1,h2,h3,h4,h5,h6","placement":"right","visible":"hover","icon":""},"progressbar":{"enable":true,"height_px":3,"color":"#29d","options":{"showSpinner":false,"trickleSpeed":100}},"copy_btn":true,"image_zoom":{"enable":true,"img_url_replace":["",""]},"toc":{"enable":true,"headingSelector":"h1,h2,h3,h4,h5,h6","collapseDepth":0},"lazyload":{"enable":true,"loading_img":"/img/loading.gif","onlypost":false,"offset_factor":2},"web_analytics":{"enable":true,"baidu":null,"google":null,"gtag":null,"tencent":{"sid":null,"cid":null},"woyaola":null,"cnzz":null,"leancloud":{"app_id":"OLRteWxoct1JkWm3Pe9BDYEK-gzGzoHsz","app_key":"YBKiC6SE5hpWUmy0WIyegCrM","server_url":"https://waline.zywvvd.com"}},"search_path":"/local-search.xml"};
+  </script>
+  <script  src="/js/utils.js" ></script>
+  <script  src="/js/color-schema.js" ></script>
+<meta name="generator" content="Hexo 5.4.0"><link rel="alternate" href="/atom.xml" title="又见苍岚" type="application/atom+xml">
+</head>
+
+
+<body>
+		
+  <header style="height: 70vh;">
+    <nav id="navbar" class="navbar fixed-top  navbar-expand-lg navbar-dark scrolling-navbar">
+  <div class="container">
+    <a class="navbar-brand"
+       href="/">&nbsp;<strong>CangLan</strong>&nbsp;</a>
+
+    <button id="navbar-toggler-btn" class="navbar-toggler" type="button" data-toggle="collapse"
+            data-target="#navbarSupportedContent"
+            aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
+      <div class="animated-icon"><span></span><span></span><span></span></div>
+    </button>
+
+    <!-- Collapsible content -->
+    <div class="collapse navbar-collapse" id="navbarSupportedContent">
+      <ul class="navbar-nav ml-auto text-center">
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/">
+                <i class="iconfont icon-home-fill"></i>
+                首页
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/archives/">
+                <i class="iconfont icon-archive-fill"></i>
+                归档
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/categories/">
+                <i class="iconfont icon-category-fill"></i>
+                分类
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/tags/">
+                <i class="iconfont icon-tags-fill"></i>
+                标签
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/about/">
+                <i class="iconfont icon-user-fill"></i>
+                关于
+              </a>
+            </li>
+          
+        
+        
+          <li class="nav-item" id="search-btn">
+            <a class="nav-link" target="_self" data-toggle="modal" data-target="#modalSearch">&nbsp;<i
+                class="iconfont icon-search"></i>&nbsp;</a>
+          </li>
+        
+        
+          <li class="nav-item" id="color-toggle-btn">
+            <a class="nav-link" target="_self">&nbsp;<i
+                class="iconfont icon-dark" id="color-toggle-icon"></i>&nbsp;</a>
+          </li>
+        
+      </ul>
+    </div>
+  </div>
+</nav>
+
+		<div class="banner" id="banner" parallax=true
+			 style="background: url('https://photos.zywvvd.com/vvd-dell-2021-win-10/20210812235004.jpg') no-repeat center center;
+			   background-size: cover;">
+
+      <div class="full-bg-img" >
+
+		
+		<div id="banner_video_insert">
+		</div>
+		<script>
+						
+			var ua = navigator.userAgent;
+			var ipad = ua.match(/(iPad).*OS\s([\d_]+)/),
+				isIphone = !ipad && ua.match(/(iPhone\sOS)\s([\d_]+)/),
+				isAndroid = ua.match(/(Android)\s+([\d.]+)/),
+				isMobile = isIphone || isAndroid;
+
+			function set_video_attr(id){
+				
+				var height = document.body.children[0].clientHeight
+
+				var width = document.body.children[0].clientWidth
+
+				var video_item = document.getElementById(id);
+
+				if (height / width < 0.56){
+					video_item.setAttribute('width', '100%');
+					video_item.setAttribute('height', 'auto');
+				} else {
+					video_item.setAttribute('height', '100%');
+					video_item.setAttribute('width', 'auto');
+				}
+			}
+
+			$.getJSON('/vvd_js/video_url.json', function(data){
+				if (!isMobile){
+					var video_list_length = data.length
+					var seed = Math.random()
+					index = Math.floor(seed * video_list_length)
+					
+					video_url = data[index]
+					video_html_res = "<video id='video_item' style='position: absolute;' muted='muted' src=" + video_url + " autoplay='autoplay' loop='loop'></video>"
+
+					document.getElementById("banner_video_insert").innerHTML = video_html_res;
+					set_video_attr('video_item')
+				}
+
+			});
+
+			if (!isMobile){
+				window.onresize = function(){
+					set_video_attr('video_item')
+					}
+				}
+			</script>
+
+		
+
+        <div class="mask flex-center" style="background-color: rgba(0, 0, 0, 0.3)">
+          <div class="page-header text-center fade-in-up">
+            <span class="h2" id="subtitle" title="傅里叶变换到小波变换">
+              
+            </span>
+
+            
+              <div class="mt-3">
+  
+    <span class="post-meta mr-2">
+      <i class="iconfont icon-author" aria-hidden="true"></i>
+      Yiwei Zhang
+    </span>
+  
+  
+    <span class="post-meta">
+      <i class="iconfont icon-date-fill" aria-hidden="true"></i>
+      <time datetime="2021-09-06 20:30" pubdate>
+        2021年9月6日 晚上
+      </time>
+    </span>
+  
+</div>
+
+<div class="mt-1">
+  
+    
+    <span class="post-meta mr-2">
+      <i class="iconfont icon-chart"></i>
+      2.1k 字
+    </span>
+  
+
+  
+    
+    <span class="post-meta mr-2">
+      <i class="iconfont icon-clock-fill"></i>
+      
+      
+      21
+       分钟
+    </span>
+  
+
+  
+  
+    
+      <!-- LeanCloud 统计文章PV -->
+      <span id="leancloud-page-views-container" class="post-meta" style="display: none">
+        <i class="iconfont icon-eye" aria-hidden="true"></i>
+        <span id="leancloud-page-views"></span> 次
+
+		<span id="waline-comment-count-container" style="display: none">
+			&nbsp
+			<i class="iconfont icon-comment" aria-hidden="true"></i>
+			<span id="test_id_visitor"></span>
+		</span>
+		
+		<script>
+			path = window.location.pathname
+			console.log(path)
+			video_html_res = "<span id='" + path + "' class='waline-comment-count'></span>&nbsp评论"
+			console.log(video_html_res)
+			document.getElementById("test_id_visitor").innerHTML = video_html_res;
+		</script>
+
+      </span>
+    
+  
+</div>
+
+            
+          </div>
+
+          
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <main>
+    
+      
+
+<div class="container-fluid nopadding-x">
+  <div class="row nomargin-x">
+    <div class="d-none d-lg-block col-lg-2"></div>
+    <div class="col-lg-8 nopadding-x-md">
+      <div class="container nopadding-x-md" id="board-ctn">
+        <div class="py-5" id="board">
+          <article class="post-content mx-auto">
+            <!-- SEO header -->
+            <h1 style="display: none">傅里叶变换到小波变换</h1>
+            
+              <p class="note note-info">
+                
+                  本文最后更新于：2021年9月6日 晚上
+                
+              </p>
+            
+            <div class="markdown-body">
+              <blockquote>
+<p>本文按照傅里叶–&gt;短时傅里叶变换–&gt;小波变换的顺序，记录傅里叶变换到小波变换的演化过程。</p>
+</blockquote>
+<span id="more"></span>
+<h3 id="一、傅里叶变换"><strong>一、傅里叶变换</strong></h3>
+<p>傅里叶变换的不足: 对<strong>非平稳</strong>过程，傅里叶变换存在局限性。</p>
+<p>有如下信号：</p>
+<p><img src="https://photos.zywvvd.com/win11-mt/20210906203844.png" srcset="/img/loading.gif" lazyload alt=""></p>
+<p>做完FFT（快速傅里叶变换）后，可以在频谱上看到清晰的四条线，信号包含四个频率成分。</p>
+<p>一切没有问题。但是，如果是<strong>频率随着时间变化的非平稳信号</strong>呢？</p>
+<p><img src="https://photos.zywvvd.com/win11-mt/20210906203927.png" srcset="/img/loading.gif" lazyload alt=""></p>
+<p>如上图，最上边的是频率始终不变的平稳信号。而下边两个则是频率随着时间改变的非平稳信号，它们同样包含和最上信号相同频率的四个成分。<br>
+做FFT后，我们发现这三个时域上有巨大差异的信号，频谱（幅值谱）却非常一致。尤其是下边两个非平稳信号，我们从频谱上无法区分它们，因为它们包含的四个频率的信号的成分确实是一样的，只是出现的先后顺序不同。</p>
+<p>可见，傅里叶变换处理非平稳信号有天生缺陷。它只能获取<strong>一段信号总体上包含哪些频率的成分</strong>，但是<strong>对各成分出现的时刻并无所知</strong>。因此时域相差很大的两个信号，可能频谱图一样。</p>
+<p>然而平稳信号大多是人为制造出来的，自然界的大量信号几乎都是非平稳的，所以在比如生物医学信号分析等领域的论文中，基本看不到单纯傅里叶变换这样naive的方法。</p>
+<p><img src="https://photos.zywvvd.com/win11-mt/20210906204000.png" srcset="/img/loading.gif" lazyload alt=""></p>
+<p>上图所示的是一个正常人的事件相关电位。对于这样的非平稳信号，只知道包含哪些频率成分是不够的，我们还想知道<strong>各个成分出现的时间</strong>。知道<strong>信号频率随时间变化的情况</strong>，各个时刻的瞬时频率及其幅值——这也就是<strong>时频分析。</strong></p>
+<h3 id="二、短时傅里叶变换（Short-time-Fourier-Transform-STFT）">二、短时傅里叶变换（Short-time Fourier Transform, STFT）</h3>
+<p>一个简单可行的方法就是——<strong>加窗</strong>。套用<a target="_blank" rel="noopener" href="http://www.zhihu.com/people/fang-qin-yuan">方沁园</a>同学的描述了，“把整个时域过程分解成无数个等长的小过程，每个小过程近似平稳，再傅里叶变换，就知道在哪个时间点上出现了什么频率了。”这就是短时傅里叶变换。</p>
+<p><img src="https://photos.zywvvd.com/win11-mt/20210906204045.png" srcset="/img/loading.gif" lazyload alt=""></p>
+<p>时域上分成一段一段做FFT，不就知道频率成分随着时间的变化情况了吗！</p>
+<p>用这样的方法，可以得到一个信号的时频图了：</p>
+<p><img src="https://pic1.zhimg.com/80/fec492fbcf67ddde4cb6017b62497bf4_720w.jpg" srcset="/img/loading.gif" lazyload alt="img"></p>
+<blockquote>
+<p>——此图像来源于“THE WAVELET TUTORIAL”</p>
+</blockquote>
+<p>图上既能看到10Hz, 25 Hz, 50 Hz, 100 Hz四个频域成分，还能看到出现的时间。两排峰是对称的，所以大家只用看一排就行了。</p>
+<p>时频分析结果到手。但是STFT依然有缺陷。</p>
+<p>使用STFT存在一个问题，我们应该用多宽的窗函数？</p>
+<p>窗太宽太窄都有问题：</p>
+<p><img src="https://photos.zywvvd.com/win11-mt/20210906204127.png" srcset="/img/loading.gif" lazyload alt=""></p>
+<p><img src="https://pic3.zhimg.com/80/9da6c3e9704c32bfb7b53b995532878e_720w.jpg" srcset="/img/loading.gif" lazyload alt="img"></p>
+<p>窗太窄，窗内的信号太短，会导致频率分析不够精准，频率分辨率差。窗太宽，时域上又不够精细，时间分辨率低。</p>
+<blockquote>
+<p>这里插一句，这个道理可以用海森堡不确定性原理来解释。类似于我们不能同时获取一个粒子的动量和位置，我们也不能同时获取信号绝对精准的时刻和频率。这也是一对不可兼得的矛盾体。我们不知道在某个瞬间哪个频率分量存在，我们知道的只能是在一个时间段内某个频带的分量存在。 所以绝对意义的瞬时频率是不存在的。</p>
+</blockquote>
+<p>实例效果：</p>
+<p><img src="https://photos.zywvvd.com/win11-mt/20210906204150.png" srcset="/img/loading.gif" lazyload alt=""></p>
+<p><img src="https://photos.zywvvd.com/win11-mt/20210906204157.png" srcset="/img/loading.gif" lazyload alt=""></p>
+<p><img src="https://photos.zywvvd.com/win11-mt/20210906204203.png" srcset="/img/loading.gif" lazyload alt=""></p>
+<blockquote>
+<p>——此图像来源于“THE WAVELET TUTORIAL”</p>
+</blockquote>
+<p>上图对同一个信号（4个频率成分）采用不同宽度的窗做STFT，结果如右图。用窄窗，时频图在时间轴上分辨率很高，几个峰基本成矩形，而用宽窗则变成了绵延的矮山。但是频率轴上，窄窗明显不如下边两个宽窗精确。</p>
+<p>所以<strong>窄窗口时间分辨率高、频率分辨率低</strong>，<strong>宽窗口时间分辨率低、频率分辨率高</strong>。对于时变的非稳态信号，<strong>高频适合小窗口，低频适合大窗口</strong>。然而<strong>STFT的窗口是固定的</strong>，在一次STFT中宽度不会变化，所以STFT还是无法满足非稳态信号变化的频率的需求。</p>
+<h3 id="三、小波变换"><strong>三、小波变换</strong></h3>
+<p>那么你可能会想到，让窗口大小变起来，多做几次STFT不就可以了吗？！没错，小波变换就有着这样的思路。<br>
+但事实上小波并不是这么做的，至于为什么不采用可变窗的STFT呢，因为这样做冗余会太严重，<strong>STFT做不到正交化</strong>，这也是它的一大缺陷。</p>
+<p>于是小波变换的出发点和STFT还是不同的。<strong>STFT是给信号加窗，分段做FFT</strong>；而小波直接把傅里叶变换的基给换了——将<strong>无限长的三角函数基</strong>换成了<strong>有限长的会衰减的小波基</strong>。这样<strong>不仅能够获取频率</strong>，还可以<strong>定位到时间</strong>了~</p>
+<h4 id="回顾傅里叶变换">回顾傅里叶变换</h4>
+<p>来我们再回顾一下傅里叶变换吧，没弄清傅里叶变换为什么能得到信号各个频率成分的同学也可以再借我的图理解一下。</p>
+<p>傅里叶变换把无限长的三角函数作为基函数：</p>
+<p><img src="https://photos.zywvvd.com/win11-mt/20210906204332.png" srcset="/img/loading.gif" lazyload alt=""></p>
+<p>这个基函数会<strong>伸缩</strong>、会平移（其实本质并非平移，而是两个正交基的分解）。缩得窄，对应高频；伸得宽，对应低频。</p>
+<p>这个基函数不断和信号做相乘。某一个尺度（宽窄）下乘出来的结果，就可以理解成信号所包含的当前尺度对应频率成分有多少。于是，基函数会在某些尺度下，与信号相乘得到一个很大的值，因为此时二者有一种<strong>重合</strong>关系。那么我们就知道信号包含该频率的成分的多少。</p>
+<p>仔细体会可以发现，这一步其实是在计算信号和三角函数的<strong>相关性。</strong></p>
+<p><img src="https://photos.zywvvd.com/win11-mt/20210906204521.png" srcset="/img/loading.gif" lazyload alt=""></p>
+<p><img src="https://photos.zywvvd.com/win11-mt/20210906204530.png" srcset="/img/loading.gif" lazyload alt=""></p>
+<p>看，这两种尺度能乘出一个大的值（相关度高），所以信号包含较多的这两个频率成分，在频谱上这两个频率会出现两个峰。</p>
+<p>以上，就是<strong>粗浅意义上</strong>傅里叶变换的原理。</p>
+<h4 id="小波变换">小波变换</h4>
+<p>如前边所说，小波做的改变就在于，将无限长的三角函数基换成了有限长的会衰减的小波基。</p>
+<p><img src="https://photos.zywvvd.com/win11-mt/20210906204703.png" srcset="/img/loading.gif" lazyload alt=""></p>
+<p>这就是为什么它叫“小波”，因为是很小的一个波。<br>
+$$<br>
+W T(a, \tau)=\frac{1}{\sqrt{a}} \int_{-\infty}^{\infty} f(t) * \psi\left(\frac{t-\tau}{a}\right) d t<br>
+$$<br>
+从公式可以看出，不同于傅里叶变换，变量只有频率ω，小波变换有两个变量：尺度$a$（scale）和平移量$ t$（translation）。<strong>尺度</strong>$a$控制小波函数的<strong>伸缩</strong>，<strong>平移量</strong> $t$控制小波函数的<strong>平移</strong>。<strong>尺度</strong>就对应于<strong>频率</strong>（反比），<strong>平移量</strong> $t$就对应于<strong>时间</strong>。</p>
+<p><img src="https://pic2.zhimg.com/80/c4aa4c1cc6fdc1feb47be1001fa67301_720w.jpg" srcset="/img/loading.gif" lazyload alt="img"></p>
+<p>当伸缩、平移到这么一种重合情况时，也会相乘得到一个大的值。这时候和傅里叶变换不同的是，这<strong>不仅可以知道信号有这样频率的成分，而且知道它在时域上存在的具体位置。</strong></p>
+<p>而当我们在每个尺度下都平移着和信号乘过一遍后，我们就知道信号<strong>在每个位置都包含哪些频率成分</strong>。</p>
+<p>看到了吗？有了小波，我们从此再也不害怕非稳定信号啦！从此可以做时频分析啦！</p>
+<p>做傅里叶变换只能得到一个<strong>频谱</strong>，做小波变换却可以得到一个<strong>时频谱</strong>！</p>
+<p><img src="https://photos.zywvvd.com/win11-mt/20210906205011.png" srcset="/img/loading.gif" lazyload alt=""></p>
+<p>↑：时域信号</p>
+<p><img src="https://photos.zywvvd.com/win11-mt/20210906205019.png" srcset="/img/loading.gif" lazyload alt=""></p>
+<p>↑：傅里叶变换结果</p>
+<p><img src="https://photos.zywvvd.com/win11-mt/20210906205027.png" srcset="/img/loading.gif" lazyload alt=""></p>
+<blockquote>
+<p>——此图像来源于“THE WAVELET TUTORIAL”</p>
+</blockquote>
+<p>↑：小波变换结果</p>
+<p>小波还有一些好处，比如，我们知道对于突变信号，傅里叶变换存在<strong>吉布斯效应</strong>，我们用无限长的三角函数怎么也拟合不好突变信号：</p>
+<p><img src="https://photos.zywvvd.com/win11-mt/20210906205056.png" srcset="/img/loading.gif" lazyload alt=""></p>
+<p>然而衰减的小波就不一样了：</p>
+<p><img src="https://pic3.zhimg.com/80/d03e5344001f6fb2dc10be4a7bd2af92_720w.jpg" srcset="/img/loading.gif" lazyload alt="img"></p>
+<p>以上，就是小波的意义。</p>
+<h3 id="参考资料">参考资料</h3>
+<ul>
+<li><a target="_blank" rel="noopener" href="https://zhuanlan.zhihu.com/p/22450818">https://zhuanlan.zhihu.com/p/22450818</a></li>
+</ul>
+<link rel="stylesheet" href="/css/spoiler.css" type="text/css"><script src="/js/spoiler.js" type="text/javascript" async></script>
+            </div>
+            <hr>
+            <div>
+              <div class="post-metas mb-3">
+                
+                  <div class="post-meta mr-3">
+                    <i class="iconfont icon-category"></i>
+                    
+                      <a class="hover-with-bg" href="/categories/Math/">Math</a>
+                    
+                  </div>
+                
+                
+                  <div class="post-meta">
+                    <i class="iconfont icon-tags"></i>
+                    
+                      <a class="hover-with-bg" href="/tags/Math/">Math</a>
+                    
+                  </div>
+                
+              </div>
+              
+                <p class="note note-warning">
+                  
+                    本博客所有文章除特别声明外，均采用 <a target="_blank" href="https://creativecommons.org/licenses/by-sa/4.0/deed.zh" rel="nofollow noopener noopener">CC BY-SA 4.0 协议</a> ，转载请注明出处！
+                  
+                </p>
+              
+              
+                <div class="post-prevnext">
+                  <article class="post-prev col-6">
+                    
+                    
+                      <a href="/notes/coding/python/valid-url/valid-url/">
+                        <i class="iconfont icon-arrowleft"></i>
+                        <span class="hidden-mobile">Python 验证链接有效性</span>
+                        <span class="visible-mobile">上一篇</span>
+                      </a>
+                    
+                  </article>
+                  <article class="post-next col-6">
+                    
+                    
+                      <a href="/notes/coding/python/python-re/python-re/">
+                        <span class="hidden-mobile">Python 正则表达式 re 模块</span>
+                        <span class="visible-mobile">下一篇</span>
+                        <i class="iconfont icon-arrowright"></i>
+                      </a>
+                    
+                  </article>
+                </div>
+              
+            </div>
+
+            
+              <!-- Comments -->
+              <article class="comments" id="comments" lazyload>
+                
+                  
+                
+                
+  <div id="waline"></div>
+  <script type="text/javascript">
+    Fluid.utils.loadComments('#waline', function() {
+      Fluid.utils.createScript('https://cdn.jsdelivr.net/npm/@waline/client@1.3.4/dist/Waline.min.js', function() {
+        var options = Object.assign(
+          {"serverURL":"https://waline-drrsa7xhu-zywvvd.vercel.app/","placeholder":"遗憾莫过于难忘你的背影，却找不到你来过的痕迹 ...","path":"window.location.pathname","avatar":"monsterid","meta":["nick","mail","link"],"pageSize":10,"lang":"zh-CN","highlight":true,"avatarCDN":"https://seccdn.libravatar.org/avatar/","avatarForce":false,"requiredFields":[],"emojiCDN":null,"emojiMaps":null,"anonymous":null,"dark":"html[data-user-color-scheme=\"dark\"]","visitor":true},
+          {
+            el: '#waline',
+            path: window.location.pathname
+          }
+        )
+        new Waline(options);
+		
+		wa_ccc = "waline-comment-count-container"
+		var i=document.getElementById(wa_ccc)
+		i.style.display = 'inline'
+
+      });
+    });
+  </script>
+  <noscript>Please enable JavaScript to view the comments</noscript>
+
+
+              </article>
+            
+          </article>
+        </div>
+      </div>
+    </div>
+    
+      <div class="d-none d-lg-block col-lg-2 toc-container" id="toc-ctn">
+        <div id="toc">
+  <p class="toc-header"><i class="iconfont icon-list"></i>&nbsp;目录</p>
+  <div class="toc-body" id="toc-body"></div>
+</div>
+
+      </div>
+    
+  </div>
+</div>
+
+<!-- Custom -->
+
+
+    
+
+    
+      <a id="scroll-top-button" href="#" role="button">
+        <i class="iconfont icon-arrowup" aria-hidden="true"></i>
+      </a>
+    
+
+    
+      <div class="modal fade" id="modalSearch" tabindex="-1" role="dialog" aria-labelledby="ModalLabel"
+     aria-hidden="true">
+  <div class="modal-dialog modal-dialog-scrollable modal-lg" role="document">
+    <div class="modal-content">
+      <div class="modal-header text-center">
+        <h4 class="modal-title w-100 font-weight-bold">搜索</h4>
+        <button type="button" id="local-search-close" class="close" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body mx-3">
+        <div class="md-form mb-5">
+          <input type="text" id="local-search-input" class="form-control validate">
+          <label data-error="x" data-success="v"
+                 for="local-search-input">关键词</label>
+        </div>
+        <div class="list-group" id="local-search-result"></div>
+      </div>
+    </div>
+  </div>
+</div>
+    
+
+    
+  </main>
+
+  <footer class="text-center mt-5 py-3">
+  <div class="footer-content">
+     <a href="https://hexo.io" target="_blank" rel="nofollow noopener"><span>Hexo</span></a> <i class="iconfont icon-love"></i> <a href="https://github.com/fluid-dev/hexo-theme-fluid" target="_blank" rel="nofollow noopener"><span>Fluid</span></a> <div style="font-size: 0.85rem"> <span id="timeDate">载入天数...</span> <span id="times">载入时分秒...</span> <script src="/vvd_js/duration.js"></script> </div> 
+  </div>
+  
+  <div class="statistics">
+    
+    
+
+    
+      
+        <!-- LeanCloud 统计PV -->
+        <span id="leancloud-site-pv-container" style="display: none">
+            总访问量 
+            <span id="leancloud-site-pv"></span>
+             次
+          </span>
+      
+      
+        <!-- LeanCloud 统计UV -->
+        <span id="leancloud-site-uv-container" style="display: none">
+            总访客数 
+            <span id="leancloud-site-uv"></span>
+             人
+          </span>
+      
+
+    
+  </div>
+
+
+  
+  <!-- 备案信息 -->
+  <div class="beian">
+    <span>
+      <a href="http://beian.miit.gov.cn/" target="_blank" rel="nofollow noopener">
+        吉ICP备19007275号-1
+      </a>
+    </span>
+    
+      
+        <span>
+          <a
+            href="http://www.beian.gov.cn/portal/registerSystemInfo?recordcode=22020202000251"
+            rel="nofollow noopener"
+            class="beian-police"
+            target="_blank"
+          >
+            
+              <span style="visibility: hidden; width: 0">|</span>
+              <img src="/img/police_beian.png" srcset="/img/loading.gif" lazyload alt="police-icon"/>
+            
+            <span>22020202000251</span>
+          </a>
+        </span>
+      
+    
+  </div>
+
+
+  
+</footer>
+
+
+  <!-- SCRIPTS -->
+  
+  <script  src="https://cdn.jsdelivr.net/npm/nprogress@0.2.0/nprogress.min.js" ></script>
+  <link  rel="stylesheet" href="https://cdn.jsdelivr.net/npm/nprogress@0.2.0/nprogress.min.css" />
+
+  <script>
+    NProgress.configure({"showSpinner":false,"trickleSpeed":100})
+    NProgress.start()
+    window.addEventListener('load', function() {
+      NProgress.done();
+    })
+  </script>
+
+
+<script  src="https://cdn.jsdelivr.net/npm/jquery@3.6.0/dist/jquery.min.js" ></script>
+<script  src="https://cdn.jsdelivr.net/npm/bootstrap@4.6.0/dist/js/bootstrap.min.js" ></script>
+<script  src="/js/events.js" ></script>
+<script  src="/js/plugins.js" ></script>
+
+<!-- Plugins -->
+
+
+  
+    <script  src="/js/img-lazyload.js" ></script>
+  
+
+
+
+  
+
+
+
+  <script  src="https://cdn.jsdelivr.net/npm/tocbot@4.12.3/dist/tocbot.min.js" ></script>
+
+
+
+  <script  src="https://cdn.jsdelivr.net/npm/@fancyapps/fancybox@3.5.7/dist/jquery.fancybox.min.js" ></script>
+
+
+
+  <script  src="https://cdn.jsdelivr.net/npm/anchor-js@4.3.1/anchor.min.js" ></script>
+
+
+
+  <script defer src="https://cdn.jsdelivr.net/npm/clipboard@2.0.8/dist/clipboard.min.js" ></script>
+
+
+
+  <script  src="/js/local-search.js" ></script>
+
+
+
+
+  <script defer src="/js/leancloud.js" ></script>
+
+
+
+  <script  src="https://cdn.jsdelivr.net/npm/typed.js@2.0.12/lib/typed.min.js" ></script>
+  <script>
+    (function (window, document) {
+      var typing = Fluid.plugins.typing;
+      var title = document.getElementById('subtitle').title;
+      
+      typing(title)
+      
+    })(window, document);
+  </script>
+
+
+
+
+
+  
+
+  
+    <!-- MathJax -->
+    <script>
+      MathJax = {
+        tex: {
+          inlineMath: [['$', '$'], ['\\(', '\\)']]
+        },
+        options: {
+          renderActions: {
+            findScript: [10, doc => {
+              document.querySelectorAll('script[type^="math/tex"]').forEach(node => {
+                const display = !!node.type.match(/; *mode=display/);
+                const math = new doc.options.MathItem(node.textContent, doc.inputJax[0], display);
+                const text = document.createTextNode('');
+                node.parentNode.replaceChild(text, node);
+                math.start = { node: text, delim: '', n: 0 };
+                math.end = { node: text, delim: '', n: 0 };
+                doc.math.push(math);
+              });
+            }, '', false],
+            insertedScript: [200, () => {
+              document.querySelectorAll('mjx-container').forEach(node => {
+                let target = node.parentNode;
+                if (target.nodeName.toLowerCase() === 'li') {
+                  target.parentNode.classList.add('has-jax');
+                }
+              });
+            }, '', false]
+          }
+        }
+      };
+    </script>
+
+    <script async src="https://cdn.jsdelivr.net/npm/mathjax@3.1.4/es5/tex-svg.js" ></script>
+
+  
+
+
+
+
+
+
+
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+
+
+
+
+<!-- 主题的启动项 保持在最底部 -->
+<script  src="/js/boot.js" ></script>
+
+
+<script src="/live2dw/lib/L2Dwidget.min.js?094cbace49a39548bed64abff5988b05"></script><script>L2Dwidget.init({"pluginRootPath":"live2dw/","pluginJsPath":"lib/","pluginModelPath":"assets/","tagMode":false,"log":false,"model":{"jsonPath":"/live2dw/assets/z16.model.json"},"display":{"position":"left","width":235,"height":440},"mobile":{"show":false},"react":{"opacity":0.7}});</script></body>
+</html>

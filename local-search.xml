@@ -4,6 +4,60 @@
   
   
   <entry>
+    <title>Python 验证链接有效性</title>
+    <link href="/notes/coding/python/valid-url/valid-url/"/>
+    <url>/notes/coding/python/valid-url/valid-url/</url>
+    
+    <content type="html"><![CDATA[<blockquote><p>链接可能由于种种原因失效，本文记录 Python 验证链接有效性的方法。</p></blockquote><span id="more"></span><h3 id="request">request</h3><figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><code class="hljs python"><br><span class="hljs-keyword">from</span> urllib <span class="hljs-keyword">import</span> request<br> <br><span class="hljs-keyword">try</span>:<br>    <span class="hljs-keyword">with</span> request.urlopen(<br>            <span class="hljs-string">&quot;https://www.baidu.com/&quot;</span>) <span class="hljs-keyword">as</span> file:<br>        <span class="hljs-built_in">print</span>(file.status)<br>        <span class="hljs-built_in">print</span>(file.reason)<br><span class="hljs-keyword">except</span> Exception <span class="hljs-keyword">as</span> e:<br>    <span class="hljs-built_in">print</span>(e)<br><br></code></pre></td></tr></table></figure><p>返回结果：</p><ul><li>有效链接：</li></ul><figure class="highlight tap"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><code class="hljs tap">200<br><span class="hljs-symbol">OK</span><br></code></pre></td></tr></table></figure><ul><li>失效链接：</li></ul><figure class="highlight routeros"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs routeros">HTTP <span class="hljs-builtin-name">Error</span> 404: <span class="hljs-keyword">Not</span> Found<br></code></pre></td></tr></table></figure><h3 id="参考资料">参考资料</h3><ul><li><a href="https://blog.csdn.net/haiyi_guo/article/details/98619536">https://blog.csdn.net/haiyi_guo/article/details/98619536</a></li></ul><link rel="stylesheet" href="/css/spoiler.css" type="text/css"><script src="/js/spoiler.js" type="text/javascript" async></script>]]></content>
+    
+    
+    <categories>
+      
+      <category>Coding</category>
+      
+      <category>Python</category>
+      
+    </categories>
+    
+    
+    <tags>
+      
+      <tag>Coding</tag>
+      
+      <tag>Python</tag>
+      
+    </tags>
+    
+  </entry>
+  
+  
+  
+  <entry>
+    <title>傅里叶变换到小波变换</title>
+    <link href="/notes/study/math/wavelets/wavelets/"/>
+    <url>/notes/study/math/wavelets/wavelets/</url>
+    
+    <content type="html"><![CDATA[<blockquote><p>本文按照傅里叶–&gt;短时傅里叶变换–&gt;小波变换的顺序，记录傅里叶变换到小波变换的演化过程。</p></blockquote><span id="more"></span><h3 id="一、傅里叶变换"><strong>一、傅里叶变换</strong></h3><p>傅里叶变换的不足: 对<strong>非平稳</strong>过程，傅里叶变换存在局限性。</p><p>有如下信号：</p><p><img src="https://photos.zywvvd.com/win11-mt/20210906203844.png" alt=""></p><p>做完FFT（快速傅里叶变换）后，可以在频谱上看到清晰的四条线，信号包含四个频率成分。</p><p>一切没有问题。但是，如果是<strong>频率随着时间变化的非平稳信号</strong>呢？</p><p><img src="https://photos.zywvvd.com/win11-mt/20210906203927.png" alt=""></p><p>如上图，最上边的是频率始终不变的平稳信号。而下边两个则是频率随着时间改变的非平稳信号，它们同样包含和最上信号相同频率的四个成分。<br>做FFT后，我们发现这三个时域上有巨大差异的信号，频谱（幅值谱）却非常一致。尤其是下边两个非平稳信号，我们从频谱上无法区分它们，因为它们包含的四个频率的信号的成分确实是一样的，只是出现的先后顺序不同。</p><p>可见，傅里叶变换处理非平稳信号有天生缺陷。它只能获取<strong>一段信号总体上包含哪些频率的成分</strong>，但是<strong>对各成分出现的时刻并无所知</strong>。因此时域相差很大的两个信号，可能频谱图一样。</p><p>然而平稳信号大多是人为制造出来的，自然界的大量信号几乎都是非平稳的，所以在比如生物医学信号分析等领域的论文中，基本看不到单纯傅里叶变换这样naive的方法。</p><p><img src="https://photos.zywvvd.com/win11-mt/20210906204000.png" alt=""></p><p>上图所示的是一个正常人的事件相关电位。对于这样的非平稳信号，只知道包含哪些频率成分是不够的，我们还想知道<strong>各个成分出现的时间</strong>。知道<strong>信号频率随时间变化的情况</strong>，各个时刻的瞬时频率及其幅值——这也就是<strong>时频分析。</strong></p><h3 id="二、短时傅里叶变换（Short-time-Fourier-Transform-STFT）">二、短时傅里叶变换（Short-time Fourier Transform, STFT）</h3><p>一个简单可行的方法就是——<strong>加窗</strong>。套用<a href="http://www.zhihu.com/people/fang-qin-yuan">方沁园</a>同学的描述了，“把整个时域过程分解成无数个等长的小过程，每个小过程近似平稳，再傅里叶变换，就知道在哪个时间点上出现了什么频率了。”这就是短时傅里叶变换。</p><p><img src="https://photos.zywvvd.com/win11-mt/20210906204045.png" alt=""></p><p>时域上分成一段一段做FFT，不就知道频率成分随着时间的变化情况了吗！</p><p>用这样的方法，可以得到一个信号的时频图了：</p><p><img src="https://pic1.zhimg.com/80/fec492fbcf67ddde4cb6017b62497bf4_720w.jpg" alt="img"></p><blockquote><p>——此图像来源于“THE WAVELET TUTORIAL”</p></blockquote><p>图上既能看到10Hz, 25 Hz, 50 Hz, 100 Hz四个频域成分，还能看到出现的时间。两排峰是对称的，所以大家只用看一排就行了。</p><p>时频分析结果到手。但是STFT依然有缺陷。</p><p>使用STFT存在一个问题，我们应该用多宽的窗函数？</p><p>窗太宽太窄都有问题：</p><p><img src="https://photos.zywvvd.com/win11-mt/20210906204127.png" alt=""></p><p><img src="https://pic3.zhimg.com/80/9da6c3e9704c32bfb7b53b995532878e_720w.jpg" alt="img"></p><p>窗太窄，窗内的信号太短，会导致频率分析不够精准，频率分辨率差。窗太宽，时域上又不够精细，时间分辨率低。</p><blockquote><p>这里插一句，这个道理可以用海森堡不确定性原理来解释。类似于我们不能同时获取一个粒子的动量和位置，我们也不能同时获取信号绝对精准的时刻和频率。这也是一对不可兼得的矛盾体。我们不知道在某个瞬间哪个频率分量存在，我们知道的只能是在一个时间段内某个频带的分量存在。 所以绝对意义的瞬时频率是不存在的。</p></blockquote><p>实例效果：</p><p><img src="https://photos.zywvvd.com/win11-mt/20210906204150.png" alt=""></p><p><img src="https://photos.zywvvd.com/win11-mt/20210906204157.png" alt=""></p><p><img src="https://photos.zywvvd.com/win11-mt/20210906204203.png" alt=""></p><blockquote><p>——此图像来源于“THE WAVELET TUTORIAL”</p></blockquote><p>上图对同一个信号（4个频率成分）采用不同宽度的窗做STFT，结果如右图。用窄窗，时频图在时间轴上分辨率很高，几个峰基本成矩形，而用宽窗则变成了绵延的矮山。但是频率轴上，窄窗明显不如下边两个宽窗精确。</p><p>所以<strong>窄窗口时间分辨率高、频率分辨率低</strong>，<strong>宽窗口时间分辨率低、频率分辨率高</strong>。对于时变的非稳态信号，<strong>高频适合小窗口，低频适合大窗口</strong>。然而<strong>STFT的窗口是固定的</strong>，在一次STFT中宽度不会变化，所以STFT还是无法满足非稳态信号变化的频率的需求。</p><h3 id="三、小波变换"><strong>三、小波变换</strong></h3><p>那么你可能会想到，让窗口大小变起来，多做几次STFT不就可以了吗？！没错，小波变换就有着这样的思路。<br>但事实上小波并不是这么做的，至于为什么不采用可变窗的STFT呢，因为这样做冗余会太严重，<strong>STFT做不到正交化</strong>，这也是它的一大缺陷。</p><p>于是小波变换的出发点和STFT还是不同的。<strong>STFT是给信号加窗，分段做FFT</strong>；而小波直接把傅里叶变换的基给换了——将<strong>无限长的三角函数基</strong>换成了<strong>有限长的会衰减的小波基</strong>。这样<strong>不仅能够获取频率</strong>，还可以<strong>定位到时间</strong>了~</p><h4 id="回顾傅里叶变换">回顾傅里叶变换</h4><p>来我们再回顾一下傅里叶变换吧，没弄清傅里叶变换为什么能得到信号各个频率成分的同学也可以再借我的图理解一下。</p><p>傅里叶变换把无限长的三角函数作为基函数：</p><p><img src="https://photos.zywvvd.com/win11-mt/20210906204332.png" alt=""></p><p>这个基函数会<strong>伸缩</strong>、会平移（其实本质并非平移，而是两个正交基的分解）。缩得窄，对应高频；伸得宽，对应低频。</p><p>这个基函数不断和信号做相乘。某一个尺度（宽窄）下乘出来的结果，就可以理解成信号所包含的当前尺度对应频率成分有多少。于是，基函数会在某些尺度下，与信号相乘得到一个很大的值，因为此时二者有一种<strong>重合</strong>关系。那么我们就知道信号包含该频率的成分的多少。</p><p>仔细体会可以发现，这一步其实是在计算信号和三角函数的<strong>相关性。</strong></p><p><img src="https://photos.zywvvd.com/win11-mt/20210906204521.png" alt=""></p><p><img src="https://photos.zywvvd.com/win11-mt/20210906204530.png" alt=""></p><p>看，这两种尺度能乘出一个大的值（相关度高），所以信号包含较多的这两个频率成分，在频谱上这两个频率会出现两个峰。</p><p>以上，就是<strong>粗浅意义上</strong>傅里叶变换的原理。</p><h4 id="小波变换">小波变换</h4><p>如前边所说，小波做的改变就在于，将无限长的三角函数基换成了有限长的会衰减的小波基。</p><p><img src="https://photos.zywvvd.com/win11-mt/20210906204703.png" alt=""></p><p>这就是为什么它叫“小波”，因为是很小的一个波。<br>$$<br>W T(a, \tau)=\frac{1}{\sqrt{a}} \int_{-\infty}^{\infty} f(t) * \psi\left(\frac{t-\tau}{a}\right) d t<br>$$<br>从公式可以看出，不同于傅里叶变换，变量只有频率ω，小波变换有两个变量：尺度$a$（scale）和平移量$ t$（translation）。<strong>尺度</strong>$a$控制小波函数的<strong>伸缩</strong>，<strong>平移量</strong> $t$控制小波函数的<strong>平移</strong>。<strong>尺度</strong>就对应于<strong>频率</strong>（反比），<strong>平移量</strong> $t$就对应于<strong>时间</strong>。</p><p><img src="https://pic2.zhimg.com/80/c4aa4c1cc6fdc1feb47be1001fa67301_720w.jpg" alt="img"></p><p>当伸缩、平移到这么一种重合情况时，也会相乘得到一个大的值。这时候和傅里叶变换不同的是，这<strong>不仅可以知道信号有这样频率的成分，而且知道它在时域上存在的具体位置。</strong></p><p>而当我们在每个尺度下都平移着和信号乘过一遍后，我们就知道信号<strong>在每个位置都包含哪些频率成分</strong>。</p><p>看到了吗？有了小波，我们从此再也不害怕非稳定信号啦！从此可以做时频分析啦！</p><p>做傅里叶变换只能得到一个<strong>频谱</strong>，做小波变换却可以得到一个<strong>时频谱</strong>！</p><p><img src="https://photos.zywvvd.com/win11-mt/20210906205011.png" alt=""></p><p>↑：时域信号</p><p><img src="https://photos.zywvvd.com/win11-mt/20210906205019.png" alt=""></p><p>↑：傅里叶变换结果</p><p><img src="https://photos.zywvvd.com/win11-mt/20210906205027.png" alt=""></p><blockquote><p>——此图像来源于“THE WAVELET TUTORIAL”</p></blockquote><p>↑：小波变换结果</p><p>小波还有一些好处，比如，我们知道对于突变信号，傅里叶变换存在<strong>吉布斯效应</strong>，我们用无限长的三角函数怎么也拟合不好突变信号：</p><p><img src="https://photos.zywvvd.com/win11-mt/20210906205056.png" alt=""></p><p>然而衰减的小波就不一样了：</p><p><img src="https://pic3.zhimg.com/80/d03e5344001f6fb2dc10be4a7bd2af92_720w.jpg" alt="img"></p><p>以上，就是小波的意义。</p><h3 id="参考资料">参考资料</h3><ul><li><a href="https://zhuanlan.zhihu.com/p/22450818">https://zhuanlan.zhihu.com/p/22450818</a></li></ul><link rel="stylesheet" href="/css/spoiler.css" type="text/css"><script src="/js/spoiler.js" type="text/javascript" async></script>]]></content>
+    
+    
+    <categories>
+      
+      <category>Math</category>
+      
+    </categories>
+    
+    
+    <tags>
+      
+      <tag>Math</tag>
+      
+    </tags>
+    
+  </entry>
+  
+  
+  
+  <entry>
     <title>Python 正则表达式 re 模块</title>
     <link href="/notes/coding/python/python-re/python-re/"/>
     <url>/notes/coding/python/python-re/python-re/</url>
