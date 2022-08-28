@@ -1,0 +1,1055 @@
+
+
+<!DOCTYPE html>
+<html lang="zh-CN" data-default-color-scheme=auto>
+
+
+
+<head>
+  <meta charset="UTF-8">
+  <link rel="apple-touch-icon" sizes="76x76" href="/image/avatar.png">
+  <link rel="icon" href="/image/avatar.png">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, shrink-to-fit=no">
+  <meta http-equiv="x-ua-compatible" content="ie=edge">
+  
+  <meta name="theme-color" content="#2f4154">
+  <meta name="author" content="Yiwei Zhang">
+  <meta name="keywords" content="人工智能, 深度学习, 个人博客, 机器学习">
+  
+    <meta name="description" content="一个跟轮廓相关的最常用到的功能是如何匹配多条轮廓。我们或许需要比较两条计算好的轮廓，或者比较一条轮廓和一个抽象模板。这两种情况都会在本文讨论。">
+<meta property="og:type" content="article">
+<meta property="og:title" content="OpenCV 轮廓 —— 轮廓匹配">
+<meta property="og:url" content="https://www.zywvvd.com/notes/study/image-processing/opencv/opencv-contours-match/contours-match/index.html">
+<meta property="og:site_name" content="又见苍岚">
+<meta property="og:description" content="一个跟轮廓相关的最常用到的功能是如何匹配多条轮廓。我们或许需要比较两条计算好的轮廓，或者比较一条轮廓和一个抽象模板。这两种情况都会在本文讨论。">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="https://101.43.39.125/HexoFiles/vvd_dell/20220428154307.png">
+<meta property="og:image" content="https://101.43.39.125/HexoFiles/vvd_dell/20220428154307.png">
+<meta property="og:image" content="https://101.43.39.125/HexoFiles/vvd_dell/20220428172303.png">
+<meta property="article:published_time" content="2022-04-28T03:56:41.000Z">
+<meta property="article:modified_time" content="2022-08-05T15:34:37.060Z">
+<meta property="article:author" content="Yiwei Zhang">
+<meta property="article:tag" content="Image_Processing">
+<meta property="article:tag" content="OpenCV">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:image" content="https://101.43.39.125/HexoFiles/vvd_dell/20220428154307.png">
+  
+  
+  
+  <title>OpenCV 轮廓 —— 轮廓匹配 - 又见苍岚</title>
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/twitter-bootstrap/4.6.1/css/bootstrap.min.css" />
+
+
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/github-markdown-css/4.0.0/github-markdown.min.css" />
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/hint.css/2.7.0/hint.min.css" />
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/fancybox/3.5.7/jquery.fancybox.min.css" />
+
+
+
+<!-- 主题依赖的图标库，不要自行修改 -->
+<!-- Do not modify the link that theme dependent icons -->
+
+<link rel="stylesheet" href="//at.alicdn.com/t/font_1749284_hj8rtnfg7um.css">
+
+
+
+<link rel="stylesheet" href="//at.alicdn.com/t/font_1736178_lbnruvf0jn.css">
+
+
+<link  rel="stylesheet" href="/css/main.css" />
+
+
+  <link id="highlight-css" rel="stylesheet" href="/css/highlight.css" />
+  
+    <link id="highlight-css-dark" rel="stylesheet" href="/css/highlight-dark.css" />
+  
+
+
+
+  
+<link rel="stylesheet" href="/css/custom.css">
+
+
+
+  <script id="fluid-configs">
+    var Fluid = window.Fluid || {};
+    Fluid.ctx = Object.assign({}, Fluid.ctx)
+    var CONFIG = {"hostname":"www.zywvvd.com","root":"/","version":"1.9.2","typing":{"enable":true,"typeSpeed":90,"cursorChar":"_","loop":false,"scope":["home"]},"anchorjs":{"enable":true,"element":"h1,h2,h3,h4,h5,h6","placement":"left","visible":"hover","icon":""},"progressbar":{"enable":true,"height_px":3,"color":"#29d","options":{"showSpinner":false,"trickleSpeed":100}},"code_language":{"enable":true,"default":"TEXT"},"copy_btn":true,"image_caption":{"enable":true},"image_zoom":{"enable":true,"img_url_replace":["",""]},"toc":{"enable":true,"placement":"right","headingSelector":"h1,h2,h3,h4,h5,h6","collapseDepth":0},"lazyload":{"enable":true,"loading_img":"/img/loading.gif","onlypost":false,"offset_factor":2},"web_analytics":{"enable":true,"follow_dnt":true,"baidu":null,"google":null,"gtag":null,"tencent":{"sid":null,"cid":null},"woyaola":null,"cnzz":null,"leancloud":{"app_id":"Cv0XNeBSBdAPAIuVj3PsyM3R-MdYXbMMI","app_key":"4PU1rNlGrqXWzhfW3dgq98oX","server_url":null,"path":"window.location.pathname","ignore_local":false}},"search_path":"/local-search.xml"};
+
+    if (CONFIG.web_analytics.follow_dnt) {
+      var dntVal = navigator.doNotTrack || window.doNotTrack || navigator.msDoNotTrack;
+      Fluid.ctx.dnt = dntVal && (dntVal.startsWith('1') || dntVal.startsWith('yes') || dntVal.startsWith('on'));
+    }
+  </script>
+  <script  src="/js/utils.js" ></script>
+  <script  src="/js/color-schema.js" ></script>
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+    
+  
+
+
+
+  
+<meta name="generator" content="Hexo 5.4.2"><link rel="alternate" href="/atom.xml" title="又见苍岚" type="application/atom+xml">
+</head>
+
+
+<body>
+  <div>
+	<div class='real_mask' style="
+		background-color: rgba(0,0,0,0.4);
+		width: 100%;
+		height: 100%;
+		position: fixed;
+		z-index: -777;
+	"></div>
+	<div id="banner_video_insert">
+	</div>	
+	<div id='vvd_banner_img'>
+	</div>
+</div>
+<div id="banner"></div>
+
+  <header>
+    
+
+<div class="header-inner" style="height: 80vh;">
+  <nav id="navbar" class="navbar fixed-top  navbar-expand-lg navbar-dark scrolling-navbar">
+  <div class="container">
+    <a class="navbar-brand" href="/">
+      <strong>CangLan</strong>
+    </a>
+
+    <button id="navbar-toggler-btn" class="navbar-toggler" type="button" data-toggle="collapse"
+            data-target="#navbarSupportedContent"
+            aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
+      <div class="animated-icon"><span></span><span></span><span></span></div>
+    </button>
+
+    <!-- Collapsible content -->
+    <div class="collapse navbar-collapse" id="navbarSupportedContent">
+      <ul class="navbar-nav ml-auto text-center">
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/">
+                <i class="iconfont icon-home-fill"></i>
+                首页
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/archives/">
+                <i class="iconfont icon-archive-fill"></i>
+                归档
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/categories/">
+                <i class="iconfont icon-category-fill"></i>
+                分类
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/tags/">
+                <i class="iconfont icon-tags-fill"></i>
+                标签
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/about/">
+                <i class="iconfont icon-user-fill"></i>
+                关于
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/links/">
+                <i class="iconfont icon-link-fill"></i>
+                友链
+              </a>
+            </li>
+          
+        
+        
+          <li class="nav-item" id="search-btn">
+            <a class="nav-link" target="_self" href="javascript:;" data-toggle="modal" data-target="#modalSearch" aria-label="Search">
+              &nbsp;<i class="iconfont icon-search"></i>&nbsp;
+            </a>
+          </li>
+          
+        
+        
+          <li class="nav-item" id="color-toggle-btn">
+            <a class="nav-link" target="_self" href="javascript:;" aria-label="Color Toggle">&nbsp;<i
+                class="iconfont icon-dark" id="color-toggle-icon"></i>&nbsp;</a>
+          </li>
+        
+      </ul>
+    </div>
+  </div>
+</nav>
+
+  
+
+<div id="banner" class="banner" parallax=true
+     style="background: url('https://101.43.39.125/HexoFiles/new/bg-trans.png') no-repeat center center; background-size: cover;">
+  <div class="full-bg-img">
+    <div class="mask flex-center" style="background-color: rgba(0, 0, 0, 0)">
+      <div class="banner-text text-center fade-in-up">
+        <div class="h2">
+          
+            <span id="subtitle">OpenCV 轮廓 —— 轮廓匹配</span>
+          
+        </div>
+
+        
+          
+  <div class="mt-3">
+    
+      <span class="post-meta mr-2">
+        <i class="iconfont icon-author" aria-hidden="true"></i>
+        Yiwei Zhang
+      </span>
+    
+    
+      <span class="post-meta">
+        <i class="iconfont icon-date-fill" aria-hidden="true"></i>
+        <time datetime="2022-04-28 11:56" pubdate>
+          2022年4月28日 中午
+        </time>
+      </span>
+    
+  </div>
+
+  <div class="mt-1">
+    
+      <span class="post-meta mr-2">
+        <i class="iconfont icon-chart"></i>
+        
+          <!-- compatible with older versions-->
+          5.1k 字
+        
+      </span>
+    
+
+    
+      <span class="post-meta mr-2">
+        <i class="iconfont icon-clock-fill"></i>
+        
+        
+        
+          <!-- compatible with older versions-->
+          43 分钟
+        
+      </span>
+    
+
+    
+    
+      
+        <span id="vvdpost_container_page_pvuv" style="display: none">
+          <i class="iconfont icon-eye" aria-hidden="true"></i>
+          <span id="vvdpost_value_page_pv">0</span> 次&nbsp&nbsp
+		  <i class="iconfont icon-users" aria-hidden="true"></i>
+		  <span id="vvdpost_value_page_uv">0</span> 人
+        </span>
+
+		<script>
+			console.log(window.location.pathname)
+			var httpRequest = new XMLHttpRequest();
+			httpRequest.open('POST', 'https://101.43.39.125:6101/poststats', true);
+			httpRequest.setRequestHeader("Content-type","application/json");
+			httpRequest.send(JSON.stringify(window.location.pathname));
+			httpRequest.onreadystatechange = function () {//请求后的回调接口，可将请求成功后要执行的程序写在其中
+				if (httpRequest.readyState == 4 && httpRequest.status == 200) {//验证请求是否发送成功
+					var json = httpRequest.responseText;//获取到服务端返回的数据
+					var obj = JSON.parse(json);
+					console.log(obj.pv);
+					var pvCtn = document.querySelector('#vvdpost_container_page_pvuv');
+					console.log(pvCtn);
+					if (pvCtn) {
+						var pv_ele = document.querySelector('#vvdpost_value_page_pv');
+						console.log(pv_ele);
+						var uv_ele = document.querySelector('#vvdpost_value_page_uv');
+						console.log(uv_ele);
+						if (uv_ele && uv_ele) {
+							pv_ele.innerText = obj.pv;
+							uv_ele.innerText = obj.uv;
+							pvCtn.style.display = 'inline';
+							}
+						}
+					}
+			};
+		</script>
+      
+    
+  </div>
+
+
+        
+      </div>
+
+      
+        <div class="scroll-down-bar">
+          <i class="iconfont icon-arrowdown"></i>
+        </div>
+      
+    </div>
+  </div>
+</div>
+
+</div>
+
+	<script type="text/javascript" src="/vvd_js/jquery.js"></script>
+	<script async defer data-website-id="bd35c321-57fd-4b1b-8782-846263caa370" src="https://101.43.39.125:6287/umami.js"></script>
+
+	<div class="banner" id='banner' >
+
+		<div class="full-bg-img" >
+
+			
+				<script>
+					var ua = navigator.userAgent;
+					var ipad = ua.match(/(iPad).*OS\s([\d_]+)/),
+						isIphone = !ipad && ua.match(/(iPhone\sOS)\s([\d_]+)/),
+						isAndroid = ua.match(/(Android)\s+([\d.]+)/),
+						isMobile = isIphone || isAndroid;
+
+					function set_video_attr(id){
+						var height = document.body.clientHeight
+						var width = document.body.clientWidth
+						var video_item = document.getElementById(id);
+
+						if (height / width < 0.56){
+							video_item.setAttribute('width', '100%');
+							video_item.setAttribute('height', 'auto');
+						} else {
+							video_item.setAttribute('height', '100%');
+							video_item.setAttribute('width', 'auto');
+						}
+					}
+
+					$.getJSON('/vvd_js/video_url.json', function(data){
+						if (true){
+							var video_list_length = data.length
+							var seed = Math.random()
+							index = Math.floor(seed * video_list_length)
+
+							video_url = data[index][0]
+							pre_show_image_url = data[index][1]
+
+							banner_obj = document.getElementById("banner")
+							banner_obj.style.cssText = "background: url('" + pre_show_image_url + "') no-repeat;"
+
+							vvd_banner_obj = document.getElementById("vvd_banner_img")
+							vvd_banner_content = "<img id='banner_img_item' src='" + pre_show_image_url + "'style='position: fixed; z-index: -999'>"
+							vvd_banner_obj.innerHTML = vvd_banner_content 
+
+							if (!isMobile) {
+								video_html_res = "<video id='video_item' style='position: fixed; z-index: -888;'  muted='muted' src=" + video_url + " autoplay='autoplay' loop='loop'></video>"
+								document.getElementById("banner_video_insert").innerHTML = video_html_res;
+								set_video_attr('video_item')
+								set_video_attr('banner_img_item')
+							}
+						}
+					});
+
+					if (!isMobile){
+						window.onresize = function(){
+							set_video_attr('video_item')
+							set_video_attr('banner_img_item')
+							}
+						}
+				</script>
+			
+			</div>
+		</div>
+    </div>
+  </header>
+
+  <main>
+    
+      
+
+<div class="container-fluid nopadding-x">
+  <div class="row nomargin-x">
+    <div class="side-col d-none d-lg-block col-lg-2">
+      
+
+    </div>
+
+    <div class="col-lg-8 nopadding-x-md">
+      <div class="container nopadding-x-md" id="board-ctn">
+        <div id="board">
+          <article class="post-content mx-auto">
+            <!-- SEO header -->
+            <h1 style="display: none">OpenCV 轮廓 —— 轮廓匹配</h1>
+            
+              <p class="note note-info">
+                
+                  
+                    <!-- compatible with older versions-->
+                    本文最后更新于：2022年8月5日 晚上
+                  
+                
+              </p>
+            
+            
+              <div class="markdown-body">
+                
+                <blockquote>
+<p>一个跟轮廓相关的最常用到的功能是如何匹配多条轮廓。我们或许需要比较两条计算好的轮廓，或者比较一条轮廓和一个抽象模板。这两种情况都会在本文讨论。</p>
+</blockquote>
+<span id="more"></span>
+<h3 id="矩">矩</h3>
+<ul>
+<li>
+<p><a href="/notes/study/image-processing/moments/moments">相关介绍</a></p>
+</li>
+<li>
+<p>比较两条轮廓最简洁的方法之一是比较它们的轮廓矩。轮廓矩代表了一条轮廓、一幅图像、一组点集的某些高级特征。下面的所有讨论对轮廓、图像、点集都同样适用，简便起见，将它们统称为对象。矩的数值定义如下式：</p>
+</li>
+</ul>
+<p>$$<br>
+m_{p, q}=\sum_{i=1}^{N} I\left(x_{i}, y_{i}\right) x^{p} y^{q}<br>
+$$</p>
+<blockquote>
+<p>在上式中, $ m_{p, q} $ 代表对象中所有像素的总和, 其中每个像素 $ x, y $ 的像素值都乘以因子 $ x^{p} y^{q} $ , 在 $ m_{00} $ 时, 这个因子等于 1 。.</p>
+</blockquote>
+<ul>
+<li>因此若图像为二值图(例如，所有像素都等于0或者1)，则 $ m_{00} $ 代表图像上所有值非零的区域。当处理轮廓时，结果是轮廓的长度。</li>
+<li>将$m_{10}$和$m_{01}$相加再除以mo,能得到整个对象的平均x值和y值。</li>
+</ul>
+<h4 id="cv2-moments">cv2.moments</h4>
+<blockquote>
+<p>计算多边形或光栅化形状的所有矩，最高可达三阶。</p>
+<p><a target="_blank" rel="noopener" href="https://docs.opencv.org/4.5.5/d3/dc0/group__imgproc__shape.html#ga556a180f43cab22649c23ada36a8a139">官方文档</a></p>
+</blockquote>
+<ul>
+<li>仅适用于来自 Python 绑定的轮廓矩计算: 注意，输入数组的 numpy 类型应该是 <code>np.int32</code>或 <code>np.float32</code>。</li>
+<li>函数使用</li>
+</ul>
+<figure class="highlight clean"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><code class="hljs clean">cv2.moments(	<br>	array[, 				# 单通道<span class="hljs-number">2</span>D图像<br>	binaryImage]			# 如果为真，所有非零的图像像素将被视为<span class="hljs-number">1</span>。该参数仅用于图像。<br>	) -&gt;	<br>	retval					# 矩结果<br></code></pre></td></tr></table></figure>
+<ul>
+<li>retval 包含多组矩：</li>
+</ul>
+<table>
+<thead>
+<tr>
+<th>矩名称</th>
+<th>含义</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>m00</td>
+<td>零阶矩</td>
+</tr>
+<tr>
+<td>m10, m01</td>
+<td>一阶矩</td>
+</tr>
+<tr>
+<td>m20, m11, m02</td>
+<td>二阶矩</td>
+</tr>
+<tr>
+<td>m30, m12, m21, m03</td>
+<td>三阶矩</td>
+</tr>
+<tr>
+<td>mu20, mu11, mu02</td>
+<td>二阶中心距</td>
+</tr>
+<tr>
+<td>mu30, mu21, mu12, mu03</td>
+<td>三阶中心距</td>
+</tr>
+<tr>
+<td>nu20, nu11, nu02</td>
+<td>二阶归一化中心矩</td>
+</tr>
+<tr>
+<td>nu30, nu21, nu12, nu03</td>
+<td>三阶归一化中心矩</td>
+</tr>
+</tbody>
+</table>
+<ul>
+<li>示例代码</li>
+</ul>
+<figure class="highlight stylus"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br></pre></td><td class="code"><pre><code class="hljs stylus"><span class="hljs-selector-tag">img</span> = <span class="hljs-number">255</span> - mt<span class="hljs-selector-class">.cv_rgb_imread</span>(<span class="hljs-string">&#x27;conc.png&#x27;</span>, gray=True)<br>contours, hierarchy = cv2<span class="hljs-selector-class">.findContours</span>(<span class="hljs-selector-tag">img</span>, cv2<span class="hljs-selector-class">.RETR_TREE</span>, cv2.CHAIN_APPROX_NONE)<br>res = np<span class="hljs-selector-class">.zeros_like</span>(img)<br>cv2<span class="hljs-selector-class">.drawContours</span>(res, <span class="hljs-selector-attr">[contours[0]</span>], -<span class="hljs-number">1</span>, <span class="hljs-selector-attr">[200]</span>, <span class="hljs-number">3</span>)<br>mom_res = cv2<span class="hljs-selector-class">.moments</span>(res, True)<br><br>--&gt;<br>mom_res<br>&#123;<br>    <span class="hljs-string">&#x27;m00&#x27;</span>:<span class="hljs-number">5991.0</span><br>    <span class="hljs-string">&#x27;m10&#x27;</span>:<span class="hljs-number">1325055.0</span><br>    <span class="hljs-string">&#x27;m01&#x27;</span>:<span class="hljs-number">1749761.0</span><br>    <span class="hljs-string">&#x27;m20&#x27;</span>:<span class="hljs-number">344323579.0</span><br>    <span class="hljs-string">&#x27;m11&#x27;</span>:<span class="hljs-number">349473277.0</span><br>    <span class="hljs-string">&#x27;m02&#x27;</span>:<span class="hljs-number">669951437.0</span><br>    <span class="hljs-string">&#x27;m30&#x27;</span>:<span class="hljs-number">96933608139.0</span><br>    <span class="hljs-string">&#x27;m21&#x27;</span>:<span class="hljs-number">85341328483.0</span><br>    <span class="hljs-string">&#x27;m12&#x27;</span>:<span class="hljs-number">127841748675.0</span><br>    <span class="hljs-string">&#x27;m03&#x27;</span>:<span class="hljs-number">288309060455.0</span><br>    <span class="hljs-string">&#x27;mu20&#x27;</span>:<span class="hljs-number">51255518.07110667</span><br>    <span class="hljs-string">&#x27;mu11&#x27;</span>:-<span class="hljs-number">37528819.78768152</span><br>    <span class="hljs-string">&#x27;mu02&#x27;</span>:<span class="hljs-number">158907611.74194622</span><br>    <span class="hljs-string">&#x27;mu30&#x27;</span>:-<span class="hljs-number">1894707829.496994</span><br>    <span class="hljs-string">&#x27;mu21&#x27;</span>:<span class="hljs-number">1377304228.770937</span><br>    <span class="hljs-string">&#x27;mu12&#x27;</span>:<span class="hljs-number">1587438731.2496796</span><br>    <span class="hljs-string">&#x27;mu03&#x27;</span>:-<span class="hljs-number">182940816.065979</span><br>    <span class="hljs-string">&#x27;nu20&#x27;</span>:<span class="hljs-number">1.428045313703228</span><br>    <span class="hljs-string">&#x27;nu11&#x27;</span>:-<span class="hljs-number">1.0456016687269127</span><br>    <span class="hljs-string">&#x27;nu02&#x27;</span>:<span class="hljs-number">4.4273724820231575</span><br>    <span class="hljs-string">&#x27;nu30&#x27;</span>:-<span class="hljs-number">0.682015038155167</span><br>    <span class="hljs-string">&#x27;nu21&#x27;</span>:<span class="hljs-number">0.49577152820752285</span><br>    <span class="hljs-string">&#x27;nu12&#x27;</span>:<span class="hljs-number">0.571411100966244</span><br>    <span class="hljs-string">&#x27;nu03&#x27;</span>:-<span class="hljs-number">0.06585099069469698</span><br>&#125;<br></code></pre></td></tr></table></figure>
+<ul>
+<li>
+<p>计算第二个 Hu 不变矩测试归一化中心矩：</p>
+</li>
+<li>
+<p>公式为：</p>
+
+
+$$
+h_2=(v_{20}+v_{02})^2+4v_{11}^2
+$$
+
+
+</li>
+<li>
+<p>示例代码：</p>
+</li>
+</ul>
+<figure class="highlight reasonml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br></pre></td><td class="code"><pre><code class="hljs reasonml">def h2(mom):<br>    v20 = mom<span class="hljs-literal">[&#x27;<span class="hljs-identifier">nu20</span>&#x27;]</span><br>    v02 = mom<span class="hljs-literal">[&#x27;<span class="hljs-identifier">nu02</span>&#x27;]</span><br>    v11 = mom<span class="hljs-literal">[&#x27;<span class="hljs-identifier">nu11</span>&#x27;]</span><br>    h2 = (v20 + v02)<span class="hljs-operator"> ** </span><span class="hljs-number">2</span> + <span class="hljs-number">4</span><span class="hljs-operator"> * </span>(v11<span class="hljs-operator"> ** </span><span class="hljs-number">2</span>)<br>    return h2<br><br>img = <span class="hljs-number">255</span> - mt.cv<span class="hljs-constructor">_rgb_imread(&#x27;<span class="hljs-params">conc</span>.<span class="hljs-params">png</span>&#x27;, <span class="hljs-params">gray</span>=True)</span><br>contours, hierarchy = cv2.find<span class="hljs-constructor">Contours(<span class="hljs-params">img</span>, <span class="hljs-params">cv2</span>.RETR_TREE, <span class="hljs-params">cv2</span>.CHAIN_APPROX_NONE)</span><br>res = np.zeros<span class="hljs-constructor">_like(<span class="hljs-params">img</span>)</span><br>cv2.draw<span class="hljs-constructor">Contours(<span class="hljs-params">res</span>, [<span class="hljs-params">contours</span>[0]], -1, [200], -1)</span><br>another_res = mt.image<span class="hljs-constructor">_resize(<span class="hljs-params">np</span>.<span class="hljs-params">rot90</span>(<span class="hljs-params">res</span>)</span>, factor=<span class="hljs-number">0.5</span>)<br>mom_res = cv2.moments(res, True)<br>mom_another_res = cv2.moments(another_res, True)<br><br>h2_1 = h2(mom_res)<br>h2_2 = h2(mom_another_res)<br><span class="hljs-constructor">PIS([<span class="hljs-params">res</span>, <span class="hljs-params">str</span>(<span class="hljs-params">h2_1</span>)</span>], <span class="hljs-literal">[<span class="hljs-identifier">another_res</span>, <span class="hljs-identifier">str</span>(<span class="hljs-identifier">h2_2</span>)]</span>)<br></code></pre></td></tr></table></figure>
+<p><img src="https://101.43.39.125/HexoFiles/vvd_dell/20220428154307.png" srcset="/img/loading.gif" lazyload alt=""></p>
+<h3 id="Hu-矩">Hu 矩</h3>
+<ul>
+<li><a href="notes/study/image-processing/moments/moments">Hu 矩</a></li>
+</ul>
+<h4 id="cv2-HuMoments">cv2.HuMoments</h4>
+<blockquote>
+<p>函数用于计算 Hu 矩：</p>
+<p><a target="_blank" rel="noopener" href="https://docs.opencv.org/4.5.5/d3/dc0/group__imgproc__shape.html#gab001db45c1f1af6cbdbe64df04c4e944">官方代码</a></p>
+</blockquote>
+<ul>
+<li>函数使用</li>
+</ul>
+<figure class="highlight clean"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><code class="hljs clean">cv2.HuMoments(	<br>	moments[, 				# cv2.moments 函数的输出结果<br>	hu]	<br>	) -&gt;	<br>	hu						# 输出 <span class="hljs-number">7</span> 个 Hu 不变矩<br></code></pre></td></tr></table></figure>
+<ul>
+<li>示例代码</li>
+</ul>
+<figure class="highlight stylus"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br></pre></td><td class="code"><pre><code class="hljs stylus"><span class="hljs-selector-tag">img</span> = <span class="hljs-number">255</span> - mt<span class="hljs-selector-class">.cv_rgb_imread</span>(<span class="hljs-string">&#x27;conc.png&#x27;</span>, gray=True)<br>contours, hierarchy = cv2<span class="hljs-selector-class">.findContours</span>(<span class="hljs-selector-tag">img</span>, cv2<span class="hljs-selector-class">.RETR_TREE</span>, cv2.CHAIN_APPROX_NONE)<br>res = np<span class="hljs-selector-class">.zeros_like</span>(img)<br>cv2<span class="hljs-selector-class">.drawContours</span>(res, <span class="hljs-selector-attr">[contours[0]</span>], -<span class="hljs-number">1</span>, <span class="hljs-selector-attr">[200]</span>, -<span class="hljs-number">1</span>)<br>another_res = mt<span class="hljs-selector-class">.image_resize</span>(np<span class="hljs-selector-class">.rot90</span>(res), factor=<span class="hljs-number">0.5</span>)<br>mom_res = cv2<span class="hljs-selector-class">.moments</span>(res, True)<br>mom_another_res = cv2<span class="hljs-selector-class">.moments</span>(another_res, True)<br><br>hu_res = cv2<span class="hljs-selector-class">.HuMoments</span>(mom_res)<br>hu_another_res = cv2<span class="hljs-selector-class">.HuMoments</span>(mom_another_res)<br><br><br>--&gt; <br><br>hu_res<br><span class="hljs-built_in">array</span>(<span class="hljs-selector-attr">[[2.65472790e-01]</span>,<br>       <span class="hljs-selector-attr">[3.67973951e-02]</span>,<br>       <span class="hljs-selector-attr">[4.31746085e-03]</span>,<br>       <span class="hljs-selector-attr">[1.65053925e-03]</span>,<br>       <span class="hljs-selector-attr">[4.40583128e-06]</span>,<br>       <span class="hljs-selector-attr">[3.16616604e-04]</span>,<br>       <span class="hljs-selector-attr">[4.73966676e-08]</span>])<br><br>hu_another_res<br><span class="hljs-built_in">array</span>(<span class="hljs-selector-attr">[[2.65294556e-01]</span>,<br>       <span class="hljs-selector-attr">[3.67252753e-02]</span>,<br>       <span class="hljs-selector-attr">[4.27103909e-03]</span>,<br>       <span class="hljs-selector-attr">[1.62915379e-03]</span>,<br>       <span class="hljs-selector-attr">[4.29714551e-06]</span>,<br>       <span class="hljs-selector-attr">[3.12207937e-04]</span>,<br>       <span class="hljs-selector-attr">[5.03721607e-08]</span>])<br></code></pre></td></tr></table></figure>
+<p><img src="https://101.43.39.125/HexoFiles/vvd_dell/20220428154307.png" srcset="/img/loading.gif" lazyload alt="参考图形"></p>
+<h3 id="使用Hu矩进行匹配">使用Hu矩进行匹配</h3>
+<ul>
+<li>我们想要使用Hu矩比较两个物体，并判定它们是否相似。对“相似”的定义可能有很多。为了使比较过程变得简单，OpenCV的函数<code>cv2.matchShapes</code> 允许我们简单提供两个物体，然后计算它们的矩，并根据我们提供的标准进行比较。</li>
+</ul>
+<h4 id="cv2-matchShapes">cv2.matchShapes</h4>
+<blockquote>
+<p>该函数比较两个形状，所有三个实现的方法都使用 Hu 不变量。</p>
+<p><a target="_blank" rel="noopener" href="https://docs.opencv.org/4.5.5/d3/dc0/group__imgproc__shape.html#gaadc90cb16e2362c9bd6e7363e6e4c317">官方文档</a></p>
+</blockquote>
+<ul>
+<li>函数使用</li>
+</ul>
+<figure class="highlight oxygene"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><code class="hljs oxygene">cv2.matchShapes(	<br>	contour1, 			# 第一个轮廓或灰度图像。<br>	contour2, 			# 第二轮廓或灰度图像。<br>	<span class="hljs-keyword">method</span>, 			# 比对方法<br>	<span class="hljs-title function_">parameter</span>			# 方法参数（<span class="hljs-title function_">OpenCV</span> 4.5.5 暂时还不支持）<br>	) -&gt;	<br>	<span class="hljs-title function_">retval</span><br></code></pre></td></tr></table></figure>
+<ul>
+<li>
+<p>method： <a target="_blank" rel="noopener" href="https://docs.opencv.org/4.5.5/d3/dc0/group__imgproc__shape.html#gaf2b97a230b51856d09a2d934b78c015f">ShapeMatchModes</a></p>
+<p>$A, B $分别表示两个输入的物体轮廓</p>
+
+  $$
+  \begin{array}{c}
+   m_{i}^{A}=\operatorname{sign}\left(h_{i}^{A}\right) \cdot \log h_{i}^{A} \\
+   m_{i}^{B}=\operatorname{sign}\left(h_{i}^{B}\right) \cdot \log h_{i}^{B} 
+   \end{array}
+  $$
+
+  
+<blockquote>
+<p>其中 $ h_{i}^{A}, h_{i}^{B} $ 为 $A,B$ 的 Hu 不变矩</p>
+</blockquote>
+<table>
+<thead>
+<tr>
+<th>参数</th>
+<th>含义</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>cv2.CONTOURS_MATCH_I1</td>
+<td>$ I_{1}(A, B)=\sum_ {i = 1 \ldots . } \left | \frac{1} {m_{i}^{A}}-\frac{1}{m_{i}^{B}}\right|$ </td>
+</tr>
+<tr>
+<td>cv2.CONTOURS_MATCH_I2</td>
+<td>$ I_{2}(A, B)= \sum_{ i=1 \ldots . } \left | m_{i} ^ {A}-m_{i}^{B}\right|$</td>
+</tr>
+<tr>
+<td>cv2.CONTOURS_MATCH_I3</td>
+<td>$ I_{3}(A, B)=\max _{i=1 \ldots 7} \frac{\left|m_{i}^{A}-m_{i}^{B}\right|}{\left|m_{i}^{A}\right|} $</td>
+</tr>
+</tbody>
+</table>
+</li>
+<li>
+<p>示例代码</p>
+</li>
+</ul>
+<figure class="highlight reasonml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><code class="hljs reasonml">img = <span class="hljs-number">255</span> - mt.cv<span class="hljs-constructor">_rgb_imread(&#x27;<span class="hljs-params">conc</span>.<span class="hljs-params">png</span>&#x27;, <span class="hljs-params">gray</span>=True)</span><br>contours, hierarchy = cv2.find<span class="hljs-constructor">Contours(<span class="hljs-params">img</span>, <span class="hljs-params">cv2</span>.RETR_TREE, <span class="hljs-params">cv2</span>.CHAIN_APPROX_NONE)</span><br>res1 = np.zeros<span class="hljs-constructor">_like(<span class="hljs-params">img</span>)</span><br>res2 = np.zeros<span class="hljs-constructor">_like(<span class="hljs-params">img</span>)</span><br>cv2.draw<span class="hljs-constructor">Contours(<span class="hljs-params">res1</span>, [<span class="hljs-params">contours</span>[0]], -1, [200], -1)</span><br>cv2.draw<span class="hljs-constructor">Contours(<span class="hljs-params">res2</span>, [<span class="hljs-params">contours</span>[6]], -1, [200], -1)</span><br>another_res = mt.image<span class="hljs-constructor">_resize(<span class="hljs-params">np</span>.<span class="hljs-params">rot90</span>(<span class="hljs-params">res1</span>)</span>, factor=<span class="hljs-number">0.5</span>)<br>match_res1 = cv2.<span class="hljs-keyword">match</span><span class="hljs-constructor">Shapes(<span class="hljs-params">res1</span>, <span class="hljs-params">another_res</span>, <span class="hljs-params">cv2</span>.CONTOURS_MATCH_I1, None)</span><br>match_res2 = cv2.<span class="hljs-keyword">match</span><span class="hljs-constructor">Shapes(<span class="hljs-params">res1</span>, <span class="hljs-params">res2</span>, <span class="hljs-params">cv2</span>.CONTOURS_MATCH_I1, None)</span><br><span class="hljs-constructor">PIS([<span class="hljs-params">res1</span>, &#x27;<span class="hljs-params">source</span> <span class="hljs-params">img</span>&#x27;], [<span class="hljs-params">another_res</span>, <span class="hljs-params">f</span><span class="hljs-string">&quot;match score &#123;format(match_res1, &#x27;.3f&#x27;)&#125;&quot;</span>], [<span class="hljs-params">res2</span>, <span class="hljs-params">f</span><span class="hljs-string">&quot;match score &#123;format(match_res2, &#x27;.3f&#x27;)&#125;&quot;</span>])</span><br></code></pre></td></tr></table></figure>
+<p><img src="https://101.43.39.125/HexoFiles/vvd_dell/20220428172303.png" srcset="/img/loading.gif" lazyload alt=""></p>
+<h3 id="利用形状场景方法比较轮廓">利用形状场景方法比较轮廓</h3>
+<p>OpenCV 努力提供比矩匹配更好的形状匹配算法</p>
+<p><a target="_blank" rel="noopener" href="https://docs.opencv.org/4.5.5/d1/d85/group__shape.html#ga1d058c5d00f6292da61422af2f3f4adc">https://docs.opencv.org/4.5.5/d1/d85/group__shape.html#ga1d058c5d00f6292da61422af2f3f4adc</a></p>
+<ul>
+<li>在 OpenCV 4.5.5 中还没有实现，有传说在 3.5 的版本中有相关函数</li>
+</ul>
+<h3 id="源码">源码</h3>
+<p><a target="_blank" rel="noopener" href="https://github.com/zywvvd/Python_Practise/tree/master/OpenCV/Chapter%2014">https://github.com/zywvvd/Python_Practise/tree/master/OpenCV/Chapter 14</a></p>
+<h3 id="参考资料">参考资料</h3>
+<ul>
+<li>《学习OpenCV》 第十四章</li>
+</ul>
+<link rel="stylesheet" href="/css/spoiler.css" type="text/css"><script src="/js/spoiler.js" type="text/javascript" async></script>
+                
+              </div>
+            
+            <hr/>
+            <div>
+              <div class="post-metas my-3">
+  
+    <div class="post-meta mr-3 d-flex align-items-center">
+      <i class="iconfont icon-category"></i>
+      
+
+<span class="category-chains">
+  
+  
+    
+      <span class="category-chain">
+        
+  <a href="/categories/Image-Processing/" class="category-chain-item">Image_Processing</a>
+  
+  
+    <span>></span>
+    
+  <a href="/categories/Image-Processing/OpenCV/" class="category-chain-item">OpenCV</a>
+  
+  
+
+  
+
+      </span>
+    
+  
+</span>
+
+    </div>
+  
+  
+    <div class="post-meta">
+      <i class="iconfont icon-tags"></i>
+      
+        <a href="/tags/Image-Processing/">#Image_Processing</a>
+      
+        <a href="/tags/OpenCV/">#OpenCV</a>
+      
+    </div>
+  
+</div>
+
+
+              
+  
+
+  <div class="license-box my-3">
+    <div class="license-title">
+      <div>OpenCV 轮廓 —— 轮廓匹配</div>
+      <div>https://www.zywvvd.com/notes/study/image-processing/opencv/opencv-contours-match/contours-match/</div>
+    </div>
+    <div class="license-meta">
+      
+        <div class="license-meta-item">
+          <div>作者</div>
+          <div>Yiwei Zhang</div>
+        </div>
+      
+      
+        <div class="license-meta-item license-meta-date">
+          <div>发布于</div>
+          <div>2022年4月28日</div>
+        </div>
+      
+      
+      <div class="license-meta-item">
+        <div>许可协议</div>
+        <div>
+          
+            
+            
+              <a target="_blank" href="https://creativecommons.org/licenses/by/4.0/">
+              <span class="hint--top hint--rounded" aria-label="BY - 署名">
+                <i class="iconfont icon-by"></i>
+              </span>
+              </a>
+            
+          
+        </div>
+      </div>
+    </div>
+    <div class="license-icon iconfont"></div>
+  </div>
+
+
+
+              
+                <div class="post-prevnext my-3">
+                  <article class="post-prev col-6">
+                    
+                    
+                      <a href="/notes/hexo/website/31-vercel/vercel-deploy/" title="Hexo -31- vercel 部署网站">
+                        <i class="iconfont icon-arrowleft"></i>
+                        <span class="hidden-mobile">Hexo -31- vercel 部署网站</span>
+                        <span class="visible-mobile">上一篇</span>
+                      </a>
+                    
+                  </article>
+                  <article class="post-next col-6">
+                    
+                    
+                      <a href="/notes/study/image-processing/moments/moments/" title="矩 / Hu 矩">
+                        <span class="hidden-mobile">矩 / Hu 矩</span>
+                        <span class="visible-mobile">下一篇</span>
+                        <i class="iconfont icon-arrowright"></i>
+                      </a>
+                    
+                  </article>
+                </div>
+              
+            </div>
+
+            
+  <article id="comments" lazyload>
+    
+  <div id="waline"></div>
+  <script type="text/javascript">
+    Fluid.utils.loadComments('#waline', function() {
+      Fluid.utils.createCssLink('https://lib.baomitu.com/waline/2.5.1/waline.min.css')
+      Fluid.utils.createScript('https://lib.baomitu.com/waline/2.5.1/waline.min.js', function() {
+        var options = Object.assign(
+          {"serverURL":"waline2-server.vercel.app","path":"window.location.pathname","meta":["nick","mail","link"],"requiredMeta":["nick"],"lang":"zh-CN","emoji":["https://cdn.jsdelivr.net/gh/walinejs/emojis/weibo"],"dark":"html[data-user-color-scheme=\"dark\"]","wordLimit":0,"pageSize":10},
+          {
+            el: '#waline',
+            path: window.location.pathname
+          }
+        )
+        Waline.init(options);
+        Fluid.utils.waitElementVisible('#waline .vcontent', () => {
+          var imgSelector = '#waline .vcontent img:not(.vemoji)';
+          Fluid.plugins.imageCaption(imgSelector);
+          Fluid.plugins.fancyBox(imgSelector);
+        })
+      });
+    });
+  </script>
+  <noscript>Please enable JavaScript to view the comments</noscript>
+
+
+  </article>
+
+
+          </article>
+        </div>
+      </div>
+    </div>
+
+    <div class="side-col d-none d-lg-block col-lg-2">
+      
+  <aside class="sidebar" style="margin-left: -1rem">
+    <div id="toc">
+  <p class="toc-header"><i class="iconfont icon-list"></i>&nbsp;目录</p>
+  <div class="toc-body" id="toc-body"></div>
+</div>
+
+
+
+  </aside>
+
+
+    </div>
+  </div>
+</div>
+
+
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+  
+  
+
+
+
+
+
+  <script>
+  Fluid.utils.createScript('https://lib.baomitu.com/mermaid/8.14.0/mermaid.min.js', function() {
+    mermaid.initialize({"theme":"default"});
+  });
+</script>
+
+
+
+
+
+
+    
+
+    
+      <a id="scroll-top-button" aria-label="TOP" href="#" role="button">
+        <i class="iconfont icon-arrowup" aria-hidden="true"></i>
+      </a>
+    
+
+    
+      <div class="modal fade" id="modalSearch" tabindex="-1" role="dialog" aria-labelledby="ModalLabel"
+     aria-hidden="true">
+  <div class="modal-dialog modal-dialog-scrollable modal-lg" role="document">
+    <div class="modal-content">
+      <div class="modal-header text-center">
+        <h4 class="modal-title w-100 font-weight-bold">搜索</h4>
+        <button type="button" id="local-search-close" class="close" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body mx-3">
+        <div class="md-form mb-5">
+          <input type="text" id="local-search-input" class="form-control validate">
+          <label data-error="x" data-success="v" for="local-search-input">关键词</label>
+        </div>
+        <div class="list-group" id="local-search-result"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+    
+
+    
+  </main>
+
+  <footer>
+    <div class="footer-inner">
+  
+    <div class="footer-content">
+       <div class="vvd_footer" style="font-size: 0.85rem;"> <a href="https://hexo.io" target="_blank" rel="nofollow noopener" color="#d7d8d9"><span>Hexo</span></a> <i class="iconfont icon-love"></i> <a href="https://github.com/fluid-dev/hexo-theme-fluid" target="_blank" rel="nofollow noopener"><span>Fluid</span></a> <i class="iconfont icon-love"></i> <a href="https://101.43.39.125:6287/share/r5OGod2Z/%E5%8F%88%E8%A7%81%E8%8B%8D%E5%B2%9A" target="_blank" rel="nofollow noopener"><span>Umami</span></a> <div style="font-size: 0.85rem;"> <span id="timeDate">载入天数...</span> <span id="times">载入时分秒...</span> <script src="/vvd_js/duration.js"></script> </div> <div style="font-size: 0.85rem;"> <span> 总访问量 <span style="color: #d7d8d9;" id="PVstatic">0</span> 次&nbsp</span> <span> 总访客数 <span style="color: #d7d8d9;" id="UVstatic">0</span> 人&nbsp</span> <span> 当前在线 <span style="color: #d7d8d9;" id="ACTstatic">0</span> 人&nbsp</span> <script src="https://101.43.39.125:6101/statistics" defer></script> </div> <div style="font-size: 0.85rem;"> <a target="_blank" rel="noopener" href="https://developer.hitokoto.cn/" id="hitokoto_text"><span style="color: #d7d8d9;"  id="hitokoto"></span></a> <script src="https://v1.hitokoto.cn/?encode=js&select=%23hitokoto" defer></script> </div>
+</div> 
+    </div>
+  
+  
+  
+  
+</div>
+
+  </footer>
+
+  <!-- Scripts -->
+  
+  <script  src="https://lib.baomitu.com/nprogress/0.2.0/nprogress.min.js" ></script>
+  <link  rel="stylesheet" href="https://lib.baomitu.com/nprogress/0.2.0/nprogress.min.css" />
+
+  <script>
+    NProgress.configure({"showSpinner":false,"trickleSpeed":100})
+    NProgress.start()
+    window.addEventListener('load', function() {
+      NProgress.done();
+    })
+  </script>
+
+
+<script  src="https://lib.baomitu.com/jquery/3.6.0/jquery.min.js" ></script>
+<script  src="https://lib.baomitu.com/twitter-bootstrap/4.6.1/js/bootstrap.min.js" ></script>
+<script  src="/js/events.js" ></script>
+<script  src="/js/plugins.js" ></script>
+
+
+
+
+
+  
+    <script  src="/js/img-lazyload.js" ></script>
+  
+
+
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/tocbot/4.18.2/tocbot.min.js', function() {
+    var toc = jQuery('#toc');
+    if (toc.length === 0 || !window.tocbot) { return; }
+    var boardCtn = jQuery('#board-ctn');
+    var boardTop = boardCtn.offset().top;
+
+    window.tocbot.init({
+      tocSelector     : '#toc-body',
+      contentSelector : '.markdown-body',
+      headingSelector : CONFIG.toc.headingSelector || 'h1,h2,h3,h4,h5,h6',
+      linkClass       : 'tocbot-link',
+      activeLinkClass : 'tocbot-active-link',
+      listClass       : 'tocbot-list',
+      isCollapsedClass: 'tocbot-is-collapsed',
+      collapsibleClass: 'tocbot-is-collapsible',
+      collapseDepth   : CONFIG.toc.collapseDepth || 0,
+      scrollSmooth    : true,
+      headingsOffset  : -boardTop
+    });
+    if (toc.find('.toc-list-item').length > 0) {
+      toc.css('visibility', 'visible');
+    }
+  });
+</script>
+
+
+  <script src=https://lib.baomitu.com/clipboard.js/2.0.10/clipboard.min.js></script>
+
+  <script>Fluid.plugins.codeWidget();</script>
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/anchor-js/4.3.1/anchor.min.js', function() {
+    window.anchors.options = {
+      placement: CONFIG.anchorjs.placement,
+      visible  : CONFIG.anchorjs.visible
+    };
+    if (CONFIG.anchorjs.icon) {
+      window.anchors.options.icon = CONFIG.anchorjs.icon;
+    }
+    var el = (CONFIG.anchorjs.element || 'h1,h2,h3,h4,h5,h6').split(',');
+    var res = [];
+    for (var item of el) {
+      res.push('.markdown-body > ' + item.trim());
+    }
+    if (CONFIG.anchorjs.placement === 'left') {
+      window.anchors.options.class = 'anchorjs-link-left';
+    }
+    window.anchors.add(res.join(', '));
+  });
+</script>
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/fancybox/3.5.7/jquery.fancybox.min.js', function() {
+    Fluid.plugins.fancyBox();
+  });
+</script>
+
+
+  <script>Fluid.plugins.imageCaption();</script>
+
+  
+      <script>
+        if (!window.MathJax) {
+          window.MathJax = {
+            tex    : {
+              inlineMath: { '[+]': [['$', '$']] }
+            },
+            options: {
+              renderActions: {
+                insertedScript: [200, () => {
+                  document.querySelectorAll('mjx-container').forEach(node => {
+                    let target = node.parentNode;
+                    if (target.nodeName.toLowerCase() === 'li') {
+                      target.parentNode.classList.add('has-jax');
+                    }
+                  });
+                }, '', false]
+              }
+            }
+          };
+        } else {
+          MathJax.startup.document.state(0);
+          MathJax.texReset();
+          MathJax.typeset();
+          MathJax.typesetPromise();
+        }
+      </script>
+    
+
+  <script  src="https://lib.baomitu.com/mathjax/3.2.1/es5/tex-mml-chtml.js" ></script>
+
+  <script defer src="/js/leancloud.js" ></script>
+
+  <script  src="/js/local-search.js" ></script>
+
+
+
+
+
+<!-- 主题的启动项，将它保持在最底部 -->
+<!-- the boot of the theme, keep it at the bottom -->
+<script  src="/js/boot.js" ></script>
+
+
+  <script type="text/javascript">
+    /*窗口监视*/
+    var originalTitle = document.title;
+    window.onblur = function(){document.title = "明眸如初"};
+    window.onfocus = function(){document.title = originalTitle};
+  </script>
+
+
+  
+
+  <noscript>
+    <div class="noscript-warning">博客在允许 JavaScript 运行的环境下浏览效果更佳</div>
+  </noscript>
+<script src="/live2dw/lib/L2Dwidget.min.js?094cbace49a39548bed64abff5988b05"></script><script>L2Dwidget.init({"pluginRootPath":"live2dw/","pluginJsPath":"lib/","pluginModelPath":"assets/","tagMode":false,"log":false,"model":{"jsonPath":"/live2dw/assets/z16.model.json"},"display":{"position":"left","width":200,"height":400},"mobile":{"show":false},"react":{"opacity":0.9}});</script></body>
+</html>
