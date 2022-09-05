@@ -24,7 +24,7 @@
 <meta property="og:description" content="变分推断（Variational Inference, VI）是贝叶斯近似推断方法中的一大类方法，将后验推断问题巧妙地转化为优化问题进行求解。">
 <meta property="og:locale" content="zh_CN">
 <meta property="article:published_time" content="2022-08-27T12:25:08.000Z">
-<meta property="article:modified_time" content="2022-08-29T15:19:02.979Z">
+<meta property="article:modified_time" content="2022-09-05T12:33:56.463Z">
 <meta property="article:author" content="Yiwei Zhang">
 <meta property="article:tag" content="Probability">
 <meta name="twitter:card" content="summary_large_image">
@@ -272,7 +272,7 @@
         <i class="iconfont icon-chart"></i>
         
           <!-- compatible with older versions-->
-          5.8k 字
+          7k 字
         
       </span>
     
@@ -284,7 +284,7 @@
         
         
           <!-- compatible with older versions-->
-          49 分钟
+          59 分钟
         
       </span>
     
@@ -296,8 +296,8 @@
           <i class="iconfont icon-eye" aria-hidden="true"></i>
           <span id="vvdpost_value_page_pv">0</span> 次&nbsp&nbsp
 		  <i class="iconfont icon-users" aria-hidden="true"></i>
-		  <span id="vvdpost_value_page_uv">0</span> 人
-		  <i class="iconfont icon-users" aria-hidden="true"></i>
+		  <span id="vvdpost_value_page_uv">0</span> 人&nbsp&nbsp
+		  <i class="iconfont icon-comment" aria-hidden="true"></i>
 		  <span id="vvdpost_value_page_cn">0</span> 条
         </span>
 
@@ -439,7 +439,7 @@
                 
                   
                     <!-- compatible with older versions-->
-                    本文最后更新于：2022年8月29日 晚上
+                    本文最后更新于：2022年9月5日 晚上
                   
                 
               </p>
@@ -451,8 +451,62 @@
 <p><strong>变分推断</strong>（Variational Inference, VI）是贝叶斯近似推断方法中的一大类方法，将后验推断问题巧妙地转化为优化问题进行求解。</p>
 </blockquote>
 <span id="more"></span>
+<h3 id="简介">简介</h3>
+<ul>
+<li>在变分贝叶斯方法中， <strong>evidence lower bound</strong>  (通常缩写为 ELBO，有时也称为 <a target="_blank" rel="noopener" href="https://arxiv.org/pdf/1312.6114.pdf">变分下界</a> 或负变分自由能)是一些观测数据对数可能性的有用下界。</li>
+</ul>
 <h3 id="问题定义">问题定义</h3>
-<p>给定观察变量 $x$ 和隐变量 $z$，假设我们想知道后验概率 $p(z|x) $，但发现 $p(z|x)$ 在实际中不好或者没法求解，那么我们该怎么求解这个后验概率呢？</p>
+<ul>
+<li>给定观测随机变量 $X$, 我们的目标是寻找 $X$ 的真实分布 $p*$.</li>
+<li>我们可以通过不断从 $X$ 中采样样本 $x$ 来统计其分布，但是这样效率不高而且难以获取 $p*$, 迫使我们必须寻找 $p*$ 的近似分布。</li>
+<li>如果我们定义一组足够大的带参数的分布族 $ \left{p_{\theta}\right}_{\theta \in \Theta} $，这个分布族表示每一组 $\theta$ 对应一个分布，所有 $\theta$ 代表的所有分布的集合</li>
+<li>定义两个分布之间的损失函数 $L$，那么我们通过优化 $\theta$ 最小化 $L$ 就可以了, $ \min <em>{\theta} L\left(p</em>{\theta}, p^{*}\right) $</li>
+</ul>
+<h4 id="生成模型">生成模型</h4>
+<ul>
+<li>
+<p>由于显式的分布难以描述复杂的 $X$ 分布，我们引入带有隐变量的概率分布：</p>
+<ol>
+<li>
+<p>首先定义隐变量 $Z$，其分布 $p(z)$ 我们可以任意给定（一般为标准高斯分布）</p>
+</li>
+<li>
+<p>定义复杂函数 $f_\theta$，操作层面上可以理解为结构确定、参数为 $\theta$ 的神经网络</p>
+</li>
+<li>
+<p>定义由 $p(z)$ 采样经过 $f_\theta$ 生成 $X$ 分布的方法</p>
+<blockquote>
+<p><strong>注意</strong>：定义的是从<strong>采样</strong> $z$ 生成 $X$ <strong>分布</strong>的方法</p>
+<p>例如：</p>
+<ul>
+<li>采样两个 $z$，由 $ f_{\theta}(z)=\left(f_{1}(z), f_{2}(z)\right) $ 得到两个输出变量</li>
+<li>之后定义 $X$ 的分布为 $ \mathcal{N}\left(f_{1}(z), e^{f_{2}(z)}\right) $</li>
+</ul>
+</blockquote>
+</li>
+</ol>
+</li>
+<li>
+<p>通过这种方法我们定义了$(X,Z)$ 的联合分布，因为我们可以采样 $ z \sim p $，计算 $ f_{\theta}(z) $，采样 $ x \sim p_{\theta}(\cdot \mid z) $</p>
+</li>
+<li>
+<p>也就是说我们得到了观测变量和隐变量的 <strong>生成模型</strong></p>
+</li>
+</ul>
+<h4 id="评估模型">评估模型</h4>
+<ul>
+<li>现在我们将 $p_\theta$ 当做 $x$ 的近似评估模型 $ p_{\theta}(X) \approx p^{*}(X) $</li>
+<li>由于等式右侧和 $Z$ 无关，等式左边也需要和 $Z$ 无关的 $X$ 的边缘分布</li>
+<li>直接的想法是对 $z $ 积分，$ p_{\theta}(x)=\int p_{\theta}(x \mid z) p(z) d z $，可以蒙特卡洛积分计算，但是如果要求精度会很慢，因此我们转向贝叶斯的思路</li>
+<li>根据贝叶斯公式，有：</li>
+</ul>
+<p>$$<br>
+p_{\theta}(x)=\frac{p_{\theta}(x \mid z) p(z)}{p_{\theta}(z \mid x)}<br>
+$$</p>
+<ul>
+<li>此时我们有 $p(z)$（我们自己定义的）, $p_{\theta}(x \mid z)$ 我们自己定义的，这二者乘积为联合分布，但是这个联合分布带着 $z$，需要除以后验概率 $p_{\theta}(z \mid x)$ 才能消除 $z$</li>
+<li>但是这个后验概率不好搞，寻找这个后验概率的问题称作 <strong>变分贝叶斯推理</strong> ( <strong>variational Bayesian inference</strong> )</li>
+</ul>
 <h3 id="变分推断-VI-解决方案">变分推断 (VI) 解决方案</h3>
 <h4 id="MCMC">MCMC</h4>
 <ul>
@@ -634,6 +688,8 @@ q^{*}\left(z_{k}\right) \propto \exp E_{-k}\left[\log p\left(z_{k}, z_{-k}, x\ri
 $$</p>
 <h3 id="参考资料">参考资料</h3>
 <ul>
+<li><a target="_blank" rel="noopener" href="https://arxiv.org/pdf/1312.6114.pdf">Auto-Encoding Variational Bayes</a></li>
+<li><a target="_blank" rel="noopener" href="https://en.wikipedia.org/wiki/Evidence_lower_bound">https://en.wikipedia.org/wiki/Evidence_lower_bound</a></li>
 <li><a target="_blank" rel="noopener" href="https://zhuanlan.zhihu.com/p/385341342">https://zhuanlan.zhihu.com/p/385341342</a></li>
 <li><a target="_blank" rel="noopener" href="https://www.jianshu.com/p/98a9c48e9c7f">https://www.jianshu.com/p/98a9c48e9c7f</a></li>
 </ul>
