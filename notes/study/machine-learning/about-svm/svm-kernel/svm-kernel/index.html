@@ -16,28 +16,25 @@
   <meta name="author" content="Yiwei Zhang">
   <meta name="keywords" content="人工智能, 深度学习, 个人博客, 机器学习">
   
-    <meta name="description" content="“集”这个概念在 Python 中算是比较年轻的，同时它的使用率也比较低。set 和它的不可变的姊妹类型 frozenset 直到 Python 2.3 才首次以 模块的形式出现，然后在 Python 2.6 中它们升级成为内置类型。本文记录相关内容。">
+    <meta name="description" content="SVM 在实际应用时往往会用到核函数，可以用很小的计算代价达到提升特征维度的效果，本文记录相关内容。">
 <meta property="og:type" content="article">
-<meta property="og:title" content="Python 集合 Set">
-<meta property="og:url" content="https://www.zywvvd.com/notes/coding/python/fluent-python/chapter-3/python-set/python-set/index.html">
+<meta property="og:title" content="SVM 中的核函数 (kernal function)">
+<meta property="og:url" content="https://www.zywvvd.com/notes/study/machine-learning/about-svm/svm-kernel/svm-kernel/index.html">
 <meta property="og:site_name" content="又见苍岚">
-<meta property="og:description" content="“集”这个概念在 Python 中算是比较年轻的，同时它的使用率也比较低。set 和它的不可变的姊妹类型 frozenset 直到 Python 2.3 才首次以 模块的形式出现，然后在 Python 2.6 中它们升级成为内置类型。本文记录相关内容。">
+<meta property="og:description" content="SVM 在实际应用时往往会用到核函数，可以用很小的计算代价达到提升特征维度的效果，本文记录相关内容。">
 <meta property="og:locale" content="zh_CN">
-<meta property="og:image" content="https://101.43.39.125/HexoFiles/vvd_file_bed/202205272315879.jpg">
-<meta property="og:image" content="https://101.43.39.125/HexoFiles/vvd_file_bed/202205272317044.jpg">
-<meta property="og:image" content="https://101.43.39.125/HexoFiles/vvd_file_bed/202205272325116.jpg">
-<meta property="article:published_time" content="2022-05-27T13:46:08.000Z">
-<meta property="article:modified_time" content="2022-08-05T15:34:36.991Z">
+<meta property="og:image" content="https://101.43.39.125/HexoFiles/vvd_pc_upload/202210312339132.png">
+<meta property="article:published_time" content="2022-10-31T14:25:15.000Z">
+<meta property="article:modified_time" content="2022-11-01T16:08:55.130Z">
 <meta property="article:author" content="Yiwei Zhang">
-<meta property="article:tag" content="Coding">
-<meta property="article:tag" content="Python">
-<meta property="article:tag" content="Fluent-Python">
+<meta property="article:tag" content="Machine_Learning">
+<meta property="article:tag" content="SVM">
 <meta name="twitter:card" content="summary_large_image">
-<meta name="twitter:image" content="https://101.43.39.125/HexoFiles/vvd_file_bed/202205272315879.jpg">
+<meta name="twitter:image" content="https://101.43.39.125/HexoFiles/vvd_pc_upload/202210312339132.png">
   
   
   
-  <title>Python 集合 Set - 又见苍岚</title>
+  <title>SVM 中的核函数 (kernal function) - 又见苍岚</title>
 
   <link  rel="stylesheet" href="https://lib.baomitu.com/twitter-bootstrap/4.6.1/css/bootstrap.min.css" />
 
@@ -261,7 +258,7 @@
       <div class="banner-text text-center fade-in-up">
         <div class="h2">
           
-            <span id="subtitle">Python 集合 Set</span>
+            <span id="subtitle">SVM 中的核函数 (kernal function)</span>
           
         </div>
 
@@ -277,8 +274,8 @@
     
       <span class="post-meta">
         <i class="iconfont icon-date-fill" aria-hidden="true"></i>
-        <time datetime="2022-05-27 21:46" pubdate>
-          2022年5月27日 晚上
+        <time datetime="2022-10-31 22:25" pubdate>
+          2022年10月31日 晚上
         </time>
       </span>
     
@@ -290,7 +287,7 @@
         <i class="iconfont icon-chart"></i>
         
           <!-- compatible with older versions-->
-          1.1k 字
+          2.3k 字
         
       </span>
     
@@ -302,7 +299,7 @@
         
         
           <!-- compatible with older versions-->
-          9 分钟
+          20 分钟
         
       </span>
     
@@ -451,13 +448,13 @@
         <div id="board">
           <article class="post-content mx-auto">
             <!-- SEO header -->
-            <h1 style="display: none">Python 集合 Set</h1>
+            <h1 style="display: none">SVM 中的核函数 (kernal function)</h1>
             
               <p class="note note-info">
                 
                   
                     <!-- compatible with older versions-->
-                    本文最后更新于：2022年8月5日 晚上
+                    本文最后更新于：2022年11月2日 凌晨
                   
                 
               </p>
@@ -466,44 +463,117 @@
               <div class="markdown-body">
                 
                 <blockquote>
-<p>“集”这个概念在 Python 中算是比较年轻的，同时它的使用率也比较低。set 和它的不可变的姊妹类型 frozenset 直到 Python 2.3 才首次以 模块的形式出现，然后在 Python 2.6 中它们升级成为内置类型。本文记录相关内容。</p>
+<p>SVM 在实际应用时往往会用到核函数，可以用很小的计算代价达到提升特征维度的效果，本文记录相关内容。</p>
 </blockquote>
 <span id="more"></span>
-<h3 id="集合">集合</h3>
+<h3 id="核函数">核函数</h3>
+<h4 id="定义">定义</h4>
 <ul>
-<li>表示唯一对象的聚集，因此集合中没有重复元素，可以用于去重。</li>
-<li>初始化集合用 set() 函数，或带元素地使用 {…}</li>
+<li>函数 $\Phi$ 是一个从低维特征空间到高维特征空间的一个映射，那么如果存在函数 $K(x,z)$, 对于任意的低维特征向量 $x$ 和 $z$，都有：</li>
 </ul>
-<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><code class="hljs python">l = [<span class="hljs-string">&#x27;spam&#x27;</span>, <span class="hljs-string">&#x27;spam&#x27;</span>, <span class="hljs-string">&#x27;eggs&#x27;</span>, <span class="hljs-string">&#x27;spam&#x27;</span>]<br>s = <span class="hljs-built_in">set</span>(l)<br>t = &#123;<span class="hljs-number">1</span>, <span class="hljs-number">2</span>&#125;<br>--&gt;<br>s<br>&#123;<span class="hljs-string">&#x27;eggs&#x27;</span>, <span class="hljs-string">&#x27;spam&#x27;</span>&#125;<br>t<br>&#123;<span class="hljs-number">1</span>, <span class="hljs-number">2</span>&#125;<br></code></pre></td></tr></table></figure>
+<p>$$<br>
+\mathrm{K}(x, z)=\Phi(x) \bullet \Phi(z)<br>
+$$</p>
+<p>​		则称 <strong>函数 $K(x,z)$ 为核函数(kernal function)</strong></p>
 <ul>
-<li>集合中的元素必须是可散列的，set 类型本身是不可散列的，但是 frozenset 可以。因此可以创建一个包含不同 frozenset 的 set。</li>
+<li><strong>本质：</strong> 核函数是一个低维的计算结果，并没有采用低维到高维的映射。只不过核函数低维运算的结果<strong>等价于</strong>映射到高维时向量点积的值。</li>
 </ul>
-<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><code class="hljs python">data = [<span class="hljs-number">1</span>,<span class="hljs-number">2</span>,<span class="hljs-number">3</span>]<br>f = <span class="hljs-built_in">frozenset</span>(data)<br>s = <span class="hljs-built_in">set</span>([*data, f])<br><span class="hljs-built_in">print</span>(s)<br><br>--&gt;<br>&#123;<span class="hljs-built_in">frozenset</span>(&#123;<span class="hljs-number">1</span>, <span class="hljs-number">2</span>, <span class="hljs-number">3</span>&#125;), <span class="hljs-number">1</span>, <span class="hljs-number">2</span>, <span class="hljs-number">3</span>&#125;<br></code></pre></td></tr></table></figure>
+<h4 id="意义">意义</h4>
 <ul>
-<li>除了保证唯一性，集合还实现了很多基础的中缀运算符。给定两个集合 a 和 b，a | b 返回的是它们的合集，a &amp; b 得到的是交集，而 a - b 得到的是差集。合理地利用这些操作，不仅能够让代码的行数变少，还 能减少 Python 程序的运行时间。这样做同时也是为了让代码更易读，从 而更容易判断程序的正确性，因为利用这些运算符可以省去不必要的循 环和逻辑操作。</li>
+<li>其实在 <a href="/notes/study/machine-learning/about-svm/svm-summarize/svm-summarize/#%E6%8B%89%E6%A0%BC%E6%9C%97%E6%97%A5%E4%B9%98%E5%AD%90%E6%B3%95%E6%B1%82%E8%A7%A3%E6%A2%B3%E7%90%86">SVM 的计算过程</a>中，求解部分已经很漂亮地推导出来了，为何还要引入核函数呢。</li>
+<li>其目的是可以使得有时在低维空间难以找到划分超平面的问题在高维空间中得到缓解：</li>
 </ul>
-<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><code class="hljs python">set1 = <span class="hljs-built_in">set</span>([<span class="hljs-number">1</span>,<span class="hljs-number">2</span>,<span class="hljs-number">3</span>])<br>set2 = <span class="hljs-built_in">set</span>([<span class="hljs-number">2</span>,<span class="hljs-number">3</span>,<span class="hljs-number">4</span>])<br>set3 = <span class="hljs-built_in">set</span>([<span class="hljs-number">4</span>,<span class="hljs-number">5</span>,<span class="hljs-number">6</span>])<br><br><span class="hljs-built_in">print</span>(set1 | set2)<br><span class="hljs-built_in">print</span>(set1 - set2)<br><span class="hljs-built_in">print</span>(set2 &amp; set2)<br><br>&gt;&gt;&gt;<br>&#123;<span class="hljs-number">1</span>, <span class="hljs-number">2</span>, <span class="hljs-number">3</span>, <span class="hljs-number">4</span>&#125;<br>&#123;<span class="hljs-number">1</span>&#125;<br>&#123;<span class="hljs-number">2</span>, <span class="hljs-number">3</span>, <span class="hljs-number">4</span>&#125;<br>&lt;&lt;&lt;<br></code></pre></td></tr></table></figure>
-<h4 id="集合推导">集合推导</h4>
+<p><img src="https://101.43.39.125/HexoFiles/vvd_pc_upload/202210312339132.png" srcset="/img/loading.gif" lazyload alt=""></p>
 <ul>
-<li>Python 2.7 带来了集合推导（setcomps）和字典推导。</li>
+<li>至于为何其内核是内积的形式就要聊一聊 SVM 中内积运算的部分。</li>
 </ul>
-<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><code class="hljs python">s = &#123;num <span class="hljs-keyword">for</span> num <span class="hljs-keyword">in</span> <span class="hljs-built_in">range</span>(<span class="hljs-number">10</span>) <span class="hljs-keyword">if</span> num % <span class="hljs-number">2</span>&#125;<br><span class="hljs-built_in">print</span>(s)<br><br>&gt;&gt;&gt;<br>&#123;<span class="hljs-number">1</span>, <span class="hljs-number">3</span>, <span class="hljs-number">5</span>, <span class="hljs-number">7</span>, <span class="hljs-number">9</span>&#125;<br>&lt;&lt;&lt;<br></code></pre></td></tr></table></figure>
-<h3 id="集合方法">集合方法</h3>
+<h3 id="SVM-中的内积运算">SVM 中的内积运算</h3>
+<blockquote>
+<p>SVM 的求解和推断过程均可以表示为数据的内积运算，因此核函数替换内积后完全不影响结果，但是会显著提升高维特征的 SVM 运算速度。</p>
+</blockquote>
+<h4 id="求解过程">求解过程</h4>
 <ul>
-<li>集合的数学运算</li>
+<li>根据我们之前对 <a href="">SVM 的推导过程</a> ，我们得到了带有核函数的优化目标拉格朗日方程：</li>
 </ul>
-<p><img src="https://101.43.39.125/HexoFiles/vvd_file_bed/202205272315879.jpg" srcset="/img/loading.gif" lazyload alt=""></p>
+<p>$$<br>
+\begin{array}{c}<br>
+L(w, b, \alpha)=\frac{1}{2}|w|<sup>{2}-\sum_{i=1}</sup>{n} \alpha_{i}\left(y_{i}\left(w^{T} \cdot \Phi\left(x_{i}\right)+b\right)-1\right) \<br>
+s.t.  y_{i}\left(w^{T} \cdot \Phi\left(x_{i}\right)+b\right) \geq 1<br>
+\end{array}<br>
+$$</p>
 <ul>
-<li>集合的比较运算</li>
+<li>对对偶问题求解之后对 $w$ 和 $b$ 求偏导等于零得到的结果：</li>
 </ul>
-<p><img src="https://101.43.39.125/HexoFiles/vvd_file_bed/202205272317044.jpg" srcset="/img/loading.gif" lazyload alt=""></p>
+<p>$$<br>
+\begin{array}{l}<br>
+\frac{\partial L}{\partial w}=0 \Rightarrow w=\sum_{i=1}^{n} \alpha_{i} y_{i} \Phi\left(x_{n}\right) \<br>
+\frac{\partial L}{\partial b}=0 \Rightarrow 0=\sum_{i=1}^{n} \alpha_{i} y_{i}<br>
+\end{array}<br>
+$$</p>
 <ul>
-<li>集合的实用方法</li>
+<li>最终 SVM 转为一个带约束的极小值优化问题：</li>
 </ul>
-<p><img src="https://101.43.39.125/HexoFiles/vvd_file_bed/202205272325116.jpg" srcset="/img/loading.gif" lazyload alt=""></p>
+<p>$$<br>
+\begin{array}{l}<br>
+\min <em>{\alpha} \frac{1}{2} \sum</em>{i=1}^{n} \sum_{j=1}^{n} \alpha_{i} \alpha_{j} y_{i} y_{j}\left(\Phi\left(x_{i}\right) \cdot \Phi\left(x_{j}\right)\right)-\sum_{i=1}^{n} \alpha_{i}\<br>
+s.t. \sum_{i=1}^{n} \alpha_{i} y_{i}=0 , \alpha_{i} \geq 0<br>
+\end{array}<br>
+$$</p>
+<ul>
+<li>之后需要用 <a href="/notes/study/machine-learning/about-svm/svm-smo/svm-smo/">SMO 算法</a> 求解 $\alpha$ 这其中所有 $x$ 相关的计算均为数据之间的内积运算，因此如果我们设计好了核函数 $K$，那么我们将所有的 $\left(\Phi\left(x_{i}\right) \cdot \Phi\left(x_{j}\right)\right)$ 换为 $K(x_i, x_j)$，不影响后续 $\alpha$ 的求解</li>
+<li>也就是说： <strong>核函数可以嵌入 SVM 的求解过程，不影响求解的过程，并且在求解时就已经避免了 $\Phi(x)$ 的高维运算</strong>；</li>
+</ul>
+<h4 id="推断过程">推断过程</h4>
+<ul>
+<li>原始的分类平面为：</li>
+</ul>
+<p>$$<br>
+w^{T}  x+b=0<br>
+$$</p>
+<ul>
+<li>那么最终的分类函数为：</li>
+</ul>
+<p>$$<br>
+f(x)=\operatorname{sign}\left(w^{T}  x+b\right)<br>
+$$</p>
+<ul>
+<li>根据 SVM 的推导，有结论：</li>
+</ul>
+<p>$$<br>
+w=\sum_{i=1}^{n} \alpha_{i} y_{i} x_{i}<br>
+$$</p>
+<ul>
+<li>假设 $x_j$ 为支持向量  ，$b$ 为：</li>
+</ul>
+<p>$$<br>
+b=y_j-w^Tx_j<br>
+$$</p>
+<ul>
+<li>带入分类函数：</li>
+</ul>
+<p>$$<br>
+\begin{aligned} f(x) &amp;=w^{T} x+b \<br>
+&amp;=(\sum_{i=1}^{n} \alpha_{i} y_{i} x_{i})^{T} x+y_j-(\sum_{i=1}^{n} \alpha_{i} y_{i} x_{i})^{T}x_j\<br>
+&amp;=\sum_{i=1}^{n} \alpha_{i} y_{i}\left\langle x_{i}, x\right\rangle+y_j-\sum_{i=1}^{n} \alpha_{i} y_{i} \langle x_{i},x_j \rangle<br>
+\end{aligned}<br>
+$$</p>
+<ul>
+<li>如果此时对原始数据，引入核函数：</li>
+</ul>
+<p>$$<br>
+f(x)=\sum_{i=1}^{n} \alpha_{i} y_{i} K(x_{i},x)+y_j-\sum_{i=1}^{n} \alpha_{i} y_{i}  K(x_{i},x_j)<br>
+$$</p>
+<ul>
+<li>也就是说原始分类函数完全可以用核函数运算来表示</li>
+<li>而且其中 $b$ 的运算结果是一个常数，算完放在那用就好了</li>
+<li>$w$ 的计算看起来有求和符号需要对所有训练数据求和，但是事实上仅有支持向量的 $\alpha$ 非零，仅需极小的复杂度就可以完成对数据的推断。</li>
+</ul>
 <h3 id="参考资料">参考资料</h3>
 <ul>
-<li><a target="_blank" rel="noopener" href="http://www.baidu.com/link?url=PPQJGT2As4J1cgfjoe4Lt_MbAv20VFnfAvavev36ulFHlnqwqaD6y5nUwRE-8c6-l79a5tfOvakpOfCy8GpruVdlecHZPT-S-l0r3soDeXDCy71mLZUuYmpzaXy7L0ts">流畅的Python(2017年人民邮电出版社出版)</a></li>
+<li><a target="_blank" rel="noopener" href="https://chih-sheng-huang821.medium.com/%E6%A9%9F%E5%99%A8%E5%AD%B8%E7%BF%92-kernel-%E5%87%BD%E6%95%B8-47c94095171">https://chih-sheng-huang821.medium.com/機器學習-kernel-函數-47c94095171</a></li>
+<li><a target="_blank" rel="noopener" href="https://zhuanlan.zhihu.com/p/261061617">https://zhuanlan.zhihu.com/p/261061617</a></li>
+<li><a target="_blank" rel="noopener" href="https://www.jianshu.com/p/028d1883ad93">https://www.jianshu.com/p/028d1883ad93</a></li>
+<li><a href="https://www.zywvvd.com/notes/study/machine-learning/about-svm/svm-summarize/svm-summarize/">https://www.zywvvd.com/notes/study/machine-learning/about-svm/svm-summarize/svm-summarize/</a></li>
 </ul>
 <link rel="stylesheet" href="/css/spoiler.css" type="text/css"><script src="/js/spoiler.js" type="text/javascript" async></script>
                 
@@ -523,20 +593,13 @@
     
       <span class="category-chain">
         
-  <a href="/categories/Coding/" class="category-chain-item">Coding</a>
+  <a href="/categories/Machine-Learning/" class="category-chain-item">Machine_Learning</a>
   
   
     <span>></span>
     
-  <a href="/categories/Coding/Python/" class="category-chain-item">Python</a>
+  <a href="/categories/Machine-Learning/SVM/" class="category-chain-item">SVM</a>
   
-  
-    <span>></span>
-    
-  <a href="/categories/Coding/Python/Fluent-Python/" class="category-chain-item">Fluent-Python</a>
-  
-  
-
   
 
   
@@ -552,11 +615,9 @@
     <div class="post-meta">
       <i class="iconfont icon-tags"></i>
       
-        <a href="/tags/Coding/">#Coding</a>
+        <a href="/tags/Machine-Learning/">#Machine_Learning</a>
       
-        <a href="/tags/Python/">#Python</a>
-      
-        <a href="/tags/Fluent-Python/">#Fluent-Python</a>
+        <a href="/tags/SVM/">#SVM</a>
       
     </div>
   
@@ -568,8 +629,8 @@
 
   <div class="license-box my-3">
     <div class="license-title">
-      <div>Python 集合 Set</div>
-      <div>https://www.zywvvd.com/notes/coding/python/fluent-python/chapter-3/python-set/python-set/</div>
+      <div>SVM 中的核函数 (kernal function)</div>
+      <div>https://www.zywvvd.com/notes/study/machine-learning/about-svm/svm-kernel/svm-kernel/</div>
     </div>
     <div class="license-meta">
       
@@ -581,7 +642,7 @@
       
         <div class="license-meta-item license-meta-date">
           <div>发布于</div>
-          <div>2022年5月27日</div>
+          <div>2022年10月31日</div>
         </div>
       
       
@@ -611,18 +672,12 @@
                   <article class="post-prev col-6">
                     
                     
-                      <a href="/notes/study/deep-learning/moco/moco/" title="自监督学习 —— MoCo v1">
-                        <i class="iconfont icon-arrowleft"></i>
-                        <span class="hidden-mobile">自监督学习 —— MoCo v1</span>
-                        <span class="visible-mobile">上一篇</span>
-                      </a>
-                    
                   </article>
                   <article class="post-next col-6">
                     
                     
-                      <a href="/notes/coding/python/fluent-python/chapter-3/python-dict/pytho-dict/" title="Python 字典 dict">
-                        <span class="hidden-mobile">Python 字典 dict</span>
+                      <a href="/notes/study/machine-learning/one-class/ocsvm/ocsvm/" title="异常检测 One Class SVM 算法的个人理解">
+                        <span class="hidden-mobile">异常检测 One Class SVM 算法的个人理解</span>
                         <span class="visible-mobile">下一篇</span>
                         <i class="iconfont icon-arrowright"></i>
                       </a>
