@@ -44,7 +44,7 @@
 <meta property="og:image" content="https://101.43.39.125/HexoFiles/vvd_pc_upload/202211102247467.jpg">
 <meta property="og:image" content="https://101.43.39.125/HexoFiles/vvd_pc_upload/202211102257444.jpg">
 <meta property="article:published_time" content="2022-11-06T14:29:07.000Z">
-<meta property="article:modified_time" content="2022-11-10T15:00:57.530Z">
+<meta property="article:modified_time" content="2022-11-12T06:36:09.632Z">
 <meta property="article:author" content="Yiwei Zhang">
 <meta property="article:tag" content="Algorithm">
 <meta name="twitter:card" content="summary_large_image">
@@ -305,7 +305,7 @@
         <i class="iconfont icon-chart"></i>
         
           <!-- compatible with older versions-->
-          3.4k 字
+          4.6k 字
         
       </span>
     
@@ -317,7 +317,7 @@
         
         
           <!-- compatible with older versions-->
-          29 分钟
+          39 分钟
         
       </span>
     
@@ -472,7 +472,7 @@
                 
                   
                     <!-- compatible with older versions-->
-                    本文最后更新于：2022年11月10日 晚上
+                    本文最后更新于：2022年11月12日 下午
                   
                 
               </p>
@@ -560,6 +560,41 @@
 <li>在找不到更多增广路径时就完成了最大流的搜索算法</li>
 </ul>
 <p><img src="https://101.43.39.125/HexoFiles/vvd_pc_upload/202211102211009.jpg" srcset="/img/loading.gif" lazyload alt=""></p>
+<h3 id="最大流-Yuri-Boykov算法">最大流 Yuri Boykov算法</h3>
+<ul>
+<li>
+<p>假设以源点s和汇点t在图结构上构造两颗没有交集的树，分别为树S和树T，如下图所示。树S中的所有边都是由父节点指向子节点（存在流量），树T中则由子节点指向父节点。不在两树中的节点为“自由”状态。搜索树S和T中的节点只有两种状态：“主动”和“被动”。主动态的节点表示搜索树的外边界节点，意思是从该节点出发还可以扩展搜索树，而被动态节点表示搜索树内部的节点，树不能由该节点向外扩展。主动态节点因为可以向外扩展，所以有可能会搜索到另一搜索树的节点，当主动节点检测到另一搜索树的节点，就找到了一条增广路径。</p>
+</li>
+<li>
+<p>Yuri提出的算法主要循环以下三个步骤：</p>
+<ol>
+<li>“增长”阶段：搜索树S和T扩展节点，直到两树相遇，得到一条由源点s到汇点t的增广路径。</li>
+<li>“增广”阶段：根据找到的增广路径将搜索树拆分为子树或森林。</li>
+<li>“领养”阶段：搜索树S和T重新构建。</li>
+</ol>
+</li>
+<li>
+<p><strong>初始化</strong></p>
+<p>初始化时，搜索树S只有源点s为主动节点，搜索树T只有汇点t作为主动节点，增长搜索树直到它们的主动节点相遇，得到一条增广路径P。如果P为空则算法终止，反之则对P进行增广流量处理。然后对孤点进行领养处理，以此循环。</p>
+</li>
+<li>
+<p><strong>增长阶段</strong></p>
+<p>主动态节点搜索相邻且邻边仍有可用流量的自由节点作为搜索树新的子节点，新增长的子节点又称为该搜索树的主动态节点，搜索树继续扩展增长。当主动态节点的所有邻点都检测过，主动态节点变为被动态节点。当两颗搜索树的主动态节点搜索到对方的节点时，增长阶段终止。然后根据当前建树情况，找到一条增广路径。</p>
+</li>
+<li>
+<p><strong>增广阶段</strong></p>
+<p>这个阶段根据增长阶段找到的增广路径进行增广流量统计，即求出经过该路径的最大流量，意味着路径中至少有一条边达到饱和态，也就是所经流量等于该边的流量值。因此搜索树S和T中会出现一种新的节点，称为“孤点”（orphans），意思就是连接它与其父节点的边已达饱和态，没有流可以再到达这个节点。</p>
+<p>所以在增广阶段搜索树S和T可能会拆分为多棵子树，从而形成森林。源点s和汇点t仍充当两颗子树的根节点，而孤点成为其余子树的根节点。</p>
+<p>首先找到路径P的瓶颈值，即最小流量边，为该路径的最大流量值。流量经过后，路径P中至少有一条边变为饱和态，即所经流量等于自身流量值，该边连接的子节点变为孤点。</p>
+</li>
+<li>
+<p><strong>领养阶段</strong></p>
+<p>领养阶段字面上理解就能看出是针对孤点进行处理的阶段，该阶段也是为了恢复搜索树S和T的单一性，即图中除了两颗搜索树，其余节点都归为主动态、被动态和自由态，消除孤点。做法是为每个孤点找到一个新的合法父节点，该父节点原来必须与孤点属于同一搜索树，而且父节点与孤点间有一条未饱和（仍有可经流量）的边。若没有符合要求的父节点，该孤点变为自由节点。以此处理所有孤点和孤点的子节点。当所有孤点都处理后，领养阶段结束，最终只剩下原有的搜索树S和T。</p>
+</li>
+</ul>
+<blockquote>
+<p>最大流的求解过程就是循环重复以上三个阶段，直到搜索树S和T不能再增长。</p>
+</blockquote>
 <h3 id="最大流和最小割的关系">最大流和最小割的关系</h3>
 <h4 id="最大流最小割定理">最大流最小割定理</h4>
 <ul>
@@ -654,7 +689,7 @@
 </ul>
 <h3 id="原始论文">原始论文</h3>
 <iframe src='/vvd_js/pdfjs/web/viewer.html?file=https://101.43.39.125/HexoFiles/vvd_pc_upload/202211062243748.pdf' style='width:100%;height:650px'></iframe>
-<h3 id="参考资料">参考资料</h3>
+### 参考资料
 <ul>
 <li><a target="_blank" rel="noopener" href="https://www.jianshu.com/p/79f045056e65">https://www.jianshu.com/p/79f045056e65</a></li>
 <li><a target="_blank" rel="noopener" href="https://blog.csdn.net/mmm_jsw/article/details/83787395">https://blog.csdn.net/mmm_jsw/article/details/83787395</a></li>
