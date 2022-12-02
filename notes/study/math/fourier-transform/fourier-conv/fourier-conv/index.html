@@ -24,7 +24,7 @@
 <meta property="og:description" content="傅里叶变换使得空域信号与频域信号实现相互转换，而在空域中运算复杂度很高的卷积运算在频域中仅为乘法，本文记录相关内容。">
 <meta property="og:locale" content="zh_CN">
 <meta property="article:published_time" content="2022-03-27T12:08:02.000Z">
-<meta property="article:modified_time" content="2022-11-30T13:55:18.957Z">
+<meta property="article:modified_time" content="2022-12-02T16:18:22.432Z">
 <meta property="article:author" content="Yiwei Zhang">
 <meta property="article:tag" content="Math">
 <meta property="article:tag" content="Fourier_Transform">
@@ -285,7 +285,7 @@
         <i class="iconfont icon-chart"></i>
         
           <!-- compatible with older versions-->
-          1.9k 字
+          2.5k 字
         
       </span>
     
@@ -297,7 +297,7 @@
         
         
           <!-- compatible with older versions-->
-          16 分钟
+          21 分钟
         
       </span>
     
@@ -452,7 +452,7 @@
                 
                   
                     <!-- compatible with older versions-->
-                    本文最后更新于：2022年11月30日 晚上
+                    本文最后更新于：2022年12月3日 凌晨
                   
                 
               </p>
@@ -470,7 +470,7 @@
 <li><a href="/notes/study/math/fourier-transform/fourier-transform">傅里叶变换</a></li>
 </ul>
 <h3 id="空域卷积与频域乘法">空域卷积与频域乘法</h3>
-<h4 id="连续信号">连续信号</h4>
+<h4 id="连续信号卷积">连续信号卷积</h4>
 <ul>
 <li>设两时域信号$f(t), g(t)$ , 对于卷积有:</li>
 </ul>
@@ -497,14 +497,14 @@ $$
 \begin{array}{c}
 F[f(t) * g(t)] &=& \int_{-\infty}^{\infty} f(\tau) e^{-j u \tau} d \tau\left[\int_{-\infty}^{\infty} g(t-\tau) e^{-j w(t-\tau)} d(t-\tau)\right] \\
 &=&F[f(\tau)] F[g(t-\tau)] \\
-&=&F_{1}(w) F_{2}(w)
+&=&F(w) G(w)
 \end{array}
 $$
 
 
 <ul>
 <li>
-<p>反向计算也可以得到相同结果：</p>
+<p>反向计算也可以得到相同结果</p>
 </li>
 <li>
 <p>证明了空域卷积结果的傅里叶变换为两时域信号傅里叶变换结果的乘积</p>
@@ -518,6 +518,25 @@ $$</p>
 </ul>
 <p>$$<br>
 f \cdot g \longleftrightarrow F * G<br>
+$$</p>
+<h4 id="连续信号互相关">连续信号互相关</h4>
+<ul>
+<li>两时域信号$f(t), g(t)$ , 对于互相关有:</li>
+</ul>
+<p>$$<br>
+f(t) \otimes g(t)=\int_{-\infty}^{\infty} f(\tau) * g(t+\tau) d \tau<br>
+$$</p>
+<ul>
+<li>按照同样方法推导其在频域的样子：</li>
+</ul>
+<p>$$<br>
+\begin{array}{c}<br>
+F[f(t) \otimes g(t)]&amp;=&amp;\int_{-\infty}<sup>{\infty}\left[\int_{-\infty}</sup>{\infty} f(\tau) g(t+\tau) d \tau\right] e^{-j w t} d t \<br>
+&amp;=&amp;\int_{-\infty}^{\infty} f(\tau)\left[\int_{-\infty}^{\infty} g(t+\tau) e^{-j w t} d t\right] d \tau \<br>
+&amp;=&amp; \int_{-\infty}^{\infty} f(\tau) e^{j u \tau} d \tau\left[\int_{-\infty}^{\infty} g(t+\tau) e^{-j w(t+\tau)} d(t+\tau)\right] \<br>
+&amp;=&amp;F^<em>[f(\tau)] F[g(t-\tau)] \<br>
+&amp;=&amp;F^</em>(w) G(w)</p>
+<p>\end{array}<br>
 $$</p>
 <h4 id="离散信号">离散信号</h4>
 <p>假设有一个函数$g$，表示空域离散信号$f$ 与 $h$的卷积（可以看作 $h$ 是滤波器，$f$为原始图像）。<br>
@@ -552,8 +571,21 @@ $$
 <h3 id="快速计算空域卷积">快速计算空域卷积</h3>
 <p><code>卷积结果的傅里叶变换为信号傅里叶变换乘积</code> 这一结论为空域卷积快速计算提供了可能。</p>
 <ul>
-<li>对于二维数据，假设数据 $f$ 与卷积核 $h$ 的尺寸分别为 $N\times N, M\times M$，那么直接卷积的运算复杂度为 $O(N ^ 2 M ^ 2)$</li>
-<li>假设傅里叶变换后得到频域数据尺寸 $P\times P$, 乘法运算复杂度为 $O(P^2)$，一般 $P$ 与 $max(N,M)$ 具有相同的数量级，因此复杂度为 $O(max(N, M)^2)$，可以大大减少运算量</li>
+<li>
+<p>对于二维数据，假设数据 $f$ 与卷积核 $h$ 的尺寸分别为 $N\times N, M\times M (N&gt;M)$，那么直接卷积的运算复杂度为 $O(N ^ 2 M ^ 2)$</p>
+</li>
+<li>
+<p>假设通过傅里叶变换计算卷积</p>
+<ul>
+<li>需要将卷积核 pad 到和 $f$ 一样大，数据均为 $N\times N$</li>
+<li>后得到频域数据尺寸 $N\times N$, 时间复杂度为$O(N^2log(N))$</li>
+<li>乘法运算复杂度为 $O(N^2)$</li>
+<li>因此复杂度为 $O(N^2logN)$</li>
+</ul>
+</li>
+<li>
+<p>因此若 $logN &lt; M^2$ 时会极大地减少运算量，也就是说当卷积核和数据尺寸接近时，使用频域计算卷积可以大幅加速。</p>
+</li>
 </ul>
 <h4 id="计算过程">计算过程</h4>
 <ul>
