@@ -16,23 +16,24 @@
   <meta name="author" content="Yiwei Zhang">
   <meta name="keywords" content="人工智能, 深度学习, 个人博客, 机器学习">
   
-    <meta name="description" content="在 Linux 下多进程调用 CUDA 执行任务时可能会报错: To use CUDA with multiprocessing, you must use the ‘spawn‘ start method，本文记录解决方案。">
+    <meta name="description" content="理想情况下, 当相机对均匀的目标成像时, 得到图像中所有像素点的灰度值理论上应该是相同的. 然而, 实际上图像中各像素的值往往会有较大差异，此时就需要对图像进行平场校正。">
 <meta property="og:type" content="article">
-<meta property="og:title" content="错误 To use CUDA with multiprocessing, you must use the ‘spawn‘ start method 解决方案">
-<meta property="og:url" content="https://www.zywvvd.com/notes/study/deep-learning/bug-fix/cuda-multiprocess-spawn-error/cuda-multiprocess-spawn-error/index.html">
+<meta property="og:title" content="图像平场校正(Flat-field correction)">
+<meta property="og:url" content="https://www.zywvvd.com/notes/study/camera-imaging/flat-field-corr/flat-field-corr/index.html">
 <meta property="og:site_name" content="又见苍岚">
-<meta property="og:description" content="在 Linux 下多进程调用 CUDA 执行任务时可能会报错: To use CUDA with multiprocessing, you must use the ‘spawn‘ start method，本文记录解决方案。">
+<meta property="og:description" content="理想情况下, 当相机对均匀的目标成像时, 得到图像中所有像素点的灰度值理论上应该是相同的. 然而, 实际上图像中各像素的值往往会有较大差异，此时就需要对图像进行平场校正。">
 <meta property="og:locale" content="zh_CN">
-<meta property="article:published_time" content="2022-02-24T06:49:37.000Z">
-<meta property="article:modified_time" content="2022-08-05T15:34:37.047Z">
+<meta property="og:image" content="https://101.43.39.125/HexoFiles/vvd_file_mt/202302061622703.jpg">
+<meta property="article:published_time" content="2023-02-06T07:53:53.000Z">
+<meta property="article:modified_time" content="2023-02-06T15:11:51.539Z">
 <meta property="article:author" content="Yiwei Zhang">
-<meta property="article:tag" content="Deep_Learning">
-<meta property="article:tag" content="Bug_Fix">
+<meta property="article:tag" content="Camera">
 <meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:image" content="https://101.43.39.125/HexoFiles/vvd_file_mt/202302061622703.jpg">
   
   
   
-  <title>错误 To use CUDA with multiprocessing, you must use the ‘spawn‘ start method 解决方案 - 又见苍岚</title>
+  <title>图像平场校正(Flat-field correction) - 又见苍岚</title>
 
   <link  rel="stylesheet" href="https://lib.baomitu.com/twitter-bootstrap/4.6.1/css/bootstrap.min.css" />
 
@@ -352,7 +353,7 @@
       <div class="banner-text text-center fade-in-up">
         <div class="h2">
           
-            <span id="subtitle">错误 To use CUDA with multiprocessing, you must use the ‘spawn‘ start method 解决方案</span>
+            <span id="subtitle">图像平场校正(Flat-field correction)</span>
           
         </div>
 
@@ -368,8 +369,8 @@
     
       <span class="post-meta">
         <i class="iconfont icon-date-fill" aria-hidden="true"></i>
-        <time datetime="2022-02-24 14:49" pubdate>
-          2022年2月24日 下午
+        <time datetime="2023-02-06 15:53" pubdate>
+          2023年2月6日 下午
         </time>
       </span>
     
@@ -381,7 +382,7 @@
         <i class="iconfont icon-chart"></i>
         
           <!-- compatible with older versions-->
-          401 字
+          2.3k 字
         
       </span>
     
@@ -393,7 +394,7 @@
         
         
           <!-- compatible with older versions-->
-          4 分钟
+          20 分钟
         
       </span>
     
@@ -538,13 +539,13 @@
         <div id="board">
           <article class="post-content mx-auto">
             <!-- SEO header -->
-            <h1 style="display: none">错误 To use CUDA with multiprocessing, you must use the ‘spawn‘ start method 解决方案</h1>
+            <h1 style="display: none">图像平场校正(Flat-field correction)</h1>
             
               <p class="note note-info">
                 
                   
                     <!-- compatible with older versions-->
-                    本文最后更新于：2022年8月5日 晚上
+                    本文最后更新于：2023年2月6日 晚上
                   
                 
               </p>
@@ -553,36 +554,104 @@
               <div class="markdown-body">
                 
                 <blockquote>
-<p>在 Linux 下多进程调用 CUDA 执行任务时可能会报错: <code>To use CUDA with multiprocessing, you must use the ‘spawn‘ start method</code>，本文记录解决方案。</p>
+<p>理想情况下, 当相机对均匀的目标成像时, 得到图像中所有像素点的灰度值理论上应该是相同的. 然而, 实际上图像中各像素的值往往会有较大差异，此时就需要对图像进行平场校正。</p>
 </blockquote>
 <span id="more"></span>
-<h3 id="问题原因">问题原因</h3>
+<h3 id="简介">简介</h3>
 <ul>
 <li>
-<p>操作系统为 Linux</p>
+<p>平场校正(Flat-field correction, FFC)是提高数字成像质量的一种技术。它消除了由探测器像素对像素灵敏度的变化和光路畸变引起的图像伪影的影响。从个人数码相机到大型望远镜，这都是标准的校准程序。</p>
 </li>
 <li>
-<p>多进程调用程序</p>
+<p>理想情况下, 当相机对均匀的目标成像时, 得到图像中所有像素点的灰度值理论上应该是相同的. 然而, 实际上图像中各像素的值往往会有较大差异。</p>
 </li>
 <li>
-<p>程序中需要调用 CUDA</p>
+<p>这一般是由以下几个原因造成：</p>
+<ol>
+<li>光照不均匀；</li>
+<li>镜片中心和镜片边缘的响应不一致；</li>
+<li>成像器件各像元响应不一致；</li>
+<li>固定的图像背景噪声等等。</li>
+</ol>
 </li>
 <li>
-<p>调用多进程时使用的不是 <code>spawn</code> 模式</p>
+<p>所谓的平场校正就是校正传感器芯片上这些不一致性。 目标是校正捕获的（Raw）图像的像素，以便当系统（相机和镜头）捕获统一的背景时，生成的输出图像是统一的。</p>
+</li>
+</ul>
+<h3 id="校正思路">校正思路</h3>
+<p>​		数字图像是成像系统输出的产物，过程中可能受到各种影响，导致在相同光照、相同材质情况下拍出图像的像素值发生变化。</p>
+<p><img src="https://101.43.39.125/HexoFiles/vvd_file_mt/202302061622703.jpg" srcset="/img/loading.gif" lazyload alt=""></p>
+<p>​		既然已经发生了系统性的失真，首先进行系统性矫正。平场矫正中假设该材质在光照强度线性变化的情况下像素值也线性变化，那么对于图像每一个位置上的像素来说，仅需两个标准亮度下产生的灰度值即可对该像素进行平场校正。</p>
+<h3 id="校正方法">校正方法</h3>
+<p>​		 通过两个步骤来进行校正：暗信号非均匀性（DSNU）校正和光响应非均匀性（PRNU）校正。要校准 DSNU，必须在黑暗中记录参考图像，而对于 PRNU，必须用均匀的照明记录参考图像。因此，平场校正中的这两个单独的步骤分别称为暗场校正和亮场校正。</p>
+<h4 id="采集校正图像">采集校正图像</h4>
+<ul>
+<li>
+<p>暗场图像采集</p>
+<p>暗场图像采集方法比较简单，我们记采集到的暗场图像为 $D$：</p>
+</li>
+</ul>
+<ol>
+<li>
+<p>用盖子盖住透镜。</p>
+</li>
+<li>
+<p>获取多个图像，并计算阵列每个像素的平均响应</p>
+</li>
+</ol>
+<ul>
+<li>
+<p>亮场图像采集</p>
+<p>亮场图像是覆盖整个视野的材质反光均匀一致的目标图像（<strong>注意：此处强调均匀，没有强调白色</strong>，实际使用时可以尽量亮，但核心需求是材质、光照均匀），一般来说要求这部分图像像素值大于 128，不可以过曝（会丢失信息）。记亮场图像为 $F$：</p>
+</li>
+</ul>
+<ol>
+<li>
+<p>放置一个宽度足以覆盖整个视野的一致性（反光材质均匀）目标（彩色相机为白色）</p>
+</li>
+<li>
+<p>调整镜头光圈和照明强度，以获得可能最亮的图像（前提是没有像素饱和）。</p>
+</li>
+<li>
+<p>获取多个图像，并计算阵列每个像素的平均响应</p>
+</li>
+</ol>
+<h4 id="平场校正">平场校正</h4>
+<p>​		我们已经获取了校正所需的暗场、亮场基准图像，我们认为暗场图像为相机没有获取任何光信号时自己产生的噪声；亮场图像为光照、反光材质均匀情况下相机拍出的数字图像。</p>
+<p>​		根据我们像素灰度值随光照线性变化的假设，我们需要对每个像素位置进行线性归一化，记待校正的图像为 $R$，归一化后的图像为 $C’$：<br>
+$$<br>
+C’= \frac{R-D}{F-D}<br>
+$$</p>
+<pre><code class="hljs">	&gt; 其中所谓的除法表示的是图像矩阵逐像素相除，之后的计算均为矩阵逐像素运算
+</code></pre>
+<p>​		此时的  $C’$ 为归一化后的图像，值在 0 - 1 左右，为什么说左右呢，因为有可能小于0 （相机噪声），也有可能大于1（当前图像亮度大于亮场图像亮度），我们还需要将归一化后的图像调整回 0 - 255 的灰阶中，那就需要一个放大系数。</p>
+<p>​		放大数字应该由两张校正基准图像决定，记该系数为 $m$，差值的均值是最合适的了：<br>
+$$<br>
+m = \sum(F-D)/N<br>
+$$</p>
 <blockquote>
-<p>Linux 默认调用多进程的方法为 <code>fork</code>，参考之前的<a href="/notes/environment/cuda/mp-spawn-error/mp-spawn-error/#%E9%97%AE%E9%A2%98%E5%8E%9F%E5%9B%A0-1">说明</a></p>
+<p>$N$ 表示图像像素个数</p>
 </blockquote>
-</li>
-</ul>
-<p>在此种情景中为了保证 CUDA 进程的隔离仅能使用 <code>spawn</code> 模式运行多进程任务，如果没有使用则会报出上述错误</p>
-<h3 id="解决方案">解决方案</h3>
-<ul>
-<li>需要强制 <code>multiprocessing</code> 使用 <code>spawn </code> 方法调用多进程</li>
-</ul>
-<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><code class="hljs python"><span class="hljs-keyword">import</span> multiprocessing<br>multiprocessing.set_start_method(<span class="hljs-string">&#x27;spawn&#x27;</span>)<br></code></pre></td></tr></table></figure>
+<p>​		记最终校正结果为 $C$，则整个对 $R$ 的校正过程为：<br>
+$$<br>
+C =\frac{R-D}{F-D}m<br>
+$$<br>
+​		有说法将平场校正描述为求解<code>偏置</code>和<code>增益</code>的过程，此处偏置即为 $D$,增益即为 $\frac{m}{F-D}$。</p>
+<p>​		如果对校正图像要求较高，你会发现不同波长的光线照射下产生的图像需要相同的波长光线产生的校正基准图像校正才能使得误差最小。</p>
+<h3 id="校正评估">校正评估</h3>
+<p>​		平场校正后，需要对校正的图像进行评估，常用的方法是使用平均后的校正基准图作为校正使用的图像，回头去校准产生这张基准图像的单张数据。</p>
+<p>​		我们期望校正后的图像所有位置的灰度均为同一个值，但事实上并不可能，那么就需要评估和这个值有多么接近。</p>
+<p>​		简单的方法可以查看方差是否足够小，精度要求不高的话已经可以满足大部分需求了；</p>
+<p>​		如果需要更高精度的评估，那就需要度量每个灰阶的像素点是否展示了在该二维平面上足够的均匀程度，也就是相同像素值的像素如果类似二维均匀分布产生的样本，那么就说明平场足够有效。</p>
+<p>​		这个评估本质上是在度量一个数据集描述的分布与二维已知的均匀分布直接的距离，如果计算二者之间的 KL 散度你会发现落脚点会在度量数据集的熵上面，然而这看似简单的需求并不容易计算。</p>
+<p>​		为了计算在已知二维平面上的均匀程度，需要将这些数据集转化为真正的分布，我的实践经验是将这些数据在二维平面上分块统计数量，形成二维平面上的统计直方图，归一化后就得到了他们的二维分布，之后就可以计算这个分布和均匀分布之间的距离了。</p>
 <h3 id="参考资料">参考资料</h3>
 <ul>
-<li><a target="_blank" rel="noopener" href="https://blog.csdn.net/qq_16792139/article/details/114938594">https://blog.csdn.net/qq_16792139/article/details/114938594</a></li>
+<li><a target="_blank" rel="noopener" href="https://en.wikipedia.org/wiki/Flat-field_correction">https://en.wikipedia.org/wiki/Flat-field_correction</a></li>
+<li><a target="_blank" rel="noopener" href="https://blog.csdn.net/pamxy/article/details/8938412">https://blog.csdn.net/pamxy/article/details/8938412</a></li>
+<li><a target="_blank" rel="noopener" href="https://documentation.euresys.com/Products/COAXLINK/COAXLINK_11_2/zh-cn/Content/03_Using_Coaxlink/functional-guide/flat-field-correction/what-is-ffc.htm?TocPath=%E4%BD%BF%E7%94%A8Coaxlink%7C%E5%8A%9F%E8%83%BD%E6%8C%87%E5%8D%97%7C%E9%AB%98%E7%BA%A7%E5%8A%9F%E8%83%BD%7C%E5%B9%B3%E5%9C%BA%E6%A0%A1%E6%AD%A3%7C_____1">https://documentation.euresys.com/Products/COAXLINK/COAXLINK_11_2/zh-cn/Content/03_Using_Coaxlink/functional-guide/flat-field-correction/what-is-ffc.htm?TocPath=使用Coaxlink|功能指南|高级功能|平场校正|_____1</a></li>
+<li><a target="_blank" rel="noopener" href="https://zhuanlan.zhihu.com/p/540606357">https://zhuanlan.zhihu.com/p/540606357</a></li>
+<li><a target="_blank" rel="noopener" href="https://blog.csdn.net/thisiszdy/article/details/109092450">https://blog.csdn.net/thisiszdy/article/details/109092450</a></li>
 </ul>
 <link rel="stylesheet" href="/css/spoiler.css" type="text/css"><script src="/js/spoiler.js" type="text/javascript" async></script>
                 
@@ -602,15 +671,8 @@
     
       <span class="category-chain">
         
-  <a href="/categories/Deep-Learning/" class="category-chain-item">Deep_Learning</a>
+  <a href="/categories/Camera/" class="category-chain-item">Camera</a>
   
-  
-    <span>></span>
-    
-  <a href="/categories/Deep-Learning/Bug-Fix/" class="category-chain-item">Bug_Fix</a>
-  
-  
-
   
 
       </span>
@@ -624,9 +686,7 @@
     <div class="post-meta">
       <i class="iconfont icon-tags"></i>
       
-        <a href="/tags/Deep-Learning/">#Deep_Learning</a>
-      
-        <a href="/tags/Bug-Fix/">#Bug_Fix</a>
+        <a href="/tags/Camera/">#Camera</a>
       
     </div>
   
@@ -638,8 +698,8 @@
 
   <div class="license-box my-3">
     <div class="license-title">
-      <div>错误 To use CUDA with multiprocessing, you must use the ‘spawn‘ start method 解决方案</div>
-      <div>https://www.zywvvd.com/notes/study/deep-learning/bug-fix/cuda-multiprocess-spawn-error/cuda-multiprocess-spawn-error/</div>
+      <div>图像平场校正(Flat-field correction)</div>
+      <div>https://www.zywvvd.com/notes/study/camera-imaging/flat-field-corr/flat-field-corr/</div>
     </div>
     <div class="license-meta">
       
@@ -651,7 +711,7 @@
       
         <div class="license-meta-item license-meta-date">
           <div>发布于</div>
-          <div>2022年2月24日</div>
+          <div>2023年2月6日</div>
         </div>
       
       
@@ -681,18 +741,12 @@
                   <article class="post-prev col-6">
                     
                     
-                      <a href="/notes/study/deep-learning/visualization/grad-cam/grad-cam/" title="Grad CAM 模型可视化">
-                        <i class="iconfont icon-arrowleft"></i>
-                        <span class="hidden-mobile">Grad CAM 模型可视化</span>
-                        <span class="visible-mobile">上一篇</span>
-                      </a>
-                    
                   </article>
                   <article class="post-next col-6">
                     
                     
-                      <a href="/notes/study/deep-learning/visualization/cam/cam/" title="CAM 模型可视化">
-                        <span class="hidden-mobile">CAM 模型可视化</span>
+                      <a href="/notes/hexo/theme/fluid/fluid-umami-event/fluid-umami-event/" title="Fluid -32- 配置 Umami 事件统计显示">
+                        <span class="hidden-mobile">Fluid -32- 配置 Umami 事件统计显示</span>
                         <span class="visible-mobile">下一篇</span>
                         <i class="iconfont icon-arrowright"></i>
                       </a>
