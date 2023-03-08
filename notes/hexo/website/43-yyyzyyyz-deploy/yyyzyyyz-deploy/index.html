@@ -25,7 +25,7 @@
 <meta property="og:locale" content="zh_CN">
 <meta property="og:image" content="https://101.43.39.125/HexoFiles/vvd_pc_upload/202303041452446.jpg">
 <meta property="article:published_time" content="2023-03-03T08:01:45.000Z">
-<meta property="article:modified_time" content="2023-03-04T07:33:37.911Z">
+<meta property="article:modified_time" content="2023-03-07T13:22:42.046Z">
 <meta property="article:author" content="Yiwei Zhang">
 <meta property="article:tag" content="Hexo">
 <meta property="article:tag" content="Website">
@@ -397,7 +397,7 @@
         <i class="iconfont icon-chart"></i>
         
           <!-- compatible with older versions-->
-          6.6k 字
+          7.5k 字
         
       </span>
     
@@ -409,7 +409,7 @@
         
         
           <!-- compatible with older versions-->
-          55 分钟
+          63 分钟
         
       </span>
     
@@ -560,7 +560,7 @@
                 
                   
                     <!-- compatible with older versions-->
-                    本文最后更新于：2023年3月4日 下午
+                    本文最后更新于：2023年3月7日 晚上
                   
                 
               </p>
@@ -707,13 +707,31 @@
 <figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs bash"><span class="hljs-built_in">cat</span> /tmp/crawler.log<br></code></pre></td></tr></table></figure>
 <h4 id="自动运行">自动运行</h4>
 <p>当前的状况是需要手动运行 <code>deploy.py </code> 文件才能运行，不是随开机自动启动的，需要调整一下</p>
+<h5 id="docker-容器内创建启动服务脚本">docker 容器内创建启动服务脚本</h5>
+<p>进入容器</p>
+<figure class="highlight hsp"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs hsp">docker <span class="hljs-keyword">exec</span> -it <span class="hljs-keyword">circle</span> bash<br></code></pre></td></tr></table></figure>
+<p>在 <code>/home/fcircle_src</code> 创建启动脚本文件 <code>setup.sh</code></p>
+<figure class="highlight sh"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><code class="hljs sh"><span class="hljs-meta">#!/bin/bash</span><br><br>python3 -u ./hexo_circle_of_friends/run.py &gt; /dev/null 2&gt;&amp;1 &amp;<br>python3 -u ./api/main.py &gt; /dev/null 2&gt;&amp;1 &amp;<br></code></pre></td></tr></table></figure>
+<blockquote>
+<p>这样在服务器（容器外）就可以通过 <code>docker exec</code> 命令启动这个脚本实现服务启动了</p>
+<p>修改容器后可以通过 <code>docker commit</code> 命令保存配置于自启动脚本到 <code>docker image</code></p>
+</blockquote>
 <h5 id="创建自动运行脚本">创建自动运行脚本</h5>
 <p>在 <code>/usr/local/friend-circle</code> 文件夹下创建 <code>friend_circle.sh</code> 文件，内容为：</p>
-<figure class="highlight sh"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><code class="hljs sh"><span class="hljs-meta">#!/bin/bash</span><br><br>docker start circle<br>docker <span class="hljs-built_in">exec</span> circle <span class="hljs-built_in">nohup</span> python3 -u ./hexo_circle_of_friends/run.py &gt; /dev/null 2&gt;&amp;1 &amp;<br>docker <span class="hljs-built_in">exec</span> circle <span class="hljs-built_in">nohup</span> python3 -u ./api/main.py &gt; /dev/null 2&gt;&amp;1 &amp;<br></code></pre></td></tr></table></figure>
+<figure class="highlight sh"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><code class="hljs sh"><span class="hljs-meta">#!/bin/bash</span><br><br>docker start circle<br>docker <span class="hljs-built_in">exec</span> circle bash ./setup.sh<br></code></pre></td></tr></table></figure>
 <p>该脚本在创建容器后，可以复活容器并启动友链朋友圈服务</p>
 <h5 id="systemctl-添加服务">systemctl 添加服务</h5>
-<p>添加  <code>systemctl</code> 服务随开机启动</p>
+<p>添加  <code>systemctl</code> 服务随开机启动，创建 <code>/lib/systemd/system/friend-circle.service</code> 文件写入如下内容</p>
+<figure class="highlight ini"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><code class="hljs ini"><span class="hljs-section">[Unit]</span><br><span class="hljs-attr">Description</span> = Service for friend circle<br><span class="hljs-attr">After</span> = docker.service<br><br><span class="hljs-section">[Service]</span><br><span class="hljs-attr">ExecStart</span> = /bin/bash friend_circle.sh<br><span class="hljs-attr">WorkingDirectory</span> = /usr/local/friend-circle<br><span class="hljs-attr">StandardOutput</span> = inherit<br><span class="hljs-attr">StandardError</span> = inherit<br><span class="hljs-attr">User</span> = lighthouse<br><br><span class="hljs-section">[Install]</span><br><span class="hljs-attr">WantedBy</span>=multi-user.target<br><br></code></pre></td></tr></table></figure>
+<p>配置 <code>systemctl</code> 开机启动 <code>friend-circle</code> 服务</p>
+<figure class="highlight arduino"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs arduino">sudo systemctl enable <span class="hljs-keyword">friend</span>-circle.service<br></code></pre></td></tr></table></figure>
+<p>之后重启服务器可以发现 <code>友链朋友圈</code> 服务已经启动，外部可以正常访问</p>
+<h4 id="nginx-反向代理">nginx 反向代理</h4>
+<p>当前访问 IP 为 http 协议，需要反向代理成 https 用于博客使用</p>
+<figure class="highlight nginx"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><code class="hljs nginx"><span class="hljs-section">server</span> &#123;<br>    <span class="hljs-attribute">listen</span>       <span class="hljs-number">9876</span> ssl;<br>    <span class="hljs-attribute">listen</span>  [::]:<span class="hljs-number">9876</span> ssl;<br>    <span class="hljs-comment"># server_name localhost;</span><br><br>    <span class="hljs-attribute">ssl_certificate</span>     /ssl/server.crt;<br>    <span class="hljs-attribute">ssl_certificate_key</span> /ssl/server.key;<br><br>    <span class="hljs-section">location</span> / &#123;<br>                    <span class="hljs-attribute">proxy_set_header</span>    X-FORWARDED-FOR <span class="hljs-variable">$remote_addr</span>;<br>                    <span class="hljs-attribute">proxy_set_header</span>    X-FORWARDED-PROTO <span class="hljs-variable">$scheme</span>;<br>                    <span class="hljs-attribute">proxy_set_header</span>    Host   <span class="hljs-variable">$http_host</span>;<br>                    <span class="hljs-attribute">proxy_pass</span>          http://ip:local-port;<br>    &#125;<br>&#125;<br></code></pre></td></tr></table></figure>
+<blockquote>
 <p>至此完成了 <code>友链朋友圈</code> 的后端部署。</p>
+</blockquote>
 <h3 id="参考资料">参考资料</h3>
 <ul>
 <li><a target="_blank" rel="noopener" href="https://fcircle-doc.yyyzyyyz.cn/#/">https://fcircle-doc.yyyzyyyz.cn/#/</a></li>
@@ -814,6 +832,12 @@
                 <div class="post-prevnext my-3">
                   <article class="post-prev col-6">
                     
+                    
+                      <a href="/notes/system/windows/windows-remote-login/windows-remote-login/" title="Windows 10 远程桌面配置与连接">
+                        <i class="iconfont icon-arrowleft"></i>
+                        <span class="hidden-mobile">Windows 10 远程桌面配置与连接</span>
+                        <span class="visible-mobile">上一篇</span>
+                      </a>
                     
                   </article>
                   <article class="post-next col-6">
