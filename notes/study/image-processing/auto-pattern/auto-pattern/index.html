@@ -1,0 +1,1051 @@
+
+
+<!DOCTYPE html>
+<html lang="zh-CN" data-default-color-scheme=auto>
+
+
+
+<head>
+  <meta charset="UTF-8">
+  <link rel="apple-touch-icon" sizes="76x76" href="/image/avatar.png">
+  <link rel="icon" href="/image/avatar.png">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, shrink-to-fit=no">
+  <meta http-equiv="x-ua-compatible" content="ie=edge">
+  
+  <meta name="theme-color" content="#2f4154">
+  <meta name="author" content="Yiwei Zhang">
+  <meta name="keywords" content="人工智能, 深度学习, 个人博客, 机器学习">
+  
+    <meta name="description" content="模板匹配是图像处理中常用的精对位手段，但不是所有的区域都适用于模板匹配，本文提出一种启发式的自动搜索纹理区域的方法。">
+<meta property="og:type" content="article">
+<meta property="og:title" content="自动查找适用于模板匹配的纹理区域">
+<meta property="og:url" content="https://www.zywvvd.com/notes/study/image-processing/auto-pattern/auto-pattern/index.html">
+<meta property="og:site_name" content="又见苍岚">
+<meta property="og:description" content="模板匹配是图像处理中常用的精对位手段，但不是所有的区域都适用于模板匹配，本文提出一种启发式的自动搜索纹理区域的方法。">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="https://101.43.39.125/HexoFiles/vvd_file_mt/202305161158279.jpg">
+<meta property="article:published_time" content="2023-02-16T02:06:07.000Z">
+<meta property="article:modified_time" content="2023-05-17T12:46:49.556Z">
+<meta property="article:author" content="Yiwei Zhang">
+<meta property="article:tag" content="Image_Processing">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:image" content="https://101.43.39.125/HexoFiles/vvd_file_mt/202305161158279.jpg">
+  
+  
+  
+  <title>自动查找适用于模板匹配的纹理区域 - 又见苍岚</title>
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/twitter-bootstrap/4.6.1/css/bootstrap.min.css" />
+
+
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/github-markdown-css/4.0.0/github-markdown.min.css" />
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/hint.css/2.7.0/hint.min.css" />
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/fancybox/3.5.7/jquery.fancybox.min.css" />
+
+
+
+<!-- 主题依赖的图标库，不要自行修改 -->
+<!-- Do not modify the link that theme dependent icons -->
+
+<link rel="stylesheet" href="//at.alicdn.com/t/font_1749284_hj8rtnfg7um.css">
+
+
+
+<link rel="stylesheet" href="//at.alicdn.com/t/font_1736178_lbnruvf0jn.css">
+
+
+<link  rel="stylesheet" href="/css/main.css" />
+
+
+  <link id="highlight-css" rel="stylesheet" href="/css/highlight.css" />
+  
+    <link id="highlight-css-dark" rel="stylesheet" href="/css/highlight-dark.css" />
+  
+
+
+
+  
+<link rel="stylesheet" href="/css/custom.css">
+
+
+
+  <script id="fluid-configs">
+    var Fluid = window.Fluid || {};
+    Fluid.ctx = Object.assign({}, Fluid.ctx)
+    var CONFIG = {"hostname":"www.zywvvd.com","root":"/","version":"1.9.2","typing":{"enable":true,"typeSpeed":90,"cursorChar":"_","loop":false,"scope":["home"]},"anchorjs":{"enable":true,"element":"h1,h2,h3,h4,h5,h6","placement":"left","visible":"hover","icon":""},"progressbar":{"enable":true,"height_px":3,"color":"#29d","options":{"showSpinner":false,"trickleSpeed":100}},"code_language":{"enable":true,"default":"TEXT"},"copy_btn":true,"image_caption":{"enable":true},"image_zoom":{"enable":true,"img_url_replace":["",""]},"toc":{"enable":true,"placement":"right","headingSelector":"h1,h2,h3,h4,h5,h6","collapseDepth":0},"lazyload":{"enable":true,"loading_img":"/img/loading.gif","onlypost":false,"offset_factor":2},"web_analytics":{"enable":true,"follow_dnt":true,"baidu":null,"google":null,"gtag":null,"tencent":{"sid":null,"cid":null},"woyaola":null,"cnzz":null,"leancloud":{"app_id":"Cv0XNeBSBdAPAIuVj3PsyM3R-MdYXbMMI","app_key":"4PU1rNlGrqXWzhfW3dgq98oX","server_url":null,"path":"window.location.pathname","ignore_local":false}},"search_path":"/local-search.xml"};
+
+    if (CONFIG.web_analytics.follow_dnt) {
+      var dntVal = navigator.doNotTrack || window.doNotTrack || navigator.msDoNotTrack;
+      Fluid.ctx.dnt = dntVal && (dntVal.startsWith('1') || dntVal.startsWith('yes') || dntVal.startsWith('on'));
+    }
+  </script>
+  <script  src="/js/utils.js" ></script>
+  <script  src="/js/color-schema.js" ></script>
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+    
+  
+
+
+
+  
+<meta name="generator" content="Hexo 5.4.2"><link rel="alternate" href="/atom.xml" title="又见苍岚" type="application/atom+xml">
+</head>
+
+
+<body>
+  <div>
+	<div class='real_mask' style="
+		background-color: rgba(0,0,0,0.4);
+		width: 100%;
+		height: 100%;
+		position: fixed;
+		z-index: -777;
+	"></div>
+	<div id="banner_video_insert">
+	</div>	
+	<div id='vvd_banner_img'>
+	</div>
+</div>
+<div id="banner"></div>
+
+  <header>
+    
+
+<div class="header-inner" style="height: 80vh;">
+  <nav id="navbar" class="navbar fixed-top  navbar-expand-lg navbar-dark scrolling-navbar">
+  <div class="container">
+    <a class="navbar-brand" href="/">
+      <strong>CangLan</strong>
+    </a>
+
+    <button id="navbar-toggler-btn" class="navbar-toggler" type="button" data-toggle="collapse"
+            data-target="#navbarSupportedContent"
+            aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
+      <div class="animated-icon"><span></span><span></span><span></span></div>
+    </button>
+
+    <!-- Collapsible content -->
+    <div class="collapse navbar-collapse" id="navbarSupportedContent">
+      <ul class="navbar-nav ml-auto text-center">
+        
+          
+          
+          
+          
+            <li class="nav-item">
+			<div class = "umami--click--Navigation-Homepage">
+              <a class="nav-link" href="/">
+                <i class="iconfont icon-home-fill"></i>
+                首页
+              </a>
+			  </div>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+			<div class = "umami--click--Navigation-Archive">
+              <a class="nav-link" href="/archives/">
+                <i class="iconfont icon-archive-fill"></i>
+                归档
+              </a>
+			  </div>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+			<div class = "umami--click--Navigation-Category">
+              <a class="nav-link" href="/categories/">
+                <i class="iconfont icon-category-fill"></i>
+                分类
+              </a>
+			  </div>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+			<div class = "umami--click--Navigation-Tag">
+              <a class="nav-link" href="/tags/">
+                <i class="iconfont icon-tags-fill"></i>
+                标签
+              </a>
+			  </div>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+			<div class = "umami--click--Navigation-Friends">
+              <a class="nav-link" href="/links/">
+                <i class="iconfont icon-link-fill"></i>
+                友链
+              </a>
+			  </div>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+			<div class = "umami--click--Navigation-MessageBoard">
+              <a class="nav-link" href="/messagebd/">
+                <i class="iconfont icon-comment"></i>
+                留言板
+              </a>
+			  </div>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+			<div class = "umami--click--Navigation-AboutMe">
+              <a class="nav-link" href="/about/">
+                <i class="iconfont icon-user-fill"></i>
+                关于
+              </a>
+			  </div>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+			<div class = "umami--click--Navigation-SiteMap">
+              <a class="nav-link" href="/site-map/">
+                <i class="iconfont icon-ic_fly"></i>
+                导航
+              </a>
+			  </div>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item dropdown">
+              <a class="nav-link dropdown-toggle" target="_self" href="javascript:;" role="button"
+                 data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                <i class="iconfont icon-tongji2"></i>
+                统计
+              </a>
+              <div class="dropdown-menu" aria-labelledby="navbarDropdown">
+                
+                  
+                  
+                  
+				  <div class = "umami--click--Navigation-Umami">
+                  <a class="dropdown-item" target="_blank" rel="noopener" href="https://101.43.39.125:6287/share/r5OGod2Z/%E5%8F%88%E8%A7%81%E8%8B%8D%E5%B2%9A">
+                    
+                    计数
+                  </a>
+				  </div>
+                
+                  
+                  
+                  
+				  <div class = "umami--click--Navigation-Globe">
+                  <a class="dropdown-item" href="/earth_sta/">
+                    
+                    地球仪
+                  </a>
+				  </div>
+                
+              </div>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item dropdown">
+              <a class="nav-link dropdown-toggle" target="_self" href="javascript:;" role="button"
+                 data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                <i class="iconfont icon-train1"></i>
+                传送
+              </a>
+              <div class="dropdown-menu" aria-labelledby="navbarDropdown">
+                
+                  
+                  
+                  
+				  <div class = "umami--click--Navigation-ForeverBolg">
+                  <a class="dropdown-item" target="_blank" rel="noopener" href="https://www.foreverblog.cn/go.html">
+                    
+                    十年之约
+                  </a>
+				  </div>
+                
+                  
+                  
+                  
+				  <div class = "umami--click--Navigation-DriveTo">
+                  <a class="dropdown-item" target="_blank" rel="noopener" href="https://www.travellings.cn/go.html">
+                    
+                    开往
+                  </a>
+				  </div>
+                
+                  
+                  
+                  
+				  <div class = "umami--click--Navigation-BlogFinder">
+                  <a class="dropdown-item" target="_blank" rel="noopener" href="https://bf.zzxworld.com/">
+                    
+                    BlogFinder
+                  </a>
+				  </div>
+                
+              </div>
+            </li>
+          
+        
+        
+          <li class="nav-item" id="search-btn">
+            <a class="nav-link" target="_self" href="javascript:;" data-toggle="modal" data-target="#modalSearch" aria-label="Search">
+              &nbsp;<i class="iconfont icon-search"></i>&nbsp;
+            </a>
+          </li>
+          
+        
+        
+          <li class="nav-item" id="color-toggle-btn">
+            <a class="nav-link" target="_self" href="javascript:;" aria-label="Color Toggle">&nbsp;<i
+                class="iconfont icon-dark" id="color-toggle-icon"></i>&nbsp;</a>
+          </li>
+        
+      </ul>
+    </div>
+  </div>
+</nav>
+
+  
+
+<div id="banner" class="banner" parallax=true
+     style="background: url('https://101.43.39.125/HexoFiles/new/bg-trans.png') no-repeat center center; background-size: cover;">
+  <div class="full-bg-img">
+    <div class="mask flex-center" style="background-color: rgba(0, 0, 0, 0)">
+      <div class="banner-text text-center fade-in-up">
+        <div class="h2">
+          
+            <span id="subtitle">自动查找适用于模板匹配的纹理区域</span>
+          
+        </div>
+
+        
+          
+  <div class="mt-3">
+    
+      <span class="post-meta mr-2">
+        <i class="iconfont icon-author" aria-hidden="true"></i>
+        Yiwei Zhang
+      </span>
+    
+    
+      <span class="post-meta">
+        <i class="iconfont icon-date-fill" aria-hidden="true"></i>
+        <time datetime="2023-02-16 10:06" pubdate>
+          2023年2月16日 上午
+        </time>
+      </span>
+    
+  </div>
+
+  <div class="mt-1">
+    
+      <span class="post-meta mr-2">
+        <i class="iconfont icon-chart"></i>
+        
+          <!-- compatible with older versions-->
+          19k 字
+        
+      </span>
+    
+
+    
+      <span class="post-meta mr-2">
+        <i class="iconfont icon-clock-fill"></i>
+        
+        
+        
+          <!-- compatible with older versions-->
+          155 分钟
+        
+      </span>
+    
+
+    
+    
+      
+        <span id="vvdpost_container_page_pvuv" style="display: none">
+          <i class="iconfont icon-eye" aria-hidden="true"></i>
+          <span id="vvdpost_value_page_pv">0</span> 次&nbsp&nbsp
+		  <i class="iconfont icon-users" aria-hidden="true"></i>
+		  <span id="vvdpost_value_page_uv">0</span> 人&nbsp&nbsp
+		  <i class="iconfont icon-comment" aria-hidden="true"></i>
+		  <span id="vvdpost_value_page_cn">0</span> 条
+        </span>
+
+		<script>
+			console.log(window.location.pathname)
+			var httpRequest = new XMLHttpRequest();
+			httpRequest.open('POST', 'https://101.43.39.125:6101/poststats', true);
+			httpRequest.setRequestHeader("Content-type","application/json");
+			httpRequest.send(JSON.stringify(window.location.pathname));
+			httpRequest.onreadystatechange = function () {//请求后的回调接口，可将请求成功后要执行的程序写在其中
+				if (httpRequest.readyState == 4 && httpRequest.status == 200) {//验证请求是否发送成功
+					var json = httpRequest.responseText;//获取到服务端返回的数据
+					var obj = JSON.parse(json);
+					var pvCtn = document.querySelector('#vvdpost_container_page_pvuv');
+					if (pvCtn) {
+						var pv_ele = document.querySelector('#vvdpost_value_page_pv');
+						var uv_ele = document.querySelector('#vvdpost_value_page_uv');
+						var cn_ele = document.querySelector('#vvdpost_value_page_cn');
+
+						if (uv_ele && uv_ele) {
+							pv_ele.innerText = obj.pv;
+							uv_ele.innerText = obj.uv;
+							cn_ele.innerText = obj.cn;
+							pvCtn.style.display = 'inline';
+							}
+						}
+					}
+			};
+		</script>
+      
+    
+  </div>
+
+
+        
+      </div>
+
+      
+        <div class="scroll-down-bar">
+          <i class="iconfont icon-arrowdown"></i>
+        </div>
+      
+    </div>
+  </div>
+</div>
+
+</div>
+
+	<script type="text/javascript" src="/vvd_js/jquery.js"></script>
+	<script async defer data-website-id="bd35c321-57fd-4b1b-8782-846263caa370" src="https://101.43.39.125:6287/umami.js"></script>
+
+	<div class="banner" id='banner' >
+
+		<div class="full-bg-img" >
+
+			
+				<script>
+					var ua = navigator.userAgent;
+					var ipad = ua.match(/(iPad).*OS\s([\d_]+)/),
+						isIphone = !ipad && ua.match(/(iPhone\sOS)\s([\d_]+)/),
+						isAndroid = ua.match(/(Android)\s+([\d.]+)/),
+						isMobile = isIphone || isAndroid;
+
+					function set_video_attr(id){
+						var height = document.body.clientHeight
+						var width = document.body.clientWidth
+						var video_item = document.getElementById(id);
+
+						if (height / width < 0.56){
+							video_item.setAttribute('width', '100%');
+							video_item.setAttribute('height', 'auto');
+						} else {
+							video_item.setAttribute('height', '100%');
+							video_item.setAttribute('width', 'auto');
+						}
+					}
+
+					$.getJSON('/vvd_js/video_url.json', function(data){
+						if (true){
+							var video_list_length = data.length
+							var seed = Math.random()
+							index = Math.floor(seed * video_list_length)
+
+							video_url = data[index][0]
+							pre_show_image_url = data[index][1]
+
+							banner_obj = document.getElementById("banner")
+							banner_obj.style.cssText = "background: url('" + pre_show_image_url + "') no-repeat;"
+
+							vvd_banner_obj = document.getElementById("vvd_banner_img")
+							vvd_banner_content = "<img id='banner_img_item' src='" + pre_show_image_url + "'style='position: fixed; z-index: -999'>"
+							vvd_banner_obj.innerHTML = vvd_banner_content 
+
+							if (!isMobile) {
+								video_html_res = "<video id='video_item' style='position: fixed; z-index: -888;'  muted='muted' src=" + video_url + " autoplay='autoplay' loop='loop'></video>"
+								document.getElementById("banner_video_insert").innerHTML = video_html_res;
+								set_video_attr('video_item')
+								set_video_attr('banner_img_item')
+							}
+						}
+					});
+
+					if (!isMobile){
+						window.onresize = function(){
+							set_video_attr('video_item')
+							set_video_attr('banner_img_item')
+							}
+						}
+				</script>
+			
+			</div>
+		</div>
+    </div>
+  </header>
+
+  <main>
+    
+      
+
+
+
+<div class="container-fluid nopadding-x">
+  <div class="row nomargin-x">
+    <div class="side-col d-none d-lg-block col-lg-2">
+      
+
+    </div>
+
+    <div class="col-lg-8 nopadding-x-md">
+      <div class="container nopadding-x-md" id="board-ctn">
+        <div id="board">
+          <article class="post-content mx-auto">
+            <!-- SEO header -->
+            <h1 style="display: none">自动查找适用于模板匹配的纹理区域</h1>
+            
+              <p class="note note-info">
+                
+                  
+                    <!-- compatible with older versions-->
+                    本文最后更新于：2023年5月17日 晚上
+                  
+                
+              </p>
+            
+            
+              <div class="markdown-body">
+                
+                <blockquote>
+<p>模板匹配是图像处理中常用的精对位手段，但不是所有的区域都适用于模板匹配，本文提出一种启发式的自动搜索纹理区域的方法。</p>
+</blockquote>
+<span id="more"></span>
+<h3 id="实现目标">实现目标</h3>
+<ol>
+<li>初始化配置完成后仅需要输入图像</li>
+<li>输出最适用于模板匹配的纹理矩形区域</li>
+<li>大小可变</li>
+<li>速度不能太慢（几秒内）</li>
+</ol>
+<h3 id="核心思想">核心思想</h3>
+<h4 id="整体路线">整体路线</h4>
+<p>为了在全图范围内找到适合模板匹配的纹理区域，需要在全图范围内的指定尺寸窗口中计算是否适合模板匹配的分值</p>
+<p>难点主要在于给定一个窗口如何评价这个窗口内的图像是否适合用于模板匹配，另一个问题是对每个窗口都做复杂的评估需要巨大运算量，如果兼顾不同尺寸的窗口，可能需要很长时间计算，需要在效果和运算量上做取舍和平衡。</p>
+<h4 id="基本思想">基本思想</h4>
+<p>将需求拆分成三个维度：</p>
+<ol>
+<li>目标区域需要和周围图像像素差异大</li>
+<li>目标区域纹理丰富</li>
+<li>目标区域与周围纹理特征差异大</li>
+</ol>
+<h4 id="实现思路">实现思路</h4>
+<ol>
+<li>为了兼顾多种尺寸，难以做出细粒度的纹理评估方法，采用固定几种窗口尺寸的策略折中进行评估</li>
+<li>在每种尺寸下使用 <code>Hog特征</code>作为基础，生成<code>纹理强度特征</code>和<code>邻域相似度特征</code>，再生成<code>残差特征</code></li>
+<li>将三种特征归一化后合并得到最终适合模板匹配的得分 Map</li>
+<li>取得分最高的作为输出结果</li>
+</ol>
+<h3 id="特征生成">特征生成</h3>
+<h4 id="图像预处理">图像预处理</h4>
+<p>原图如果太大需要下采样到合适的尺寸</p>
+<h4 id="窗口尺寸">窗口尺寸</h4>
+<p>64 - 256 * 64 - 256，步长为 64，一共16种尺寸</p>
+<h4 id="残差特征">残差特征</h4>
+<p>当前图像在 8 个方向上计算梯度，求得 8  组梯度特征，在一个小窗口内对梯度平方求和，取每个位置下最小梯度作为该位置的梯度特征，归一化后得到残差特征。</p>
+<h4 id="Hog-特征">Hog 特征</h4>
+<p>45度为步进角度计算 Hog 特征，在所有尺寸下制作 Hog 特征和矩阵，作为生成纹理和邻域相似特征的基础</p>
+<h4 id="纹理强度特征">纹理强度特征</h4>
+<p>不希望细密的纹理称为精对位的核心纹理，因此计算纹理强度特征时，Hog 特征原始图像经过了中值滤波</p>
+<p>在每种尺寸的 Hog 特征和矩阵中，计算每个位置所有方向的 Hog 特征平方和作为纹理强度特征</p>
+<h4 id="邻域相似特征">邻域相似特征</h4>
+<p>在每种尺寸的 Hog 特征和矩阵中，计算每个位置与周围（上下左右）的 Hog 不同方向特征的最小差异作为该尺寸下该位置的邻域相似特征</p>
+<h3 id="结果汇总">结果汇总</h3>
+<p>将结果做归一化，汇总得到统一的纹理强度 Map，取前几高分值作为结果返回</p>
+<blockquote>
+<p>本质上是局部纹理特征的独特性搜索，并不是全局唯一</p>
+</blockquote>
+<p><img src="https://101.43.39.125/HexoFiles/vvd_file_mt/202305161158279.jpg" srcset="/img/loading.gif" lazyload alt=""></p>
+<h3 id="问题">问题</h3>
+<ul>
+<li>最主要的问题是没有提出合理的结果评估方法</li>
+<li>没有评估就无法做消融实验，因此算法设计是启发式的</li>
+<li>已经尽量做了速度优化，但还是需要几秒，主要是兼容多种尺寸浪费了很多时间</li>
+</ul>
+<h3 id="Python-源码">Python 源码</h3>
+  <details>  
+  <summary>Demo Code</summary>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br><span class="line">84</span><br><span class="line">85</span><br><span class="line">86</span><br><span class="line">87</span><br><span class="line">88</span><br><span class="line">89</span><br><span class="line">90</span><br><span class="line">91</span><br><span class="line">92</span><br><span class="line">93</span><br><span class="line">94</span><br><span class="line">95</span><br><span class="line">96</span><br><span class="line">97</span><br><span class="line">98</span><br><span class="line">99</span><br><span class="line">100</span><br><span class="line">101</span><br><span class="line">102</span><br><span class="line">103</span><br><span class="line">104</span><br><span class="line">105</span><br><span class="line">106</span><br><span class="line">107</span><br><span class="line">108</span><br><span class="line">109</span><br><span class="line">110</span><br><span class="line">111</span><br><span class="line">112</span><br><span class="line">113</span><br><span class="line">114</span><br><span class="line">115</span><br><span class="line">116</span><br><span class="line">117</span><br><span class="line">118</span><br><span class="line">119</span><br><span class="line">120</span><br><span class="line">121</span><br><span class="line">122</span><br><span class="line">123</span><br><span class="line">124</span><br><span class="line">125</span><br><span class="line">126</span><br><span class="line">127</span><br><span class="line">128</span><br><span class="line">129</span><br><span class="line">130</span><br><span class="line">131</span><br><span class="line">132</span><br><span class="line">133</span><br><span class="line">134</span><br><span class="line">135</span><br><span class="line">136</span><br><span class="line">137</span><br><span class="line">138</span><br><span class="line">139</span><br><span class="line">140</span><br><span class="line">141</span><br><span class="line">142</span><br><span class="line">143</span><br><span class="line">144</span><br><span class="line">145</span><br><span class="line">146</span><br><span class="line">147</span><br><span class="line">148</span><br><span class="line">149</span><br><span class="line">150</span><br><span class="line">151</span><br><span class="line">152</span><br><span class="line">153</span><br><span class="line">154</span><br><span class="line">155</span><br><span class="line">156</span><br><span class="line">157</span><br><span class="line">158</span><br><span class="line">159</span><br><span class="line">160</span><br><span class="line">161</span><br><span class="line">162</span><br><span class="line">163</span><br><span class="line">164</span><br><span class="line">165</span><br><span class="line">166</span><br><span class="line">167</span><br><span class="line">168</span><br><span class="line">169</span><br><span class="line">170</span><br><span class="line">171</span><br><span class="line">172</span><br><span class="line">173</span><br><span class="line">174</span><br><span class="line">175</span><br><span class="line">176</span><br><span class="line">177</span><br><span class="line">178</span><br><span class="line">179</span><br><span class="line">180</span><br><span class="line">181</span><br><span class="line">182</span><br><span class="line">183</span><br><span class="line">184</span><br><span class="line">185</span><br><span class="line">186</span><br><span class="line">187</span><br><span class="line">188</span><br><span class="line">189</span><br><span class="line">190</span><br><span class="line">191</span><br><span class="line">192</span><br><span class="line">193</span><br><span class="line">194</span><br><span class="line">195</span><br><span class="line">196</span><br><span class="line">197</span><br><span class="line">198</span><br><span class="line">199</span><br><span class="line">200</span><br><span class="line">201</span><br><span class="line">202</span><br><span class="line">203</span><br><span class="line">204</span><br><span class="line">205</span><br><span class="line">206</span><br><span class="line">207</span><br><span class="line">208</span><br><span class="line">209</span><br><span class="line">210</span><br><span class="line">211</span><br><span class="line">212</span><br><span class="line">213</span><br><span class="line">214</span><br><span class="line">215</span><br><span class="line">216</span><br><span class="line">217</span><br><span class="line">218</span><br><span class="line">219</span><br><span class="line">220</span><br><span class="line">221</span><br><span class="line">222</span><br><span class="line">223</span><br><span class="line">224</span><br><span class="line">225</span><br><span class="line">226</span><br><span class="line">227</span><br><span class="line">228</span><br><span class="line">229</span><br><span class="line">230</span><br><span class="line">231</span><br><span class="line">232</span><br><span class="line">233</span><br><span class="line">234</span><br><span class="line">235</span><br><span class="line">236</span><br><span class="line">237</span><br><span class="line">238</span><br><span class="line">239</span><br><span class="line">240</span><br><span class="line">241</span><br><span class="line">242</span><br><span class="line">243</span><br><span class="line">244</span><br><span class="line">245</span><br><span class="line">246</span><br><span class="line">247</span><br><span class="line">248</span><br><span class="line">249</span><br><span class="line">250</span><br><span class="line">251</span><br><span class="line">252</span><br><span class="line">253</span><br><span class="line">254</span><br><span class="line">255</span><br><span class="line">256</span><br><span class="line">257</span><br><span class="line">258</span><br><span class="line">259</span><br><span class="line">260</span><br><span class="line">261</span><br><span class="line">262</span><br><span class="line">263</span><br><span class="line">264</span><br><span class="line">265</span><br><span class="line">266</span><br><span class="line">267</span><br><span class="line">268</span><br><span class="line">269</span><br><span class="line">270</span><br><span class="line">271</span><br><span class="line">272</span><br><span class="line">273</span><br><span class="line">274</span><br><span class="line">275</span><br><span class="line">276</span><br><span class="line">277</span><br><span class="line">278</span><br><span class="line">279</span><br><span class="line">280</span><br><span class="line">281</span><br><span class="line">282</span><br><span class="line">283</span><br><span class="line">284</span><br><span class="line">285</span><br><span class="line">286</span><br><span class="line">287</span><br><span class="line">288</span><br><span class="line">289</span><br><span class="line">290</span><br><span class="line">291</span><br><span class="line">292</span><br><span class="line">293</span><br><span class="line">294</span><br><span class="line">295</span><br><span class="line">296</span><br><span class="line">297</span><br><span class="line">298</span><br><span class="line">299</span><br><span class="line">300</span><br><span class="line">301</span><br><span class="line">302</span><br><span class="line">303</span><br><span class="line">304</span><br><span class="line">305</span><br><span class="line">306</span><br><span class="line">307</span><br><span class="line">308</span><br><span class="line">309</span><br><span class="line">310</span><br><span class="line">311</span><br><span class="line">312</span><br><span class="line">313</span><br><span class="line">314</span><br><span class="line">315</span><br><span class="line">316</span><br><span class="line">317</span><br><span class="line">318</span><br><span class="line">319</span><br><span class="line">320</span><br><span class="line">321</span><br><span class="line">322</span><br><span class="line">323</span><br><span class="line">324</span><br><span class="line">325</span><br><span class="line">326</span><br><span class="line">327</span><br><span class="line">328</span><br><span class="line">329</span><br><span class="line">330</span><br><span class="line">331</span><br><span class="line">332</span><br><span class="line">333</span><br><span class="line">334</span><br><span class="line">335</span><br><span class="line">336</span><br><span class="line">337</span><br><span class="line">338</span><br><span class="line">339</span><br><span class="line">340</span><br><span class="line">341</span><br><span class="line">342</span><br><span class="line">343</span><br><span class="line">344</span><br><span class="line">345</span><br><span class="line">346</span><br><span class="line">347</span><br><span class="line">348</span><br><span class="line">349</span><br><span class="line">350</span><br><span class="line">351</span><br><span class="line">352</span><br><span class="line">353</span><br><span class="line">354</span><br><span class="line">355</span><br><span class="line">356</span><br><span class="line">357</span><br><span class="line">358</span><br><span class="line">359</span><br><span class="line">360</span><br><span class="line">361</span><br><span class="line">362</span><br><span class="line">363</span><br><span class="line">364</span><br><span class="line">365</span><br><span class="line">366</span><br><span class="line">367</span><br><span class="line">368</span><br><span class="line">369</span><br><span class="line">370</span><br><span class="line">371</span><br><span class="line">372</span><br><span class="line">373</span><br><span class="line">374</span><br><span class="line">375</span><br><span class="line">376</span><br><span class="line">377</span><br><span class="line">378</span><br><span class="line">379</span><br><span class="line">380</span><br><span class="line">381</span><br><span class="line">382</span><br><span class="line">383</span><br><span class="line">384</span><br><span class="line">385</span><br><span class="line">386</span><br><span class="line">387</span><br><span class="line">388</span><br><span class="line">389</span><br><span class="line">390</span><br><span class="line">391</span><br><span class="line">392</span><br><span class="line">393</span><br><span class="line">394</span><br><span class="line">395</span><br><span class="line">396</span><br><span class="line">397</span><br><span class="line">398</span><br><span class="line">399</span><br><span class="line">400</span><br><span class="line">401</span><br><span class="line">402</span><br><span class="line">403</span><br><span class="line">404</span><br><span class="line">405</span><br><span class="line">406</span><br><span class="line">407</span><br><span class="line">408</span><br><span class="line">409</span><br><span class="line">410</span><br></pre></td><td class="code"><pre><code class="hljs python"><span class="hljs-keyword">import</span> mtutils <span class="hljs-keyword">as</span> mt<br><span class="hljs-keyword">import</span> numpy <span class="hljs-keyword">as</span> np<br><span class="hljs-keyword">import</span> cv2<br><span class="hljs-keyword">import</span> time<br><span class="hljs-keyword">class</span> <span class="hljs-title class_">UniqueZone</span>:<br>    <span class="hljs-keyword">def</span> <span class="hljs-title function_">__init__</span>(<span class="hljs-params">self, crop_step=<span class="hljs-number">5</span>, angle_step=<span class="hljs-number">45</span>, size_max=<span class="hljs-number">256</span>, size_step=<span class="hljs-number">64</span>, search_step=<span class="hljs-number">4</span>, search_num=<span class="hljs-number">5</span>, pattern_dis=<span class="hljs-number">6</span>, blur_kernel=<span class="hljs-number">7</span>, resize_target=<span class="hljs-number">400</span>, max_factor=<span class="hljs-number">15</span></span>) -&gt; <span class="hljs-literal">None</span>:<br>        <span class="hljs-keyword">assert</span> size_step &lt; size_max<br>        self.angle_step = angle_step<br>        self.crop_step = crop_step<br>        self.size_max = size_max<br>        self.size_step = size_step<br>        self.search_step = search_step<br>        self.search_num = search_num<br>        self.pattern_dis = pattern_dis<br>        self.blur_kernel = blur_kernel<br>        self.resize_target = resize_target<br>        self.max_factor = max_factor<br><span class="hljs-meta">    @staticmethod</span><br>    <span class="hljs-keyword">def</span> <span class="hljs-title function_">gradient_integral_map</span>(<span class="hljs-params">img, angle_step</span>):<br>        H, W = img.shape[:<span class="hljs-number">2</span>]<br><br>        <span class="hljs-comment">#  梯度积分图</span><br>        angle_feature_channel_num = <span class="hljs-number">360</span> // angle_step<br>        hog_matrix = np.zeros([H+<span class="hljs-number">1</span>, W+<span class="hljs-number">1</span>, angle_feature_channel_num], dtype=<span class="hljs-string">&#x27;float32&#x27;</span>)<br>        hog_gra_matrix = np.zeros([H, W, angle_feature_channel_num], dtype=<span class="hljs-string">&#x27;float32&#x27;</span>)<br><br>        gx = cv2.Sobel(img, cv2.CV_32F, <span class="hljs-number">1</span>, <span class="hljs-number">0</span>, ksize=<span class="hljs-number">1</span>)<br>        gy = cv2.Sobel(img, cv2.CV_32F, <span class="hljs-number">0</span>, <span class="hljs-number">1</span>, ksize=<span class="hljs-number">1</span>)<br><br>        mag, angle = cv2.cartToPolar(gx, gy, angleInDegrees=<span class="hljs-literal">True</span>)<br>        angle_index = (angle / angle_step).<span class="hljs-built_in">round</span>().astype(<span class="hljs-string">&#x27;uint8&#x27;</span>)<br><br>        <span class="hljs-keyword">for</span> channel_index <span class="hljs-keyword">in</span> <span class="hljs-built_in">range</span>(angle_feature_channel_num):<br>            temp_map = mag * (angle_index == channel_index)<br>            hog_gra_matrix[:,:,channel_index] = temp_map<br>            sum_map = cv2.integral(temp_map.astype(<span class="hljs-string">&#x27;float64&#x27;</span>))<br>            hog_matrix[:,:,channel_index] = sum_map<br><br>        <span class="hljs-keyword">return</span> hog_matrix, hog_gra_matrix<br><br><span class="hljs-meta">    @staticmethod</span><br>    <span class="hljs-keyword">def</span> <span class="hljs-title function_">make_map_for_size</span>(<span class="hljs-params">hog_matrix, crop_width, crop_height</span>):<br>        H, W, C = hog_matrix.shape[:<span class="hljs-number">3</span>]<br>        <span class="hljs-keyword">if</span> crop_width &gt;= W <span class="hljs-keyword">or</span> crop_height &gt;= H:<br>            <span class="hljs-keyword">return</span> <span class="hljs-literal">None</span><br>        result_map = np.zeros([H-crop_height, W-crop_width, C])<br>        result_map = hog_matrix[crop_height:, crop_width:, :] - hog_matrix[crop_height:, :-crop_width] - hog_matrix[:-crop_height, crop_width:] + hog_matrix[:-crop_height, :-crop_width]<br>        <span class="hljs-keyword">return</span> result_map<br><br><br>    <span class="hljs-keyword">def</span> <span class="hljs-title function_">get_score</span>(<span class="hljs-params">self, result_map_normed, x_index, y_index</span>):<br>        H, W = result_map_normed.shape[:<span class="hljs-number">2</span>]<br>        res_score = <span class="hljs-number">999999</span><br><br>        <span class="hljs-keyword">def</span> <span class="hljs-title function_">cal_score</span>(<span class="hljs-params">res_data, res_score</span>):<br>            score = (<span class="hljs-number">1</span> - (res_data.<span class="hljs-built_in">sum</span>(axis=<span class="hljs-number">1</span>) ** <span class="hljs-number">4</span>)).mean()<br>            <span class="hljs-keyword">if</span> res_score &gt; score:<br>                res_score = score<br>            <span class="hljs-keyword">return</span> res_score<br><br>        <span class="hljs-comment"># top</span><br>        top_matrix = result_map_normed[<span class="hljs-built_in">max</span>(<span class="hljs-number">0</span>, y_index - self.search_num * self.search_step):y_index:self.search_step, x_index , :]<br>        <span class="hljs-keyword">if</span> <span class="hljs-built_in">min</span>(top_matrix.shape[:<span class="hljs-number">2</span>]) &gt; <span class="hljs-number">2</span>:<br>            res_data = top_matrix * result_map_normed[y_index, x_index, :]<br>            res_score = cal_score(res_data, res_score)<br><br>        <span class="hljs-comment"># bottom</span><br>        bottom_matrix = result_map_normed[y_index:<span class="hljs-built_in">min</span>(H, y_index + self.search_num * self.search_step):self.search_step, x_index , :]<br>        <span class="hljs-keyword">if</span> <span class="hljs-built_in">min</span>(bottom_matrix.shape[:<span class="hljs-number">2</span>]) &gt; <span class="hljs-number">2</span>:<br>            res_data = bottom_matrix * result_map_normed[y_index, x_index, :]<br>            res_score = cal_score(res_data, res_score)<br><br>        <span class="hljs-comment"># left</span><br>        left_matrix = result_map_normed[y_index, <span class="hljs-built_in">max</span>(<span class="hljs-number">0</span>, x_index - self.search_num * self.search_step):x_index:self.search_step, :]<br>        <span class="hljs-keyword">if</span> <span class="hljs-built_in">min</span>(left_matrix.shape[:<span class="hljs-number">2</span>]) &gt; <span class="hljs-number">2</span>:<br>            res_data = left_matrix * result_map_normed[y_index, x_index, :]<br>            res_score = cal_score(res_data, res_score)<br><br>        <span class="hljs-comment"># right</span><br>        right_matrix = result_map_normed[y_index, x_index:<span class="hljs-built_in">min</span>(W, x_index + self.search_num * self.search_step):self.search_step, :]<br>        <span class="hljs-keyword">if</span> <span class="hljs-built_in">min</span>(right_matrix.shape[:<span class="hljs-number">2</span>]) &gt; <span class="hljs-number">2</span>:<br>            res_data = right_matrix * result_map_normed[y_index, x_index , :]<br>            res_score = cal_score(res_data, res_score)<br><br>        <span class="hljs-keyword">return</span> res_score<br><br>    <span class="hljs-keyword">def</span> <span class="hljs-title function_">edge_map</span>(<span class="hljs-params">self, result_map</span>):<br>        H, W = result_map.shape[:<span class="hljs-number">2</span>]<br>        result_map_normed = result_map / (((result_map ** <span class="hljs-number">2</span>).<span class="hljs-built_in">sum</span>(axis=<span class="hljs-number">2</span>)) ** <span class="hljs-number">0.5</span>)[:,:,<span class="hljs-literal">None</span>]<br><br>        <span class="hljs-comment"># start = time.time()</span><br>        win_size = self.search_num * self.search_step<br>        pad_map = mt.image_border_move(result_map_normed, win_size, value=<span class="hljs-number">0.4</span>)<br><br>        result_map = np.zeros([H, W, <span class="hljs-number">8</span>], <span class="hljs-string">&quot;float32&quot;</span>)<br><br>        temp_map = np.zeros([H, W, self.search_num-<span class="hljs-number">1</span>], dtype=<span class="hljs-string">&#x27;float32&#x27;</span>)<br><br>        <span class="hljs-comment"># left</span><br>        <span class="hljs-keyword">for</span> index <span class="hljs-keyword">in</span> <span class="hljs-built_in">range</span>(<span class="hljs-number">1</span>, self.search_num):<br>            temp_map[:,:,index-<span class="hljs-number">1</span>] = np.clip((result_map_normed * pad_map[win_size:H+win_size, win_size - index*self.search_step:win_size+W - index*self.search_step]).<span class="hljs-built_in">sum</span>(axis=<span class="hljs-number">2</span>), <span class="hljs-literal">None</span>, <span class="hljs-number">1</span>)<br>        result_map[:,:,<span class="hljs-number">0</span>] = (<span class="hljs-number">1</span> - temp_map ** <span class="hljs-number">4</span>).mean(axis=<span class="hljs-number">2</span>)<br>        <span class="hljs-comment"># left top</span><br>        <span class="hljs-keyword">for</span> index <span class="hljs-keyword">in</span> <span class="hljs-built_in">range</span>(<span class="hljs-number">1</span>, self.search_num):<br>            temp_map[:,:,index-<span class="hljs-number">1</span>] = np.clip((result_map_normed * pad_map[win_size - index*self.search_step:H+win_size - index*self.search_step, win_size - index*self.search_step:win_size+W - index*self.search_step]).<span class="hljs-built_in">sum</span>(axis=<span class="hljs-number">2</span>), <span class="hljs-literal">None</span>, <span class="hljs-number">1</span>)<br>        result_map[:,:,<span class="hljs-number">1</span>] = (<span class="hljs-number">1</span> - temp_map ** <span class="hljs-number">4</span>).mean(axis=<span class="hljs-number">2</span>)<br>        <span class="hljs-comment"># top</span><br>        <span class="hljs-keyword">for</span> index <span class="hljs-keyword">in</span> <span class="hljs-built_in">range</span>(<span class="hljs-number">1</span>, self.search_num):<br>            temp_map[:,:,index-<span class="hljs-number">1</span>] = np.clip((result_map_normed * pad_map[win_size - index*self.search_step:H+win_size - index*self.search_step, win_size:win_size+W]).<span class="hljs-built_in">sum</span>(axis=<span class="hljs-number">2</span>), <span class="hljs-literal">None</span>, <span class="hljs-number">1</span>)<br>        result_map[:,:,<span class="hljs-number">2</span>] = (<span class="hljs-number">1</span> - temp_map ** <span class="hljs-number">4</span>).mean(axis=<span class="hljs-number">2</span>)<br>        <span class="hljs-comment"># right top</span><br>        <span class="hljs-keyword">for</span> index <span class="hljs-keyword">in</span> <span class="hljs-built_in">range</span>(<span class="hljs-number">1</span>, self.search_num):<br>            temp_map[:,:,index-<span class="hljs-number">1</span>] = np.clip((result_map_normed * pad_map[win_size - index*self.search_step:H+win_size - index*self.search_step, win_size + index*self.search_step:win_size+W + index*self.search_step]).<span class="hljs-built_in">sum</span>(axis=<span class="hljs-number">2</span>), <span class="hljs-literal">None</span>, <span class="hljs-number">1</span>)<br>        result_map[:,:,<span class="hljs-number">3</span>] = (<span class="hljs-number">1</span> - temp_map ** <span class="hljs-number">4</span>).mean(axis=<span class="hljs-number">2</span>)<br>        <span class="hljs-comment"># right</span><br>        <span class="hljs-keyword">for</span> index <span class="hljs-keyword">in</span> <span class="hljs-built_in">range</span>(<span class="hljs-number">1</span>, self.search_num):<br>            temp_map[:,:,index-<span class="hljs-number">1</span>] = np.clip((result_map_normed * pad_map[win_size:H+win_size, win_size + index*self.search_step:win_size+W + index*self.search_step]).<span class="hljs-built_in">sum</span>(axis=<span class="hljs-number">2</span>), <span class="hljs-literal">None</span>, <span class="hljs-number">1</span>)<br>        result_map[:,:,<span class="hljs-number">4</span>] = (<span class="hljs-number">1</span> - temp_map ** <span class="hljs-number">4</span>).mean(axis=<span class="hljs-number">2</span>)<br>        <span class="hljs-comment"># right bottom</span><br>        <span class="hljs-keyword">for</span> index <span class="hljs-keyword">in</span> <span class="hljs-built_in">range</span>(<span class="hljs-number">1</span>, self.search_num):<br>            temp_map[:,:,index-<span class="hljs-number">1</span>] = np.clip((result_map_normed * pad_map[win_size + index*self.search_step:H+win_size + index*self.search_step, win_size + index*self.search_step:win_size+W + index*self.search_step]).<span class="hljs-built_in">sum</span>(axis=<span class="hljs-number">2</span>), <span class="hljs-literal">None</span>, <span class="hljs-number">1</span>)<br>        result_map[:,:,<span class="hljs-number">5</span>] = (<span class="hljs-number">1</span> - temp_map ** <span class="hljs-number">4</span>).mean(axis=<span class="hljs-number">2</span>)<br>        <span class="hljs-comment"># bottom</span><br>        <span class="hljs-keyword">for</span> index <span class="hljs-keyword">in</span> <span class="hljs-built_in">range</span>(<span class="hljs-number">1</span>, self.search_num):<br>            temp_map[:,:,index-<span class="hljs-number">1</span>] = np.clip((result_map_normed * pad_map[win_size + index*self.search_step:H+win_size + index*self.search_step, win_size:win_size+W]).<span class="hljs-built_in">sum</span>(axis=<span class="hljs-number">2</span>), <span class="hljs-literal">None</span>, <span class="hljs-number">1</span>)<br>        result_map[:,:,<span class="hljs-number">6</span>] = (<span class="hljs-number">1</span> - temp_map ** <span class="hljs-number">4</span>).mean(axis=<span class="hljs-number">2</span>)<br>        <span class="hljs-comment"># left bottom</span><br>        <span class="hljs-keyword">for</span> index <span class="hljs-keyword">in</span> <span class="hljs-built_in">range</span>(<span class="hljs-number">1</span>, self.search_num):<br>            temp_map[:,:,index-<span class="hljs-number">1</span>] = np.clip((result_map_normed * pad_map[win_size + index*self.search_step:H+win_size + index*self.search_step, win_size - index*self.search_step:win_size+W - index*self.search_step]).<span class="hljs-built_in">sum</span>(axis=<span class="hljs-number">2</span>), <span class="hljs-literal">None</span>, <span class="hljs-number">1</span>)<br>        result_map[:,:,<span class="hljs-number">7</span>] = (<span class="hljs-number">1</span> - temp_map ** <span class="hljs-number">4</span>).mean(axis=<span class="hljs-number">2</span>)<br>        <br>        score_map = result_map.<span class="hljs-built_in">min</span>(axis=<span class="hljs-number">2</span>)<br>        <span class="hljs-comment"># print(f&quot;new time &#123;time.time() - start&#125;&quot;)</span><br>        <span class="hljs-comment"># start = time.time()</span><br>        <span class="hljs-comment"># score_map2 = np.zeros([H, W], &quot;float32&quot;)</span><br><br>        <span class="hljs-comment"># x_index = 0</span><br>        <span class="hljs-comment"># while x_index &lt; W:</span><br>        <span class="hljs-comment">#     y_index = 0</span><br>        <span class="hljs-comment">#     while y_index &lt; H:</span><br>        <span class="hljs-comment">#         score_map2[y_index, x_index] = self.get_score(result_map_normed, x_index, y_index)</span><br>        <span class="hljs-comment">#         y_index += 1</span><br>        <span class="hljs-comment">#     x_index += 1</span><br>        <span class="hljs-comment"># print(f&quot;old time &#123;time.time() - start&#125;&quot;)</span><br>        <span class="hljs-keyword">return</span> score_map<br><br><br>    <span class="hljs-keyword">def</span> <span class="hljs-title function_">edge_map2</span>(<span class="hljs-params">self, result_map</span>):<br>        H, W = result_map.shape[:<span class="hljs-number">2</span>]<br><br>        <span class="hljs-comment"># start = time.time()</span><br>        win_size = self.search_num * self.search_step<br>        pad_map = mt.image_border_move(result_map, win_size, value=<span class="hljs-number">0</span>)<br><br>        temp_map = np.zeros([H, W, (self.search_num-<span class="hljs-number">1</span>) * <span class="hljs-number">4</span>, result_map.shape[-<span class="hljs-number">1</span>]], dtype=<span class="hljs-string">&#x27;float32&#x27;</span>)<br><br>        <span class="hljs-comment"># left</span><br>        g_index = <span class="hljs-number">0</span><br>        <span class="hljs-keyword">for</span> index <span class="hljs-keyword">in</span> <span class="hljs-built_in">range</span>(<span class="hljs-number">1</span>, self.search_num):<br>            temp_map[:,:,index-<span class="hljs-number">1</span> + g_index * (self.search_num-<span class="hljs-number">1</span>)] = result_map - pad_map[win_size:H+win_size, win_size - index*self.search_step:win_size+W - index*self.search_step]<br><br>        <span class="hljs-comment"># # left top</span><br>        <span class="hljs-comment"># g_index = 1</span><br>        <span class="hljs-comment"># for index in range(1, self.search_num):</span><br>        <span class="hljs-comment">#     temp_map[:,:,index-1 + g_index * (self.search_num-1)] = result_map - pad_map[win_size - index*self.search_step:H+win_size - index*self.search_step, win_size - index*self.search_step:win_size+W - index*self.search_step]</span><br><br>        <span class="hljs-comment"># top</span><br>        g_index = <span class="hljs-number">1</span><br>        <span class="hljs-keyword">for</span> index <span class="hljs-keyword">in</span> <span class="hljs-built_in">range</span>(<span class="hljs-number">1</span>, self.search_num):<br>            temp_map[:,:,index-<span class="hljs-number">1</span> + g_index * (self.search_num-<span class="hljs-number">1</span>)] = result_map - pad_map[win_size - index*self.search_step:H+win_size - index*self.search_step, win_size:win_size+W]<br><br>        <span class="hljs-comment"># # right top</span><br>        <span class="hljs-comment"># g_index = 3</span><br>        <span class="hljs-comment"># for index in range(1, self.search_num):</span><br>        <span class="hljs-comment">#     temp_map[:,:,index-1 + g_index * (self.search_num-1)] = result_map - pad_map[win_size - index*self.search_step:H+win_size - index*self.search_step, win_size + index*self.search_step:win_size+W + index*self.search_step]</span><br><br>        <span class="hljs-comment"># right</span><br>        g_index = <span class="hljs-number">2</span><br>        <span class="hljs-keyword">for</span> index <span class="hljs-keyword">in</span> <span class="hljs-built_in">range</span>(<span class="hljs-number">1</span>, self.search_num):<br>            temp_map[:,:,index-<span class="hljs-number">1</span> + g_index * (self.search_num-<span class="hljs-number">1</span>)] = result_map - pad_map[win_size:H+win_size, win_size + index*self.search_step:win_size+W + index*self.search_step]<br><br>        <span class="hljs-comment"># # right bottom</span><br>        <span class="hljs-comment"># g_index = 5</span><br>        <span class="hljs-comment"># for index in range(1, self.search_num):</span><br>        <span class="hljs-comment">#     temp_map[:,:,index-1 + g_index * (self.search_num-1)] = result_map - pad_map[win_size + index*self.search_step:H+win_size + index*self.search_step, win_size + index*self.search_step:win_size+W + index*self.search_step]</span><br><br>        <span class="hljs-comment"># bottom</span><br>        g_index = <span class="hljs-number">3</span><br>        <span class="hljs-keyword">for</span> index <span class="hljs-keyword">in</span> <span class="hljs-built_in">range</span>(<span class="hljs-number">1</span>, self.search_num):<br>            temp_map[:,:,index-<span class="hljs-number">1</span> + g_index * (self.search_num-<span class="hljs-number">1</span>)] = result_map - pad_map[win_size + index*self.search_step:H+win_size + index*self.search_step, win_size:win_size+W]<br><br>        <span class="hljs-comment"># # left bottom</span><br>        <span class="hljs-comment"># g_index = 7</span><br>        <span class="hljs-comment"># for index in range(1, self.search_num):</span><br>        <span class="hljs-comment">#     temp_map[:,:,index-1 + g_index * (self.search_num-1)] = result_map - pad_map[win_size + index*self.search_step:H+win_size + index*self.search_step, win_size - index*self.search_step:win_size+W - index*self.search_step]</span><br><br>        <span class="hljs-keyword">return</span> temp_map<br><br><br>    <span class="hljs-keyword">def</span> <span class="hljs-title function_">make_edge_map_dict</span>(<span class="hljs-params">self, size_map_dict, cur_size_step, cur_size_max</span>):<br>        edge_map_dict = <span class="hljs-built_in">dict</span>()<br>        <span class="hljs-keyword">def</span> <span class="hljs-title function_">cal_score</span>(<span class="hljs-params">matrix</span>):<br>            <span class="hljs-keyword">return</span> (matrix ** <span class="hljs-number">2</span>).<span class="hljs-built_in">sum</span>(axis=<span class="hljs-number">3</span>).<span class="hljs-built_in">min</span>(axis=<span class="hljs-number">2</span>) ** <span class="hljs-number">0.5</span><br><br>        <span class="hljs-keyword">for</span> size_x <span class="hljs-keyword">in</span> size_map_dict.keys():<br>            <span class="hljs-keyword">if</span> size_x <span class="hljs-keyword">not</span> <span class="hljs-keyword">in</span> edge_map_dict:<br>                edge_map_dict[size_x] = <span class="hljs-built_in">dict</span>()<br>            <span class="hljs-keyword">for</span> size_y <span class="hljs-keyword">in</span> size_map_dict[size_x].keys():<br>                <span class="hljs-keyword">if</span> size_y == cur_size_step:<br>                    <span class="hljs-keyword">if</span> size_x == cur_size_step:<br>                        edge_map_dict[size_x][size_y] = self.edge_map2(size_map_dict[size_x][size_y])<br>                    <span class="hljs-keyword">else</span>:<br>                        edge_map_dict[size_x][size_y] = edge_map_dict[size_x - cur_size_step][size_y][:, :-cur_size_step, ...] + edge_map_dict[cur_size_step][cur_size_step][:, cur_size_step * ((size_x - cur_size_step) // cur_size_step):, ...]<br>                        <span class="hljs-keyword">if</span> size_x - cur_size_step &gt; cur_size_step:<br>                            edge_map_dict[size_x - cur_size_step][size_y] = cal_score(edge_map_dict[size_x - cur_size_step][size_y])<br>                <span class="hljs-keyword">else</span>:<br>                    edge_map_dict[size_x][size_y] = edge_map_dict[size_x][size_y - cur_size_step][:-cur_size_step, :, ...] + edge_map_dict[size_x][cur_size_step][cur_size_step * ((size_y - cur_size_step) // cur_size_step):, :, ...]<br>                    <span class="hljs-keyword">if</span> size_y - cur_size_step &gt; cur_size_step:<br>                        edge_map_dict[size_x][size_y - cur_size_step] = cal_score(edge_map_dict[size_x][size_y - cur_size_step])<br>                    <span class="hljs-keyword">if</span> size_y + cur_size_step &gt; cur_size_max:<br>                        edge_map_dict[size_x][size_y] = cal_score(edge_map_dict[size_x][size_y])<br><br>        edge_map_dict[cur_size_step][cur_size_step] = (edge_map_dict[cur_size_step][cur_size_step] ** <span class="hljs-number">2</span>).<span class="hljs-built_in">sum</span>(axis=<span class="hljs-number">3</span>).<span class="hljs-built_in">min</span>(axis=<span class="hljs-number">2</span>) ** <span class="hljs-number">0.5</span><br>        edge_map_dict[size_x][cur_size_step] = cal_score(edge_map_dict[size_x][cur_size_step])<br><br>        <span class="hljs-keyword">for</span> size_x <span class="hljs-keyword">in</span> edge_map_dict.keys():<br>            <span class="hljs-keyword">for</span> size_y <span class="hljs-keyword">in</span> edge_map_dict[size_x].keys():<br>                edge_map_dict[size_x][size_y] /= (size_x ** <span class="hljs-number">2</span> + size_y ** <span class="hljs-number">2</span>) ** <span class="hljs-number">0.5</span><br><br>        <span class="hljs-keyword">return</span> edge_map_dict<br><br><span class="hljs-meta">    @staticmethod</span><br>    <span class="hljs-keyword">def</span> <span class="hljs-title function_">diff_map</span>(<span class="hljs-params">img, cur_size_step, cur_pattern_dis</span>):<br>        H, W = img.shape[:<span class="hljs-number">2</span>]<br>        win_size = <span class="hljs-built_in">max</span>(<span class="hljs-number">4</span>, cur_size_step // cur_pattern_dis)<br>        img_resized = mt.image_resize(img, factor=<span class="hljs-number">1</span> / cur_pattern_dis)<br>        rs_H, rs_W = img_resized.shape[:<span class="hljs-number">2</span>]<br>        pad_img = mt.image_border_move(img_resized, <span class="hljs-number">1</span>).astype(<span class="hljs-string">&#x27;float32&#x27;</span>)<br>        feature_map = np.zeros([rs_H, rs_W, <span class="hljs-number">8</span>], <span class="hljs-string">&#x27;float32&#x27;</span>)<br><br>        <span class="hljs-comment"># left</span><br>        feature_map[:, :, <span class="hljs-number">0</span>] = pad_img[<span class="hljs-number">1</span>:-<span class="hljs-number">1</span>, <span class="hljs-number">1</span>:-<span class="hljs-number">1</span>] - pad_img[<span class="hljs-number">1</span>:-<span class="hljs-number">1</span>, <span class="hljs-number">0</span>:-<span class="hljs-number">2</span>]<br>        <span class="hljs-comment"># left_top</span><br>        feature_map[:, :, <span class="hljs-number">1</span>] = pad_img[<span class="hljs-number">1</span>:-<span class="hljs-number">1</span>, <span class="hljs-number">1</span>:-<span class="hljs-number">1</span>] - pad_img[<span class="hljs-number">0</span>:-<span class="hljs-number">2</span>, <span class="hljs-number">0</span>:-<span class="hljs-number">2</span>]<br>        <span class="hljs-comment"># top</span><br>        feature_map[:, :, <span class="hljs-number">2</span>] = pad_img[<span class="hljs-number">1</span>:-<span class="hljs-number">1</span>, <span class="hljs-number">1</span>:-<span class="hljs-number">1</span>] - pad_img[<span class="hljs-number">0</span>:-<span class="hljs-number">2</span>, <span class="hljs-number">1</span>:-<span class="hljs-number">1</span>]<br>        <span class="hljs-comment"># top_right</span><br>        feature_map[:, :, <span class="hljs-number">3</span>] = pad_img[<span class="hljs-number">1</span>:-<span class="hljs-number">1</span>, <span class="hljs-number">1</span>:-<span class="hljs-number">1</span>] - pad_img[<span class="hljs-number">0</span>:-<span class="hljs-number">2</span>, <span class="hljs-number">2</span>:]<br>        <span class="hljs-comment"># right</span><br>        feature_map[:, :, <span class="hljs-number">4</span>] = pad_img[<span class="hljs-number">1</span>:-<span class="hljs-number">1</span>, <span class="hljs-number">1</span>:-<span class="hljs-number">1</span>] - pad_img[<span class="hljs-number">1</span>:-<span class="hljs-number">1</span>, <span class="hljs-number">2</span>:]<br>        <span class="hljs-comment"># right_bottom</span><br>        feature_map[:, :, <span class="hljs-number">5</span>] = pad_img[<span class="hljs-number">1</span>:-<span class="hljs-number">1</span>, <span class="hljs-number">1</span>:-<span class="hljs-number">1</span>] - pad_img[<span class="hljs-number">2</span>:, <span class="hljs-number">2</span>:]<br>        <span class="hljs-comment"># bottom</span><br>        feature_map[:, :, <span class="hljs-number">6</span>] = pad_img[<span class="hljs-number">1</span>:-<span class="hljs-number">1</span>, <span class="hljs-number">1</span>:-<span class="hljs-number">1</span>] - pad_img[<span class="hljs-number">2</span>:, <span class="hljs-number">1</span>:-<span class="hljs-number">1</span>]<br>        <span class="hljs-comment"># left_bottom</span><br>        feature_map[:, :, <span class="hljs-number">7</span>] = pad_img[<span class="hljs-number">1</span>:-<span class="hljs-number">1</span>, <span class="hljs-number">1</span>:-<span class="hljs-number">1</span>] - pad_img[<span class="hljs-number">2</span>:, <span class="hljs-number">0</span>:-<span class="hljs-number">2</span>]<br><br>        _, sum_feature = cv2.integral2(feature_map)<br><br>        result_map = sum_feature[win_size:, win_size:, :] - sum_feature[win_size:, :-win_size] - sum_feature[:-win_size, win_size:] + sum_feature[:-win_size, :-win_size]<br>        result_map = result_map ** <span class="hljs-number">0.5</span><br>        result_map = result_map.<span class="hljs-built_in">min</span>(axis=<span class="hljs-number">2</span>)<br>        <span class="hljs-comment"># result_map = (mt.min_max_normalize(result_map + 1e-6) * 255).astype(&#x27;uint8&#x27;)</span><br>        result_map = mt.image_border_move(result_map, <span class="hljs-number">0</span>, <span class="hljs-number">0</span>, win_size-<span class="hljs-number">1</span>, win_size-<span class="hljs-number">1</span>)<br>        result_map = mt.image_resize(result_map, [W, H], uint8=<span class="hljs-literal">False</span>)<br>        result_map = mt.min_max_normalize(result_map)<br>        <span class="hljs-keyword">return</span> result_map<br><br>    <span class="hljs-keyword">def</span> <span class="hljs-title function_">result_show</span>(<span class="hljs-params">self, color_img, final_map_img, index_map, cur_size_step</span>):<br>        H, W = color_img.shape[:<span class="hljs-number">2</span>]<br>        map_img = final_map_img.copy()<br>        score = map_img.<span class="hljs-built_in">max</span>()<br>        margin = <span class="hljs-number">20</span><br>        gap = cur_size_step // <span class="hljs-number">2</span><br>        box_num = <span class="hljs-number">0</span><br>        <span class="hljs-keyword">while</span> score &gt; <span class="hljs-number">70</span> <span class="hljs-keyword">and</span> box_num &lt; <span class="hljs-number">3</span>:<br>            _, value, _, (x, y) = cv2.minMaxLoc(map_img)<br>            map_index = index_map[y, x]<br>            size_w = cur_size_step * (map_index // (self.size_max // cur_size_step) + <span class="hljs-number">1</span>)<br>            size_h = cur_size_step * (map_index % (self.size_max // cur_size_step) + <span class="hljs-number">1</span>)<br>            bbox = [<span class="hljs-built_in">max</span>(<span class="hljs-number">0</span>, x - margin), <span class="hljs-built_in">max</span>(<span class="hljs-number">0</span>, y - margin), <span class="hljs-built_in">min</span>(W- <span class="hljs-number">3</span>, x + size_w + margin), <span class="hljs-built_in">min</span>(H-<span class="hljs-number">3</span>, y + size_h + margin)]<br>            color_img = mt.draw_boxes(color_img, [bbox], [<span class="hljs-number">0</span>, <span class="hljs-built_in">min</span>(<span class="hljs-number">255</span>, value ** <span class="hljs-number">1.13</span>), <span class="hljs-number">0</span>], thickness=<span class="hljs-number">2</span>)<br>            gap_x = <span class="hljs-built_in">max</span>(<span class="hljs-built_in">min</span>((bbox[<span class="hljs-number">2</span>] - bbox[<span class="hljs-number">0</span>]) * <span class="hljs-number">2</span>, W // <span class="hljs-number">5</span>), W // <span class="hljs-number">10</span>)<br>            gap_y = <span class="hljs-built_in">max</span>(<span class="hljs-built_in">min</span>((bbox[<span class="hljs-number">3</span>] - bbox[<span class="hljs-number">1</span>]) * <span class="hljs-number">2</span>, H // <span class="hljs-number">5</span>), H // <span class="hljs-number">10</span>)<br>            map_img[<span class="hljs-built_in">max</span>(<span class="hljs-number">0</span>, y - gap_y):<span class="hljs-built_in">min</span>(H, y+gap_y), <span class="hljs-built_in">max</span>(<span class="hljs-number">0</span>, x - gap_x):<span class="hljs-built_in">min</span>(W, x+gap_x)] = <span class="hljs-number">0</span><br>            score = map_img.<span class="hljs-built_in">max</span>()<br>            box_num += <span class="hljs-number">1</span><br>        <span class="hljs-keyword">return</span> color_img<br><br>    <span class="hljs-keyword">def</span> <span class="hljs-title function_">mask_size_map_dict</span>(<span class="hljs-params">self, hog_matrix, cur_size_step, cur_size_max</span>):<br>        <span class="hljs-comment"># step_map = self.make_map_for_size(hog_matrix, cur_size_step, cur_size_step)</span><br><br>        <span class="hljs-comment"># make empty dict</span><br>        size_map_dict = <span class="hljs-built_in">dict</span>()<br>        <span class="hljs-keyword">for</span> size1 <span class="hljs-keyword">in</span> <span class="hljs-built_in">range</span>(cur_size_step, cur_size_max + <span class="hljs-number">1</span>, cur_size_step):<br>            size_map_dict[size1] = <span class="hljs-built_in">dict</span>()<br>            <span class="hljs-keyword">for</span> size2 <span class="hljs-keyword">in</span> <span class="hljs-built_in">range</span>(cur_size_step, cur_size_max + <span class="hljs-number">1</span>, cur_size_step):<br>                size_map_dict[size1][size2] = <span class="hljs-literal">None</span><br><br>        <span class="hljs-keyword">for</span> size_x <span class="hljs-keyword">in</span> <span class="hljs-built_in">range</span>(cur_size_step, cur_size_max + <span class="hljs-number">1</span>, cur_size_step):<br>            <span class="hljs-keyword">for</span> size_y <span class="hljs-keyword">in</span> <span class="hljs-built_in">range</span>(cur_size_step, cur_size_max + <span class="hljs-number">1</span>, cur_size_step):<br>                <span class="hljs-keyword">if</span> size_y == cur_size_step:<br>                    <span class="hljs-keyword">if</span> size_x == cur_size_step:<br>                        size_map_dict[size_x][size_y] = self.make_map_for_size(hog_matrix, size_x, size_y)<br>                    <span class="hljs-keyword">else</span>:<br>                        size_map_dict[size_x][size_y] = size_map_dict[size_x - cur_size_step][size_y][:, :-cur_size_step, ...] + size_map_dict[cur_size_step][cur_size_step][:, cur_size_step * ((size_x - cur_size_step) // cur_size_step):, ...]<br>                <span class="hljs-keyword">else</span>:<br>                    size_map_dict[size_x][size_y] = size_map_dict[size_x][size_y - cur_size_step][:-cur_size_step, :, ...] + size_map_dict[size_x][cur_size_step][cur_size_step * ((size_y - cur_size_step) // cur_size_step):, :, ...]<br><br>        <span class="hljs-keyword">return</span> size_map_dict<br><br><span class="hljs-meta">    @staticmethod</span><br>    <span class="hljs-keyword">def</span> <span class="hljs-title function_">make_pattern_map_dict</span>(<span class="hljs-params">size_map_dict</span>):<br>        pattern_map_dict = <span class="hljs-built_in">dict</span>()<br>        <span class="hljs-keyword">for</span> size_x <span class="hljs-keyword">in</span> size_map_dict.keys():<br>            pattern_map_dict[size_x] = <span class="hljs-built_in">dict</span>()<br>            <span class="hljs-keyword">for</span> size_y <span class="hljs-keyword">in</span> size_map_dict[size_x].keys():<br>                pattern_map_dict[size_x][size_y] = mt.min_max_normalize(size_map_dict[size_x][size_y].<span class="hljs-built_in">sum</span>(axis=<span class="hljs-number">2</span>))<br>        <span class="hljs-keyword">return</span> pattern_map_dict<br><br>    <span class="hljs-keyword">def</span> <span class="hljs-title function_">make_final_map</span>(<span class="hljs-params">self, ori_img, resized_img, pattern_map_dict, size_map_dict, edge_map_dict, diff_map</span>):<br>        ori_H, ori_W = ori_img.shape[:<span class="hljs-number">2</span>]<br>        H, W = resized_img.shape[:<span class="hljs-number">2</span>]<br>        <br>        size_final_map_temp = np.zeros([H, W, (<span class="hljs-built_in">len</span>(pattern_map_dict.keys())) ** <span class="hljs-number">2</span>])<br>        index = <span class="hljs-number">0</span><br>        <span class="hljs-keyword">for</span> key1 <span class="hljs-keyword">in</span> size_map_dict.keys():<br>            <span class="hljs-keyword">for</span> key2 <span class="hljs-keyword">in</span> size_map_dict[key1].keys():<br>                edge_map = edge_map_dict[key1][key2]<br>                pattern_map = pattern_map_dict[key1][key2]<br>                cur_h, cur_w = pattern_map.shape[:<span class="hljs-number">2</span>]<br>                size_final_map_temp[:cur_h, :cur_w, index] = (edge_map ** <span class="hljs-number">2</span>) * (pattern_map ** <span class="hljs-number">0.5</span>)<br>                index += <span class="hljs-number">1</span><br>        ori_size_final_map_temp = mt.image_resize(size_final_map_temp, shape=[ori_W, ori_H], uint8=<span class="hljs-literal">False</span>)<br>        index_map = np.argmax(ori_size_final_map_temp, axis=<span class="hljs-number">2</span>)<br>        final_map = ori_size_final_map_temp.<span class="hljs-built_in">max</span>(axis=<span class="hljs-number">2</span>)<br><br>        zero_edge = <span class="hljs-number">20</span><br>        edge_mask = np.ones([ori_H - zero_edge * <span class="hljs-number">2</span> - self.size_step, ori_W - zero_edge * <span class="hljs-number">2</span> - self.size_step])<br>        edge_mask = mt.image_border_move(edge_mask, zero_edge, zero_edge, self.size_step + zero_edge, self.size_step + zero_edge)<br><br>        final_map *= diff_map ** <span class="hljs-number">0.5</span><br>        final_map *= edge_mask<br><br>        <span class="hljs-comment"># size_final_map_map = (pattern_map ** 0.5) * (edge_map ** 2.5) * (diff_map[:-height+1, :-width+1] ** 1)</span><br>        final_map_img = (mt.min_max_normalize(final_map) * <span class="hljs-number">255</span>).astype(<span class="hljs-string">&#x27;uint8&#x27;</span>)<br>        <span class="hljs-keyword">return</span> final_map_img, index_map<br><br><br>    <span class="hljs-keyword">def</span> <span class="hljs-title function_">infer</span>(<span class="hljs-params">self, img</span>):<br>        begin = time.time()<br>        color_img = mt.to_colorful_image(img)<br>        img = mt.to_gray_image(img)<br>        ori_H, ori_W = img.shape[:<span class="hljs-number">2</span>]<br>        <span class="hljs-built_in">print</span>(<span class="hljs-string">f&quot;original img size H <span class="hljs-subst">&#123;ori_H&#125;</span> W <span class="hljs-subst">&#123;ori_W&#125;</span>&quot;</span>)<br><br>        cur_factor = <span class="hljs-built_in">max</span>(<span class="hljs-number">1</span>, <span class="hljs-built_in">min</span>(self.max_factor, <span class="hljs-built_in">max</span>([ori_H, ori_W]) / <span class="hljs-built_in">max</span>(<span class="hljs-number">1</span>, self.resize_target)))<br><br>        resized_img = cv2.resize(img, [mt.<span class="hljs-built_in">round</span>(ori_W/cur_factor), mt.<span class="hljs-built_in">round</span>(ori_H/cur_factor)], interpolation=cv2.INTER_LINEAR)<br>        H, W = resized_img.shape[:<span class="hljs-number">2</span>]<br><br>        cur_size_max = <span class="hljs-built_in">int</span>(<span class="hljs-built_in">min</span>(<span class="hljs-built_in">max</span>(<span class="hljs-number">7</span>, self.size_max // cur_factor), W * <span class="hljs-number">0.8</span>))<br>        cur_size_step = <span class="hljs-built_in">int</span>(<span class="hljs-built_in">min</span>(<span class="hljs-built_in">max</span>(<span class="hljs-number">7</span>, self.size_step // cur_factor), W * <span class="hljs-number">0.4</span>))<br>        <br>        cur_pattern_dis = <span class="hljs-built_in">int</span>(<span class="hljs-built_in">max</span>(<span class="hljs-number">2</span>, self.pattern_dis // cur_factor))<br><br>        cur_blur_kernel = <span class="hljs-built_in">max</span>(mt.<span class="hljs-built_in">round</span>(self.blur_kernel / (cur_factor ** <span class="hljs-number">0.5</span>)) // <span class="hljs-number">2</span> * <span class="hljs-number">2</span> + <span class="hljs-number">1</span>, <span class="hljs-number">1</span>)<br>        mb_img = cv2.medianBlur(resized_img, cur_blur_kernel)<br><br>        start = time.time()<br>        diff_map = self.diff_map(resized_img, cur_size_step, cur_pattern_dis)<br>        diff_map = mt.image_resize(diff_map, shape=[ori_W, ori_H], uint8=<span class="hljs-literal">False</span>)<br>        <span class="hljs-built_in">print</span>(<span class="hljs-string">f&quot;diff_map time <span class="hljs-subst">&#123;time.time() - start&#125;</span>s.&quot;</span>)<br>        <br>        <span class="hljs-comment">## 积分图</span><br>        start = time.time()<br>        hog_matrix, _ = self.gradient_integral_map(resized_img, self.angle_step)<br>        hog_mb_matrix, _ = self.gradient_integral_map(mb_img, self.angle_step)<br>        <span class="hljs-built_in">print</span>(<span class="hljs-string">f&quot;hog fea extract time <span class="hljs-subst">&#123;time.time() - start&#125;</span>s.&quot;</span>)<br><br>        start = time.time()<br>        size_map_dict = self.mask_size_map_dict(hog_matrix, cur_size_step, cur_size_max)<br>        <span class="hljs-built_in">print</span>(<span class="hljs-string">f&quot;size <span class="hljs-subst">&#123;W&#125;</span> <span class="hljs-subst">&#123;H&#125;</span> size_map * 16 time <span class="hljs-subst">&#123;time.time() - start&#125;</span>s.&quot;</span>)<br><br>        start = time.time()<br>        size_mb_map_dict = self.mask_size_map_dict(hog_mb_matrix, cur_size_step, cur_size_max)<br>        pattern_map_dict = self.make_pattern_map_dict(size_mb_map_dict)<br>        <span class="hljs-built_in">print</span>(<span class="hljs-string">f&quot;size <span class="hljs-subst">&#123;W&#125;</span> <span class="hljs-subst">&#123;H&#125;</span> pattern_map time <span class="hljs-subst">&#123;time.time() - start&#125;</span>s.&quot;</span>)<br><br>        start = time.time()<br>        edge_map_dict = self.make_edge_map_dict(size_map_dict, cur_size_step, cur_size_max)<br>        <span class="hljs-built_in">print</span>(<span class="hljs-string">f&quot;size <span class="hljs-subst">&#123;W&#125;</span> <span class="hljs-subst">&#123;H&#125;</span> edge_map time <span class="hljs-subst">&#123;time.time() - start&#125;</span>s.&quot;</span>)<br><br>        start = time.time()<br>        final_map_img, index_map = self.make_final_map(color_img, resized_img, pattern_map_dict, size_map_dict, edge_map_dict, diff_map)<br>        <span class="hljs-built_in">print</span>(<span class="hljs-string">f&quot;size <span class="hljs-subst">&#123;W&#125;</span> <span class="hljs-subst">&#123;H&#125;</span> final_map time <span class="hljs-subst">&#123;time.time() - start&#125;</span>s.&quot;</span>)<br>        <span class="hljs-built_in">print</span>(<span class="hljs-string">f&quot;Shape <span class="hljs-subst">&#123;W&#125;</span> <span class="hljs-subst">&#123;H&#125;</span> total time <span class="hljs-subst">&#123;time.time() - begin&#125;</span>s.&quot;</span>)<br><br>        color_img = self.result_show(color_img, final_map_img, index_map, self.size_step)<br><br>        <span class="hljs-keyword">return</span> final_map_img, color_img<br><br><br><span class="hljs-keyword">if</span> __name__ == <span class="hljs-string">&#x27;__main__&#x27;</span>:<br><br>    img = mt.cv_rgb_imread(<span class="hljs-string">&#x27;test.png&#x27;</span>)<br>    obj = UniqueZone()<br>    final_map_img, color_img = obj.infer(img)<br>    mt.cv_rgb_imwrite(final_map_img, <span class="hljs-string">&#x27;result.png&#x27;</span>)<br><br></code></pre></td></tr></table></figure>
+</details><link rel="stylesheet" href="/css/spoiler.css" type="text/css"><script src="/js/spoiler.js" type="text/javascript" async></script>
+                
+
+
+				<br /><br />
+				<blockquote>
+					<p>文章链接：<br /> 
+					<a style="font-size: 0.85rem" target="_blank" rel="noopener" href="https://www.zywvvd.com/notes/study/image-processing/auto-pattern/auto-pattern/">https://www.zywvvd.com/notes/study/image-processing/auto-pattern/auto-pattern/</a>
+					</p>
+				</blockquote>
+
+
+              </div>
+            
+            <hr/>
+			
+			
+            <div>
+              <div class="post-metas my-3">
+  
+    <div class="post-meta mr-3 d-flex align-items-center">
+      <i class="iconfont icon-category"></i>
+      
+
+<span class="category-chains">
+  
+  
+    
+      <span class="category-chain">
+        
+  <a href="/categories/Image-Processing/" class="category-chain-item">Image_Processing</a>
+  
+  
+
+      </span>
+    
+  
+</span>
+
+    </div>
+  
+  
+    <div class="post-meta">
+      <i class="iconfont icon-tags"></i>
+      
+        <a href="/tags/Image-Processing/">#Image_Processing</a>
+      
+    </div>
+  
+</div>
+
+
+              
+  
+
+  <div class="license-box my-3">
+    <div class="license-title">
+      <div>自动查找适用于模板匹配的纹理区域</div>
+      <div>https://www.zywvvd.com/notes/study/image-processing/auto-pattern/auto-pattern/</div>
+    </div>
+    <div class="license-meta">
+      
+        <div class="license-meta-item">
+          <div>作者</div>
+          <div>Yiwei Zhang</div>
+        </div>
+      
+      
+        <div class="license-meta-item license-meta-date">
+          <div>发布于</div>
+          <div>2023年2月16日</div>
+        </div>
+      
+      
+      <div class="license-meta-item">
+        <div>许可协议</div>
+        <div>
+          
+            
+            
+              <a target="_blank" href="https://creativecommons.org/licenses/by/4.0/">
+              <span class="hint--top hint--rounded" aria-label="BY - 署名">
+                <i class="iconfont icon-by"></i>
+              </span>
+              </a>
+            
+          
+        </div>
+      </div>
+    </div>
+    <div class="license-icon iconfont"></div>
+  </div>
+
+
+
+              
+                <div class="post-prevnext my-3">
+                  <article class="post-prev col-6">
+                    
+                    
+                      <a href="/notes/tools/selenium-screenshot/ubuntu-selenium-chrome/ubuntu-selenium-chrome/" title="无界面 Ubuntu 服务器搭建 selenium + chromedriver 实现 Python 自动网页截图">
+                        <i class="iconfont icon-arrowleft"></i>
+                        <span class="hidden-mobile">无界面 Ubuntu 服务器搭建 selenium + chromedriver 实现 Python 自动网页截图</span>
+                        <span class="visible-mobile">上一篇</span>
+                      </a>
+                    
+                  </article>
+                  <article class="post-next col-6">
+                    
+                    
+                      <a href="/notes/coding/java-script/js-post-get/js-post-get/" title="Javascript 发送 GET/POST 请求">
+                        <span class="hidden-mobile">Javascript 发送 GET/POST 请求</span>
+                        <span class="visible-mobile">下一篇</span>
+                        <i class="iconfont icon-arrowright"></i>
+                      </a>
+                    
+                  </article>
+                </div>
+              
+            </div>
+
+            
+  <article id="comments" lazyload>
+    
+  <div id="waline"></div>
+  <script type="text/javascript">
+    Fluid.utils.loadComments('#waline', function() {
+      Fluid.utils.createCssLink('https://lib.baomitu.com/waline/2.14.8/waline.min.css')
+      Fluid.utils.createScript('https://lib.baomitu.com/waline/2.14.8/waline.min.js', function() {
+        var options = Object.assign(
+          {"serverURL":"https://101.43.39.125:6102","path":"window.location.pathname","meta":["nick","mail","link"],"requiredMeta":["nick"],"lang":"zh-CN","emoji":["https://cdn.jsdelivr.net/gh/walinejs/emojis/weibo"],"dark":"html[data-user-color-scheme=\"dark\"]","wordLimit":0,"pageSize":10,"reaction":true,"locale":{"placeholder":"山高路远，常来玩吖 ~","reactionTitle":null}},
+          {
+            el: '#waline',
+            path: window.location.pathname
+          }
+        )
+        Waline.init(options);
+        Fluid.utils.waitElementVisible('#waline .vcontent', () => {
+          var imgSelector = '#waline .vcontent img:not(.vemoji)';
+          Fluid.plugins.imageCaption(imgSelector);
+          Fluid.plugins.fancyBox(imgSelector);
+        })
+      });
+    });
+  </script>
+  <noscript>Please enable JavaScript to view the comments</noscript>
+
+
+  </article>
+
+
+          </article>
+        </div>
+      </div>
+    </div>
+
+    <div class="side-col d-none d-lg-block col-lg-2">
+      
+  <aside class="sidebar" style="margin-left: -1rem">
+    <div id="toc">
+  <p class="toc-header"><i class="iconfont icon-list"></i>&nbsp;目录</p>
+  <div class="toc-body" id="toc-body"></div>
+</div>
+
+
+
+  </aside>
+
+
+    </div>
+  </div>
+</div>
+
+
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+  
+  
+
+
+
+
+
+  <script>
+  Fluid.utils.createScript('https://lib.baomitu.com/mermaid/8.14.0/mermaid.min.js', function() {
+    mermaid.initialize({"theme":"default"});
+  });
+</script>
+
+
+
+
+
+
+    
+
+    
+      <a id="scroll-top-button" aria-label="TOP" href="#" role="button">
+        <i class="iconfont icon-arrowup" aria-hidden="true"></i>
+      </a>
+    
+
+    
+      <div class="modal fade" id="modalSearch" tabindex="-1" role="dialog" aria-labelledby="ModalLabel"
+     aria-hidden="true">
+  <div class="modal-dialog modal-dialog-scrollable modal-lg" role="document">
+    <div class="modal-content">
+      <div class="modal-header text-center">
+        <h4 class="modal-title w-100 font-weight-bold">搜索</h4>
+        <button type="button" id="local-search-close" class="close" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body mx-3">
+        <div class="md-form mb-5">
+          <input type="text" id="local-search-input" class="form-control validate">
+          <label data-error="x" data-success="v" for="local-search-input">关键词</label>
+        </div>
+        <div class="list-group" id="local-search-result"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+    
+
+    
+  </main>
+
+  <footer>
+    <div class="footer-inner">
+  
+    <div class="footer-content">
+       <div class="vvd_footer" style="font-size: 0.85rem;"> <a href="https://hexo.io" target="_blank" rel="nofollow noopener" color="#d7d8d9"><span class="umami--click--Footer-Hexo">Hexo</span></a> <i class="iconfont icon-love"></i> <a href="https://github.com/fluid-dev/hexo-theme-fluid" target="_blank" rel="nofollow noopener"><span class="umami--click--Footer-Fluid">Fluid</span></a> <i class="iconfont icon-love"></i> <a href="https://101.43.39.125:6287/share/r5OGod2Z/%E5%8F%88%E8%A7%81%E8%8B%8D%E5%B2%9A" target="_blank" rel="nofollow noopener"><span class="umami--click--Footer-Umami">Umami</span></a> <div style="font-size: 0.85rem;"> <span id="timeDate">载入天数...</span> <span id="times">载入时分秒...</span> <script src="/vvd_js/duration.js"></script> </div> <div style="font-size: 0.85rem;"> <span> 总访问量 <span style="color: #d7d8d9;" id="PVstatic">0</span> 次&nbsp</span> <span> 总访客数 <span style="color: #d7d8d9;" id="UVstatic">0</span> 人&nbsp</span> <span> 当前在线 <span style="color: #d7d8d9;" id="ACTstatic">0</span> 人&nbsp</span> <script src="https://101.43.39.125:6101/statistics" defer></script> </div> <div> <span> Copyright © 2020-2023. All Rights Reserved.</span> </div> <div style="font-size: 0.85rem;"> <a target="_blank" rel="noopener" href="https://developer.hitokoto.cn/" id="hitokoto_text"><span style="color: #d7d8d9;"  id="hitokoto"></span></a> <script src="https://v1.hitokoto.cn/?encode=js&select=%23hitokoto" defer></script> </div> <a href="https://icp.gov.moe/?keyword=20230615" target="_blank">萌ICP备20230615号</a>
+
+
+</div> 
+    </div>
+  
+  
+  
+  
+</div>
+
+  </footer>
+
+  <!-- Scripts -->
+  
+  <script  src="https://lib.baomitu.com/nprogress/0.2.0/nprogress.min.js" ></script>
+  <link  rel="stylesheet" href="https://lib.baomitu.com/nprogress/0.2.0/nprogress.min.css" />
+
+  <script>
+    NProgress.configure({"showSpinner":false,"trickleSpeed":100})
+    NProgress.start()
+    window.addEventListener('load', function() {
+      NProgress.done();
+    })
+  </script>
+
+
+<script  src="https://lib.baomitu.com/jquery/3.6.0/jquery.min.js" ></script>
+<script  src="https://lib.baomitu.com/twitter-bootstrap/4.6.1/js/bootstrap.min.js" ></script>
+<script  src="/js/events.js" ></script>
+<script  src="/js/plugins.js" ></script>
+
+
+
+
+
+  
+    <script  src="/js/img-lazyload.js" ></script>
+  
+
+
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/tocbot/4.18.2/tocbot.min.js', function() {
+    var toc = jQuery('#toc');
+    if (toc.length === 0 || !window.tocbot) { return; }
+    var boardCtn = jQuery('#board-ctn');
+    var boardTop = boardCtn.offset().top;
+
+    window.tocbot.init({
+      tocSelector     : '#toc-body',
+      contentSelector : '.markdown-body',
+      headingSelector : CONFIG.toc.headingSelector || 'h1,h2,h3,h4,h5,h6',
+      linkClass       : 'tocbot-link',
+      activeLinkClass : 'tocbot-active-link',
+      listClass       : 'tocbot-list',
+      isCollapsedClass: 'tocbot-is-collapsed',
+      collapsibleClass: 'tocbot-is-collapsible',
+      collapseDepth   : CONFIG.toc.collapseDepth || 0,
+      scrollSmooth    : true,
+      headingsOffset  : -boardTop
+    });
+    if (toc.find('.toc-list-item').length > 0) {
+      toc.css('visibility', 'visible');
+    }
+  });
+</script>
+
+
+  <script src=https://lib.baomitu.com/clipboard.js/2.0.10/clipboard.min.js></script>
+
+  <script>Fluid.plugins.codeWidget();</script>
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/anchor-js/4.3.1/anchor.min.js', function() {
+    window.anchors.options = {
+      placement: CONFIG.anchorjs.placement,
+      visible  : CONFIG.anchorjs.visible
+    };
+    if (CONFIG.anchorjs.icon) {
+      window.anchors.options.icon = CONFIG.anchorjs.icon;
+    }
+    var el = (CONFIG.anchorjs.element || 'h1,h2,h3,h4,h5,h6').split(',');
+    var res = [];
+    for (var item of el) {
+      res.push('.markdown-body > ' + item.trim());
+    }
+    if (CONFIG.anchorjs.placement === 'left') {
+      window.anchors.options.class = 'anchorjs-link-left';
+    }
+    window.anchors.add(res.join(', '));
+  });
+</script>
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/fancybox/3.5.7/jquery.fancybox.min.js', function() {
+    Fluid.plugins.fancyBox();
+  });
+</script>
+
+
+  <script>Fluid.plugins.imageCaption();</script>
+
+  
+      <script>
+        if (!window.MathJax) {
+          window.MathJax = {
+            tex    : {
+              inlineMath: { '[+]': [['$', '$']] }
+            },
+            options: {
+              renderActions: {
+                insertedScript: [200, () => {
+                  document.querySelectorAll('mjx-container').forEach(node => {
+                    let target = node.parentNode;
+                    if (target.nodeName.toLowerCase() === 'li') {
+                      target.parentNode.classList.add('has-jax');
+                    }
+                  });
+                }, '', false]
+              }
+            }
+          };
+        } else {
+          MathJax.startup.document.state(0);
+          MathJax.texReset();
+          MathJax.typeset();
+          MathJax.typesetPromise();
+        }
+      </script>
+    
+
+  <script  src="https://lib.baomitu.com/mathjax/3.2.1/es5/tex-mml-chtml.js" ></script>
+
+  <script defer src="/js/leancloud.js" ></script>
+
+  <script  src="/js/local-search.js" ></script>
+
+
+
+
+
+<!-- 主题的启动项，将它保持在最底部 -->
+<!-- the boot of the theme, keep it at the bottom -->
+<script  src="/js/boot.js" ></script>
+
+
+  <script type="text/javascript">
+    /*窗口监视*/
+    var originalTitle = document.title;
+    window.onblur = function(){document.title = "明眸如初"};
+    window.onfocus = function(){document.title = originalTitle};
+  </script>
+
+
+  
+
+  <noscript>
+    <div class="noscript-warning">博客在允许 JavaScript 运行的环境下浏览效果更佳</div>
+  </noscript>
+<script src="/live2dw/lib/L2Dwidget.min.js?094cbace49a39548bed64abff5988b05"></script><script>L2Dwidget.init({"pluginRootPath":"live2dw/","pluginJsPath":"lib/","pluginModelPath":"assets/","tagMode":false,"log":false,"model":{"jsonPath":"/live2dw/assets/z16.model.json"},"display":{"position":"left","width":200,"height":400},"mobile":{"show":false},"react":{"opacity":0.9}});</script></body>
+</html>
