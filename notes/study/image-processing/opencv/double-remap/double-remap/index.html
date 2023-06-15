@@ -572,7 +572,7 @@
 <p>OpenCV 的 <code>remap</code> 函数用于计算原始矩阵的差值版本，当需要将多次映射时需要多次使用 <code>remap</code> 函数，本文记录将多次 <code>remap</code> 合并的方法。</p>
 </blockquote>
 <span id="more"></span>
-<h3 id="背景">背景</h3>
+<h3 id="背景-46">背景</h3>
 <p>考虑对图像做畸变校正的背景应用，对于一幅带有畸变的图像 $I$，使用 OpenCV 的传统畸变校正流程后得到了畸变过程在 $X, Y$ 方向上的两个畸变校正映射矩阵 $map_x, map_y$；</p>
 <p>但是可能这个畸变校正的结果仍然没有达到精度要求，需要在此基础上建立更加复杂的模型并求解，之后会得到在第一次映射图像基础上的第二次畸变校正映射矩阵 $map_x’, map_y’$；</p>
 <p>那么此时的畸变校正流程为：<br>
@@ -583,10 +583,10 @@ $$<br>
 $$<br>
 D(I) = map’(map(I))=map^e(I)<br>
 $$</p>
-<h3 id="实现思路">实现思路</h3>
+<h3 id="实现思路-14">实现思路</h3>
 <p>在 <code>remap</code> 函数中 $X,Y$ 是解耦的，也就是 $X$ 一个矩阵，$Y$ 一个矩阵，于是在求解 $map^e$ 时也同样可以分成 $X,Y$ 两个独立的维度；</p>
 <p>考虑  $map_x$，其中记录的是新图像每个整数点位置对应原始图像的 $X$ 方向坐标，大多数情况是浮点数，那么 $map_x’$ 做的事情就是在  $map_x$ 的浮点坐标之间进行进一步插值，那么事实上直接用 $map_x’, map_y’$ <code>remap</code> $map_x$，得到的结果就是  $map^e_x$，同理可以求得 $map^e_y$；</p>
-<h3 id="Python-实现">Python 实现</h3>
+<h3 id="Python-实现-6">Python 实现</h3>
 <p>示例代码：</p>
 <figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br></pre></td><td class="code"><pre><code class="hljs python"><span class="hljs-keyword">import</span> mtutils <span class="hljs-keyword">as</span> mt<br><span class="hljs-keyword">import</span> cv2<br><br><br><span class="hljs-keyword">if</span> __name__ == <span class="hljs-string">&#x27;__main__&#x27;</span>:<br>    map_x = cv2.imread(<span class="hljs-string">&#x27;map_x.tiff&#x27;</span>, cv2.IMREAD_UNCHANGED)<br>    map_y = cv2.imread(<span class="hljs-string">&#x27;map_y.tiff&#x27;</span>, cv2.IMREAD_UNCHANGED)<br><br>    map_x_opencv = cv2.imread(<span class="hljs-string">&#x27;map_x_opencv.tiff&#x27;</span>, cv2.IMREAD_UNCHANGED)<br>    map_y_opencv = cv2.imread(<span class="hljs-string">&#x27;map_y_opencv.tiff&#x27;</span>, cv2.IMREAD_UNCHANGED)<br><br>    <span class="hljs-comment"># 生成等效 map</span><br>    new_map_x = cv2.remap(map_x_opencv, map_x, map_y, cv2.INTER_LINEAR)<br>    new_map_y = cv2.remap(map_y_opencv, map_x, map_y, cv2.INTER_LINEAR)<br><br>    mt.cv_rgb_imwrite(new_map_x, <span class="hljs-string">&#x27;merge_map_x.tiff&#x27;</span>)<br>    mt.cv_rgb_imwrite(new_map_y, <span class="hljs-string">&#x27;merge_map_y.tiff&#x27;</span>)<br><br>	img = mt.cv_rgb_imread(<span class="hljs-string">&#x27;test.png&#x27;</span>, <span class="hljs-number">1</span>)<br><br>	frame1 = cv2.remap(img, new_map_x, new_map_y, cv2.INTER_LINEAR)<br><br>	frame2 = cv2.remap(img.astype(<span class="hljs-string">&#x27;float32&#x27;</span>), map_x_opencv, map_y_opencv, cv2.INTER_LINEAR)<br>	frame2 = cv2.remap(frame2, map_x, map_y, cv2.INTER_LINEAR)<br>	frame2 = frame2.astype(<span class="hljs-string">&#x27;uint8&#x27;</span>)<br><br>	<span class="hljs-keyword">pass</span><br></code></pre></td></tr></table></figure>
 <blockquote>
