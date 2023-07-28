@@ -23,13 +23,17 @@
 <meta property="og:site_name" content="又见苍岚">
 <meta property="og:description" content="双边滤波是一种非线性滤波器，它可以达到保持边缘、降噪平滑的效果。和其他滤波原理一样，双边滤波也是采用加权平均的方法，用周边像素亮度值的加权平均代表某个像素的强度，本文记录原理与实现。">
 <meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="https://101.43.39.125/HexoFiles/vvd_file_mt/202307121218576.jpg">
+<meta property="og:image" content="https://101.43.39.125/HexoFiles/vvd_file_mt/202307121221565.jpg">
+<meta property="og:image" content="https://101.43.39.125/HexoFiles/vvd_file_mt/202307121224458.jpg">
+<meta property="og:image" content="https://101.43.39.125/HexoFiles/vvd_file_mt/202307121226322.jpg">
 <meta property="og:image" content="https://101.43.39.125/HexoFiles/mt_images_gitee/20220314201944.png">
 <meta property="article:published_time" content="2022-03-14T12:07:26.000Z">
-<meta property="article:modified_time" content="2022-08-05T15:34:37.057Z">
+<meta property="article:modified_time" content="2023-07-16T03:25:24.988Z">
 <meta property="article:author" content="Yiwei Zhang">
 <meta property="article:tag" content="Image_Processing">
 <meta name="twitter:card" content="summary_large_image">
-<meta name="twitter:image" content="https://101.43.39.125/HexoFiles/mt_images_gitee/20220314201944.png">
+<meta name="twitter:image" content="https://101.43.39.125/HexoFiles/vvd_file_mt/202307121218576.jpg">
   
   
   
@@ -483,7 +487,7 @@
         <i class="iconfont icon-chart"></i>
         
           <!-- compatible with older versions-->
-          938 字
+          2.6k 字
         
       </span>
     
@@ -495,7 +499,7 @@
         
         
           <!-- compatible with older versions-->
-          8 分钟
+          23 分钟
         
       </span>
     
@@ -641,13 +645,15 @@
       <div class="container nopadding-x-md" id="board-ctn">
         <div id="board">
           <article class="post-content mx-auto">
-            <h1 id="seo-header">Bilateral Filters 双边滤波</h1>
+
+            <!-- <h1 id="seo-header">Bilateral Filters 双边滤波</h1> -->
+
             
               <p class="note note-info">
                 
                   
                     <!-- compatible with older versions-->
-                    本文最后更新于：2022年8月5日 晚上
+                    本文最后更新于：2023年7月16日 上午
                   
                 
               </p>
@@ -659,23 +665,43 @@
 <p>双边滤波是一种非线性滤波器，它可以达到保持边缘、降噪平滑的效果。和其他滤波原理一样，双边滤波也是采用加权平均的方法，用周边像素亮度值的加权平均代表某个像素的强度，本文记录原理与实现。</p>
 </blockquote>
 <span id="more"></span>
-<h3 id="简介-84">简介</h3>
-<p>双边滤波（Bilateral filter）是一种可以保边去噪的滤波器。之所以可以达到此去噪效果，是因为滤波器是由两个函数构成。一个函数是由几何空间距离决定滤波器系数。另一个由像素差值决定滤波器系数。</p>
-<h3 id="原理-3">原理</h3>
+<h3 id="简介-93">简介</h3>
+<p>双边滤波（Bilateral filter）是一种可以保边去噪的滤波器，是结合图像的空间邻近度和像素值相似度的一种折衷处理，同时考虑空域信息和灰度相似性，达到保边去噪的目的。具有简单、非迭代、局部的特点。</p>
+<p>之所以可以达到此去噪效果，是因为滤波器是由两个函数构成。一个函数是由几何空间距离决定滤波器系数。另一个由像素差值决定滤波器系数。</p>
+<p>双边滤波器的好处是可以做边缘保存（edge preserving），一般用高斯滤波去降噪，会较明显地模糊边缘，对于高频细节的保护效果并不明显。双边滤波器顾名思义比高斯滤波多了一个高斯方差sigma－d，它是基于空间分布的高斯滤波函数，所以在边缘附近，离的较远的像素不会太多影响到边缘上的像素值，这样就保证了边缘附近像素值的保存。但是由于保存了过多的高频信息，对于彩色图像里的高频噪声，双边滤波器不能够干净的滤掉，只能够对于低频信息进行较好的滤波。</p>
+<h4 id="为什么要使用双边滤波？">为什么要使用双边滤波？</h4>
+<p>高斯滤波去降噪，会较明显地模糊边缘，对于高频细节的保护效果并不明显。</p>
+<h4 id="直觉来源">直觉来源</h4>
+<p>需要降噪，又想要保留细节，只能根据图像情况决定如何应用卷积核了，如果可以在非边缘区域做模糊，在边缘区域只用和当前像素接近的像素做模糊就好了呢 ~</p>
+<h3 id="原理-5">原理</h3>
+<p>对图像进行空间域滤波的方法是使用一个结构元素（核）来对原图像进行卷积。比如说高斯核像是这样的：</p>
+<p><img src="https://101.43.39.125/HexoFiles/vvd_file_mt/202307121218576.jpg" srcset="/img/loading.gif" lazyload alt=""></p>
+<p>而这个结构元素就会对原图像进行卷积操作，从而得到一个新的图像，即输出图像。我们知道，这个结构元素是不会变的。但是！但是！但是！在双边滤波算法中就不是如此了。为了使图像的边缘得到保留，就要根据当前被卷积像素的邻域进行观察，“推断”是否是边缘点和接近边缘的点。因此，结构元素就会改变，从而保留边缘点。</p>
+<p>下面的一组图中，图a是原图像，图c是输出。而中间的图像是什么呢？显然，这是原图中根据某个点的邻域生成的，专属于这个点的结构元素。</p>
+<p><img src="https://101.43.39.125/HexoFiles/vvd_file_mt/202307121221565.jpg" srcset="/img/loading.gif" lazyload alt=""></p>
+<p>可以看到，原图中显然有一个灰度的突变，这就表示是边缘。灰度值高的地方不应该和灰度低的区域进行混合，所以，图像中接近边缘的一个点就会生成图b这样的结构元素。</p>
+<p>而生成这样的结构元素的方法，是将我们原本的高斯核，与一个能“推断”出是否在边缘点的结构元素相乘，如下图中间的结构元素。</p>
+<p><img src="https://101.43.39.125/HexoFiles/vvd_file_mt/202307121224458.jpg" srcset="/img/loading.gif" lazyload alt=""></p>
+<p>另一幅原理示意图：</p>
+<p><img src="https://101.43.39.125/HexoFiles/vvd_file_mt/202307121226322.jpg" srcset="/img/loading.gif" lazyload alt=""></p>
+<p>双边滤波器的输出像素依赖于当前被卷积像素的邻域。 $i$ 和 $j$  是当前被卷积像素的坐标点， $k$  和 $l$ 是邻域像素的坐标点:</p>
 <ul>
-<li>双边滤波器中，输出像素的值依赖于邻域像素的值的加权组合：</li>
+<li>输出像素的值依赖于邻域像素的值的加权组合：</li>
 </ul>
 <p>$$<br>
 g(i, j)=\frac{\sum_{k, l} f(k, l) w(i, j, k, l)}{\sum_{k, l} w(i, j, k, l)}<br>
 $$</p>
 <ul>
-<li>权重系数$w(i,j,k,l)$取决于空间域核：</li>
+<li>权重系数$w(i,j,k,l)$取决于空间域核，即领域像素和当前像素差异，越小权重越大：</li>
 </ul>
-<p>$$<br>
-d(i, j, k, l)=\exp \left(-\frac{(i-k)<sup>{2}+(j-l)</sup>{2}}{2 \sigma_{d}^{2}}\right)<br>
-$$</p>
+
+$$
+ d(i, j, k, l)=\exp \left(-\frac{(i-k)^{2}+(j-l)^{2}}{2 \sigma_{d}^{2}}\right) 
+$$
+
+
 <ul>
-<li>和值域核：</li>
+<li>和值域核，即高斯核强度，距离该像素越近强度越大：</li>
 </ul>
 <p>$$<br>
 r(i, j, k, l)=\exp \left(-\frac{|f(i, j)-f(k, l)|^{2}}{2 \sigma_{r}^{2}}\right)<br>
@@ -683,11 +709,25 @@ $$</p>
 <ul>
 <li>二者的乘积构成权重：</li>
 </ul>
-<p>$$<br>
-w(i, j, k, l)=\exp \left(-\frac{(i-k)<sup>{2}+(j-l)</sup>{2}}{2 \sigma_{d}^{2}}-\frac{|f(i, j)-f(k, l)|^{2}}{2 \sigma_{r}^{2}}\right)<br>
-$$</p>
+
+$$
+ w(i, j, k, l)=\exp \left(-\frac{(i-k)^{2}+(j-l)^{2}}{2 \sigma_{d}^{2}}-\frac{\|f(i, j)-f(k, l)\|^{2}}{2 \sigma_{r}^{2}}\right) 
+$$
+
+
 <ul>
 <li>同时考虑了空域和值域的信息，简单来说：<strong>距离越近、颜色越接近的像素权重越大</strong>。</li>
+</ul>
+<h3 id="API">API</h3>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><code class="hljs cpp"><span class="hljs-function"><span class="hljs-type">void</span> <span class="hljs-title">bilateralFilter</span><span class="hljs-params">( InputArray src, </span></span><br><span class="hljs-params"><span class="hljs-function">                      OutputArray dst, </span></span><br><span class="hljs-params"><span class="hljs-function">                      <span class="hljs-type">int</span> d,</span></span><br><span class="hljs-params"><span class="hljs-function">                      <span class="hljs-type">double</span> sigmaColor, </span></span><br><span class="hljs-params"><span class="hljs-function">                      <span class="hljs-type">double</span> sigmaSpace,</span></span><br><span class="hljs-params"><span class="hljs-function">                      <span class="hljs-type">int</span> borderType = BORDER_DEFAULT )</span></span>;<br></code></pre></td></tr></table></figure>
+<p>参数：</p>
+<ul>
+<li>第一个参数，InputArray类型的src，输入图像，即源图像，需要为8位或者浮点型单通道、三通道的图像。</li>
+<li>第二个参数，OutputArray类型的dst，即目标图像，需要和源图片有一样的尺寸和类型。</li>
+<li>第三个参数，int类型的d，表示在过滤过程中每个像素邻域的直径。如果这个值我们设其为非正数，那么OpenCV会从第五个参数sigmaSpace来计算出它来。</li>
+<li>第四个参数，double类型的sigmaColor，颜色空间滤波器的sigma值。这个参数的值越大，就表明该像素邻域内有更宽广的颜色会被混合到一起，产生较大的半相等颜色区域。</li>
+<li>第五个参数，double类型的sigmaSpace坐标空间中滤波器的sigma值，坐标空间的标注方差。他的数值越大，意味着越远的像素会相互影响，从而使更大的区域足够相似的颜色获取相同的颜色。当d&gt;0，d指定了邻域大小且与sigmaSpace无关。否则，d正比于sigmaSpace。</li>
+<li>第六个参数，int类型的borderType，用于推断图像外部像素的某种边界模式。注意它有默认值BORDER_DEFAULT。</li>
 </ul>
 <h3 id="实现-3">实现</h3>
 <figure class="highlight reasonml"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs reasonml">cv.bilateral<span class="hljs-constructor">Filter(<span class="hljs-params">src</span>, <span class="hljs-params">d</span>, <span class="hljs-params">sigmaColor</span>, <span class="hljs-params">sigmaSpace</span>[, <span class="hljs-params">dst</span>[, <span class="hljs-params">borderType</span>]]	)</span> -&gt;	dst<br></code></pre></td></tr></table></figure>
@@ -696,10 +736,23 @@ $$</p>
 </ul>
 <figure class="highlight reasonml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><code class="hljs reasonml">img = mt.cv<span class="hljs-constructor">_rgb_imread(&#x27;<span class="hljs-params">img1</span>.<span class="hljs-params">jpg</span>&#x27;, <span class="hljs-params">gray</span>=False)</span><br>res = cv2.bilateral<span class="hljs-constructor">Filter(<span class="hljs-params">img</span>, 9, 100, 1000)</span><br><span class="hljs-constructor">PIS(<span class="hljs-params">img</span>, <span class="hljs-params">res</span>)</span><br></code></pre></td></tr></table></figure>
 <p><img src="https://101.43.39.125/HexoFiles/mt_images_gitee/20220314201944.png" srcset="/img/loading.gif" lazyload alt=""></p>
-<h3 id="参考资料-239">参考资料</h3>
+<h3 id="参考资料-293">参考资料</h3>
 <ul>
-<li><a target="_blank" rel="noopener" href="https://blog.csdn.net/u013066730/article/details/87859184">https://blog.csdn.net/u013066730/article/details/87859184</a></li>
-<li><a target="_blank" rel="noopener" href="https://blog.csdn.net/abcjennifer/article/details/7616663">https://blog.csdn.net/abcjennifer/article/details/7616663</a></li>
+<li>
+<p><a target="_blank" rel="noopener" href="https://blog.csdn.net/u013066730/article/details/87859184">https://blog.csdn.net/u013066730/article/details/87859184</a></p>
+</li>
+<li>
+<p><a target="_blank" rel="noopener" href="https://blog.csdn.net/abcjennifer/article/details/7616663">https://blog.csdn.net/abcjennifer/article/details/7616663</a></p>
+</li>
+<li>
+<p><a target="_blank" rel="noopener" href="https://zhuanlan.zhihu.com/p/127023952">https://zhuanlan.zhihu.com/p/127023952</a></p>
+</li>
+<li>
+<p><a target="_blank" rel="noopener" href="https://homepages.inf.ed.ac.uk/rbf/CVonline/LOCAL_COPIES/MANDUCHI1/Bilateral_Filtering.html">https://homepages.inf.ed.ac.uk/rbf/CVonline/LOCAL_COPIES/MANDUCHI1/Bilateral_Filtering.html</a></p>
+</li>
+<li>
+<p><a target="_blank" rel="noopener" href="https://blog.csdn.net/weixin_41907390/article/details/81021848">https://blog.csdn.net/weixin_41907390/article/details/81021848</a></p>
+</li>
 </ul>
 <link rel="stylesheet" href="/css/spoiler.css" type="text/css"><script src="/js/spoiler.js" type="text/javascript" async></script>
                 
