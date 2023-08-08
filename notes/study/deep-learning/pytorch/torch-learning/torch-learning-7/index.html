@@ -661,7 +661,7 @@
 </blockquote>
 <span id="more"></span>
 <p>参考 <a target="_blank" rel="noopener" href="https://datawhalechina.github.io/thorough-pytorch/index.html">深入浅出PyTorch</a> ，系统补齐基础知识。</p>
-<h3 id="本节目录-6">本节目录</h3>
+<h3 id="本节目录-7">本节目录</h3>
 <ul>
 <li>PyTorch的训练/评估模式的开启</li>
 <li>完整的训练/评估流程</li>
@@ -669,10 +669,10 @@
 <h3 id="模型模式">模型模式</h3>
 <p>首先应该设置模型的状态：如果是训练状态，那么模型的参数应该支持反向传播的修改；如果是验证/测试状态，则不应该修改模型参数。在PyTorch中，模型的状态设置非常简便，如下的两个操作二选一即可：</p>
 <figure class="highlight stan"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><code class="hljs stan"><span class="hljs-title">model</span>.train()   <span class="hljs-comment"># 训练状态</span><br><span class="hljs-title">model</span>.eval()   <span class="hljs-comment"># 验证/测试状态</span><br></code></pre></td></tr></table></figure>
-<h4 id="model-train-2">model.train()</h4>
+<h4 id="model-train">model.train()</h4>
 <p><code>model.train()</code> 的作用是启用 Batch Normalization 和 Dropout。</p>
 <p>如果模型中有BN层(Batch Normalization）和Dropout，需要在训练时添加 <code>model.train()</code>。<code>model.train()</code>是保证BN层能够用到每一批数据的均值和方差。对于Dropout，<code>model.train()</code>是随机取一部分网络连接来训练更新参数。</p>
-<h4 id="model-eval-2">model.eval()</h4>
+<h4 id="model-eval">model.eval()</h4>
 <p><code>model.eval()</code>的作用是不启用 Batch Normalization 和 Dropout。</p>
 <p>如果模型中有BN层(Batch Normalization）和Dropout，在测试时添加<code>model.eval()</code>。<code>model.eval()</code>是保证BN层能够用全部训练数据的均值和方差，即测试过程中要保证BN层的均值和方差不变。对于Dropout，<code>model.eval()</code>是利用到了所有网络连接，即不进行随机舍弃神经元。</p>
 <p>训练完train样本后，生成的模型model要用来测试样本。在model(test)之前，需要加上<code>model.eval()</code>，否则的话，有输入数据，即使不训练，它也会改变权值。这是model中含有BN层和Dropout所带来的的性质。</p>
@@ -720,7 +720,7 @@
 <figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><code class="hljs python"><span class="hljs-keyword">def</span> <span class="hljs-title function_">train</span>(<span class="hljs-params">epoch</span>):<br>    model.train()<br>    train_loss = <span class="hljs-number">0</span><br>    <span class="hljs-keyword">for</span> data, label <span class="hljs-keyword">in</span> train_loader:<br>        data, label = data.cuda(), label.cuda()<br>        optimizer.zero_grad()<br>        output = model(data)<br>        loss = criterion(output, label)<br>        loss.backward()<br>        optimizer.step()<br>        train_loss += loss.item()*data.size(<span class="hljs-number">0</span>)<br>    train_loss = train_loss/<span class="hljs-built_in">len</span>(train_loader.dataset)<br>		<span class="hljs-built_in">print</span>(<span class="hljs-string">&#x27;Epoch: &#123;&#125; \tTraining Loss: &#123;:.6f&#125;&#x27;</span>.<span class="hljs-built_in">format</span>(epoch, train_loss))<br></code></pre></td></tr></table></figure>
 <p>对应的，一个完整图像分类的验证过程如下所示：</p>
 <figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><code class="hljs python"><span class="hljs-keyword">def</span> <span class="hljs-title function_">val</span>(<span class="hljs-params">epoch</span>):       <br>    model.<span class="hljs-built_in">eval</span>()<br>    val_loss = <span class="hljs-number">0</span><br>    <span class="hljs-keyword">with</span> torch.no_grad():<br>        <span class="hljs-keyword">for</span> data, label <span class="hljs-keyword">in</span> val_loader:<br>            data, label = data.cuda(), label.cuda()<br>            output = model(data)<br>            preds = torch.argmax(output, <span class="hljs-number">1</span>)<br>            loss = criterion(output, label)<br>            val_loss += loss.item()*data.size(<span class="hljs-number">0</span>)<br>            running_accu += torch.<span class="hljs-built_in">sum</span>(preds == label.data)<br>    val_loss = val_loss/<span class="hljs-built_in">len</span>(val_loader.dataset)<br>    <span class="hljs-built_in">print</span>(<span class="hljs-string">&#x27;Epoch: &#123;&#125; \tTraining Loss: &#123;:.6f&#125;&#x27;</span>.<span class="hljs-built_in">format</span>(epoch, val_loss))<br></code></pre></td></tr></table></figure>
-<h3 id="参考资料-496">参考资料</h3>
+<h3 id="参考资料-492">参考资料</h3>
 <ul>
 <li>
 <p><a target="_blank" rel="noopener" href="https://datawhalechina.github.io/thorough-pytorch/%E7%AC%AC%E4%B8%89%E7%AB%A0/3.9%20%E4%BC%98%E5%8C%96%E5%99%A8.html">https://datawhalechina.github.io/thorough-pytorch/第三章/3.9 优化器.html</a></p>
