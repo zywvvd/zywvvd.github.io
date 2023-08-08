@@ -38,7 +38,7 @@ $$
 
 - $\frac{a_{0}}{2}$为直流分量，$n$为使用的正弦波的下标，$a_n,b_n$为幅度 {.text-intro}
 
-![](https://101.43.39.125/HexoFiles/vvd_pc_upload/202212022059316.jpg)
+![](https://uipv4.zywvvd.com:33030/HexoFiles/vvd_pc_upload/202212022059316.jpg)
 
 ::::
 
@@ -82,7 +82,7 @@ $$
 
 - 对于自然界存在的信号，在时域时可以理解为此信号的基为不同时刻的冲击函数，基是一族冲击激信号$\delta(x-n)${.text-intro}
 
-![](https://101.43.39.125/HexoFiles/vvd_pc_upload/202212022202043.jpg)
+![](https://uipv4.zywvvd.com:33030/HexoFiles/vvd_pc_upload/202212022202043.jpg)
 
 <slide class="bg-apple aligncenter">
 
@@ -92,7 +92,7 @@ $$
 
 ::::div {.text-cols}
 
-![](https://101.43.39.125/HexoFiles/vvd_file_mt/202211231429311.jpg)
+![](https://uipv4.zywvvd.com:33030/HexoFiles/vvd_file_mt/202211231429311.jpg)
 
 
 
@@ -134,7 +134,7 @@ $$
 
 :::{.content-right}
 
-![](https://101.43.39.125/HexoFiles/vvd_pc_upload/841476e8e15e1d.gif)
+![](https://uipv4.zywvvd.com:33030/HexoFiles/vvd_pc_upload/841476e8e15e1d.gif)
 
 :::
 
@@ -181,7 +181,7 @@ $$
 
 :::{.content-right}
 
-![](https://101.43.39.125/HexoFiles/vvd_file_mt/202211231425925.jpg)
+![](https://uipv4.zywvvd.com:33030/HexoFiles/vvd_file_mt/202211231425925.jpg)
 
 :::
 
@@ -223,7 +223,7 @@ $$
 
 :::{.content-left}
 
-![](https://101.43.39.125/HexoFiles/vvd_file_mt/202211231434927.jpg)
+![](https://uipv4.zywvvd.com:33030/HexoFiles/vvd_file_mt/202211231434927.jpg)
 
 :::
 
@@ -242,7 +242,7 @@ $$
 
 
 
-![](https://101.43.39.125/HexoFiles/vvd_file_mt/202211231443624.jpg)
+![](https://uipv4.zywvvd.com:33030/HexoFiles/vvd_file_mt/202211231443624.jpg)
 
 <slide class="bg-apple aligncenter">
 
@@ -315,7 +315,7 @@ $$
 
 
 
-![](https://101.43.39.125/HexoFiles/vvd_file_mt/202211241016205.gif)
+![](https://uipv4.zywvvd.com:33030/HexoFiles/vvd_file_mt/202211241016205.gif)
 
 :::
 
@@ -465,7 +465,7 @@ $$
 
 :::{.content-right}
 
-![](https://101.43.39.125/HexoFiles/vvd_pc_upload/202212030034441.jpg)
+![](https://uipv4.zywvvd.com:33030/HexoFiles/vvd_pc_upload/202212030034441.jpg)
 
 :::
 
@@ -515,7 +515,7 @@ $$
 
 ---
 
-![](https://101.43.39.125/HexoFiles/vvd_file_mt/202211161506496.jpg)
+![](https://uipv4.zywvvd.com:33030/HexoFiles/vvd_file_mt/202211161506496.jpg)
 
 
 
@@ -533,7 +533,7 @@ $$
 
 ---
 
-![](https://101.43.39.125/HexoFiles/vvd_file_mt/202211161506813.jpg)
+![](https://uipv4.zywvvd.com:33030/HexoFiles/vvd_file_mt/202211161506813.jpg)
 
 <slide class="bg-apple aligncenter">
 
@@ -551,7 +551,7 @@ $$
 
 :::{.content-left}
 
-![](https://101.43.39.125/HexoFiles/vvd_file_mt/202211161506602.jpg)
+![](https://uipv4.zywvvd.com:33030/HexoFiles/vvd_file_mt/202211161506602.jpg)
 
 :::
 
@@ -565,13 +565,13 @@ Halcon 实例： `determine grid rotation fft`
 
 ::::div {.text-cols}
 
-![](https://101.43.39.125/HexoFiles/vvd_pc_upload/202212030039596.jpg)
+![](https://uipv4.zywvvd.com:33030/HexoFiles/vvd_pc_upload/202212030039596.jpg)
 
-![](https://101.43.39.125/HexoFiles/vvd_pc_upload/202212030040904.jpg)
+![](https://uipv4.zywvvd.com:33030/HexoFiles/vvd_pc_upload/202212030040904.jpg)
 
 ---
 
-![](https://101.43.39.125/HexoFiles/vvd_file_mt/202212031401827.jpg)
+![](https://uipv4.zywvvd.com:33030/HexoFiles/vvd_file_mt/202212031401827.jpg)
 
 :::
 
@@ -593,7 +593,7 @@ Halcon 实例： `determine grid rotation fft`
 
 :::{.content-right}
 
-![](https://101.43.39.125/HexoFiles/vvd_pc_upload/202212030041146.jpg)
+![](https://uipv4.zywvvd.com:33030/HexoFiles/vvd_pc_upload/202212030041146.jpg)
 
 :::
 
@@ -612,7 +612,7 @@ Halcon 实例： `determine grid rotation fft`
 
 ---
 
-![](https://101.43.39.125/HexoFiles/vvd_file_mt/202211231452596.jpg)
+![](https://uipv4.zywvvd.com:33030/HexoFiles/vvd_file_mt/202211231452596.jpg)
 
 <slide class="bg-apple aligncenter">
 
@@ -625,7 +625,7 @@ Halcon 实例： `determine grid rotation fft`
 
 ---
 
-![](https://101.43.39.125/HexoFiles/vvd_file_mt/202212031143354.jpg)
+![](https://uipv4.zywvvd.com:33030/HexoFiles/vvd_file_mt/202212031143354.jpg)
 
 <slide class="bg-white aligncenter">
 
@@ -639,13 +639,13 @@ Halcon 实例： `determine grid rotation fft`
 
 :::{.content-left}
 
-![](https://101.43.39.125/HexoFiles/vvd_file_mt/202212031145000.jpg)
+![](https://uipv4.zywvvd.com:33030/HexoFiles/vvd_file_mt/202212031145000.jpg)
 
 :::
 
 :::{.content-right}
 
-![](https://101.43.39.125/HexoFiles/vvd_file_mt/202211240952741.jpg)
+![](https://uipv4.zywvvd.com:33030/HexoFiles/vvd_file_mt/202211240952741.jpg)
 
 :::
 
@@ -671,7 +671,7 @@ $$
 
 ---
 
-![](https://101.43.39.125/HexoFiles/vvd_file_mt/202211241135832.jpg)
+![](https://uipv4.zywvvd.com:33030/HexoFiles/vvd_file_mt/202211241135832.jpg)
 
 <slide class="bg-apple aligncenter">
 
@@ -690,7 +690,7 @@ $$
 
 :::{.content-right}
 
-![](https://101.43.39.125/HexoFiles/vvd_file_mt/202211241207402.jpg)
+![](https://uipv4.zywvvd.com:33030/HexoFiles/vvd_file_mt/202211241207402.jpg)
 
 :::
 
