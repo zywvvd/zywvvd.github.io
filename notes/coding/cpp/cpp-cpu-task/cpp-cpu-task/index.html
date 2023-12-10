@@ -672,7 +672,7 @@
 <p>将不同任务分配至不同计算资源有利于资源合理分配，降低冲突，如果使用得当还可能提升系统性能，本文记录 C++ 实现 CPU 资源分配的方法。</p>
 </blockquote>
 <span id="more"></span>
-<h3 id="简介-57">简介</h3>
+<h3 id="简介-18">简介</h3>
 <p>一个程序，当运算很充分（IO等操作很少）时，指定到单独一个CPU上运行会比不指定CPU运行时快。这中间主要有两个原因：</p>
 <ol>
 <li>CPU切换时损耗的性能。</li>
@@ -683,9 +683,9 @@
 <h3 id="C-实现-CPU-分配">C++ 实现 CPU 分配</h3>
 <h4 id="进程分配-CPU-资源">进程分配 CPU 资源</h4>
 <p>核心函数为 <code>setProcessAffinityMask</code>， 为指定进程的线程设置处理器关联掩码，<a target="_blank" rel="noopener" href="https://learn.microsoft.com/zh-cn/windows/win32/api/winbase/nf-winbase-setprocessaffinitymask?redirectedfrom=MSDN">官方文档</a>。</p>
-<h5 id="语法-5">语法</h5>
+<h5 id="语法">语法</h5>
 <figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><code class="hljs c++"><span class="hljs-function">BOOL <span class="hljs-title">SetProcessAffinityMask</span><span class="hljs-params">(</span></span><br><span class="hljs-params"><span class="hljs-function">  [in] HANDLE    hProcess,</span></span><br><span class="hljs-params"><span class="hljs-function">  [in] DWORD_PTR dwProcessAffinityMask</span></span><br><span class="hljs-params"><span class="hljs-function">)</span></span>;<br></code></pre></td></tr></table></figure>
-<h5 id="参数-3">参数</h5>
+<h5 id="参数">参数</h5>
 <figure class="highlight angelscript"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs angelscript"><span class="hljs-string">[in]</span> hProcess<br></code></pre></td></tr></table></figure>
 <p>要设置其关联掩码的进程句柄。 此句柄必须具有 <strong>PROCESS_SET_INFORMATION</strong> 访问权限。 有关详细信息，请参阅 <a target="_blank" rel="noopener" href="https://learn.microsoft.com/zh-cn/windows/desktop/ProcThread/process-security-and-access-rights">进程安全性和访问权限</a>。</p>
 <figure class="highlight angelscript"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs angelscript"><span class="hljs-string">[in]</span> dwProcessAffinityMask<br></code></pre></td></tr></table></figure>
@@ -706,7 +706,7 @@
 <figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><code class="hljs c++">DWORD dwProcessAffinityMask = <span class="hljs-number">1</span> + <span class="hljs-number">8</span> + <span class="hljs-number">64</span> + <span class="hljs-number">512</span>;<br><span class="hljs-type">int</span> res = <span class="hljs-built_in">SetProcessAffinityMask</span>(<span class="hljs-built_in">GetCurrentProcess</span>(), dwProcessAffinityMask);<br><span class="hljs-comment">// do something</span><br></code></pre></td></tr></table></figure>
 <p><img src="https://uipv4.zywvvd.com:33030/HexoFiles/vvd_file_mt/202303171606137.jpg" srcset="/img/loading.gif" lazyload alt=""></p>
 <p>可以看到进程确实控制我安排的目标 CPU 在努力工作，表示分配成功。</p>
-<h5 id="返回值-2">返回值</h5>
+<h5 id="返回值">返回值</h5>
 <p>如果该函数成功，则返回值为非零值。</p>
 <p>如果函数失败，则返回值为零。 要获得更多的错误信息，请调用 GetLastError。</p>
 <p>如果进程相关性掩码请求未在系统中配置的处理器，则最后一个错误代码 <strong>ERROR_INVALID_PARAMETER</strong>。</p>
@@ -719,9 +719,9 @@
 <p>使用 SetThreadAffinityMask 函数为多个组中的各个线程设置相关性掩码。 这实际上改变了进程的组分配。</p>
 <h4 id="获取进程分配掩码">获取进程分配掩码</h4>
 <p>核心函数为 <code>getProcessAffinityMask</code>，检索指定进程的进程关联掩码和系统的系统相关性掩码。</p>
-<h5 id="语法-6">语法</h5>
+<h5 id="语法-2">语法</h5>
 <figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><code class="hljs cpp"><span class="hljs-function">BOOL <span class="hljs-title">GetProcessAffinityMask</span><span class="hljs-params">(</span></span><br><span class="hljs-params"><span class="hljs-function">  [in]  HANDLE     hProcess,</span></span><br><span class="hljs-params"><span class="hljs-function">  [out] PDWORD_PTR lpProcessAffinityMask,</span></span><br><span class="hljs-params"><span class="hljs-function">  [out] PDWORD_PTR lpSystemAffinityMask</span></span><br><span class="hljs-params"><span class="hljs-function">)</span></span>;<br></code></pre></td></tr></table></figure>
-<h5 id="参数-4">参数</h5>
+<h5 id="参数-2">参数</h5>
 <figure class="highlight angelscript"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs angelscript"><span class="hljs-string">[in]</span> hProcess<br></code></pre></td></tr></table></figure>
 <p>需要关联掩码的进程句柄。</p>
 <p>此句柄必须具有 <strong>PROCESS_QUERY_INFORMATION</strong> 或 <strong>PROCESS_QUERY_LIMITED_INFORMATION</strong> 访问权限。 有关详细信息，请参阅 <a target="_blank" rel="noopener" href="https://learn.microsoft.com/zh-cn/windows/desktop/ProcThread/process-security-and-access-rights">进程安全性和访问权限</a>。</p>
@@ -730,16 +730,16 @@
 <p>指向接收指定进程的关联掩码的变量的指针。</p>
 <figure class="highlight ada"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs ada">[<span class="hljs-keyword">out</span>] lpSystemAffinityMask<br></code></pre></td></tr></table></figure>
 <p>指向接收系统的关联掩码的变量的指针。</p>
-<h5 id="返回值-3">返回值</h5>
+<h5 id="返回值-2">返回值</h5>
 <p>如果函数成功，则返回值为非零值，并且函数将 <em>lpProcessAffinityMask</em> 和 <em>lpSystemAffinityMask</em> 指向的变量设置为适当的关联掩码。</p>
 <p>在具有 64 个以上的处理器的系统上，如果调用进程的线程位于单个<a target="_blank" rel="noopener" href="https://learn.microsoft.com/zh-cn/windows/desktop/ProcThread/processor-groups">处理器组中</a>，该函数会将 <code>lpProcessAffinityMask</code> 和 <code>lpSystemAffinityMask</code> 指向的变量设置为进程关联掩码以及该组的活动逻辑处理器的处理器掩码。 如果调用进程包含多个组中的线程，则函数将返回这两个关联掩码的零。</p>
 <p>如果函数失败，则返回值为零，并且 <code>lpProcessAffinityMask</code> 和 <code>lpSystemAffinityMask</code> 指向的变量的值是未定义的。 要获得更多的错误信息，请调用 <code>GetLastError</code>。</p>
 <h4 id="线程分配-CPU-资源">线程分配 CPU 资源</h4>
 <p>核心函数为 <code>setThreadAffinityMask </code>， 设置指定线程的处理器相关性掩码，<a target="_blank" rel="noopener" href="https://learn.microsoft.com/zh-cn/windows/win32/api/winbase/nf-winbase-setthreadaffinitymask">官方文档</a>。</p>
-<h5 id="语法-7">语法</h5>
+<h5 id="语法-3">语法</h5>
 <p>C++复制</p>
 <figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><code class="hljs cpp"><span class="hljs-function">DWORD_PTR <span class="hljs-title">SetThreadAffinityMask</span><span class="hljs-params">(</span></span><br><span class="hljs-params"><span class="hljs-function">  [in] HANDLE    hThread,</span></span><br><span class="hljs-params"><span class="hljs-function">  [in] DWORD_PTR dwThreadAffinityMask</span></span><br><span class="hljs-params"><span class="hljs-function">)</span></span>;<br></code></pre></td></tr></table></figure>
-<h5 id="参数-5">参数</h5>
+<h5 id="参数-3">参数</h5>
 <figure class="highlight angelscript"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs angelscript"><span class="hljs-string">[in]</span> hThread<br></code></pre></td></tr></table></figure>
 <p>要设置关联掩码的线程的句柄。</p>
 <p>此句柄必须具有 <strong>THREAD_SET_INFORMATION</strong> 或 <strong>THREAD_SET_LIMITED_INFORMATION</strong> 访问权限和 <strong>THREAD_QUERY_INFORMATION</strong> 或 <strong>THREAD_QUERY_LIMITED_INFORMATION</strong> 访问权限。 有关详细信息，请参阅 <a target="_blank" rel="noopener" href="https://learn.microsoft.com/zh-cn/windows/desktop/ProcThread/thread-security-and-access-rights">线程安全和访问权限</a>。</p>
@@ -747,7 +747,7 @@
 <figure class="highlight angelscript"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs angelscript"><span class="hljs-string">[in]</span> dwThreadAffinityMask<br></code></pre></td></tr></table></figure>
 <p>线程的关联掩码。</p>
 <p>在具有 64 个以上的处理器的系统上，地缘掩码必须在线程的当前 <a target="_blank" rel="noopener" href="https://learn.microsoft.com/zh-cn/windows/desktop/ProcThread/processor-groups">处理器组中指定处理器</a>。</p>
-<h5 id="返回值-4">返回值</h5>
+<h5 id="返回值-3">返回值</h5>
 <p>如果函数成功，则返回值为线程的上一个关联掩码。</p>
 <p>如果函数失败，则返回值为零。 要获得更多的错误信息，请调用 GetLastError。</p>
 <p>如果线程相关性掩码请求未为进程关联掩码选择的处理器，则最后一个错误代码 <strong>ERROR_INVALID_PARAMETER</strong>。</p>
@@ -755,7 +755,7 @@
 <p>线程关联掩码是一个位向量，其中每个位表示允许线程在其中运行的逻辑处理器。 线程关联掩码必须是线程包含进程的进程相关性掩码的子集。 线程只能在其进程可以运行的处理器上运行。 因此，当进程相关性掩码为该处理器指定 0 位时，线程关联掩码不能为处理器指定 1 位。</p>
 <p>为进程或线程设置关联掩码可能会导致线程接收的处理器时间较少，因为系统被限制在特定处理器上运行线程。 在大多数情况下，最好让系统选择可用的处理器。</p>
 <p>如果新的线程关联掩码未指定当前正在运行该线程的处理器，则会在允许的处理器之一上重新计划该线程。</p>
-<h3 id="参考资料-176">参考资料</h3>
+<h3 id="参考资料-33">参考资料</h3>
 <ul>
 <li><a target="_blank" rel="noopener" href="https://www.cnblogs.com/lvdongjie/p/4476766.html">https://www.cnblogs.com/lvdongjie/p/4476766.html</a></li>
 <li><a target="_blank" rel="noopener" href="https://learn.microsoft.com/zh-cn/windows/win32/api/winbase/nf-winbase-setprocessaffinitymask?redirectedfrom=MSDN">https://learn.microsoft.com/zh-cn/windows/win32/api/winbase/nf-winbase-setprocessaffinitymask?redirectedfrom=MSDN</a></li>
