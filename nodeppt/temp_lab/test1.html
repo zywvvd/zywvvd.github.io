@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="UTF-8">
+    <title>Js实现粘贴上传图片</title>
+    <script src="jquery.js"></script>
+</head>
+
+<body>
+    复制粘贴上传图片：
+    <div id="content_img" contentEditable="true" style="width:500px;height:500px;border:1px solid #000;"></div>
+    <script>
+        document.getElementById('content_img').addEventListener('paste', function(e) {
+        if (!(e.clipboardData && e.clipboardData.items)) {
+            return;
+        }
+        for (var i = 0, len = e.clipboardData.items.length; i < len; i++) {
+            var item = e.clipboardData.items[i];
+            if (item.kind === "string") {
+                item.getAsString(function(str) {
+                    console.log(str);
+                    alert("请粘贴图片上传");
+                })
+                $("#content_img").html(""); 
+            } else if (item.kind === "file") {
+                var blob = item.getAsFile();
+                console.log(blob);
+                if (blob.size === 0) {
+                    return;
+                }
+                var data = new FormData();
+                data.append("image", blob);
+                $.ajax({
+                    url: "http://www.yzmcms.com/upload.php",
+                    type: 'POST',
+                    cache: false,
+                    data: data,
+                    processData: false,
+                    contentType: false,
+                    dataType: "json", 
+                    success: function(result) {
+                        console.log(result);
+                        if (result.status) {
+                            var html = "<img src=" + result.data + " width='100' height='100'>";
+                            $("#content_img").append(html);
+                        } else {
+                            console.log(result.message)
+                        }
+                    }
+                });
+
+                //阻止默认行为即不让剪贴板内容在div中显示出来
+                e.preventDefault();
+            }
+        }
+    });
+    </script>
+</body>
+
+</html>
