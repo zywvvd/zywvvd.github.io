@@ -25,7 +25,7 @@
 <meta property="og:description" content="HOG 特征广泛应用于物体识别等领域，但大面积计算 HOG 特征时重复统计会严重拖慢运行速度，使用积分图可以显著加速特征提取。">
 <meta property="og:locale" content="zh_CN">
 <meta property="article:published_time" content="2023-01-10T08:58:07.000Z">
-<meta property="article:modified_time" content="2023-01-10T12:40:39.419Z">
+<meta property="article:modified_time" content="2024-01-14T12:07:22.445Z">
 <meta property="article:author" content="Yiwei Zhang">
 <meta property="article:tag" content="Image_Processing">
 <meta property="article:tag" content="Feature_Extraction">
@@ -201,6 +201,16 @@
                   </a>
 				  </div>
                 
+                  
+                  
+                  
+				  <div >
+                  <a class="dropdown-item" href="/shuoshuo/" data-umami-event="Navigation-Shuoshuo">
+                    <i class="iconfont icon-tags-fill"></i>
+                    <span>说说</span>
+                  </a>
+				  </div>
+                
               </div>
             </li>
           
@@ -300,6 +310,16 @@
                   <a class="dropdown-item" target="_blank" rel="noopener" href="https://uipv4.zywvvd.com:38920" data-umami-event="Navigation-Emby">
                     <i class="iconfont icon-meiti"></i>
                     <span>影院</span>
+                  </a>
+				  </div>
+                
+                  
+                  
+                  
+				  <div >
+                  <a class="dropdown-item" target="_blank" rel="noopener" href="https://uipv4.zywvvd.com:33036" data-umami-event="Navigation-OneDev">
+                    <i class="iconfont icon-git"></i>
+                    <span>仓库</span>
                   </a>
 				  </div>
                 
@@ -658,7 +678,7 @@
                 
                   
                     <!-- compatible with older versions-->
-                    本文最后更新于：2023年1月10日 晚上
+                    本文最后更新于：2024年1月14日 晚上
                   
                 
               </p>
@@ -670,12 +690,12 @@
 <p>HOG 特征广泛应用于物体识别等领域，但大面积计算 HOG 特征时重复统计会严重拖慢运行速度，使用积分图可以显著加速特征提取。</p>
 </blockquote>
 <span id="more"></span>
-<h3 id="背景-42">背景</h3>
+<h3 id="背景-36">背景</h3>
 <ul>
 <li><a href="/notes/study/image-processing/feature-extraction/hog/hog/">HOG 特征介绍</a></li>
 <li><a href="/notes/study/image-processing/opencv/opencv-integral-map/opencv-integral-map/">积分图介绍</a></li>
 </ul>
-<h3 id="加速原理">加速原理</h3>
+<h3 id="加速原理-2">加速原理</h3>
 <ul>
 <li>对于 $W\times H$ 的图像 $I$</li>
 <li>HOG 特征会在提取前根据不同梯度角度确定该点特征属于哪个 bin，计算时会将 bin 相同的值相加作为局部区域特定角度的 HOG 特征，假设当前确定了总bin 数量为 $N$</li>
@@ -686,7 +706,7 @@
 </ul>
 <h4 id="Python-OpenCV-实现">Python OpenCV 实现</h4>
 <figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br></pre></td><td class="code"><pre><code class="hljs python"><span class="hljs-keyword">def</span> <span class="hljs-title function_">gradient_integral_map</span>(<span class="hljs-params">img, angle_step</span>):<br>    H, W = img.shape[:<span class="hljs-number">2</span>]<br><br>    <span class="hljs-comment">#  梯度积分图</span><br>    angle_feature_channel_num = <span class="hljs-number">360</span> // angle_step<br>    hog_matrix = np.zeros([H+<span class="hljs-number">1</span>, W+<span class="hljs-number">1</span>, angle_feature_channel_num], dtype=<span class="hljs-string">&#x27;float32&#x27;</span>)<br>    hog_gra_matrix = np.zeros([H, W, angle_feature_channel_num], dtype=<span class="hljs-string">&#x27;float32&#x27;</span>)<br><br>    gx = cv2.Sobel(img, cv2.CV_32F, <span class="hljs-number">1</span>, <span class="hljs-number">0</span>, ksize=<span class="hljs-number">1</span>)<br>    gy = cv2.Sobel(img, cv2.CV_32F, <span class="hljs-number">0</span>, <span class="hljs-number">1</span>, ksize=<span class="hljs-number">1</span>)<br><br>    mag, angle = cv2.cartToPolar(gx, gy, angleInDegrees=<span class="hljs-literal">True</span>)<br>    angle = np.clip(angle, <span class="hljs-literal">None</span>, <span class="hljs-number">359.99999</span>)<br>    angle_index = angle // angle_step<br><br>    <span class="hljs-keyword">for</span> channel_index <span class="hljs-keyword">in</span> <span class="hljs-built_in">range</span>(angle_feature_channel_num):<br>        temp_map = mag * (angle_index == channel_index)<br>        hog_gra_matrix[:,:,channel_index] = temp_map<br>        sum_map = cv2.integral(temp_map)<br>        hog_matrix[:,:,channel_index] = sum_map<br><br>    <span class="hljs-keyword">return</span> hog_matrix, hog_gra_matrix<br></code></pre></td></tr></table></figure>
-<h3 id="参考资料-495">参考资料</h3>
+<h3 id="参考资料-522">参考资料</h3>
 <ul>
 <li><a href="https://www.zywvvd.com/notes/study/image-processing/feature-extraction/hog/hog/">https://www.zywvvd.com/notes/study/image-processing/feature-extraction/hog/hog/</a></li>
 <li><a href="https://www.zywvvd.com/notes/study/image-processing/opencv/opencv-integral-map/opencv-integral-map/">https://www.zywvvd.com/notes/study/image-processing/opencv/opencv-integral-map/opencv-integral-map/</a></li>
