@@ -764,10 +764,10 @@
 <p>本文记录异常检测23年性能最佳的工作 DDAD 的原理以及官方源码解析。</p>
 </blockquote>
 <span id="more"></span>
-<h3 id="简介-158">简介</h3>
+<h3 id="简介-170">简介</h3>
 <p>DDAD 是 2024 年以前 MVTec AD 数据集上性能最好的异常检测模型，本文解读相关论文并对源码进行解读</p>
 <h3 id="论文解读">论文解读</h3>
-<h4 id="基本信息-3"><strong>基本信息</strong></h4>
+<h4 id="基本信息-2"><strong>基本信息</strong></h4>
 <table>
 <thead>
 <tr>
@@ -829,7 +829,7 @@
 </tr>
 </tbody>
 </table>
-<h4 id="方法介绍-2"><strong>方法介绍</strong></h4>
+<h4 id="方法介绍"><strong>方法介绍</strong></h4>
 <p><img src="https://uipv4.zywvvd.com:33030/HexoFiles/vvd_files/202312141713986.png" srcset="/img/loading.gif" lazyload alt=""></p>
 <h5 id="基于条件扩散模型的图像重构"><strong>基于条件扩散模型的图像重构</strong></h5>
 <p>输入图像 $X$, 经过扩散过程得到随机的 $X_{T’}$, 之后需要通过 $X_{T’}$ 经过反扩散过程重构图像生成 $x_0$, 目标是 $y$. 因为重构目标是 $y$, 所以假设重构输出与目标接近, 即：$x_0 \approx y$, 假设从 $X_{T’}$ 到 $X_0$ 每一步添加的噪声为 $\epsilon_\theta^{(t)}$, 得到过程中的 $X_{T’},X_{T’-1},X_{T’-2}, …,X_2,X_1,X_0$, 反过来, 我们向 $y$ 逐步加入  $\epsilon_\theta^{(t)}$, 得到 $y, y_1,y_2, …,y_{T’-2},y_{T’-1},y_{T’}$, 那么根据假设可以推断 $y_t\approx x_t$, 那么就可以用 $y_t$ 指导每一步去噪产生 $x_t$ 的训练过程, 也就是带条件的扩散模型.</p>
@@ -983,10 +983,10 @@ $$
 <p>构建 Unet 模型的函数为 <code>main.py -&gt; build_model</code> ，通过实例化 <code>unet.py -&gt; UNetModel</code> 类实现。</p>
 <h4 id="数据集构建">数据集构建</h4>
 <p>核心函数在 <code>dataset.py -&gt; Dataset_maker</code> 类中，根据文件夹名称构建所需数据集。</p>
-<h4 id="训练-5">训练</h4>
+<h4 id="训练-4">训练</h4>
 <p>入口函数在  <code>main.py -&gt; train</code>，核心代码在 <code>train.py -&gt; trainer</code> 函数中</p>
 <p>此处训练的是 <code>去噪Unet</code> 网络，期望网络可以将叠加在图像上的噪声恢复出来</p>
-<h5 id="损失函数-3">损失函数</h5>
+<h5 id="损失函数-2">损失函数</h5>
 <p>向 Unet 输入带噪的图像，输出张量与噪声的二范数距离作为损失</p>
 <figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><code class="hljs python">x = at.sqrt() * x_0 + (<span class="hljs-number">1</span>- at).sqrt() * e <br>output = model(x, t.<span class="hljs-built_in">float</span>())<br><span class="hljs-keyword">return</span> (e - output).square().<span class="hljs-built_in">sum</span>(dim=(<span class="hljs-number">1</span>, <span class="hljs-number">2</span>, <span class="hljs-number">3</span>)).mean(dim=<span class="hljs-number">0</span>)<br></code></pre></td></tr></table></figure>
 <p>经过训练，可以使得 Unet 网络较好地预测添加到数据中的噪声</p>
@@ -996,7 +996,7 @@ $$
 <p>输入一个 batch 的数据一半为输入 一半为目标，训练重构器</p>
 <p>同时兼顾原始模型的蒸馏损失</p>
 <p>训练完成后保留特征提取器</p>
-<h4 id="推断-4">推断</h4>
+<h4 id="推断-2">推断</h4>
 <p>入口函数 <code>main.py -&gt; detection</code>，核心代码在 <code>ddad.py</code> 的 <code>DDAD</code> 类中</p>
 <p>过程中可以在配置文件配置可视化参数为 True</p>
 <p>结果保存可视化结果</p>
@@ -1118,9 +1118,9 @@ F--&gt;N
 <p>可以重构出和目标图像很接近的图，可以作为其他需求的技术储备</p>
 </li>
 </ol>
-<h3 id="原始论文-8">原始论文</h3>
+<h3 id="原始论文-7">原始论文</h3>
 <iframe src='https://uipv4.zywvvd.com:33030/HexoFiles/js/vvd_js/pdfjs/web/viewer.html?file=https://uipv4.zywvvd.com:33030/HexoFiles/pdf/ddad.pdf' style='width:100%;height:900px'></iframe>
-<h3 id="参考资料-466">参考资料</h3>
+<h3 id="参考资料-521">参考资料</h3>
 <ul>
 <li><a target="_blank" rel="noopener" href="https://github.com/arimousa/DDAD">https://github.com/arimousa/DDAD</a></li>
 <li><a target="_blank" rel="noopener" href="https://www.mvtec.com/company/research/datasets/mvtec-ad">https://www.mvtec.com/company/research/datasets/mvtec-ad</a></li>
@@ -1433,7 +1433,7 @@ F--&gt;N
     <div class="footer-inner">
   
     <div class="footer-content">
-       <div class="vvd_footer" style="font-size: 0.85rem;"> <a href="https://hexo.io" target="_blank" rel="nofollow noopener" color="#d7d8d9" data-umami-event="Footer-Hexo"><span class="umami--click--Footer-Hexo">Hexo</span></a> <i class="iconfont icon-love"></i> <a href="https://github.com/fluid-dev/hexo-theme-fluid" target="_blank" rel="nofollow noopener" data-umami-event="Footer-Fluid"><span class="umami--click--Footer-Fluid">Fluid</span></a> <i class="iconfont icon-love"></i> <a href="https://uipv4.zywvvd.com:33039/share/0zx3o21oIpZTZqwC/%E5%8F%88%E8%A7%81%E8%8B%8D%E5%B2%9A" target="_blank" rel="nofollow noopener" data-umami-event="Footer-Umami"><span class="umami--click--Footer-Umami">Umami</span></a> <div style="font-size: 0.85rem;"> <span id="timeDate">载入天数...</span> <span id="times">载入时分秒...</span> <script src="/vvd_js/duration.js"></script> </div> <div style="font-size: 0.85rem;"> <span> 总访问量 <span style="color: #d7d8d9;" id="PVstatic">0</span> 次&nbsp</span> <span> 总访客数 <span style="color: #d7d8d9;" id="UVstatic">0</span> 人&nbsp</span> <span> 当前在线 <span style="color: #d7d8d9;" id="ACTstatic">0</span> 人&nbsp</span> <script src="https://uipv4.zywvvd.com:33037/statistics" defer></script> </div> <div> <span> Copyright © 2020-2023. All Rights Reserved.</span> </div> <div style="font-size: 0.85rem;"> <a target="_blank" rel="noopener" href="https://developer.hitokoto.cn/" id="hitokoto_text"><span style="color: #d7d8d9;"  id="hitokoto"></span></a> <script src="https://v1.hitokoto.cn/?encode=js&select=%23hitokoto" defer></script> </div> <a href="https://icp.gov.moe/?keyword=20230615" target="_blank">萌ICP备20230615号</a>
+       <div class="vvd_footer" style="font-size: 0.85rem;"> <a href="https://hexo.io" target="_blank" rel="nofollow noopener" color="#d7d8d9" data-umami-event="Footer-Hexo"><span class="umami--click--Footer-Hexo">Hexo</span></a> <i class="iconfont icon-love"></i> <a href="https://github.com/fluid-dev/hexo-theme-fluid" target="_blank" rel="nofollow noopener" data-umami-event="Footer-Fluid"><span class="umami--click--Footer-Fluid">Fluid</span></a> <i class="iconfont icon-love"></i> <a href="https://uipv4.zywvvd.com:33039/share/0zx3o21oIpZTZqwC/%E5%8F%88%E8%A7%81%E8%8B%8D%E5%B2%9A" target="_blank" rel="nofollow noopener" data-umami-event="Footer-Umami"><span class="umami--click--Footer-Umami">Umami</span></a> <div style="font-size: 0.85rem;"> <span id="timeDate">载入天数...</span> <span id="times">载入时分秒...</span> <script src="/vvd_js/duration.js"></script> </div> <div style="font-size: 0.85rem;"> <span> 总访问量 <span style="color: #d7d8d9;" id="PVstatic">0</span> 次&nbsp</span> <span> 总访客数 <span style="color: #d7d8d9;" id="UVstatic">0</span> 人&nbsp</span> <span> 当前在线 <span style="color: #d7d8d9;" id="ACTstatic">0</span> 人&nbsp</span> <script src="https://uipv4.zywvvd.com:33037/statistics" defer></script> </div> <div> <span> Copyright © 2020-2024. All Rights Reserved.</span> </div> <div style="font-size: 0.85rem;"> <a target="_blank" rel="noopener" href="https://developer.hitokoto.cn/" id="hitokoto_text"><span style="color: #d7d8d9;"  id="hitokoto"></span></a> <script src="https://v1.hitokoto.cn/?encode=js&select=%23hitokoto" defer></script> </div> <a href="https://icp.gov.moe/?keyword=20230615" target="_blank">萌ICP备20230615号</a>
 
 
 </div> 
