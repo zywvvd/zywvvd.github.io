@@ -73,3 +73,12 @@ document.addEventListener("DOMContentLoaded", function () {
     ".post-content a:not(.social-share-icon):not(.fancybox):not(.not-check-link)"
   );
 });
+
+
+waline.init(options);
+// 监控滚动到留言板执行回调 -- 添加外链跳转页面
+Fluid.utils.waitElementVisible('#waline .wl-cards .wl-item', () => {
+  setTimeout(() => {
+   	window.NzcheckLink("#waline .wl-cards .wl-item a");
+  }, 1500);
+});
