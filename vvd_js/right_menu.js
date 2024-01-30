@@ -12,7 +12,8 @@
 		menu.style.left = e.clientX + "px";  //设置位置，跟随鼠标
 		menu.style.top = e.clientY+"px"; 
 		right_cilck_num = right_cilck_num+ 1;
-		
+		  const referrer = document.referrer;
+  console.log(referrer);
 		if(right_cilck_num %7== 1){
 		      const tooltip = document.getElementById('tooltip-rightmenu');
 		      tooltip.classList.add('show-tooltip');
@@ -27,3 +28,11 @@
 		var menu = document.getElementById("rightmenu-wrapper");
 		menu.style.display = "none";
 	}
+	
+
+
+	$(function(){
+	   $("#Loadanimation").fadeOut(500);
+	});
+
+
