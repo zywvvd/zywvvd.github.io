@@ -760,18 +760,18 @@
 <p>Pytorch 模型转换为 Onnx 时，可能出现 if 节点，本文记录我遇到的这种情况的解决方案。</p>
 </blockquote>
 <span id="more"></span>
-<h3 id="问题描述-8">问题描述</h3>
+<h3 id="问题描述-15">问题描述</h3>
 <p>Pytorch 模型导出到 Onnx 时，输入尺寸固定时没有问题，当开启动态轴（dynamic_axes）时，Onnx 中可能出现莫名其妙的 if 节点（前提是网络中没有显式写入 if 等逻辑）。</p>
 <p>此类节点会导致 TensorRT 模型无法正常运行。</p>
 <p><img src="https://uipv4.zywvvd.com:33030/HexoFiles/vvd_files/202403131613771.png" srcset="/img/loading.gif" lazyload alt=""></p>
 <p>形如上图，以 Gather -&gt; Equal -&gt; if 结构为基本单元。</p>
-<h3 id="问题原因-29">问题原因</h3>
+<h3 id="问题原因-34">问题原因</h3>
 <p>经过排查，网络中没有写入 if 逻辑，是由于特征层中使用了 <code>squeeze(1)</code> 之类的算子，导致 Onnx 动态输入时需要为自己增加一些判断。</p>
 <p>总之，问题出在 <strong>squeeze(1)</strong> 上</p>
 <blockquote>
 <p>我的情况是这样，有其他情况后续补充</p>
 </blockquote>
-<h3 id="解决方案-67">解决方案</h3>
+<h3 id="解决方案-81">解决方案</h3>
 <p>将 <code>squeeze</code> 的部分换成切片式的写法即可解决类似问题。</p>
 <link rel="stylesheet" href="/css/spoiler.css" type="text/css"><script src="/js/spoiler.js" type="text/javascript" async></script>
                 

@@ -33,7 +33,7 @@
 <meta property="og:image" content="https://uipv4.zywvvd.com:33030/HexoFiles/vvd_pc_upload_2023/202403272331981.png">
 <meta property="og:image" content="https://uipv4.zywvvd.com:33030/HexoFiles/vvd_pc_upload_2023/202403272331563.png">
 <meta property="article:published_time" content="2024-03-26T15:09:46.000Z">
-<meta property="article:modified_time" content="2024-03-27T15:39:30.579Z">
+<meta property="article:modified_time" content="2024-03-29T13:32:12.418Z">
 <meta property="article:author" content="Yiwei Zhang">
 <meta property="article:tag" content="Deep_Learning">
 <meta name="twitter:card" content="summary_large_image">
@@ -583,7 +583,7 @@
         <i class="iconfont icon-chart"></i>
         
           <!-- compatible with older versions-->
-          13k 字
+          14k 字
         
       </span>
     
@@ -595,7 +595,7 @@
         
         
           <!-- compatible with older versions-->
-          112 分钟
+          113 分钟
         
       </span>
     
@@ -754,7 +754,7 @@
                 
                   
                     <!-- compatible with older versions-->
-                    本文最后更新于：2024年3月27日 晚上
+                    本文最后更新于：2024年3月29日 晚上
                   
                 
               </p>
@@ -766,16 +766,18 @@
 <p>重参数化也可以用在离散分布采样中，由于对我来说相比于连续分布的重参数技巧，离散重参数难理解很多，本文单独介绍离散部分的重参数化 。</p>
 </blockquote>
 <span id="more"></span>
-<h3 id="简介-222">简介</h3>
+<h3 id="简介-226">简介</h3>
 <p>这篇文章从直观感觉讲起，先讲Gumbel-Softmax Trick用在哪里及如何运用，再编程感受Gumbel分布的效果，最后讨论数学证明。</p>
 <p><img src="https://uipv4.zywvvd.com:33030/HexoFiles/vvd_pc_upload_2023/202403272248468.png" srcset="/img/loading.gif" lazyload alt=""></p>
 <h3 id="问题来源">问题来源</h3>
 <p>通常在强化学习中，如果动作空间是离散的，比如上、下、左、右四个动作，通常的做法是网络输出一个四维的one-hot向量(不考虑空动作)，分别代表四个动作。比如 [1,0,0,0] 代表上，[0,1,0,0] 代表下等等。而具体取哪个动作呢，就根据输出的每个维度的大小，选择值最大的作为输出动作,即 $arg \max (v) $ .</p>
-<p>例如网络输出的四维向量为 $v=[−20,10,9.6,6.2]$，第二个维度取到最大值 10，那么输出的动作就是 [0,1,0,0]，也就是说，这和多类别的分类任务是一个道理。但是这种取法有个问题是不能计算梯度，也就不能更新网络。通常的做法是加softmax函数，把向量归一化，这样既能计算梯度，同时值的大小还能表示概率的含义。softmax函数定义如下：<br>
-$$<br>
-\sigma\left(z_{i}\right)=\frac{e<sup>{z_{i}}}{\sum_{j=1}</sup>{K} e^{z_{j}}}<br>
-$$<br>
-那么将 <code>v=[−20,10,9.6,6.2]</code> 通过softmax函数后有 $σ(v)=[0,0.591,0.396,0.013]$，这样做不会改变动作或者说类别的选取，同时 softmax 倾向于让最大值的概率显著大于其他值，比如这里10和9.6经过 softmax 放缩之后变成了 0.591 和 0.396，6.2 对应的概率更是变成了 0.013，这有利于把网络训成一个 one-hot 输出的形式，这种方式在分类问题中是常用方法。</p>
+<p>例如网络输出的四维向量为 $v=[−20,10,9.6,6.2]$，第二个维度取到最大值 10，那么输出的动作就是 [0,1,0,0]，也就是说，这和多类别的分类任务是一个道理。但是这种取法有个问题是不能计算梯度，也就不能更新网络。通常的做法是加softmax函数，把向量归一化，这样既能计算梯度，同时值的大小还能表示概率的含义。softmax函数定义如下：</p>
+
+$$
+ \sigma\left(z_{i}\right)=\frac{e^{z_{i}}}{\sum_{j=1}^{K} e^{z_{j}}} 
+$$
+
+<p>那么将 <code>v=[−20,10,9.6,6.2]</code> 通过softmax函数后有 $σ(v)=[0,0.591,0.396,0.013]$，这样做不会改变动作或者说类别的选取，同时 softmax 倾向于让最大值的概率显著大于其他值，比如这里10和9.6经过 softmax 放缩之后变成了 0.591 和 0.396，6.2 对应的概率更是变成了 0.013，这有利于把网络训成一个 one-hot 输出的形式，这种方式在分类问题中是常用方法。</p>
 <p>但是这么做还有一个问题，这个表示概率的向量 $σ(v)=[0,0.591,0.396,0.013]$ 并没有真正显示出概率的含义，因为一旦某个值最大，就选择相应的动作或者分类。比如 $σ(v)=[0,0.591,0.396,0.013]$ 和 $σ(v)=[0,0.9,0.1,0]$ 在类别选取的结果看来没有任何差别，都是选择第二个类别，但是从概率意义上讲差别是巨大的。所以需要一种方法不仅选出动作，而且遵从概率的含义。</p>
 <p>很直接的方法是依概率分布采样就完事了，比如直接用<code>np.random.choice</code>函数依照概率生成样本值，这样概率就有意义了。这样做确实可以，但是又有一个问题冒了出来：这种方式怎么计算梯度？不能计算梯度怎么用 BP 的方式更新网络？</p>
 <p>这时重参数(re-parameterization)技巧解决了这个问题，<a target="_blank" rel="noopener" href="https://casmls.github.io/general/2017/02/01/GumbelSoftmax.html">这里</a>有详尽的解释，不过比较晦涩。简单来说重参数技巧的一个用处是把采样的步骤移出计算图，这样整个图就可以计算梯度BP更新了。之前我一直在想分类任务直接softmax之后BP更新不就完事了吗，为什么非得采样。后来看了VAE和GAN之后明白，还有很多需要采样训练的任务。这里举简单的VAE(变分自编码器)的例子说明需要采样训练的任务以及重参数技巧，详细内容来自<a target="_blank" rel="noopener" href="https://www.bilibili.com/video/av20165127">视频</a>和<a target="_blank" rel="noopener" href="http://kvfrans.com/variational-autoencoders-explained/">博客</a>。</p>
@@ -817,10 +819,13 @@ $$</p>
 <p>对应相加得到新的值向量 $v′=[v_1+G_1,v_2+G_2,…,v_n+G_n]$</p>
 </li>
 <li>
-<p>通过 softmax 函数<br>
-$$<br>
-\sigma_{\tau}\left(v_{i}<sup>{\prime}\right)=\frac{e</sup>{v_{i}^{\prime} / \tau}}{\sum_{j=1}^{n} e<sup>{v_{j}</sup>{\prime} / \tau}}<br>
-$$</p>
+<p>通过 softmax 函数</p>
+
+  $$
+   \sigma_{\tau}\left(v_{i}^{\prime}\right)=\frac{e^{v_{i}^{\prime} / \tau}}{\sum_{j=1}^{n} e^{v_{j}^{\prime} / \tau}} 
+  $$
+
+
 </li>
 </ul>
 <p>计算概率大小得到最终的类别。其中 $τ$ 是温度参数。</p>
@@ -829,11 +834,13 @@ $$</p>
 </blockquote>
 <h3 id="Gumbel分布采样效果">Gumbel分布采样效果</h3>
 <p>为什么使用Gumbel分布生成随机数，就能模拟离散概率分布的样本呢？这部分使用代码模拟来感受它的优越性。这部分例子和代码来自<a target="_blank" rel="noopener" href="http://amid.fish/humble-gumbel">这里</a>。</p>
-<p>Gumbel分布的概率密度函数:<br>
-$$<br>
-p(x)=\frac{1}{\beta} e<sup>{-z-e</sup>{-z}}<br>
-$$<br>
-其中 $ z=\frac{x-\mu}{\beta} $ 。</p>
+<p>Gumbel分布的概率密度函数:</p>
+
+$$
+ p(x)=\frac{1}{\beta} e^{-z-e^{-z}} 
+$$
+
+<p>其中 $ z=\frac{x-\mu}{\beta} $ 。</p>
 <h4 id="极值分布">极值分布</h4>
 <p>Gumbel分布是一类极值分布，那么它表示什么含义呢？</p>
 <p>这里举一个类似的喝水的例子。</p>
@@ -856,50 +863,61 @@ $$<br>
 <p>可以明显看到Gumbel噪声的采样效果是最好的，正态分布其次，均匀分布最差。也就是说可以用Gumbel分布做Re-parameterization使得整个图计算可导，同时样本点最接近真实分布的样本。</p>
 <h3 id="数学证明">数学证明</h3>
 <p>为什么添加 Gumbel 噪声有如此效果，下面阐述问题并给出证明。</p>
-<p>假设有一个 $K$ 维的输出向量，每个维度的值记为 $x_k$,通过 softmax 函数可得，取到每个维度的概率为：<br>
-$$<br>
-\pi_{k}=\frac{e<sup>{x_{k}}}{\sum_{k</sup>{\prime}=1}^{K} e<sup>{x_{k</sup>{\prime}}}}<br>
-$$<br>
-这是直接 softmax 得到的概率密度函数，如果换一种方式，对每个 $x_k$ 添加独立的标准 Gumbel 分布(尺度参数为1，位置参数为0)噪声，并选择值最大的维度作为输出，得到的概率密度同样为 $π_k$。</p>
+<p>假设有一个 $K$ 维的输出向量，每个维度的值记为 $x_k$,通过 softmax 函数可得，取到每个维度的概率为：</p>
+
+$$
+ \pi_{k}=\frac{e^{x_{k}}}{\sum_{k^{\prime}=1}^{K} e^{x_{k^{\prime}}}} 
+$$
+
+<p>这是直接 softmax 得到的概率密度函数，如果换一种方式，对每个 $x_k$ 添加独立的标准 Gumbel 分布(尺度参数为1，位置参数为0)噪声，并选择值最大的维度作为输出，得到的概率密度同样为 $π_k$。</p>
 <p>下面给出Gumbel分布的概率密度函数和分布函数，并证明这件事情。</p>
-<p>尺度参数为1，位置参数为 $μ$ 的Gumbel分布的PDF为:<br>
-$$<br>
-f(z ; \mu)=e<sup>{-(z-\mu)-e</sup>{-(z-\mu)}}<br>
-$$<br>
-CDF为<br>
-$$<br>
-F(z ; \mu)=e<sup>{-e</sup>{-(z-\mu)}}<br>
-$$<br>
-假设第$k $个Gumbel分布对应 $x_k$,加和得到随机变量 $z_k=x_k+G_k$,即相当于 $z_k$ 服从尺度参数为1，位置参数为 $μ=x_k$的 Gumbel分布。要证明这样取得的随机变量 $z_k$与原随机变量相同，只需证明取到 $z_k$ 的概率为 $π_k$。也就是 $z_k$比其他所有 $z_{k′}(k′≠k)$大的概率为 $π_k$，即:<br>
-$$<br>
-P\left(z_{k} \geq z_{k^{\prime}} ; \forall k^{\prime} \neq k \mid\left{x_{k<sup>{\prime}}\right}_{k</sup>{\prime}=1}^{K}\right)=\pi_{k}<br>
-$$<br>
-关于 $z_k$ 的条件累积概率分布函数为<br>
-$$<br>
-\begin{array}{c}P\left(z_{k} \geq z_{k^{\prime}} ; \forall k^{\prime} \neq k \mid z_{k},\left{x_{k<sup>{\prime}}\right}_{k</sup>{\prime}=1}^{K}\right)=P\left(z_{1} \leq z_{k}\right) P\left(z_{2} \leq z_{k}\right) \cdots P\left(z_{k-1} \leq z_{k}\right) P\left(z_{k+1} \leq z_{k}\right) \cdots \ \cdot P\left(z_{K} \leq z_{k}\right)\end{array}<br>
-$$<br>
-即:<br>
-$$<br>
-P\left(z_{k} \geq z_{k^{\prime}} ; \forall k^{\prime} \neq k \mid z_{k},\left{x_{k<sup>{\prime}}\right}_{k</sup>{\prime}=1}<sup>{K}\right)=\prod_{k</sup>{\prime} \neq k} e<sup>{-e</sup>{-\left(z_{k}-x_{k^{\prime}}\right)}}<br>
-$$<br>
-对 $z_k$ 求积分可得边缘累积概率分布函数<br>
-$$<br>
-P\left(z_{k} \geq z_{k^{\prime}} ; \forall k^{\prime} \neq k \mid\left{x_{k<sup>{\prime}}\right}_{k</sup>{\prime}=1}^{K}\right)=\int P\left(z_{k} \geq z_{k^{\prime}} ; \forall k^{\prime} \neq k \mid z_{k},\left{x_{k<sup>{\prime}}\right}_{k</sup>{\prime}=1}^{K}\right) \cdot f\left(z_{k} ; x_{k}\right) d z_{k}<br>
-$$<br>
-带入式子有<br>
-$$<br>
-P\left(z_{k} \geq z_{k^{\prime}} ; \forall k^{\prime} \neq k \mid\left{x_{k<sup>{\prime}}\right}_{k</sup>{\prime}=1}^{K}\right)=\int \prod_{k^{\prime} \neq k} e<sup>{-e</sup>{-\left(z_{k}-x_{k}\right)}} \cdot e<sup>{-\left(z_{k}-x_{k}\right)-e</sup>{-\left(z_{k}-x_{k}\right)}} d z_{k}<br>
-$$<br>
-化简有<br>
-$$<br>
-\begin{array}{l}P\left(z_{k} \geq z_{k^{\prime}} ; \forall k^{\prime} \neq k \mid\left{x_{k<sup>{\prime}}\right}_{k</sup>{\prime}=1}^{K}\right) \ =\int \prod_{k^{\prime} \neq k} e<sup>{-e</sup>{-\left(z_{k}-x_{k^{\prime}}\right)}} \cdot e<sup>{-\left(z_{k}-x_{k}\right)-e</sup>{-\left(z_{k}-x_{k}\right)}} d z_{k} \ =\int e<sup>{-\sum_{k</sup>{\prime} \neq k} e<sup>{-\left(z_{k}-x_{k</sup>{\prime}}\right)}-\left(z_{k}-x_{k}\right)-e^{-\left(z_{k}-x_{k}\right)}} d z_{k} \ =\int e<sup>{-\sum_{k</sup>{\prime}=1}^{K} e<sup>{-\left(z_{k}-x_{k</sup>{\prime}}\right)}-\left(z_{k}-x_{k}\right)} d z_{k} \ =\int e<sup>{-\left(\sum_{k</sup>{\prime}=1}^{K} e<sup>{x</sup>{\prime}}\right) e^{-z_{k}-z_{k}+x_{k}}} d z_{k} \ =\int e<sup>{-e</sup>{-z_{k}+\ln \left(\sum_{k<sup>{\prime}=1}</sup>{K} e<sup>{\left.x_{k</sup>{\prime}}\right)}\right.}-z_{k}+x_{k}} d z_{k} \ =\int e<sup>{-e</sup>{-\left(z_{k}-\ln \left(\sum_{k<sup>{\prime}=1}</sup>{K} e<sup>{x_{k</sup>{\prime}}}\right)\right)}-\left(z_{k}-\ln \left(\sum_{k<sup>{\prime}=1}</sup>{K} e<sup>{x_{k</sup>{\prime}}}\right)\right)-\ln \left(\sum_{k<sup>{\prime}=1}</sup>{K} e<sup>{x_{k</sup>{\prime}}}\right)+x_{k}} d z_{k} \ =e^{-\ln \left(\sum_{k<sup>{\prime}=1}</sup>{K} e<sup>{x_{k</sup>{\prime}}}\right)+x_{k}} \int e<sup>{-e</sup>{-\left(z_{k}-\ln \left(\sum_{k<sup>{\prime}=1}</sup>{K} e<sup>{\left.x_{k</sup>{\prime}}\right)}\right)\right.}-\left(z_{k}-\ln \left(\sum_{k<sup>{\prime}=1}</sup>{K} e<sup>{x_{k</sup>{\prime}}}\right)\right)} d z_{k} \ =\frac{e<sup>{x_{k}}}{\sum_{k</sup>{\prime}=1}^{K} e<sup>{x_{k</sup>{\prime}}}} \int e<sup>{-e</sup>{-\left(z_{k}-\ln \left(\sum_{k<sup>{\prime}=1}</sup>{K} e<sup>{x_{k</sup>{\prime}}}\right)\right)}-\left(z_{k}-\ln \left(\sum_{k<sup>{\prime}=1}</sup>{K} e<sup>{x_{k</sup>{\prime}}}\right)\right)} d z_{k} \ =\frac{e<sup>{x_{k}}}{\sum_{k</sup>{\prime}=1}^{K} e<sup>{x_{k</sup>{\prime}}}} \int e^{-\left(z_{k}-\ln \left(\sum_{k<sup>{\prime}=1}</sup>{K} e<sup>{x_{k</sup>{\prime}}}\right)\right)-e^{-\left(z_{k}-\ln \left(\sum_{k<sup>{\prime}=1}</sup>{K} e<sup>{x_{k</sup>{\prime}}}\right)\right)}} d z_{k} \\end{array}<br>
-$$<br>
-积分里面是 $ \mu=\ln \left(\sum_{k<sup>{\prime}=1}</sup>{K} e<sup>{x_{k</sup>{\prime}}}\right) $ 的Gumbel分布，所以整个积分为1。则有<br>
-$$<br>
-P\left(z_{k} \geq z_{k^{\prime}} ; \forall k^{\prime} \neq k \mid\left{x_{k<sup>{\prime}}\right}_{k</sup>{\prime}=1}<sup>{K}\right)=\frac{e</sup>{x_{k}}}{\sum_{k<sup>{\prime}=1}</sup>{K} e<sup>{x_{k</sup>{\prime}}}}<br>
-$$<br>
-这和softmax的结果一致。</p>
-<h3 id="参考资料-675">参考资料</h3>
+<p>尺度参数为1，位置参数为 $μ$ 的Gumbel分布的PDF为:</p>
+
+$$
+ f(z ; \mu)=e^{-(z-\mu)-e^{-(z-\mu)}} 
+$$
+CDF为
+$$
+ F(z ; \mu)=e^{-e^{-(z-\mu)}} 
+$$
+
+<p>假设第$k $个Gumbel分布对应 $x_k$,加和得到随机变量 $z_k=x_k+G_k$,即相当于 $z_k$ 服从尺度参数为1，位置参数为 $μ=x_k$的 Gumbel分布。要证明这样取得的随机变量 $z_k$与原随机变量相同，只需证明取到 $z_k$ 的概率为 $π_k$。也就是 $z_k$比其他所有 $z_{k′}(k′≠k)$大的概率为 $π_k$，即:</p>
+
+$$
+P\left(z_{k} \geq z_{k^{\prime}} ; \forall k^{\prime} \neq k \mid\left\{x_{k^{\prime}}\right\}_{k^{\prime}=1}^{K}\right)=\pi_{k}
+$$
+关于 $z_k$ 的条件累积概率分布函数为
+$$
+ \begin{array}{c}P\left(z_{k} \geq z_{k^{\prime}} ; \forall k^{\prime} \neq k \mid z_{k},\left\{x_{k^{\prime}}\right\}_{k^{\prime}=1}^{K}\right)=P\left(z_{1} \leq z_{k}\right) P\left(z_{2} \leq z_{k}\right) \cdots P\left(z_{k-1} \leq z_{k}\right) P\left(z_{k+1} \leq z_{k}\right) \cdots \\ \cdot P\left(z_{K} \leq z_{k}\right)\end{array} 
+$$
+即:
+$$
+P\left(z_{k} \geq z_{k^{\prime}} ; \forall k^{\prime} \neq k \mid z_{k},\left\{x_{k^{\prime}}\right\}_{k^{\prime}=1}^{K}\right)=\prod_{k^{\prime} \neq k} e^{-e^{-\left(z_{k}-x_{k^{\prime}}\right)}}
+$$
+对 $z_k$ 求积分可得边缘累积概率分布函数
+
+
+$$
+P\left(z_{k} \geq z_{k^{\prime}} ; \forall k^{\prime} \neq k \mid\left\{x_{k^{\prime}}\right\}_{k^{\prime}=1}^{K}\right)=\int P\left(z_{k} \geq z_{k^{\prime}} ; \forall k^{\prime} \neq k \mid z_{k},\left\{x_{k^{\prime}}\right\}_{k^{\prime}=1}^{K}\right) \cdot f\left(z_{k} ; x_{k}\right) d z_{k}
+$$
+带入式子有
+$$
+ P\left(z_{k} \geq z_{k^{\prime}} ; \forall k^{\prime} \neq k \mid\left\{x_{k^{\prime}}\right\}_{k^{\prime}=1}^{K}\right)=\int \prod_{k^{\prime} \neq k} e^{-e^{-\left(z_{k}-x_{k}\right)}} \cdot e^{-\left(z_{k}-x_{k}\right)-e^{-\left(z_{k}-x_{k}\right)}} d z_{k} 
+$$
+化简有
+$$
+ \begin{array}{l}P\left(z_{k} \geq z_{k^{\prime}} ; \forall k^{\prime} \neq k \mid\left\{x_{k^{\prime}}\right\}_{k^{\prime}=1}^{K}\right) \\ =\int \prod_{k^{\prime} \neq k} e^{-e^{-\left(z_{k}-x_{k^{\prime}}\right)}} \cdot e^{-\left(z_{k}-x_{k}\right)-e^{-\left(z_{k}-x_{k}\right)}} d z_{k} \\ =\int e^{-\sum_{k^{\prime} \neq k} e^{-\left(z_{k}-x_{k^{\prime}}\right)}-\left(z_{k}-x_{k}\right)-e^{-\left(z_{k}-x_{k}\right)}} d z_{k} \\ =\int e^{-\sum_{k^{\prime}=1}^{K} e^{-\left(z_{k}-x_{k^{\prime}}\right)}-\left(z_{k}-x_{k}\right)} d z_{k} \\ =\int e^{-\left(\sum_{k^{\prime}=1}^{K} e^{x^{\prime}}\right) e^{-z_{k}-z_{k}+x_{k}}} d z_{k} \\ =\int e^{-e^{-z_{k}+\ln \left(\sum_{k^{\prime}=1}^{K} e^{\left.x_{k^{\prime}}\right)}\right.}-z_{k}+x_{k}} d z_{k} \\ =\int e^{-e^{-\left(z_{k}-\ln \left(\sum_{k^{\prime}=1}^{K} e^{x_{k^{\prime}}}\right)\right)}-\left(z_{k}-\ln \left(\sum_{k^{\prime}=1}^{K} e^{x_{k^{\prime}}}\right)\right)-\ln \left(\sum_{k^{\prime}=1}^{K} e^{x_{k^{\prime}}}\right)+x_{k}} d z_{k} \\ =e^{-\ln \left(\sum_{k^{\prime}=1}^{K} e^{x_{k^{\prime}}}\right)+x_{k}} \int e^{-e^{-\left(z_{k}-\ln \left(\sum_{k^{\prime}=1}^{K} e^{\left.x_{k^{\prime}}\right)}\right)\right.}-\left(z_{k}-\ln \left(\sum_{k^{\prime}=1}^{K} e^{x_{k^{\prime}}}\right)\right)} d z_{k} \\ =\frac{e^{x_{k}}}{\sum_{k^{\prime}=1}^{K} e^{x_{k^{\prime}}}} \int e^{-e^{-\left(z_{k}-\ln \left(\sum_{k^{\prime}=1}^{K} e^{x_{k^{\prime}}}\right)\right)}-\left(z_{k}-\ln \left(\sum_{k^{\prime}=1}^{K} e^{x_{k^{\prime}}}\right)\right)} d z_{k} \\ =\frac{e^{x_{k}}}{\sum_{k^{\prime}=1}^{K} e^{x_{k^{\prime}}}} \int e^{-\left(z_{k}-\ln \left(\sum_{k^{\prime}=1}^{K} e^{x_{k^{\prime}}}\right)\right)-e^{-\left(z_{k}-\ln \left(\sum_{k^{\prime}=1}^{K} e^{x_{k^{\prime}}}\right)\right)}} d z_{k} \\\end{array} 
+$$
+
+
+积分里面是 $ \mu=\ln \left(\sum_{k^{\prime}=1}^{K} e^{x_{k^{\prime}}}\right) $ 的Gumbel分布，所以整个积分为1。则有
+$$
+ P\left(z_{k} \geq z_{k^{\prime}} ; \forall k^{\prime} \neq k \mid\left\{x_{k^{\prime}}\right\}_{k^{\prime}=1}^{K}\right)=\frac{e^{x_{k}}}{\sum_{k^{\prime}=1}^{K} e^{x_{k^{\prime}}}} 
+$$
+这和softmax的结果一致。
+
+
+<h3 id="参考资料-707">参考资料</h3>
 <ul>
 <li><a target="_blank" rel="noopener" href="https://www.cnblogs.com/initial-h/p/9468974.html">https://www.cnblogs.com/initial-h/p/9468974.html</a></li>
 <li><a target="_blank" rel="noopener" href="https://casmls.github.io/general/2017/02/01/GumbelSoftmax.html">https://casmls.github.io/general/2017/02/01/GumbelSoftmax.html</a></li>
