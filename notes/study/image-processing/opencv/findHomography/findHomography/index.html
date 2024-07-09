@@ -26,7 +26,7 @@
 <meta property="og:locale" content="zh_CN">
 <meta property="og:image" content="https://uipv4.zywvvd.com:33030/HexoFiles/vvd_image_files/202407091115845.png">
 <meta property="article:published_time" content="2024-07-09T02:55:45.000Z">
-<meta property="article:modified_time" content="2024-07-09T06:55:44.016Z">
+<meta property="article:modified_time" content="2024-07-09T07:01:06.411Z">
 <meta property="article:author" content="Yiwei Zhang">
 <meta property="article:tag" content="OpenCV">
 <meta property="article:tag" content="Image_Processing">
@@ -645,7 +645,7 @@
         
         
           <!-- compatible with older versions-->
-          30 分钟
+          29 分钟
         
       </span>
     
@@ -860,30 +860,33 @@
 <blockquote>
 <p>射影变换也叫“单应”–Homography，“Homo”前缀就是same的意思，表示“同”，homography就是用同一个源产生的graphy，中文译过来大概就是“单应”。</p>
 </blockquote>
-<p>上面式子中的矩阵 $H$ 就叫单应性矩阵。上式中的 $x_1$ 和 $x_2$都是$3\times1$的齐次坐标，因此 $H$ 是一个 $3\times3$的矩阵：<br>
-$$<br>
-s<br>
-\begin{bmatrix}<br>
-x^{‘} \<br>
-y^{’} \<br>
-1<br>
-\end{bmatrix} = \mathbf{H}<br>
-\begin{bmatrix}<br>
-x \<br>
-y \<br>
-1<br>
-\end{bmatrix} =<br>
-\begin{bmatrix}<br>
-h_{11} &amp; h_{12} &amp; h_{13} \<br>
-h_{21} &amp; h_{22} &amp; h_{23} \<br>
-h_{31} &amp; h_{32} &amp; h_{33}<br>
-\end{bmatrix}<br>
-\begin{bmatrix}<br>
-x \<br>
-y \<br>
-1<br>
-\end{bmatrix}<br>
-$$</p>
+<p>上面式子中的矩阵 $H$ 就叫单应性矩阵。上式中的 $x_1$ 和 $x_2$都是$3\times1$的齐次坐标，因此 $H$ 是一个 $3\times3$的矩阵：</p>
+
+$$
+s
+\begin{bmatrix}
+x^{'} \\
+y^{'} \\
+1
+\end{bmatrix} = \mathbf{H}
+\begin{bmatrix}
+x \\
+y \\
+1
+\end{bmatrix} =
+\begin{bmatrix}
+h_{11} & h_{12} & h_{13} \\
+h_{21} & h_{22} & h_{23} \\
+h_{31} & h_{32} & h_{33}
+\end{bmatrix}
+\begin{bmatrix}
+x \\
+y \\
+1
+\end{bmatrix}
+$$
+
+
 <h5 id="自由度-DoF-degrees-of-freedom"><strong>自由度</strong> DoF (degrees of freedom)</h5>
 <p>如果给定一个单应 $H={h_{ij}}$，给它的元素乘上同一个数 $a$，得到的的单应 $aH$和 $H$ 作用相同，因为新单应无非把齐次点 $x_1$ 变成了齐次点 $ax_1$，都是一回事。因此我们可以把 $a$ 换成 $1/h_{33}$，那么 $H$ 就变成了只有8个自由元素的矩阵。</p>
 <p>那么需要多少个点对求解这个 $H$ 呢？如果需要唯一解的话，需要4个点对（对应8个方程，去解 $H$ 中的8个未知数）。</p>
@@ -906,68 +909,81 @@ $$</p>
 </ul>
 <p><img src="https://uipv4.zywvvd.com:33030/HexoFiles/vvd_image_files/202407091146130.png" srcset="/img/loading.gif" lazyload alt=""></p>
 <h3 id="单应性矩阵求解">单应性矩阵求解</h3>
-<p>首先，我们假设两张图像中的对应点对齐次坐标为(x’,y’,1)和(x,y,1)，单应矩阵H定义为：<br>
-$$<br>
-\boldsymbol{H}=\begin{bmatrix}h_{11}&amp;h_{12}&amp;h_{13}\h_{21}&amp;h_{22}&amp;h_{23}\h_{31}&amp;h_{32}&amp;h_{33}\end{bmatrix}<br>
-$$<br>
-则有：<br>
-$$<br>
-s<br>
-\begin{bmatrix}<br>
-x^{‘} \<br>
-y^{’} \<br>
-1<br>
-\end{bmatrix} = \mathbf{H}<br>
-\begin{bmatrix}<br>
-x \<br>
-y \<br>
-1<br>
-\end{bmatrix} =<br>
-\begin{bmatrix}<br>
-h_{11} &amp; h_{12} &amp; h_{13} \<br>
-h_{21} &amp; h_{22} &amp; h_{23} \<br>
-h_{31} &amp; h_{32} &amp; h_{33}<br>
-\end{bmatrix}<br>
-\begin{bmatrix}<br>
-x \<br>
-y \<br>
-1<br>
-\end{bmatrix}<br>
-$$<br>
-矩阵展开后有3个等式，将第3个等式代入前两个等式中可得：<br>
-$$<br>
-x<sup>{\prime}=\frac{h_{11}x+h_{12}y+h_{13}}{h_{31}x+h_{32}y+h_{33}}\y</sup>{\prime}=\frac{h_{21}x+h_{22}y+h_{23}}{h_{31}x+h_{32}y+h_{33}}<br>
-$$<br>
-根据上文对单应性矩阵自由度的讨论结果，有两种归一化方法：</p>
+<p>首先，我们假设两张图像中的对应点对齐次坐标为(x’,y’,1)和(x,y,1)，单应矩阵H定义为：</p>
+
+$$
+\boldsymbol{H}=\begin{bmatrix}h_{11}&h_{12}&h_{13}\\h_{21}&h_{22}&h_{23}\\h_{31}&h_{32}&h_{33}\end{bmatrix}
+$$
+则有：
+$$
+s
+\begin{bmatrix}
+x^{'} \\
+y^{'} \\
+1
+\end{bmatrix} = \mathbf{H}
+\begin{bmatrix}
+x \\
+y \\
+1
+\end{bmatrix} =
+\begin{bmatrix}
+h_{11} & h_{12} & h_{13} \\
+h_{21} & h_{22} & h_{23} \\
+h_{31} & h_{32} & h_{33}
+\end{bmatrix}
+\begin{bmatrix}
+x \\
+y \\
+1
+\end{bmatrix}
+$$
+矩阵展开后有3个等式，将第3个等式代入前两个等式中可得：
+$$
+x^{\prime}=\frac{h_{11}x+h_{12}y+h_{13}}{h_{31}x+h_{32}y+h_{33}}\\y^{\prime}=\frac{h_{21}x+h_{22}y+h_{23}}{h_{31}x+h_{32}y+h_{33}}
+$$
+
+<p>根据上文对单应性矩阵自由度的讨论结果，有两种归一化方法：</p>
 <ol>
 <li>令 $s = h_{33} = 1$，那么上述等式变为：</li>
 </ol>
-<p>$$<br>
-x<sup>{\prime}=\frac{h_{11}x+h_{12}y+h_{13}}{h_{31}x+h_{32}y+1}\y</sup>{\prime}=\frac{h_{21}x+h_{22}y+h_{23}}{h_{31}x+h_{32}y+1}<br>
-$$</p>
+
+$$
+x^{\prime}=\frac{h_{11}x+h_{12}y+h_{13}}{h_{31}x+h_{32}y+1}\\y^{\prime}=\frac{h_{21}x+h_{22}y+h_{23}}{h_{31}x+h_{32}y+1}
+$$
+
+
 <ol start="2">
-<li>将 $H$ 添加约束条件，将 $H$ 矩阵模与 $s$ 变为1，则等式如下：</li>
+<li>
+<p>将 $H$ 添加约束条件，将 $H$ 矩阵模与 $s$ 变为1，则等式如下：</p>
+
+
+$$
+\begin{aligned}&x^{\prime}=\frac{h_{11}x+h_{12}y+h_{13}}{h_{31}x+h_{32}y+h_{33}}\\&y^{\prime}=\frac{h_{21}x+h_{22}y+h_{23}}{h_{31}x+h_{32}y+h_{33}}\\&h_{11}^{2}+h_{12}^{2}+h_{13}^{2}+h_{21}^{2}+h_{22}^{2}+h_{23}^{2}+h_{31}^{2}+h_{32}^{2}+h_{33}^{2}=1\end{aligned}
+$$
+
+
+</li>
 </ol>
-<p>$$<br>
-\begin{aligned}&amp;x<sup>{\prime}=\frac{h_{11}x+h_{12}y+h_{13}}{h_{31}x+h_{32}y+h_{33}}\&amp;y</sup>{\prime}=\frac{h_{21}x+h_{22}y+h_{23}}{h_{31}x+h_{32}y+h_{33}}\&amp;h_{11}<sup>{2}+h_{12}</sup>{2}+h_{13}<sup>{2}+h_{21}</sup>{2}+h_{22}<sup>{2}+h_{23}</sup>{2}+h_{31}<sup>{2}+h_{32}</sup>{2}+h_{33}^{2}=1\end{aligned}<br>
-$$</p>
-<p>这里我们用模长为 1 的归一化方法继续推导：<br>
-$$<br>
-(h_{31}x+h_{32}y+h_{33})x^{\prime} = h_{11}x+h_{12}y+h_{13}\(h_{31}x+h_{32}y+h_{33})y^{\prime} = h_{21}x+h_{22}y+h_{23}<br>
-$$<br>
-整理，得到：<br>
-$$<br>
-h_{11}x+h_{12}y+h_{13}-h_{31}xx<sup>{\prime}-h_{32}yx</sup>{\prime}-h_{33}x<sup>{\prime}=0\h_{21}x+h_{22}y+h_{23}-h_{31}xy</sup>{\prime}-h_{32}yy<sup>{\prime}-h_{33}y</sup>{\prime}=0<br>
-$$<br>
-假如我们得到了两幅图片中对应的N个点对（特征点匹配对），那么可以得到如下线性方程组：<br>
-$$<br>
-\left[\begin{array}{ccccccc}x_1&amp;y_1&amp;1&amp;0&amp;0&amp;0&amp;-x_1x_1’&amp;-y_1x_1’&amp;-x_1’\0&amp;0&amp;0&amp;x_1&amp;y_1&amp;1&amp;-x_1y_1’&amp;-y_1y_1’&amp;-y_1’\\\\\\\\\end{array}\right]\left[\begin{array}{c}h_{11}\h_{12}\h_{13}\h_{21}\h_{22}\h_{23}\h_{31}\h_{32}\h_{33}\end{array}\right]=\left[\begin{array}{c}0\0\\\\\\\\\end{array}\right]<br>
-$$<br>
-写成矩阵形式：<br>
-$$<br>
-\begin{array}{cccc}2\mathrm{Nx9}&amp;9\mathrm{x1}&amp;&amp;2\mathrm{Nx1}\\mathbf{A}&amp;\mathbf{h}&amp;=&amp;\mathbf{0}\end{array}<br>
-$$<br>
-由于单应矩阵H包含了 $||H||=1$ 约束，因此根据上图的线性方程组，8自由度的H我们至少需要 4 对对应的点才能计算出单应矩阵。这也回答了前面图像校正中提到的为何至少需要4个点对的根本原因。</p>
+<p>这里我们用模长为 1 的归一化方法继续推导：</p>
+
+$$
+(h_{31}x+h_{32}y+h_{33})x^{\prime} = h_{11}x+h_{12}y+h_{13}\\(h_{31}x+h_{32}y+h_{33})y^{\prime} = h_{21}x+h_{22}y+h_{23}
+$$
+整理，得到：
+$$
+h_{11}x+h_{12}y+h_{13}-h_{31}xx^{\prime}-h_{32}yx^{\prime}-h_{33}x^{\prime}=0\\h_{21}x+h_{22}y+h_{23}-h_{31}xy^{\prime}-h_{32}yy^{\prime}-h_{33}y^{\prime}=0
+$$
+假如我们得到了两幅图片中对应的N个点对（特征点匹配对），那么可以得到如下线性方程组：
+$$
+\left[\begin{array}{ccccccc}x_1&y_1&1&0&0&0&-x_1x_1'&-y_1x_1'&-x_1'\\0&0&0&x_1&y_1&1&-x_1y_1'&-y_1y_1'&-y_1'\\\\\\\\\\\\\\\\\end{array}\right]\left[\begin{array}{c}h_{11}\\h_{12}\\h_{13}\\h_{21}\\h_{22}\\h_{23}\\h_{31}\\h_{32}\\h_{33}\end{array}\right]=\left[\begin{array}{c}0\\0\\\\\\\\\\\\\\\\\end{array}\right]
+$$
+写成矩阵形式：
+$$
+\begin{array}{cccc}2\mathrm{Nx9}&9\mathrm{x1}&&2\mathrm{Nx1}\\\mathbf{A}&\mathbf{h}&=&\mathbf{0}\end{array}
+$$
+
+<p>由于单应矩阵H包含了 $||H||=1$ 约束，因此根据上图的线性方程组，8自由度的H我们至少需要 4 对对应的点才能计算出单应矩阵。这也回答了前面图像校正中提到的为何至少需要4个点对的根本原因。</p>
 <p>但是，以上只是理论推导，在真实的应用场景中，我们计算的点对中都会包含噪声。比如点的位置偏差几个像素，甚至出现特征点对误匹配的现象，如果只使用4个点对来计算单应矩阵，那会出现很大的误差。因此，为了使得计算更精确，一般都会使用远大于4个点对来计算单应矩阵。另外上述方程组采用直接线性解法通常很难得到最优解，所以实际使用中一般会用其他优化方法，如奇异值分解、Levenberg-Marquarat（LM）算法（后续文章会介绍）等进行求解。</p>
 <h4 id="如何根据标定图得到单应矩阵">如何根据标定图得到单应矩阵</h4>
 <p>经过前面一系列的介绍，我们应该大致明白如何根据打印的棋盘标定图和拍摄的照片来计算单应矩阵H。我们来总结一下大致过程。</p>
@@ -996,19 +1012,21 @@ $$<br>
 <p>棋盘格的格子长度已知，因此可以知道各个角点的世界坐标系坐标 $XYZ（Z=0）$。由于 $Z=0$，因此可以忽略掉 $Z$ 这个维度，世界坐标系中某个坐标 $(X,Y,Z,1)$ 到图像坐标 $(x,y,1)$ 的变换就等价于 $(X,Y,1)$ 到图像坐标 $(x,y,1)$ 的变换。此时的变换矩阵就由 $3\times4$ 变为 $3\times3$，成为了单应性矩阵。</p>
 <p>因此用 4 个角点就可以计算 $H$ 的8个参数。以不同的角度对棋盘格拍摄 3 张就可以得到 3 个 $H$，如果用张正友标定法，就可以得到6个约束方程，可以求解B矩阵（对称矩阵）的6个未知参数，进而通过Cholesky分解求解出内参矩阵A的参数。</p>
 <p><img src="https://uipv4.zywvvd.com:33030/HexoFiles/vvd_image_files/202407091135648.png" srcset="/img/loading.gif" lazyload alt=""></p>
-<p>像素坐标系和世界坐标系下的坐标映射关系：<br>
-$$<br>
-\begin{bmatrix}u\\nu\1\end{bmatrix}=s\begin{bmatrix}f_x&amp;\gamma&amp;u_0\0&amp;f_y&amp;\nu_0\0&amp;0&amp;1\end{bmatrix}\begin{bmatrix}r_1&amp;r_2&amp;t\end{bmatrix}\begin{bmatrix}x_W\y_W\z_W\end{bmatrix}<br>
-$$<br>
-相机下的单应性（Homography）变换，可以简单的理解为它用来描述物体在世界坐标系和像素坐标系之间的位置映射关系。对应的变换矩阵称为单应性矩阵。在上述式子中，单应性矩阵定义为：<br>
-$$<br>
-H=s\begin{bmatrix}f_x&amp;\gamma&amp;u_0\0&amp;f_y&amp;\nu_0\0&amp;0&amp;1\end{bmatrix}\begin{bmatrix}r_1&amp;r_2&amp;t\end{bmatrix}=sM\begin{bmatrix}r_1&amp;r_2&amp;t\end{bmatrix}<br>
-$$<br>
-其中，M是内参矩阵。<br>
-$$<br>
-M=\begin{bmatrix}f_x&amp;\gamma&amp;u_0\0&amp;f_y&amp;\nu_0\0&amp;0&amp;1\end{bmatrix}<br>
-$$<br>
-从单应矩阵定义式子来看，它同时包含了相机内参和外参。</p>
+<p>像素坐标系和世界坐标系下的坐标映射关系：</p>
+
+$$
+\begin{bmatrix}u\\\nu\\1\end{bmatrix}=s\begin{bmatrix}f_x&\gamma&u_0\\0&f_y&\nu_0\\0&0&1\end{bmatrix}\begin{bmatrix}r_1&r_2&t\end{bmatrix}\begin{bmatrix}x_W\\y_W\\z_W\end{bmatrix}
+$$
+相机下的单应性（Homography）变换，可以简单的理解为它用来描述物体在世界坐标系和像素坐标系之间的位置映射关系。对应的变换矩阵称为单应性矩阵。在上述式子中，单应性矩阵定义为：
+$$
+H=s\begin{bmatrix}f_x&\gamma&u_0\\0&f_y&\nu_0\\0&0&1\end{bmatrix}\begin{bmatrix}r_1&r_2&t\end{bmatrix}=sM\begin{bmatrix}r_1&r_2&t\end{bmatrix}
+$$
+其中，M是内参矩阵。
+$$
+M=\begin{bmatrix}f_x&\gamma&u_0\\0&f_y&\nu_0\\0&0&1\end{bmatrix}
+$$
+
+<p>从单应矩阵定义式子来看，它同时包含了相机内参和外参。</p>
 <p><img src="https://uipv4.zywvvd.com:33030/HexoFiles/vvd_image_files/202407091140392.png" srcset="/img/loading.gif" lazyload alt=""></p>
 <h4 id="图像校正">图像校正</h4>
 <p>用单应矩阵进行图像矫正的例子如下图所示，最少需要四个对应点对就可以实现。</p>
@@ -1070,15 +1088,17 @@ $$<br>
 </tr>
 </tbody>
 </table>
-<p>函数功能：该函数能够找到并返回源平面和目标平面之间的转换矩阵H，以便于反向投影错误率达到最小。<br>
-$$<br>
-s_i\begin{bmatrix}x_i’\y_i’\1\end{bmatrix}\sim H\begin{bmatrix}x_i\y_i\1\end{bmatrix}<br>
-$$<br>
-反投影误差计算方法：<br>
-$$<br>
-\sum_i\left(x_i<sup>{\prime}-\frac{h_{11}x_i+h_{12}y_i+h_{13}}{h_{31}x_i+h_{32}y_i+h_{33}}\right)</sup>2+\left(y_i<sup>{\prime}-\frac{h_{21}x_i+h_{22}y_i+h_{23}}{h_{31}x_i+h_{32}y_i+h_{33}}\right)</sup>2<br>
-$$<br>
-如果方法参数method值为默认值0，则该函数使用所有点对来计算具有简单最小二乘的初始单应性估计。但并不是所有点对都合适刚性透视变换(即存在一些外点,匹配错误点对),那么这个初始估计就很差。在这种情况下，可以使用RANSAC、LMeDS和RHO等算法尝试对应点对的许多不同子集，使用该子集和简单最小二乘算法估计单应矩阵，然后计算单应性矩阵的质量(内点的数量或重投影误差)。最后使用最佳子集来差生单应性矩阵的初始估计。有了初始的单应性的估计矩阵后，都会采用Levenberg-Marquardt方法进行细化，以进一步减少重投影误差。</p>
+<p>函数功能：该函数能够找到并返回源平面和目标平面之间的转换矩阵H，以便于反向投影错误率达到最小。</p>
+
+$$
+s_i\begin{bmatrix}x_i'\\y_i'\\1\end{bmatrix}\sim H\begin{bmatrix}x_i\\y_i\\1\end{bmatrix}
+$$
+反投影误差计算方法：
+$$
+\sum_i\left(x_i^{\prime}-\frac{h_{11}x_i+h_{12}y_i+h_{13}}{h_{31}x_i+h_{32}y_i+h_{33}}\right)^2+\left(y_i^{\prime}-\frac{h_{21}x_i+h_{22}y_i+h_{23}}{h_{31}x_i+h_{32}y_i+h_{33}}\right)^2
+$$
+
+<p>如果方法参数method值为默认值0，则该函数使用所有点对来计算具有简单最小二乘的初始单应性估计。但并不是所有点对都合适刚性透视变换(即存在一些外点,匹配错误点对),那么这个初始估计就很差。在这种情况下，可以使用RANSAC、LMeDS和RHO等算法尝试对应点对的许多不同子集，使用该子集和简单最小二乘算法估计单应矩阵，然后计算单应性矩阵的质量(内点的数量或重投影误差)。最后使用最佳子集来差生单应性矩阵的初始估计。有了初始的单应性的估计矩阵后，都会采用Levenberg-Marquardt方法进行细化，以进一步减少重投影误差。</p>
 <p>【注】：该函数返回归一化后的H矩阵，若无法估计H矩阵，则返回一个空矩阵Mat。</p>
 <h3 id="OpenCV-实现">OpenCV 实现</h3>
 <p>图像1（原始图像）</p>
