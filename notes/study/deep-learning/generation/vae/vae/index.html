@@ -1,0 +1,1729 @@
+
+
+<!DOCTYPE html>
+<html lang="zh-CN" data-default-color-scheme=auto>
+
+
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="baidu-site-verification" content="codeva-rLWafCJGYc" />
+  <link rel="apple-touch-icon" sizes="76x76" href="/image/avatar.png">
+  <link rel="icon" href="/image/avatar.png">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, shrink-to-fit=no">
+  <meta http-equiv="x-ua-compatible" content="ie=edge">
+  
+  <meta name="theme-color" content="#2f4154">
+  <meta name="author" content="Yiwei Zhang">
+  <meta name="keywords" content="人工智能, 深度学习, 个人博客, 机器学习">
+  
+    <meta name="description" content="变分自编码器 (Variational Auto-Encoders, VAE) 属于生成模型家族。VAE 的生成器能够利用连续潜在空间的矢量产生有意义的输出，它是包含隐变量的一种模型，通过潜在矢量探索解码器输出的可能属性。">
+<meta property="og:type" content="article">
+<meta property="og:title" content="变分自编码器 VAE">
+<meta property="og:url" content="https://www.zywvvd.com/notes/study/deep-learning/generation/vae/vae/index.html">
+<meta property="og:site_name" content="又见苍岚">
+<meta property="og:description" content="变分自编码器 (Variational Auto-Encoders, VAE) 属于生成模型家族。VAE 的生成器能够利用连续潜在空间的矢量产生有意义的输出，它是包含隐变量的一种模型，通过潜在矢量探索解码器输出的可能属性。">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="https://uipv4.zywvvd.com:33030/HexoFiles/vvd_pc_upload/202208271709521.jpg">
+<meta property="og:image" content="https://uipv4.zywvvd.com:33030/HexoFiles/vvd_pc_upload/202208271650354.jpg">
+<meta property="og:image" content="https://uipv4.zywvvd.com:33030/HexoFiles/vvd_pc_upload/202208271723136.jpg">
+<meta property="og:image" content="https://uipv4.zywvvd.com:33030/HexoFiles/vvd_pc_upload/202208292322466.jpg">
+<meta property="og:image" content="https://uipv4.zywvvd.com:33030/HexoFiles/vvd_pc_upload/202208292336495.jpg">
+<meta property="og:image" content="https://uipv4.zywvvd.com:33030/HexoFiles/vvd_pc_upload/202208292343806.jpg">
+<meta property="og:image" content="https://uipv4.zywvvd.com:33030/HexoFiles/vvd_pc_upload/202208292356185.jpg">
+<meta property="og:image" content="https://uipv4.zywvvd.com:33030/HexoFiles/vvd_file_mt/202208301148874.jpg">
+<meta property="og:image" content="https://uipv4.zywvvd.com:33030/HexoFiles/vvd_file_mt/202209061054506.jpg">
+<meta property="og:image" content="https://uipv4.zywvvd.com:33030/HexoFiles/vvd_file_mt/202208301155077.jpg">
+<meta property="article:published_time" content="2022-08-25T15:42:49.000Z">
+<meta property="article:modified_time" content="2024-05-07T05:57:50.532Z">
+<meta property="article:author" content="Yiwei Zhang">
+<meta property="article:tag" content="Deep_Learning">
+<meta property="article:tag" content="Generation_Model">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:image" content="https://uipv4.zywvvd.com:33030/HexoFiles/vvd_pc_upload/202208271709521.jpg">
+  
+  
+  
+  <title>变分自编码器 VAE - 又见苍岚</title>
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/twitter-bootstrap/4.6.1/css/bootstrap.min.css" />
+
+
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/github-markdown-css/4.0.0/github-markdown.min.css" />
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/hint.css/2.7.0/hint.min.css" />
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/fancybox/3.5.7/jquery.fancybox.min.css" />
+
+
+
+<!-- 主题依赖的图标库，不要自行修改 -->
+<!-- Do not modify the link that theme dependent icons -->
+
+<link rel="stylesheet" href="//at.alicdn.com/t/font_1749284_hj8rtnfg7um.css">
+
+
+
+<link rel="stylesheet" href="//at.alicdn.com/t/font_1736178_lbnruvf0jn.css">
+
+
+<link  rel="stylesheet" href="/css/main.css" />
+
+
+  <link id="highlight-css" rel="stylesheet" href="/css/highlight.css" />
+  
+    <link id="highlight-css-dark" rel="stylesheet" href="/css/highlight-dark.css" />
+  
+
+
+
+  
+<link rel="stylesheet" href="/css/custom.css">
+<link rel="stylesheet" href="/css/reward.css">
+<link rel="stylesheet" href="//cdn.jsdelivr.net/npm/aplayer/dist/APlayer.min.css">
+
+
+
+  <script id="fluid-configs">
+    var Fluid = window.Fluid || {};
+    Fluid.ctx = Object.assign({}, Fluid.ctx)
+    var CONFIG = {"hostname":"www.zywvvd.com","root":"/","version":"1.9.7","typing":{"enable":true,"typeSpeed":90,"cursorChar":"_","loop":false,"scope":["home"]},"anchorjs":{"enable":true,"element":"h1,h2,h3,h4,h5,h6","placement":"left","visible":"hover","icon":""},"progressbar":{"enable":true,"height_px":3,"color":"#29d","options":{"showSpinner":false,"trickleSpeed":100}},"code_language":{"enable":true,"default":"TEXT"},"copy_btn":true,"image_caption":{"enable":true},"image_zoom":{"enable":true,"img_url_replace":["",""]},"toc":{"enable":true,"placement":"right","headingSelector":"h1,h2,h3,h4,h5,h6","collapseDepth":0},"lazyload":{"enable":true,"loading_img":"/img/loading.gif","onlypost":false,"offset_factor":2},"web_analytics":{"enable":true,"follow_dnt":true,"baidu":null,"google":null,"tencent":{"sid":null,"cid":null},"woyaola":null,"cnzz":null,"leancloud":{"app_id":"Cv0XNeBSBdAPAIuVj3PsyM3R-MdYXbMMI","app_key":"4PU1rNlGrqXWzhfW3dgq98oX","server_url":null,"path":"window.location.pathname","ignore_local":false},"gtag":null},"search_path":"/local-search.xml","include_content_in_search":true};
+
+    if (CONFIG.web_analytics.follow_dnt) {
+      var dntVal = navigator.doNotTrack || window.doNotTrack || navigator.msDoNotTrack;
+      Fluid.ctx.dnt = dntVal && (dntVal.startsWith('1') || dntVal.startsWith('yes') || dntVal.startsWith('on'));
+    }
+  </script>
+  <script  src="/js/utils.js" ></script>
+  <script  src="/js/color-schema.js" ></script>
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+    
+  
+
+
+
+  
+<meta name="generator" content="Hexo 7.2.0"><link rel="alternate" href="/atom.xml" title="又见苍岚" type="application/atom+xml">
+</head>
+
+
+<body>
+  
+<div id="Loadanimation" style="z-index:999999;">
+<div id="Loadanimation-center">
+   <div id="Loadanimation-center-absolute">
+       <div class="xccx_object" id="xccx_four"></div>
+       <div class="xccx_object" id="xccx_three"></div>
+       <div class="xccx_object" id="xccx_two"></div>
+       <div class="xccx_object" id="xccx_one"></div>
+   </div>
+</div>
+</div>
+
+<link href="/css/loading.css"type="text/css"rel="stylesheet"/>
+
+
+
+
+
+
+<div>
+	<div class='real_mask' style="
+		background-color: rgba(0,0,0,0.4);
+		width: 100%;
+		height: 100%;
+		position: fixed;
+		z-index: -777;
+	"></div>
+	<div id="banner_video_insert">
+	</div>	
+	<div id='vvd_banner_img'>
+	</div>
+</div>
+<div id="banner"></div>
+
+
+
+
+
+
+
+  <header>
+    
+
+<div class="header-inner" style="height: 80vh;">
+  <nav id="navbar" class="navbar fixed-top  navbar-expand-lg navbar-dark scrolling-navbar">
+  <div class="container">
+    <a class="navbar-brand" href="/">
+      <strong>CangLan</strong>
+    </a>
+
+    <button id="navbar-toggler-btn" class="navbar-toggler" type="button" data-toggle="collapse"
+            data-target="#navbarSupportedContent"
+            aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
+      <div class="animated-icon"><span></span><span></span><span></span></div>
+    </button>
+
+    <!-- Collapsible content -->
+    <div class="collapse navbar-collapse" id="navbarSupportedContent">
+      <ul class="navbar-nav ml-auto text-center">
+        
+          
+          
+          
+          
+            <li class="nav-item">
+		<div >
+		      <a class="nav-link" href="/" target="_self" data-umami-event="Navigation-Homepage">
+
+		        <i class="iconfont icon-home-fill"></i>
+		        <span>首页</span>
+		      </a>
+		</div>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item dropdown">
+              <a class="nav-link dropdown-toggle" target="_self" href="javascript:;" role="button"
+                 data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                <i class="iconfont icon-shuji1"></i>
+                <span>文章</span>
+              </a>
+              <div class="dropdown-menu" aria-labelledby="navbarDropdown">
+                
+                  
+                  
+                  
+		<div >
+
+                  <a class="dropdown-item" href="/archives/" target="_self" data-umami-event="Navigation-Archive">
+
+                    <i class="iconfont icon-archive-fill"></i>
+                    <span>归档</span>
+                  </a>
+		</div>
+                
+                  
+                  
+                  
+		<div >
+
+                  <a class="dropdown-item" href="/categories/" target="_self" data-umami-event="Navigation-Category">
+
+                    <i class="iconfont icon-category-fill"></i>
+                    <span>分类</span>
+                  </a>
+		</div>
+                
+                  
+                  
+                  
+		<div >
+
+                  <a class="dropdown-item" href="/tags/" target="_self" data-umami-event="Navigation-Tag">
+
+                    <i class="iconfont icon-tags-fill"></i>
+                    <span>标签</span>
+                  </a>
+		</div>
+                
+                  
+                  
+                  
+		<div >
+
+                  <a class="dropdown-item" href="/shuoshuo/" target="_self" data-umami-event="Navigation-Shuoshuo">
+
+                    <i class="iconfont icon-24gf-bubblesDots4"></i>
+                    <span>说说</span>
+                  </a>
+		</div>
+                
+              </div>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item dropdown">
+              <a class="nav-link dropdown-toggle" target="_self" href="javascript:;" role="button"
+                 data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                <i class="iconfont icon-momo"></i>
+                <span>社交</span>
+              </a>
+              <div class="dropdown-menu" aria-labelledby="navbarDropdown">
+                
+                  
+                  
+                  
+		<div >
+
+                  <a class="dropdown-item" href="/links/" target="_self" data-umami-event="Navigation-Friends">
+
+                    <i class="iconfont icon-link-fill"></i>
+                    <span>友链</span>
+                  </a>
+		</div>
+                
+                  
+                  
+                  
+		<div >
+
+                  <a class="dropdown-item" href="/messagebd/" target="_self" data-umami-event="Navigation-MessageBoard">
+
+                    <i class="iconfont icon-comment"></i>
+                    <span>留言板</span>
+                  </a>
+		</div>
+                
+                  
+                  
+                  
+		<div >
+
+                  <a class="dropdown-item" href="/atom.xml" target="_self" data-umami-event="Navigation-RSS">
+
+                    <i class="iconfont icon-dingyue"></i>
+                    <span>RSS订阅</span>
+                  </a>
+		</div>
+                
+              </div>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item dropdown">
+              <a class="nav-link dropdown-toggle" target="_self" href="javascript:;" role="button"
+                 data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                <i class="iconfont icon-user-fill"></i>
+                <span>个人</span>
+              </a>
+              <div class="dropdown-menu" aria-labelledby="navbarDropdown">
+                
+                  
+                  
+                  
+		<div >
+
+                  <a class="dropdown-item" href="/about/" target="_self" data-umami-event="Navigation-AboutMe">
+
+                    <i class="iconfont icon-guanyuwomen"></i>
+                    <span>关于</span>
+                  </a>
+		</div>
+                
+                  
+                  
+                  
+		<div >
+
+                  <a class="dropdown-item" href="/playlist/" target="_self" data-umami-event="Navigation-Music">
+
+                    <i class="iconfont icon-music"></i>
+                    <span>歌单</span>
+                  </a>
+		</div>
+                
+                  
+                  
+                  
+		<div >
+
+                  <a class="dropdown-item" href="https://uipv4.zywvvd.com:33035" target="_self" data-umami-event="Navigation-Nextcloud">
+
+                    <i class="iconfont icon-xuniyingpan"></i>
+                    <span>网盘</span>
+                  </a>
+		</div>
+                
+                  
+                  
+                  
+		<div >
+
+                  <a class="dropdown-item" href="https://uipv4.zywvvd.com:38920" target="_self" data-umami-event="Navigation-Emby">
+
+                    <i class="iconfont icon-meiti"></i>
+                    <span>影院</span>
+                  </a>
+		</div>
+                
+                  
+                  
+                  
+		<div >
+
+                  <a class="dropdown-item" href="https://uipv4.zywvvd.com:33036" target="_self" data-umami-event="Navigation-OneDev">
+
+                    <i class="iconfont icon-git"></i>
+                    <span>仓库</span>
+                  </a>
+		</div>
+                
+                  
+                  
+                  
+		<div >
+
+                  <a class="dropdown-item" href="https://uipv4.zywvvd.com:33041" target="_self" data-umami-event="Navigation-Wiki">
+
+                    <i class="iconfont icon-wiki"></i>
+                    <span>百科</span>
+                  </a>
+		</div>
+                
+              </div>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item dropdown">
+              <a class="nav-link dropdown-toggle" target="_self" href="javascript:;" role="button"
+                 data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                <i class="iconfont icon-ic_fly"></i>
+                <span>导航</span>
+              </a>
+              <div class="dropdown-menu" aria-labelledby="navbarDropdown">
+                
+                  
+                  
+                  
+		<div >
+
+                  <a class="dropdown-item" href="/site-map/" target="_self" data-umami-event="Navigation-SiteMap">
+
+                    <i class="iconfont icon-lianjie"></i>
+                    <span>链接</span>
+                  </a>
+		</div>
+                
+                  
+                  
+                  
+		<div >
+
+                  <a class="dropdown-item" href="/nodeppt/hexo/snavigation/" target="_self" data-umami-event="Navigation-Search">
+
+                    <i class="iconfont icon-sousuo"></i>
+                    <span>搜索</span>
+                  </a>
+		</div>
+                
+              </div>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item dropdown">
+              <a class="nav-link dropdown-toggle" target="_self" href="javascript:;" role="button"
+                 data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                <i class="iconfont icon-wangzhan"></i>
+                <span>站点</span>
+              </a>
+              <div class="dropdown-menu" aria-labelledby="navbarDropdown">
+                
+                  
+                  
+                  
+		<div >
+
+                  <a class="dropdown-item" href="https://uipv4.zywvvd.com:33039/share/0zx3o21oIpZTZqwC/%E5%8F%88%E8%A7%81%E8%8B%8D%E5%B2%9A" target="_self" data-umami-event="Navigation-Umami">
+
+                    <i class="iconfont icon-tongji2"></i>
+                    <span>站点分析</span>
+                  </a>
+		</div>
+                
+                  
+                  
+                  
+		<div >
+
+                  <a class="dropdown-item" href="/earth_sta/" target="_self" data-umami-event="Navigation-Globe">
+
+                    <i class="iconfont icon-tongjifenxi-xiangmubiaogetongji"></i>
+                    <span>访问统计</span>
+                  </a>
+		</div>
+                
+                  
+                  
+                  
+		<div >
+
+                  <a class="dropdown-item" href="https://uipv4.zywvvd.com:33034/status/show" target="_self" data-umami-event="Navigation-Monitor">
+
+                    <i class="iconfont icon-jiankong"></i>
+                    <span>站点监控</span>
+                  </a>
+		</div>
+                
+              </div>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item dropdown">
+              <a class="nav-link dropdown-toggle" target="_self" href="javascript:;" role="button"
+                 data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                <i class="iconfont icon-chuansong"></i>
+                <span>传送</span>
+              </a>
+              <div class="dropdown-menu" aria-labelledby="navbarDropdown">
+                
+                  
+                  
+                  
+		<div >
+
+                  <a class="dropdown-item" href="https://www.foreverblog.cn/go.html" target="_self" data-umami-event="Navigation-ForeverBolg">
+
+                    <i class="iconfont icon-a-BlackHole"></i>
+                    <span>十年之约</span>
+                  </a>
+		</div>
+                
+                  
+                  
+                  
+		<div >
+
+                  <a class="dropdown-item" href="https://www.travellings.cn/go.html" target="_self" data-umami-event="Navigation-DriveTo">
+
+                    <i class="iconfont icon-train1"></i>
+                    <span>开往</span>
+                  </a>
+		</div>
+                
+                  
+                  
+                  
+		<div >
+
+                  <a class="dropdown-item" href="https://bf.zzxworld.com/" target="_self" data-umami-event="Navigation-BlogFinder">
+
+                    <i class="iconfont icon-icon-"></i>
+                    <span>BlogFinder</span>
+                  </a>
+		</div>
+                
+              </div>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item dropdown">
+              <a class="nav-link dropdown-toggle" target="_self" href="javascript:;" role="button"
+                 data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                <i class="iconfont icon-gongju"></i>
+                <span>工具</span>
+              </a>
+              <div class="dropdown-menu" aria-labelledby="navbarDropdown">
+                
+                  
+                  
+                  
+		<div >
+
+                  <a class="dropdown-item" href="/navigates/calculator" target="_self" data-umami-event="Navigation-Calculator">
+
+                    <i class="iconfont icon-jisuan"></i>
+                    <span>计算器</span>
+                  </a>
+		</div>
+                
+                  
+                  
+                  
+		<div >
+
+                  <a class="dropdown-item" href="/navigates/webgraphviz" target="_self" data-umami-event="Navigation-WebGtaphviz">
+
+                    <i class="iconfont icon-tongyong-huatugongju2"></i>
+                    <span>Graphviz</span>
+                  </a>
+		</div>
+                
+              </div>
+            </li>
+          
+        
+        
+          <li class="nav-item" id="search-btn">
+            <a class="nav-link" target="_self" href="javascript:;" data-toggle="modal" data-target="#modalSearch" aria-label="Search">
+              <i class="iconfont icon-search"></i>
+            </a>
+          </li>
+          
+        
+        
+          <li class="nav-item" id="color-toggle-btn">
+            <a class="nav-link" target="_self" href="javascript:;" aria-label="Color Toggle">
+              <i class="iconfont icon-dark" id="color-toggle-icon"></i>
+            </a>
+          </li>
+        
+      </ul>
+    </div>
+  </div>
+</nav>
+
+  
+
+<div id="banner" class="banner" parallax=true
+     style="background: url('https://uipv4.zywvvd.com:33030/HexoFiles/new/bg-trans.png') no-repeat center center; background-size: cover;">
+  <div class="full-bg-img">
+    <div class="mask flex-center" style="background-color: rgba(0, 0, 0, 0)">
+      <div class="banner-text text-center fade-in-up">
+        <div class="h2">
+          
+            <span id="subtitle">变分自编码器 VAE</span>
+          
+        </div>
+
+        
+          
+  <div class="mt-3">
+    
+      <span class="post-meta mr-2">
+        <i class="iconfont icon-author" aria-hidden="true"></i>
+        Yiwei Zhang
+      </span>
+    
+    
+      <span class="post-meta">
+        <i class="iconfont icon-date-fill" aria-hidden="true"></i>
+        <time datetime="2022-08-25 23:42" pubdate>
+          2022年8月25日 晚上
+        </time>
+      </span>
+    
+  </div>
+
+  <div class="mt-1">
+    
+      <span class="post-meta mr-2">
+        <i class="iconfont icon-chart"></i>
+        
+          <!-- compatible with older versions-->
+          4.1k 字
+        
+      </span>
+    
+
+    
+      <span class="post-meta mr-2">
+        <i class="iconfont icon-clock-fill"></i>
+        
+        
+        
+          <!-- compatible with older versions-->
+          35 分钟
+        
+      </span>
+    
+
+    
+    
+      
+        <span id="vvdpost_container_page_pvuv" style="display: none">
+          <i class="iconfont icon-eye" aria-hidden="true"></i>
+          <span id="vvdpost_value_page_pv">0</span> 次&nbsp&nbsp
+		  <i class="iconfont icon-users" aria-hidden="true"></i>
+		  <span id="vvdpost_value_page_uv">0</span> 人&nbsp&nbsp
+		  <i class="iconfont icon-comment" aria-hidden="true"></i>
+		  <span id="vvdpost_value_page_cn">0</span> 条
+        </span>
+
+		<script>
+			console.log(window.location.pathname)
+			var httpRequest = new XMLHttpRequest();
+			httpRequest.open('POST', 'https://uipv4.zywvvd.com:33037/poststats', true);
+			httpRequest.setRequestHeader("Content-type","application/json");
+			httpRequest.send(JSON.stringify(window.location.pathname));
+			httpRequest.onreadystatechange = function () {//请求后的回调接口，可将请求成功后要执行的程序写在其中
+				if (httpRequest.readyState == 4 && httpRequest.status == 200) {//验证请求是否发送成功
+					var json = httpRequest.responseText;//获取到服务端返回的数据
+					var obj = JSON.parse(json);
+					var pvCtn = document.querySelector('#vvdpost_container_page_pvuv');
+					if (pvCtn) {
+						var pv_ele = document.querySelector('#vvdpost_value_page_pv');
+						var uv_ele = document.querySelector('#vvdpost_value_page_uv');
+						var cn_ele = document.querySelector('#vvdpost_value_page_cn');
+
+						if (uv_ele && uv_ele) {
+							pv_ele.innerText = obj.pv;
+							uv_ele.innerText = obj.uv;
+							cn_ele.innerText = obj.cn;
+							pvCtn.style.display = 'inline';
+							}
+						}
+					}
+			};
+		</script>
+      
+    
+  </div>
+
+
+        
+      </div>
+
+      
+        <div class="scroll-down-bar">
+          <i class="iconfont icon-arrowdown"></i>
+        </div>
+      
+    </div>
+  </div>
+</div>
+
+</div>
+
+
+	<script type="text/javascript" src="/vvd_js/jquery.js"></script>
+	<script async src="https://uipv4.zywvvd.com:33039/script.js" data-website-id="dd4a05c6-dde2-4743-9c3a-a79d6bee0778"></script>
+	<div class="banner" id='banner' >
+
+		<div class="full-bg-img" >
+
+			
+				<script>
+					var ua = navigator.userAgent;
+					var ipad = ua.match(/(iPad).*OS\s([\d_]+)/),
+						isIphone = !ipad && ua.match(/(iPhone\sOS)\s([\d_]+)/),
+						isAndroid = ua.match(/(Android)\s+([\d.]+)/),
+						isMobile = isIphone || isAndroid;
+
+					function set_video_attr(id){
+						var height = document.body.clientHeight
+						var width = document.body.clientWidth
+						var video_item = document.getElementById(id);
+
+						if (height / width < 0.56){
+							video_item.setAttribute('width', '100%');
+							video_item.setAttribute('height', 'auto');
+						} else {
+							video_item.setAttribute('height', '100%');
+							video_item.setAttribute('width', 'auto');
+						}
+					}
+
+					fetch('https://uipv4.zywvvd.com:33037/wallpaper-pair')
+					  .then(response => response.json()) // 解析JSON数据
+					  .then(data => {
+						console.log('获取链接成功');
+						video_url = data[0][0]
+						pre_show_image_url = data[0][1]
+
+						banner_obj = document.getElementById("banner")
+						banner_obj.style.cssText = "background: url('" + pre_show_image_url + "') no-repeat;"
+
+						vvd_banner_obj = document.getElementById("vvd_banner_img")
+						vvd_banner_content = "<img id='banner_img_item' src='" + pre_show_image_url + "'style='position: fixed; z-index: -999'>"
+						vvd_banner_obj.innerHTML = vvd_banner_content 
+
+						if (!isMobile) {
+							video_html_res = "<video id='video_item' style='position: fixed; z-index: -888;'  muted='muted' src=" + video_url + " autoplay='autoplay' loop='loop'></video>"
+							document.getElementById("banner_video_insert").innerHTML = video_html_res;
+							set_video_attr('video_item')
+							set_video_attr('banner_img_item')
+						}
+					    
+					  })
+					  .catch((error) => {
+					    console.error('请求失败,尝试本地获取背景图像：', error);
+	    					$.getJSON('/vvd_js/video_url.json', function(data){
+
+							var video_list_length = data.length
+							var seed = Math.random()
+							index = Math.floor(seed * video_list_length)
+
+							video_url = data[index][0]
+							pre_show_image_url = data[index][1]
+
+							banner_obj = document.getElementById("banner")
+							banner_obj.style.cssText = "background: url('" + pre_show_image_url + "') no-repeat;"
+
+							vvd_banner_obj = document.getElementById("vvd_banner_img")
+							vvd_banner_content = "<img id='banner_img_item' src='" + pre_show_image_url + "'style='position: fixed; z-index: -999'>"
+							vvd_banner_obj.innerHTML = vvd_banner_content 
+
+							if (!isMobile) {
+								video_html_res = "<video id='video_item' style='position: fixed; z-index: -888;'  muted='muted' src=" + video_url + " autoplay='autoplay' loop='loop'></video>"
+								document.getElementById("banner_video_insert").innerHTML = video_html_res;
+								set_video_attr('video_item')
+								set_video_attr('banner_img_item')
+							}
+						});
+					  });
+
+
+
+
+
+
+					if (!isMobile){
+						window.onresize = function(){
+							set_video_attr('video_item')
+							set_video_attr('banner_img_item')
+							}
+						}
+				</script>
+
+			
+
+
+			
+			</div>
+		</div>
+    </div>
+
+  </header>
+
+  <main>
+    
+      
+
+
+
+<div class="container-fluid nopadding-x">
+  <div class="row nomargin-x">
+    <div class="side-col d-none d-lg-block col-lg-2">
+      
+
+    </div>
+
+    <div class="col-lg-8 nopadding-x-md">
+      <div class="container nopadding-x-md" id="board-ctn">
+        <div id="board">
+          <article class="post-content mx-auto">
+
+            <!-- <h1 id="seo-header">变分自编码器 VAE</h1> -->
+
+            
+              <p id="updated-time" class="note note-info" style="">
+                
+                  
+                    <!-- compatible with older versions-->
+                    本文最后更新于：2024年5月7日 下午
+                  
+                
+              </p>
+            
+            
+              <div class="markdown-body">
+                
+                <blockquote>
+<p>变分自编码器 (Variational Auto-Encoders, VAE) 属于生成模型家族。VAE 的生成器能够利用连续潜在空间的矢量产生有意义的输出，它是包含隐变量的一种模型，通过潜在矢量探索解码器输出的可能属性。</p>
+</blockquote>
+<span id="more"></span>
+<h3 id="简介">简介</h3>
+<p>简单来讲，<strong>变分自编码器是可以和GAN相媲美的生成网络。我们可以输入一个低维空间的Z，映射到高维空间的真实数据</strong>。比如，生成不同样的数字，人脸等等。</p>
+<h4 id="什么是-VAE">什么是 VAE</h4>
+<ul>
+<li>变分自动编码器（AEV）就是用于生成模型，结合了深度模型以及静态推理。简单来说就是通过映射学习将一个高位数据，例如一幅图片映射到低维空间Z。与标准自动编码器不同的是，X和Z是随机变量。所以可以这么理解，尝试从P（X|Z）中去采样出x，所以利用这个可以生成人脸，数字以及语句的生成。</li>
+</ul>
+<blockquote>
+<p>VAE 使用了类似 AE (Auto Encoder) 的结构，和最早出现的生成模型完成类似的任务，所以和二者有着千丝万缕的联系</p>
+</blockquote>
+<h4 id="与-GAN-的关系">与 GAN 的关系</h4>
+<ul>
+<li>
+<p><strong>变分自编码器与对抗生成网络类似，均是为了解决数据生成问题而生的</strong>。在 GAN 中，重点在于如何得出近似输入分布的模型。 VAE 尝试对可解耦的连续潜在空间中的输入分布进行建模。</p>
+</li>
+<li>
+<p>变分自编码器同样的以特定分布的随机样本作为输入，并且可以生成相应的图像，从此方面来看其与对抗生成网络目标是相似的。但是变分自编码器不需要判别器，而是使用编码器来估计特定分布。总体结构来看与自编码器结构类似，但是中间传递向量为特定分布的随机向量。</p>
+</li>
+<li>
+<p>假设，给定一系列猫的照片，我希望你能够对应我随机输入的一个n维向量，生成一张新的猫的照片，你需要怎么去做?对于GAN就是典型的深度学习时代的逻辑，你不清楚这个n维向量与猫的图片之间的关系，没关系，我直接拟合出来猫的图片对于n维向量的分布，通过对抗学习的方式获得较好的模型效果，这个方法虽然很暴力，但是却是有效的。</p>
+</li>
+<li>
+<p>VAE则不同，他通过说我希望生成一张新的猫脸，那么这个n维向量代表的就是n个决定最终猫脸模样的隐形因素。对于每个因素，都对应产生一种分布，从这些分布关系中进行采样，那么我就可以通过一个深度网络恢复出最终的猫脸。</p>
+</li>
+</ul>
+<h4 id="与-AE-的关系">与 AE 的关系</h4>
+<ul>
+<li>在自编码器(Auto Encoder)结构中，通常需要一个输入数据，而且所生成的数据与输入数据是相同的。但是通常希望生成的数据具有一定程度的不同，这需要输入随机向量并且模型能够学习生成图像的风格化特点，因此在后续研究中以随机化向量作为输入生成特定样本的对抗生成网络结构便产生了。</li>
+<li>在结构上，VAE 与自编码器相似。它也由编码器（也称为识别或推理模型）和解码器（也称为生成模型）组成。 VAE 和自编码器都试图在学习潜矢量的同时重建输入数据。但是，与自编码器不同，VAE 的潜在空间是连续的，并且解码器本身被用作生成模型。</li>
+<li>VAE即在AE的基础上引入变分的思想，使其能够进行数据生成。VAE建模着重考虑 $\hat{x}=g(z)$ 过程的有效性，其中 $z$ 为隐变量特征的分布。</li>
+</ul>
+<p><img src="https://uipv4.zywvvd.com:33030/HexoFiles/vvd_pc_upload/202208271709521.jpg" srcset="/img/loading.gif" lazyload alt=""></p>
+<ul>
+<li>AE的主要作用为特征提取或数据降维，即寻找合适的抽象特征z，可以使其代表x，如上图左侧，当我们微调z时，无法生成有效的月亮图片；而右侧的VAE过程，此时z为抽象特征的分布，当微调时，可以得到有效的月亮图片。</li>
+</ul>
+<h3 id="Auto-Encoder"><strong>Auto-Encoder</strong></h3>
+<ul>
+<li>Auto encoder 是一种无监督算法，主要用于特征提取或数据降维。其思想非常简单，即输入特征 $x$ 经过 encoder 后抽象为 hidden layer $z$，再将 $z$ 经过 decoder 过程重新预测为 $\hat{x}$ 。其中encoder和decoder 的过程可以是 MLP/CNN/LSTM 等简单的神经网络。</li>
+</ul>
+<p><img src="https://uipv4.zywvvd.com:33030/HexoFiles/vvd_pc_upload/202208271650354.jpg" srcset="/img/loading.gif" lazyload alt=""></p>
+<ul>
+<li>Auto encoder的目的是提取抽象特征 $z$，其学习过程为最小化损失函数 $L(x,\hat{x})$ ，用于惩罚$\hat{x}$ 和 $x$ 之间的差异，假设使用平方损失，则有：</li>
+</ul>
+
+$$
+\begin{aligned} L(x, \hat{x}) &=\sum_{i=1}^{n}\left\|x_{i}-\hat{x}_{i}\right\|^{2} \\ &=\sum_{i=1}^{n}\left\|x_{i}-g\left(f\left(x_{i}\right)\right)\right\|^{2} \end{aligned} \tag{0}
+$$
+
+
+<ul>
+<li>其中 $ i $ 代表第 $ i $ 个样本。 $ x_{i} $ 可以包含 $ \mathrm{n} $ 个特征，即 $ x_{i} \in \mathbb{R}^{n} $ 。</li>
+</ul>
+<h3 id="VAE原理">VAE原理</h3>
+<p><img src="https://uipv4.zywvvd.com:33030/HexoFiles/vvd_pc_upload/202208271723136.jpg" srcset="/img/loading.gif" lazyload alt=""></p>
+<ul>
+<li>
+<p>假设数据集为 $ X=\{ \mathrm {x} ^ { ( i ) }  \} _ {i=1} ^ {N} $ ，是由连续或离散变量 $x$ 采样得到的 $N$ 个样本。</p>
+</li>
+<li>
+<p>假设数据是由随机过程产生，且包含一个不可见的连续随机隐变量 $z$ ，如上图所示。那样本生成的过程分为两步：</p>
+<ol>
+<li>从先验分布 $ P_{\theta}(\mathrm{z}) $ 随机采样生成 $ \mathrm{z}^{(i)} $</li>
+<li>从条件概率分布 $ P_{\theta}(\mathrm{x} \mid \mathrm{z}) $ 中采样生成 $ \mathrm{x}^{(i)} $ 。但这个过程大部分都是隐藏的，难以求取。</li>
+</ol>
+</li>
+<li>
+<p>本文中作者并末针对 $ p_{\theta}(\mathrm{z}) $ 进行建模，而是构建模型 $ Q_{\phi}(\mathrm{z} \mid \mathrm{x}) $ 来近似 $ P_{\theta}(\mathrm{z} \mid \mathrm{x}) $ 。作者使用 $ Q_{\phi}(\mathrm{z} \mid \mathrm{x}) $ 过程作为 encoder，即由每一个样本点 $x$，可以学出一个对应的隐层分布 $z$（注意，此处为每一个样本均可学出其对应的隐层 $z$ 分布）；并使用 $P_θ(x|z)$ 作为 decoder 过程进行解码，实现模型生成。</p>
+</li>
+</ul>
+<h3 id="VAE-结构">VAE 结构</h3>
+<p><img src="https://uipv4.zywvvd.com:33030/HexoFiles/vvd_pc_upload/202208292322466.jpg" srcset="/img/loading.gif" lazyload alt=""></p>
+<ul>
+<li>
+<p>VAE对每一个样本 $X_k$ 匹配一个高斯分布，隐变量 $Z$ 就是从高斯分布中采样得到的。对$K$ 个样本来说，每个样本的高斯分布假设为 $\mathcal N(\mu_k,\sigma_k^2)$ ，问题就在于如何拟合这些分布。VAE构建两个神经网络来进行拟合均值与方差。即 $\mu_k=f_1(X_k),log\sigma_k^2=f_2(X_k)$，拟合 $log\sigma_k^2$ 的原因是这样无需加激活函数。</p>
+</li>
+<li>
+<p>此外，VAE让每个高斯分布尽可能地趋于标准高斯分布 $\mathcal N(0,1)$。这拟合过程中的误差损失则是采用KL散度作为计算，下面做详细推导。</p>
+</li>
+</ul>
+<h3 id="VAE-确定方向的原因">VAE 确定方向的原因</h3>
+<ul>
+<li>原始样本数据 $x$ 的概率分布:：</li>
+</ul>
+<p>$$<br>
+x \sim P_{\theta}(x) \tag1<br>
+$$</p>
+<blockquote>
+<p>其中，$θ$ 表示模型参数。</p>
+</blockquote>
+<ul>
+<li>在机器学习中，为了执行特定的推理，希望找到输入 $x$ 和潜变量 $z$ 之间的联合分布 $P_θ(x,z)$。潜变量是对可从输入中观察到的某些属性进行编码。如在人脸数据中，这些可能是面部表情，发型，头发颜色，性别等。</li>
+<li>$ P_{\theta}(x, z) $ 实际上是输入数据及其属性的分布。 $ P_{\theta}(x) $ 可以从边缘分布计算:</li>
+</ul>
+<p>$$<br>
+P_{\theta}(x)=\int P_{\theta}(x, z) d z \tag2 \label2<br>
+$$</p>
+<ul>
+<li>考虑所有可能的属性，最终得到描述输入的分布。在人脸数据中，利用包含面部表情，发型，头发颜色和性别在内的特征，可以恢复描述人脸数据的分布。</li>
+<li>问题在于该方程式没有解析形式或有效的估计量。因此，通过神经网络进行优化是不可行的。</li>
+<li>使用贝叶斯定理，可以找到方程式 $\ref{2}$ 的替代表达式：</li>
+</ul>
+<p>$$<br>
+P_{\theta}(x)=\int P_{\theta}(x \mid z) P(z) d z  \tag3 \label3<br>
+$$</p>
+<ul>
+<li>其中， $ P(z) $ 是 $ z $ 的先验分布。它不以任何观察为条件。如果 $ z $ 是离散的并且 $ P_{\theta}(x \mid z) $ 是高斯分 布，则 $ P_{\theta}(x) $ 是高斯分布的混合。如果 $ z $ 是连续的，则高斯分布 $ P_{\theta}(x) $ 无法预估。</li>
+<li>在实践中，如果尝试在没有合适的损失函数的情况下建立近似 $P_θ(x|z)$ 的神经网络，它将忽略 $z$ 并得出平凡解， $ P_{\theta}(x \mid z)=P_{\theta}(x) $ 。因此，公式 $\ref{3}$ 不能提供 $ P_{\theta}(x) $ 的良好估计。公式  $\ref{2}$  也 可以表示为：</li>
+</ul>
+<p>$$<br>
+P_{\theta}(x)=\int P_{\theta}(z \mid x) P(x) d z  \tag4<br>
+$$</p>
+<ul>
+<li>但是， $ P_{\theta}(z \mid x) $ 也难以求解。VAE 的目标是找到一个可估计的分布，该分布近似估计 $ P_{\theta}(z \mid x) $ ， 即在给定输入 $ x $ 的情况下对潜在编码 $ z $ 的条件分布的估计。</li>
+</ul>
+<h3 id="VAE-推导过程">VAE 推导过程</h3>
+<ul>
+<li>原始样本数据 $x$ 的概率分布可表示为:</li>
+</ul>
+<p>$$<br>
+P(x)=\int_{Z} P(z) P(x \mid z) d z \tag5<br>
+$$</p>
+<ul>
+<li>假设 $z$ 服从标准高斯分布 $N(0,1)$，先验分布 $P(x|z)$ 是高斯的，即 $x|z \sim N(\mu(z),\sigma(z))$。$\mu(z)$ 、$\sigma(z)$ 是两个函数， 分别是 $z$ 对应的高斯分布的均值和方差，则 $P(x)$ 就是在积分域上所有高斯分布的累加：</li>
+</ul>
+<p><img src="https://uipv4.zywvvd.com:33030/HexoFiles/vvd_pc_upload/202208292336495.jpg" srcset="/img/loading.gif" lazyload alt=""></p>
+<ul>
+<li>由于 $P(z)$ 是已知的，$P(x|z)$ 未知，所以求解问题实际上就是求 $\mu$ , $\sigma$ 这两个函数。最开始的目标是求解 $P(x)$，且希望 $P(x)$ 越大越好，这等价于求解关于 $x$ 最大对数似然：</li>
+</ul>
+<p>$$<br>
+L=\sum_{x} \log P(x) \tag6<br>
+$$</p>
+<ul>
+<li>为了使 $ P(z \mid x) $ 易于处理，VAE 引入了变分推断模型 (编码器) :</li>
+</ul>
+<p>$$<br>
+Q(z \mid x) \approx P(z \mid x) \tag7<br>
+$$</p>
+<ul>
+<li>可很好地估计 $P(z|x)$。它既可以参数化又易于处理。 可以通过深度神经网络优化参数来优化 $Q(z|x)$。 通常，将 $Q(z|x)$ 选择为多元高斯分布：</li>
+</ul>
+<p>$$<br>
+Q(z|x)=N(z;μ(x),diag(σ(x)^2)) \tag8<br>
+$$</p>
+<ul>
+<li>
+<p>均值 $ μ(x)$ 和标准差 $σ(x)$ 均由编码器神经网络使用输入数据计算得出。对角矩阵表示 $ z$ 中的元素间是相互独立的。</p>
+</li>
+<li>
+<p>而 $logP(x)$ 可变换为：</p>
+</li>
+</ul>
+
+$$
+\begin{aligned} \log P(x) &=\int_{z} q(z \mid x) \log P(x) d z \\ &=\int_{z} q(z \mid x) \log \left(\frac{P(z, x)}{P(z \mid x)}\right) d z \\ &=\int_{z} q(z \mid x) \log \left(\frac{P(z, x)}{q(z \mid x)} \frac{q(z \mid x)}{P(z \mid x)}\right) d z \\ &=\int_{z} q(z \mid x) \log \left(\frac{P(z, x)}{q(z \mid x)}\right) d z+\int_{z} q(z \mid x) \log \left(\frac{q(z \mid x)}{P(z \mid x)}\right) d z \\ &=\int_{z} q(z \mid x) \log \left(\frac{P(x \mid z) P(z)}{q(z \mid x)}\right) d z+\int_{z} q(z \mid x) \log \left(\frac{q(z \mid x)}{P(z \mid x)}\right) d z \end{aligned} \tag9
+$$
+
+
+<ul>
+<li>到这里我们发现，右边第二项 $\int_z q(z|x)log(\dfrac{q(z|x)}{P(z|x)})dz$ 其实就是 $q$ 和 $P$ 的KL散度，即$KL(q(z|x)\;||\;P(z|x))$，因为 KL散度是大于等于 0 的，所以上式进一步可写成：</li>
+</ul>
+<p>$$<br>
+\log P(x) \geq \int_{z} q(z \mid x) \log \left(\frac{P(x \mid z) P(z)}{q(z \mid x)}\right) d z \tag{10}<br>
+$$</p>
+<ul>
+<li>原式也可表示成：</li>
+</ul>
+<p>$$<br>
+\log P(x)=L_{b}+K L(q(z \mid x) | P(z \mid x)) \tag{11}<br>
+$$</p>
+<ul>
+<li>为了让 $logP(x)$ 越大，目的就是要最大化它的这个下界 <a href="/notes/study/probability/elbo/elbo/">ELBO</a> $L_b$</li>
+</ul>
+<blockquote>
+<p><strong>为什么要引入q(z|x)，这里的q(z|x)可以是任何分布?</strong></p>
+实际上，因为后验分布 $P(z|x)$ 很难求(intractable)，所以才用 $q(z|x)$ 来逼近这个后验分布。在优化的过程中发现，首先 $q(z|x)$ 跟 $logP(x)$ 是完全没有关系的，$logP(x)$ 只跟 $P(z|x)$ 有关，调节$q(z|x)$ 是不会影响似然也就是 $logP(x)$ 的。所以，当固定住 $P(x|z)$ 时，调节 $q(z|x)$ 最大化下界$L_b$，KL则越小。当 $q(z|x)$ 与不断逼近后验分布 $P(z|x)$ 时，KL散度趋于为0，$logP(x)$ 就和 $L_b$ 等价。所以最大化 $logP(x)$ 就等价于最大化 $L_b$。
+</blockquote>
+<p><img src="https://uipv4.zywvvd.com:33030/HexoFiles/vvd_pc_upload/202208292343806.jpg" srcset="/img/loading.gif" lazyload alt=""></p>
+<h4 id="最大化-L-b">最大化 $L_b$</h4>
+<ul>
+<li>回顾 $L_b$：</li>
+</ul>
+
+$$
+\begin{aligned} L_{b} &=\int_{z} q(z \mid x) \log \left(\frac{P(x \mid z) P(z)}{q(z \mid x)}\right) d z \\ &=\int_{z} q(z \mid x) \log \left(\frac{P(z)}{q(z \mid x)}\right) d z+\int_{z} q(z \mid x) \log P(x \mid z) d z \\ &=-K L(q(z \mid x) \| P(z))+\int_{z} q(z \mid x) \log P(x \mid z) d z \\ &=-K L(q(z \mid x) \| P(z))+E_{q(z \mid x)}[\log (P(x \mid z))] \end{aligned} \tag{12}
+$$
+
+
+<ul>
+<li>显然，最大化 $L_b$ 就是等价于最小化 $KL(q(z|x);||;P(z))$ 和最大化 $E_{q(z|x)}[log(P(x|z))]$。</li>
+</ul>
+<h5 id="第一项，最小化KL散度"><strong>第一项，最小化KL散度</strong></h5>
+<ul>
+<li>前面已假设了 $P(z)$ 是服从标准高斯分布的，且 $q(z∣x)$ 是服从高斯分布$\mathcal N(\mu,\sigma^2)$，于是代入计算可得：</li>
+</ul>
+
+$$
+K L(q(z \mid x) \| P(z))=K L\left(\mathcal{N}\left(\mu, \sigma^{2}\right) \| \mathcal{N}(0,1)\right)=\int \frac{1}{\sqrt{2 \pi \sigma^{2}}} e^{\frac{-(x-\mu)^{2}}{2 \sigma^{2}}}\left(\log \frac{e^{\frac{-(x-\mu)^{2}}{2 \sigma^{2}}} / \sqrt{2 \pi \sigma^{2}}}{e^{\frac{-x^{2}}{2}} / \sqrt{2 \pi}}\right) d x \tag{13}
+$$
+
+
+<ul>
+<li>化简得到</li>
+</ul>
+
+$$
+\begin{align}
+K L(q(z \mid x) \| P(z))=
+=\frac{1}{2} \frac{1}{\sqrt{2 \pi \sigma^{2}}} \int e^{\frac{-(x-\mu)^{2}}{2 \sigma^{2}}}\left(-\log \sigma^{2}+x^{2}-\frac{(x-\mu)^{2}}{\sigma^{2}}\right) d x \\ 
+ =\frac{1}{2} \int \frac{1}{\sqrt{2 \pi \sigma^{2}}} e^{\frac{-(x-\mu)^{2}}{2 \sigma^{2}}}\left(-\log \sigma^{2}+x^{2}-\frac{(x-\mu)^{2}}{\sigma^{2}}\right) d x
+ \end{align} \tag{14}
+$$
+
+
+<ul>
+<li>对上式中的积分进一步求解：
+<ul>
+<li>
+$\dfrac{1}{\sqrt{2\pi\sigma^2}}e^{\frac{-(x-\mu)^2}{2\sigma^2}}$  实际就是概率密度 $f(x)$，而概率密度函数的积分就是1，所以积分第一项等于 $-log\sigma^2$；
+</li>
+<li>又因为高斯分布的二阶矩就是  $E(X^2)=\int x^2f(x)dx=\mu^2+\sigma^2$ ，正好对应积分第二项；</li>
+<li>积分第三项相当于计算标准化后的正态分布 $E(X^2)=\int x<sup>2f(x)dx=\mu</sup>2+\sigma^2=1$，算上负号后值为-1。</li>
+</ul>
+</li>
+<li><strong>最终化简得到的结果如下：</strong></li>
+</ul>
+
+$$
+K L(q(z \mid x) \| P(z))=K L\left(\mathcal{N}\left(\mu, \sigma^{2}\right) \| \mathcal{N}(0,1)\right)=\frac{1}{2}\left(-\log \sigma^{2}+\mu^{2}+\sigma^{2}-1\right) \tag{15}
+$$
+
+
+<h5 id="第二项，最大化期望">第二项，最大化期望</h5>
+<ul>
+<li>也就是表明在给定 $q(z|x)$（编码器输出）的情况下 $P(x∣z)$（解码器输出）的值尽可能高</li>
+</ul>
+<ol>
+<li>第一步，利用 encoder 的神经网络计算出均值与方差，从中采样得到 $z$，这一过程就对应式子中的$q(z∣x)$</li>
+<li>第二步，利用 decoder 的 $N$ 计算 $z$ 的均值方差，让均值（或也考虑方差）越接近 $x$，则产生 $x$ 的几率 $logP(x|z)$ 越大，对应于式子中的最大化 $logP(x∣z)$ 这一部分</li>
+</ol>
+<h4 id="重参数技巧"><strong>重参数技巧</strong></h4>
+<ul>
+<li>最后模型在实现的时候，有一个重参数技巧，就是想从高斯分布 $\mathcal N(\mu,\sigma^2)$ 中采样 $Z$ 时，其实是相当于从 $\mathcal N(0,1)$ 中采样一个 $\epsilon$，然后再来计算 $Z=\mu+\epsilon\times\sigma$。这么做的原因是，采样这个操作是不可导的，而采样的结果是可导的，这样做个参数变换，$Z=\mu+\epsilon\times\sigma$ 这个就可以参与梯度下降，模型就可以训练了</li>
+<li>那么我们从分布 $N ( 0 , I )$ 采样 $ \varepsilon$，这个就是从已知分布采样了，不需要反向传播来优化。
+<ul>
+<li>所以我们先从分布 $N(0,I)$采样 $\varepsilon$</li>
+<li>然后把 $\varepsilon$ 变化到 $z$，即 $z = ε ⋅ σ + μ $</li>
+</ul>
+</li>
+<li>如果 $ε$ 和 $σ$ 以矢量形式表示，则 $εσ$ 是逐元素乘法。 这样令采样好像直接来自于潜空间。 这项技术被称为<strong>重参数化技巧</strong>。</li>
+<li>重参数计算图的形式：</li>
+</ul>
+<p><img src="https://uipv4.zywvvd.com:33030/HexoFiles/vvd_pc_upload/202208292356185.jpg" srcset="/img/loading.gif" lazyload alt=""></p>
+<ul>
+<li>整体计算流程：</li>
+</ul>
+<p><img src="https://uipv4.zywvvd.com:33030/HexoFiles/vvd_file_mt/202208301148874.jpg" srcset="/img/loading.gif" lazyload alt=""></p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br></pre></td><td class="code"><pre><code class="hljs python"><span class="hljs-keyword">class</span> <span class="hljs-title class_">VAE</span>(nn.Module):<br>    <span class="hljs-string">&quot;&quot;&quot;Implementation of VAE(Variational Auto-Encoder)&quot;&quot;&quot;</span><br>    <span class="hljs-keyword">def</span> <span class="hljs-title function_">__init__</span>(<span class="hljs-params">self</span>):<br>        <span class="hljs-built_in">super</span>(VAE, self).__init__()<br>        self.fc1 = nn.Linear(<span class="hljs-number">784</span>, <span class="hljs-number">200</span>)<br>        self.fc2_mu = nn.Linear(<span class="hljs-number">200</span>, <span class="hljs-number">10</span>)<br>        self.fc2_log_std = nn.Linear(<span class="hljs-number">200</span>, <span class="hljs-number">10</span>)<br>        self.fc3 = nn.Linear(<span class="hljs-number">10</span>, <span class="hljs-number">200</span>)<br>        self.fc4 = nn.Linear(<span class="hljs-number">200</span>, <span class="hljs-number">784</span>)<br>    <span class="hljs-keyword">def</span> <span class="hljs-title function_">encode</span>(<span class="hljs-params">self, x</span>):<br>        h1 = F.relu(self.fc1(x))<br>        mu = self.fc2_mu(h1)<br>        log_std = self.fc2_log_std(h1)<br>        <span class="hljs-keyword">return</span> mu, log_std<br>    <span class="hljs-keyword">def</span> <span class="hljs-title function_">decode</span>(<span class="hljs-params">self, z</span>):<br>        h3 = F.relu(self.fc3(z))<br>        recon = torch.sigmoid(self.fc4(h3))  <span class="hljs-comment"># use sigmoid because the input image&#x27;s pixel is between 0-1</span><br>        <span class="hljs-keyword">return</span> recon<br>    <span class="hljs-keyword">def</span> <span class="hljs-title function_">reparametrize</span>(<span class="hljs-params">self, mu, log_std</span>):<br>        std = torch.exp(log_std)<br>        eps = torch.randn_like(std)  <span class="hljs-comment"># simple from standard normal distribution</span><br>        z = mu + eps * std<br>        <span class="hljs-keyword">return</span> z<br>    <span class="hljs-keyword">def</span> <span class="hljs-title function_">forward</span>(<span class="hljs-params">self, x</span>):<br>        mu, log_std = self.encode(x)<br>        z = self.reparametrize(mu, log_std)<br>        recon = self.decode(z)<br>        <span class="hljs-keyword">return</span> recon, mu, log_std<br>    <span class="hljs-keyword">def</span> <span class="hljs-title function_">loss_function</span>(<span class="hljs-params">self, recon, x, mu, log_std</span>) -&gt; torch.Tensor:<br>        recon_loss = F.mse_loss(recon, x, reduction=<span class="hljs-string">&quot;sum&quot;</span>)  <span class="hljs-comment"># use &quot;mean&quot; may have a bad effect on gradients</span><br>        kl_loss = -<span class="hljs-number">0.5</span> * (<span class="hljs-number">1</span> + <span class="hljs-number">2</span>*log_std - mu.<span class="hljs-built_in">pow</span>(<span class="hljs-number">2</span>) - torch.exp(<span class="hljs-number">2</span>*log_std))<br>        kl_loss = torch.<span class="hljs-built_in">sum</span>(kl_loss)<br>        loss = recon_loss + kl_loss<br>        <span class="hljs-keyword">return</span> loss<br></code></pre></td></tr></table></figure>
+<ul>
+<li>训练流程</li>
+</ul>
+<p><img src="https://uipv4.zywvvd.com:33030/HexoFiles/vvd_file_mt/202209061054506.jpg" srcset="/img/loading.gif" lazyload alt=""></p>
+<h4 id="实验结果">实验结果</h4>
+<ul>
+<li>论文中基于 MNIST 和 Frey Face 做了实验</li>
+</ul>
+<p><img src="https://uipv4.zywvvd.com:33030/HexoFiles/vvd_file_mt/202208301155077.jpg" srcset="/img/loading.gif" lazyload alt=""></p>
+<h3 id="原始论文">原始论文</h3>
+<iframe src='https://uipv4.zywvvd.com:33030/HexoFiles/js/vvd_js/pdfjs/web/viewer.html?file=https://uipv4.zywvvd.com:33030/HexoFiles/vvd_pc_upload/202208271254675.pdf' style='width:100%;height:900px'></iframe>
+### 参考资料
+<ul>
+<li><a target="_blank" rel="noopener" href="https://zhuanlan.zhihu.com/p/450516324">https://zhuanlan.zhihu.com/p/450516324</a></li>
+<li><a target="_blank" rel="noopener" href="https://www.jianshu.com/p/94d68a03c13e">https://www.jianshu.com/p/94d68a03c13e</a></li>
+<li><a target="_blank" rel="noopener" href="https://blog.csdn.net/weixin_43135178/article/details/115412487">https://blog.csdn.net/weixin_43135178/article/details/115412487</a></li>
+<li><a target="_blank" rel="noopener" href="https://blog.csdn.net/weixin_40955254/article/details/81415834">https://blog.csdn.net/weixin_40955254/article/details/81415834</a></li>
+<li><a target="_blank" rel="noopener" href="https://www.jianshu.com/p/98a9c48e9c7f">https://www.jianshu.com/p/98a9c48e9c7f</a></li>
+<li><a target="_blank" rel="noopener" href="https://zhuanlan.zhihu.com/p/161277762">https://zhuanlan.zhihu.com/p/161277762</a></li>
+<li><a target="_blank" rel="noopener" href="https://blog.csdn.net/doyouseeman/article/details/108647804">https://blog.csdn.net/doyouseeman/article/details/108647804</a></li>
+</ul>
+<link rel="stylesheet" href="/css/spoiler.css" type="text/css"><script src="/js/spoiler.js" type="text/javascript" async></script>
+                
+
+
+				<br /><br />
+				<blockquote>
+					<p>文章链接：<br /> 
+					<a style="font-size: 0.85rem" target="_blank" rel="noopener" href="https://www.zywvvd.com/notes/study/deep-learning/generation/vae/vae/">https://www.zywvvd.com/notes/study/deep-learning/generation/vae/vae/</a>
+					</p>
+				</blockquote>
+
+
+              </div>
+            
+            <hr/>
+			
+			<!-- 添加打赏模块 -->
+			<div class="reward-container">
+				
+					<button id="rewardBtn" class="reward-btn">
+						 
+							❤ 打赏
+							
+					</button>
+					<p class="tea">“觉得不错的话，给点打赏吧 ୧(๑•̀⌄•́๑)૭”</p>
+					<div id="rewardImgContainer" class="reward-img-container">
+						<div class="singleImgContainer">
+							<img id="wechatImg" class="reward-img" src="https://uipv4.zywvvd.com:33030/HexoFiles/vvd_pc_upload/wechatpay.png" srcset="/img/loading.gif" lazyload alt="微信二维码">
+							<p class="wechatPay">微信支付</p>
+						</div>
+						<div class="singleImgContainer">
+							<img id="alipayImg" class="reward-img" src="https://uipv4.zywvvd.com:33030/HexoFiles/vvd_pc_upload/alipay.png" srcset="/img/loading.gif" lazyload alt="支付宝二维码">
+							<p class="aliPay">支付宝支付</p>
+						</div>
+					</div>
+				
+			</div>
+			
+            <div>
+              <div class="post-metas my-3">
+  
+    <div class="post-meta mr-3 d-flex align-items-center">
+      <i class="iconfont icon-category"></i>
+      
+
+<span class="category-chains">
+  
+  
+    
+      <span class="category-chain">
+        
+  <a href="/categories/Deep-Learning/" class="category-chain-item">Deep_Learning</a>
+  
+  
+    <span>></span>
+    
+  <a href="/categories/Deep-Learning/Generation-Model/" class="category-chain-item">Generation_Model</a>
+  
+  
+
+  
+
+      </span>
+    
+  
+</span>
+
+    </div>
+  
+  
+    <div class="post-meta">
+      <i class="iconfont icon-tags"></i>
+      
+        <a href="/tags/Deep-Learning/" class="print-no-link">#Deep_Learning</a>
+      
+        <a href="/tags/Generation-Model/" class="print-no-link">#Generation_Model</a>
+      
+    </div>
+  
+</div>
+
+
+              
+  
+
+  <div class="license-box my-3">
+    <div class="license-title">
+      <div>变分自编码器 VAE</div>
+      <div>https://www.zywvvd.com/notes/study/deep-learning/generation/vae/vae/</div>
+    </div>
+    <div class="license-meta">
+      
+        <div class="license-meta-item">
+          <div>作者</div>
+          <div>Yiwei Zhang</div>
+        </div>
+      
+      
+        <div class="license-meta-item license-meta-date">
+          <div>发布于</div>
+          <div>2022年8月25日</div>
+        </div>
+      
+      
+      
+        <div class="license-meta-item">
+          <div>许可协议</div>
+          <div>
+            
+              
+              
+                <a class="print-no-link" target="_blank" href="https://creativecommons.org/licenses/by/4.0/">
+                  <span class="hint--top hint--rounded" aria-label="BY - 署名">
+                    <i class="iconfont icon-by"></i>
+                  </span>
+                </a>
+              
+            
+          </div>
+        </div>
+      
+    </div>
+    <div class="license-icon iconfont"></div>
+  </div>
+
+
+
+              
+                <div class="post-prevnext my-3">
+                  <article class="post-prev col-6">
+                    
+                    
+                      <a href="/notes/system/linux/add-x11-for-server/add-x11-for-server/" title="服务器开启 SSH X11-forward">
+                        <i class="iconfont icon-arrowleft"></i>
+                        <span class="hidden-mobile">服务器开启 SSH X11-forward</span>
+                        <span class="visible-mobile">上一篇</span>
+                      </a>
+                    
+                  </article>
+                  <article class="post-next col-6">
+                    
+                    
+                      <a href="/notes/study/deep-learning/pytorch/change-torch-default-cache-path/change-torch-default-cache-path/" title="修改 PyTorch Cache 文件下载路径">
+                        <span class="hidden-mobile">修改 PyTorch Cache 文件下载路径</span>
+                        <span class="visible-mobile">下一篇</span>
+                        <i class="iconfont icon-arrowright"></i>
+                      </a>
+                    
+                  </article>
+                </div>
+              
+            </div>
+
+            
+  
+  
+    <article id="comments" lazyload>
+      
+  <div id="waline"></div>
+  <script type="text/javascript">
+    Fluid.utils.loadComments('#waline', function() {
+      Fluid.utils.createCssLink('https://lib.baomitu.com/waline/2.14.8/waline.min.css')
+      Fluid.utils.createScript('https://lib.baomitu.com/waline/2.14.8/waline.min.js', function() {
+        var options = Object.assign(
+          {"serverURL":"https://uipv4.zywvvd.com:33033/","path":"window.location.pathname","meta":["nick","mail","link"],"requiredMeta":["nick"],"lang":"zh-CN","emoji":["https://cdn.jsdelivr.net/gh/walinejs/emojis/weibo"],"dark":"html[data-user-color-scheme=\"dark\"]","wordLimit":0,"pageSize":10,"reaction":true,"locale":{"placeholder":"山高路远，常来玩吖 ~","reactionTitle":null}},
+          {
+            el: '#waline',
+            path: window.location.pathname
+          }
+        )
+        Waline.init(options);
+        Fluid.utils.waitElementVisible('#waline .vcontent', () => {
+          var imgSelector = '#waline .vcontent img:not(.vemoji)';
+          Fluid.plugins.imageCaption(imgSelector);
+          Fluid.plugins.fancyBox(imgSelector);
+        })
+      });
+    });
+  </script>
+  <noscript>Please enable JavaScript to view the comments</noscript>
+
+
+    </article>
+  
+
+
+          </article>
+        </div>
+      </div>
+    </div>
+
+    <div class="side-col d-none d-lg-block col-lg-2">
+      
+  <aside class="sidebar" style="margin-left: -1rem">
+    <div id="toc">
+  <p class="toc-header">
+    <i class="iconfont icon-list"></i>
+    <span>目录</span>
+  </p>
+  <div class="toc-body" id="toc-body"></div>
+</div>
+
+
+
+  </aside>
+
+
+    </div>
+  </div>
+</div>
+
+
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+  
+  
+
+
+
+
+
+  <script>
+  Fluid.utils.createScript('https://lib.baomitu.com/mermaid/8.14.0/mermaid.min.js', function() {
+    mermaid.initialize({"theme":"default"});
+
+    Fluid.utils.listenDOMLoaded(function() {
+      Fluid.events.registerRefreshCallback(function() {
+        if ('mermaid' in window) {
+          mermaid.init();
+        }
+      });
+    });
+  });
+</script>
+
+
+
+
+
+
+    
+
+    
+      <a id="scroll-top-button" aria-label="TOP" href="#" role="button">
+        <i class="iconfont icon-xiangshangjiantou" aria-hidden="true"></i>
+      </a>
+    
+
+    
+      <div class="modal fade" id="modalSearch" tabindex="-1" role="dialog" aria-labelledby="ModalLabel"
+     aria-hidden="true">
+  <div class="modal-dialog modal-dialog-scrollable modal-lg" role="document">
+    <div class="modal-content">
+      <div class="modal-header text-center">
+        <h4 class="modal-title w-100 font-weight-bold">搜索</h4>
+        <button type="button" id="local-search-close" class="close" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body mx-3">
+        <div class="md-form mb-5">
+          <input type="text" id="local-search-input" class="form-control validate">
+          <label data-error="x" data-success="v" for="local-search-input">关键词</label>
+        </div>
+        <div class="list-group" id="local-search-result"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+    
+
+    
+  </main>
+
+  <footer>
+    <div class="footer-inner">
+  
+    <div class="footer-content">
+       <div class="vvd_footer" style="font-size: 0.85rem;"> <a href="https://hexo.io" target="_blank" rel="nofollow noopener" color="#d7d8d9" data-umami-event="Footer-Hexo"><span class="umami--click--Footer-Hexo">Hexo</span></a> <i class="iconfont icon-love"></i> <a href="https://github.com/fluid-dev/hexo-theme-fluid" target="_blank" rel="nofollow noopener" data-umami-event="Footer-Fluid"><span class="umami--click--Footer-Fluid">Fluid</span></a> <i class="iconfont icon-love"></i> <a href="https://uipv4.zywvvd.com:33039/share/0zx3o21oIpZTZqwC/%E5%8F%88%E8%A7%81%E8%8B%8D%E5%B2%9A" target="_blank" rel="nofollow noopener" data-umami-event="Footer-Umami"><span class="umami--click--Footer-Umami">Umami</span></a> <div style="font-size: 0.85rem;"> <span id="timeDate">载入天数...</span> <span id="times">载入时分秒...</span> <script src="/vvd_js/duration.js"></script> </div> <div style="font-size: 0.85rem;"> <span> 总访问量 <span style="color: #d7d8d9;" id="PVstatic">0</span> 次&nbsp</span> <span> 总访客数 <span style="color: #d7d8d9;" id="UVstatic">0</span> 人&nbsp</span> <span> 当前在线 <span style="color: #d7d8d9;" id="ACTstatic">0</span> 人&nbsp</span> <script src="https://uipv4.zywvvd.com:33037/statistics" defer></script> </div> <div> <span> Copyright © 2020-2024. All Rights Reserved.</span> </div> <div style="font-size: 0.85rem;"> <a target="_blank" rel="noopener" href="https://developer.hitokoto.cn/" id="hitokoto_text"><span style="color: #d7d8d9;"  id="hitokoto"></span></a> <script src="https://uipv4.zywvvd.com:33044/?encode=js&select=%23hitokoto" defer></script> </div> <a href="https://icp.gov.moe/?keyword=20230615" target="_blank">萌ICP备20230615号</a>
+
+
+</div> 
+    </div>
+  
+  
+  
+  
+</div>
+
+  </footer>
+
+  <!-- Scripts -->
+  
+  <script  src="https://lib.baomitu.com/nprogress/0.2.0/nprogress.min.js" ></script>
+  <link  rel="stylesheet" href="https://lib.baomitu.com/nprogress/0.2.0/nprogress.min.css" />
+
+  <script>
+    NProgress.configure({"showSpinner":false,"trickleSpeed":100})
+    NProgress.start()
+    window.addEventListener('load', function() {
+      NProgress.done();
+    })
+  </script>
+
+
+<script  src="https://lib.baomitu.com/jquery/3.6.0/jquery.min.js" ></script>
+<script  src="https://lib.baomitu.com/twitter-bootstrap/4.6.1/js/bootstrap.min.js" ></script>
+<script  src="/js/events.js" ></script>
+<script  src="/js/plugins.js" ></script>
+
+
+
+
+
+  
+    <script  src="/js/img-lazyload.js" ></script>
+  
+
+
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/tocbot/4.18.2/tocbot.min.js', function() {
+    var toc = jQuery('#toc');
+    if (toc.length === 0 || !window.tocbot) { return; }
+    var boardCtn = jQuery('#board-ctn');
+    var boardTop = boardCtn.offset().top;
+
+    window.tocbot.init(Object.assign({
+      tocSelector     : '#toc-body',
+      contentSelector : '.markdown-body',
+      linkClass       : 'tocbot-link',
+      activeLinkClass : 'tocbot-active-link',
+      listClass       : 'tocbot-list',
+      isCollapsedClass: 'tocbot-is-collapsed',
+      collapsibleClass: 'tocbot-is-collapsible',
+      scrollSmooth    : true,
+      includeTitleTags: true,
+      headingsOffset  : -boardTop,
+    }, CONFIG.toc));
+    if (toc.find('.toc-list-item').length > 0) {
+      toc.css('visibility', 'visible');
+    }
+
+    Fluid.events.registerRefreshCallback(function() {
+      if ('tocbot' in window) {
+        tocbot.refresh();
+        var toc = jQuery('#toc');
+        if (toc.length === 0 || !tocbot) {
+          return;
+        }
+        if (toc.find('.toc-list-item').length > 0) {
+          toc.css('visibility', 'visible');
+        }
+      }
+    });
+  });
+</script>
+
+
+  <script src=https://lib.baomitu.com/clipboard.js/2.0.10/clipboard.min.js></script>
+
+  <script>Fluid.plugins.codeWidget();</script>
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/anchor-js/4.3.1/anchor.min.js', function() {
+    window.anchors.options = {
+      placement: CONFIG.anchorjs.placement,
+      visible  : CONFIG.anchorjs.visible
+    };
+    if (CONFIG.anchorjs.icon) {
+      window.anchors.options.icon = CONFIG.anchorjs.icon;
+    }
+    var el = (CONFIG.anchorjs.element || 'h1,h2,h3,h4,h5,h6').split(',');
+    var res = [];
+    for (var item of el) {
+      res.push('.markdown-body > ' + item.trim());
+    }
+    if (CONFIG.anchorjs.placement === 'left') {
+      window.anchors.options.class = 'anchorjs-link-left';
+    }
+    window.anchors.add(res.join(', '));
+
+    Fluid.events.registerRefreshCallback(function() {
+      if ('anchors' in window) {
+        anchors.removeAll();
+        var el = (CONFIG.anchorjs.element || 'h1,h2,h3,h4,h5,h6').split(',');
+        var res = [];
+        for (var item of el) {
+          res.push('.markdown-body > ' + item.trim());
+        }
+        if (CONFIG.anchorjs.placement === 'left') {
+          anchors.options.class = 'anchorjs-link-left';
+        }
+        anchors.add(res.join(', '));
+      }
+    });
+  });
+</script>
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/fancybox/3.5.7/jquery.fancybox.min.js', function() {
+    Fluid.plugins.fancyBox();
+  });
+</script>
+
+
+  <script>Fluid.plugins.imageCaption();</script>
+
+  
+      <script>
+        if (!window.MathJax) {
+          window.MathJax = {
+            tex    : {
+              inlineMath: { '[+]': [['$', '$']] }
+            },
+            options: {
+              renderActions: {
+                insertedScript: [200, () => {
+                  document.querySelectorAll('mjx-container').forEach(node => {
+                    let target = node.parentNode;
+                    if (target.nodeName.toLowerCase() === 'li') {
+                      target.parentNode.classList.add('has-jax');
+                    }
+                  });
+                }, '', false]
+              }
+            }
+          };
+        } else {
+          MathJax.startup.document.state(0);
+          MathJax.texReset();
+          MathJax.typeset();
+          MathJax.typesetPromise();
+        }
+
+        Fluid.events.registerRefreshCallback(function() {
+          if ('MathJax' in window && MathJax.startup.document && typeof MathJax.startup.document.state === 'function') {
+            MathJax.startup.document.state(0);
+            MathJax.texReset();
+            MathJax.typeset();
+            MathJax.typesetPromise();
+          }
+        });
+      </script>
+    
+
+  <script  src="https://lib.baomitu.com/mathjax/3.2.1/es5/tex-mml-chtml.js" ></script>
+
+  <script defer src="/js/leancloud.js" ></script>
+
+  <script  src="/js/local-search.js" ></script>
+
+
+
+
+  
+<script src="//cdn.jsdelivr.net/npm/aplayer/dist/APlayer.min.js"></script>
+<script src="//cdn.jsdelivr.net/gh/metowolf/MetingJS@1.2/dist/Meting.min.js"></script>
+<script src="/js/reward.js"></script>
+
+
+
+<!-- 主题的启动项，将它保持在最底部 -->
+<!-- the boot of the theme, keep it at the bottom -->
+<script  src="/js/boot.js" ></script>
+
+
+  <script type="text/javascript">
+    /*窗口监视*/
+    var originalTitle = document.title;
+    window.onblur = function(){document.title = "明眸如初"};
+    window.onfocus = function(){document.title = originalTitle};
+  </script>
+
+
+  <div id="tooltip-rightmenu" class="tooltip-rightmenu">如需原始右键菜单请按下 <strong>Ctrl+右键</strong></div>
+
+<div id="rightmenu-wrapper" style="">
+  <ul class="list-v rightmenu" id="rightmenu-content">
+	  <li class="navigation menuNavigation-Content">
+		<a class="nav icon-only fix-cursor-default" onclick="history.back()"><i class="iconfont icon-zuojiantou1"></i></a>
+		<a class="nav icon-only fix-cursor-default" onclick="history.forward()"><i class="iconfont icon-youjiantou1"></i></a>
+		<a class="nav icon-only fix-cursor-default" onclick="window.location.reload()"><i class="iconfont icon-shuaxin"></i></a>
+		<a  aria-label="TOP" href="#" role="button"><i class="iconfont icon-xiangshang"></i></a>
+	  </li>
+
+		<hr class="menuLoad-Content" style="display: block;">
+	  <li class="menuLoad-Content" style="display: block;">
+		<a class="vlts-menu fix-cursor-default" target="_self" href="javascript:;" data-toggle="modal" data-target="#modalSearch" aria-label="Search">
+		  <span>
+			  <i class="iconfont icon-sousuo1 rightmenu-icon"></i>
+			  站内搜索
+		  </span>
+		</a>
+	  </li>
+
+	  <li class="menuLoad-Content" style="display: block;">
+		<a class="vlts-menu fix-cursor-default"  href="https://www.zywvvd.com/messagebd/" data-group="link">
+		  <span>
+			  <i class="iconfont icon-yangshi_icon_tongyong_chat rightmenu-icon">  </i>
+			   留言吐槽 
+		   </span>
+		</a>
+	  </li>
+
+
+	  <li class="menuLoad-Content" style="display: block;">
+		<a class="vlts-menu fix-cursor-default" id="help" target="_blank" rel="noopener" href="https://www.foreverblog.cn/go.html" data-group="link">
+		<span>
+			  <i class="iconfont icon-a-BlackHole rightmenu-icon"></i>
+			  虫洞穿梭
+		  </span>
+		</a>
+	  </li>
+
+	<a id="scroll-top-button" aria-label="TOP" href="#" role="button" style="bottom: 20px; right: 52.6364px;">
+        <i class="iconfont icon-xiangshangjiantou" aria-hidden="true"></i>
+      </a>
+
+	<hr class="menuLoad-Content" style="display: block;">
+	
+	  <li class="menuLoad-Content" style="display: block;">
+		<a class="vlts-menu fix-cursor-default" id="destroy-airplane" target="_blank" rel="noopener"  data-group="link">
+		<span>
+			  <i class="iconfont icon-feiji rightmenu-icon"></i>
+			  破坏小飞机
+		  </span>
+		</a>
+	  </li>
+  </ul>
+</div>
+
+<script>
+	var ua = navigator.userAgent;
+	var ipad = ua.match(/(iPad).*OS\s([\d_]+)/),
+		isIphone = !ipad && ua.match(/(iPhone\sOS)\s([\d_]+)/),
+		isAndroid = ua.match(/(Android)\s+([\d.]+)/),
+		isMobile = isIphone || isAndroid;
+
+	if(!isMobile) {
+		// 为按钮添加事件处理器
+		document.getElementById('destroy-airplane').onclick = function() {
+		  console.log('飞机起飞！');
+		  // 定义要执行的JavaScript代码
+		var KICKASSVERSION='2.0';
+		var s = document.createElement('script');
+		s.type='text/javascript';
+		document.body.appendChild(s);
+		s.src='https://uipv4.zywvvd.com:33030/HexoFiles/js/games/airplane/airplane.js';
+		void(0);
+		};
+	}
+</script>
+
+
+
+
+
+<link href="/css/custom.css"type="text/css"rel="stylesheet"/>
+<script src="/vvd_js/right_menu.js" type="text/javascript"></script>
+<link href="/css/right_menu.css"type="text/css"rel="stylesheet"/>
+<script src="/vvd_js/go.js"></script>
+
+
+  <noscript>
+    <div class="noscript-warning">博客在允许 JavaScript 运行的环境下浏览效果更佳</div>
+  </noscript>
+<script src="/live2dw/lib/L2Dwidget.min.js?094cbace49a39548bed64abff5988b05"></script><script>L2Dwidget.init({"pluginRootPath":"live2dw/","pluginJsPath":"lib/","pluginModelPath":"assets/","tagMode":false,"log":false,"model":{"jsonPath":"/live2dw/assets/z16.model.json"},"display":{"position":"left","width":200,"height":400},"mobile":{"show":false},"react":{"opacity":0.9}});</script></body>
+</html>
