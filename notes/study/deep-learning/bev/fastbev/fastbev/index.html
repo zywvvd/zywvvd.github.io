@@ -32,7 +32,7 @@
 <meta property="og:image" content="https://uipv4.zywvvd.com:33030/HexoFiles/vvd_image_files/202409051645096.png">
 <meta property="og:image" content="https://uipv4.zywvvd.com:33030/HexoFiles/vvd_image_files/202409051646746.png">
 <meta property="article:published_time" content="2024-09-05T07:56:46.000Z">
-<meta property="article:modified_time" content="2024-09-05T10:17:18.582Z">
+<meta property="article:modified_time" content="2024-09-05T10:19:23.851Z">
 <meta property="article:author" content="Yiwei Zhang">
 <meta property="article:tag" content="Deep_Learning">
 <meta name="twitter:card" content="summary_large_image">
@@ -874,11 +874,13 @@
 在得到多视图相机图像的多尺度图像特征 $𝐹={𝑅^{𝑁×𝑊_𝑖×𝐻_𝑖×𝐶}|𝑖∈[4,8,16]}$ 后，便可以通过上述的快速射线变换，将多尺度图像特征 投影至多尺度BEV特征空间，得到： $𝑉={𝑅^{𝑋_𝑖×𝑌_𝑖×𝑍×𝐶}|𝑋_𝑖,𝑌_𝑖∈[200,150,100]}$</p>
 <p><img src="https://uipv4.zywvvd.com:33030/HexoFiles/vvd_image_files/202409051627013.png" srcset="/img/loading.gif" lazyload alt=""></p>
 <p><strong>3.高效BEV编码器:</strong> BEV作为4D张量需要大量计算，可使用三位缩减操作加快其运算速度，从而避免3D卷积占用大量内存。此外，BEV编码器的块数和3D体素分辨率的大小对性能影响相对较小，但占用了较大的速度消耗，因此更少的块和更小的体素分辨率也更为关键。</p>
-<p>BEV 特征𝑉是一个4维的向量，如果使用时间融合操作将特征堆叠在一块，会使得BEV编码模块产生大量的计算。为了加速BEV编码的计算，通常需要使用S2C、MSCF、MFCF三种算子来降低计算量。S2C操作用于将4维的体素向量 $𝑉∈𝑅^{𝑋×𝑌×𝑍×𝐶}$ 转换至3维BEV向量 $𝑉∈𝑅^{𝑋×𝑌×(𝑍𝐶)}$，为此可以避免使用大量消耗内存的3D卷积算子。因为BEV特征本身就是一个多尺度的，即 $[200,150,100]$ ，为此同样可以通过上采样的方式，把低尺度的BEV特征放大到同一尺度 $200×200$ ，然后再通过 MSCF&amp;MFCF 操作在通道维度上进行多尺度多帧特征连接，即<br>
-$$<br>
-𝐹𝑢𝑠𝑒(𝑉_𝑖|𝑉_𝑖) ∈ 𝑅^{𝑋_𝑖×𝑌_𝑖×(𝑍𝐶𝐹_{𝑠𝑐𝑎𝑙𝑒𝑠}𝑇_{𝑓𝑟𝑎𝑚𝑒𝑠})} ⇒ 𝑉_𝑖 | 𝑉_𝑖 ∈ 𝑅^{𝑋_𝑖×𝑌_𝑖×𝐶_{𝑀𝑆𝐶𝐹 &amp; 𝑀𝐹𝐶𝐹}},𝑖∈3−𝑙𝑒𝑣𝑒𝑙<br>
-$$<br>
-从而可以将原有的高参数量融合至低参数量，并最终加速BEV编码的计算时间。</p>
+<p>BEV 特征𝑉是一个4维的向量，如果使用时间融合操作将特征堆叠在一块，会使得BEV编码模块产生大量的计算。为了加速BEV编码的计算，通常需要使用S2C、MSCF、MFCF三种算子来降低计算量。S2C操作用于将4维的体素向量 $𝑉∈𝑅^{𝑋×𝑌×𝑍×𝐶}$ 转换至3维BEV向量 $𝑉∈𝑅^{𝑋×𝑌×(𝑍𝐶)}$，为此可以避免使用大量消耗内存的3D卷积算子。因为BEV特征本身就是一个多尺度的，即 $[200,150,100]$ ，为此同样可以通过上采样的方式，把低尺度的BEV特征放大到同一尺度 $200×200$ ，然后再通过 MSCF&amp;MFCF 操作在通道维度上进行多尺度多帧特征连接，即</p>
+
+$$
+𝐹𝑢𝑠𝑒(𝑉_𝑖|𝑉_𝑖) ∈ 𝑅^{𝑋_𝑖×𝑌_𝑖×(𝑍𝐶𝐹_{𝑠𝑐𝑎𝑙𝑒𝑠}𝑇_{𝑓𝑟𝑎𝑚𝑒𝑠})} ⇒ 𝑉_𝑖 | 𝑉_𝑖 ∈ 𝑅^{𝑋_𝑖×𝑌_𝑖×𝐶_{𝑀𝑆𝐶𝐹 \& 𝑀𝐹𝐶𝐹}},𝑖∈3−𝑙𝑒𝑣𝑒𝑙
+$$
+
+<p>从而可以将原有的高参数量融合至低参数量，并最终加速BEV编码的计算时间。</p>
 <p><strong>4.数据增强:</strong> 本研究为图像空间和BEV空间添加了数据增强。如果对图像应用数据增强，还需要改变相机固有矩阵。对于增强操作，基本上遵循常见的操作，例如翻转、裁剪和旋转。BEV增强变换可以通过相应地修改相机外部矩阵来控制，增强后，需要对3D gt框进行同步变更，而且还需要修改对应的外参矩阵。</p>
 <p><img src="https://uipv4.zywvvd.com:33030/HexoFiles/vvd_image_files/202409051629252.png" srcset="/img/loading.gif" lazyload alt=""></p>
 <p><strong>5.时态融合变换器:</strong> 本研究将历史帧引入到当前帧中以进行时间特征融合。通过空间对齐操作和级联操作，将历史帧的特征与当前帧的对应特征融合。时间融合可以被认为是帧级的特征增强，在一定范围内较长的时间序列可以带来更多的性能增益。</p>
