@@ -1,0 +1,1597 @@
+
+
+<!DOCTYPE html>
+<html lang="zh-CN" data-default-color-scheme=auto>
+
+
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="baidu-site-verification" content="codeva-rLWafCJGYc" />
+  <link rel="apple-touch-icon" sizes="76x76" href="/image/avatar.png">
+  <link rel="icon" href="/image/avatar.png">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, shrink-to-fit=no">
+  <meta http-equiv="x-ua-compatible" content="ie=edge">
+  
+  <meta name="theme-color" content="#2f4154">
+  <meta name="author" content="Yiwei Zhang">
+  <meta name="keywords" content="人工智能, 深度学习, 个人博客, 机器学习">
+  
+    <meta name="description" content="重参数化也可以用在离散分布采样中，由于对我来说相比于连续分布的重参数技巧，离散重参数难理解很多，本文单独介绍离散部分的重参数化 。">
+<meta property="og:type" content="article">
+<meta property="og:title" content="离散分布重参数化 —— Gumbel-Softmax Trick 和 Gumbel分布">
+<meta property="og:url" content="https://www.zywvvd.com/notes/study/deep-learning/generation/reparameterized/repara2/repara2/index.html">
+<meta property="og:site_name" content="又见苍岚">
+<meta property="og:description" content="重参数化也可以用在离散分布采样中，由于对我来说相比于连续分布的重参数技巧，离散重参数难理解很多，本文单独介绍离散部分的重参数化 。">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="https://uipv4.zywvvd.com:33030/HexoFiles/vvd_pc_upload_2023/202403272248468.png">
+<meta property="og:image" content="https://uipv4.zywvvd.com:33030/HexoFiles/vvd_pc_upload_2023/202403262318237.png">
+<meta property="og:image" content="https://uipv4.zywvvd.com:33030/HexoFiles/vvd_pc_upload_2023/202403262319030.png">
+<meta property="og:image" content="https://uipv4.zywvvd.com:33030/HexoFiles/vvd_pc_upload_2023/202403262320397.png">
+<meta property="og:image" content="https://uipv4.zywvvd.com:33030/HexoFiles/vvd_pc_upload_2023/202403272259542.png">
+<meta property="og:image" content="https://uipv4.zywvvd.com:33030/HexoFiles/vvd_pc_upload_2023/202403272330054.png">
+<meta property="og:image" content="https://uipv4.zywvvd.com:33030/HexoFiles/vvd_pc_upload_2023/202403272331981.png">
+<meta property="og:image" content="https://uipv4.zywvvd.com:33030/HexoFiles/vvd_pc_upload_2023/202403272331563.png">
+<meta property="article:published_time" content="2024-03-26T15:09:46.000Z">
+<meta property="article:modified_time" content="2024-05-07T05:57:50.532Z">
+<meta property="article:author" content="Yiwei Zhang">
+<meta property="article:tag" content="Deep_Learning">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:image" content="https://uipv4.zywvvd.com:33030/HexoFiles/vvd_pc_upload_2023/202403272248468.png">
+  
+  
+  
+  <title>离散分布重参数化 —— Gumbel-Softmax Trick 和 Gumbel分布 - 又见苍岚</title>
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/twitter-bootstrap/4.6.1/css/bootstrap.min.css" />
+
+
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/github-markdown-css/4.0.0/github-markdown.min.css" />
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/hint.css/2.7.0/hint.min.css" />
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/fancybox/3.5.7/jquery.fancybox.min.css" />
+
+
+
+<!-- 主题依赖的图标库，不要自行修改 -->
+<!-- Do not modify the link that theme dependent icons -->
+
+<link rel="stylesheet" href="//at.alicdn.com/t/font_1749284_hj8rtnfg7um.css">
+
+
+
+<link rel="stylesheet" href="//at.alicdn.com/t/font_1736178_lbnruvf0jn.css">
+
+
+<link  rel="stylesheet" href="/css/main.css" />
+
+
+  <link id="highlight-css" rel="stylesheet" href="/css/highlight.css" />
+  
+    <link id="highlight-css-dark" rel="stylesheet" href="/css/highlight-dark.css" />
+  
+
+
+
+  
+<link rel="stylesheet" href="/css/custom.css">
+<link rel="stylesheet" href="/css/reward.css">
+<link rel="stylesheet" href="//cdn.jsdelivr.net/npm/aplayer/dist/APlayer.min.css">
+
+
+
+  <script id="fluid-configs">
+    var Fluid = window.Fluid || {};
+    Fluid.ctx = Object.assign({}, Fluid.ctx)
+    var CONFIG = {"hostname":"www.zywvvd.com","root":"/","version":"1.9.7","typing":{"enable":true,"typeSpeed":90,"cursorChar":"_","loop":false,"scope":["home"]},"anchorjs":{"enable":true,"element":"h1,h2,h3,h4,h5,h6","placement":"left","visible":"hover","icon":""},"progressbar":{"enable":true,"height_px":3,"color":"#29d","options":{"showSpinner":false,"trickleSpeed":100}},"code_language":{"enable":true,"default":"TEXT"},"copy_btn":true,"image_caption":{"enable":true},"image_zoom":{"enable":true,"img_url_replace":["",""]},"toc":{"enable":true,"placement":"right","headingSelector":"h1,h2,h3,h4,h5,h6","collapseDepth":0},"lazyload":{"enable":true,"loading_img":"/img/loading.gif","onlypost":false,"offset_factor":2},"web_analytics":{"enable":true,"follow_dnt":true,"baidu":null,"google":null,"tencent":{"sid":null,"cid":null},"woyaola":null,"cnzz":null,"leancloud":{"app_id":"Cv0XNeBSBdAPAIuVj3PsyM3R-MdYXbMMI","app_key":"4PU1rNlGrqXWzhfW3dgq98oX","server_url":null,"path":"window.location.pathname","ignore_local":false},"gtag":null},"search_path":"/local-search.xml","include_content_in_search":true};
+
+    if (CONFIG.web_analytics.follow_dnt) {
+      var dntVal = navigator.doNotTrack || window.doNotTrack || navigator.msDoNotTrack;
+      Fluid.ctx.dnt = dntVal && (dntVal.startsWith('1') || dntVal.startsWith('yes') || dntVal.startsWith('on'));
+    }
+  </script>
+  <script  src="/js/utils.js" ></script>
+  <script  src="/js/color-schema.js" ></script>
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+    
+  
+
+
+
+  
+<meta name="generator" content="Hexo 7.2.0"><link rel="alternate" href="/atom.xml" title="又见苍岚" type="application/atom+xml">
+</head>
+
+
+<body>
+  
+<div id="Loadanimation" style="z-index:999999;">
+<div id="Loadanimation-center">
+   <div id="Loadanimation-center-absolute">
+       <div class="xccx_object" id="xccx_four"></div>
+       <div class="xccx_object" id="xccx_three"></div>
+       <div class="xccx_object" id="xccx_two"></div>
+       <div class="xccx_object" id="xccx_one"></div>
+   </div>
+</div>
+</div>
+
+<link href="/css/loading.css"type="text/css"rel="stylesheet"/>
+
+
+
+
+
+
+<div>
+	<div class='real_mask' style="
+		background-color: rgba(0,0,0,0.4);
+		width: 100%;
+		height: 100%;
+		position: fixed;
+		z-index: -777;
+	"></div>
+	<div id="banner_video_insert">
+	</div>	
+	<div id='vvd_banner_img'>
+	</div>
+</div>
+<div id="banner"></div>
+
+
+
+
+
+
+
+  <header>
+    
+
+<div class="header-inner" style="height: 80vh;">
+  <nav id="navbar" class="navbar fixed-top  navbar-expand-lg navbar-dark scrolling-navbar">
+  <div class="container">
+    <a class="navbar-brand" href="/">
+      <strong>CangLan</strong>
+    </a>
+
+    <button id="navbar-toggler-btn" class="navbar-toggler" type="button" data-toggle="collapse"
+            data-target="#navbarSupportedContent"
+            aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
+      <div class="animated-icon"><span></span><span></span><span></span></div>
+    </button>
+
+    <!-- Collapsible content -->
+    <div class="collapse navbar-collapse" id="navbarSupportedContent">
+      <ul class="navbar-nav ml-auto text-center">
+        
+          
+          
+          
+          
+            <li class="nav-item">
+		<div >
+		      <a class="nav-link" href="/" target="_self" data-umami-event="Navigation-Homepage">
+
+		        <i class="iconfont icon-home-fill"></i>
+		        <span>首页</span>
+		      </a>
+		</div>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item dropdown">
+              <a class="nav-link dropdown-toggle" target="_self" href="javascript:;" role="button"
+                 data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                <i class="iconfont icon-shuji1"></i>
+                <span>文章</span>
+              </a>
+              <div class="dropdown-menu" aria-labelledby="navbarDropdown">
+                
+                  
+                  
+                  
+		<div >
+
+                  <a class="dropdown-item" href="/archives/" target="_self" data-umami-event="Navigation-Archive">
+
+                    <i class="iconfont icon-archive-fill"></i>
+                    <span>归档</span>
+                  </a>
+		</div>
+                
+                  
+                  
+                  
+		<div >
+
+                  <a class="dropdown-item" href="/categories/" target="_self" data-umami-event="Navigation-Category">
+
+                    <i class="iconfont icon-category-fill"></i>
+                    <span>分类</span>
+                  </a>
+		</div>
+                
+                  
+                  
+                  
+		<div >
+
+                  <a class="dropdown-item" href="/tags/" target="_self" data-umami-event="Navigation-Tag">
+
+                    <i class="iconfont icon-tags-fill"></i>
+                    <span>标签</span>
+                  </a>
+		</div>
+                
+                  
+                  
+                  
+		<div >
+
+                  <a class="dropdown-item" href="/shuoshuo/" target="_self" data-umami-event="Navigation-Shuoshuo">
+
+                    <i class="iconfont icon-24gf-bubblesDots4"></i>
+                    <span>说说</span>
+                  </a>
+		</div>
+                
+              </div>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item dropdown">
+              <a class="nav-link dropdown-toggle" target="_self" href="javascript:;" role="button"
+                 data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                <i class="iconfont icon-momo"></i>
+                <span>社交</span>
+              </a>
+              <div class="dropdown-menu" aria-labelledby="navbarDropdown">
+                
+                  
+                  
+                  
+		<div >
+
+                  <a class="dropdown-item" href="/links/" target="_self" data-umami-event="Navigation-Friends">
+
+                    <i class="iconfont icon-link-fill"></i>
+                    <span>友链</span>
+                  </a>
+		</div>
+                
+                  
+                  
+                  
+		<div >
+
+                  <a class="dropdown-item" href="/messagebd/" target="_self" data-umami-event="Navigation-MessageBoard">
+
+                    <i class="iconfont icon-comment"></i>
+                    <span>留言板</span>
+                  </a>
+		</div>
+                
+                  
+                  
+                  
+		<div >
+
+                  <a class="dropdown-item" href="/atom.xml" target="_self" data-umami-event="Navigation-RSS">
+
+                    <i class="iconfont icon-dingyue"></i>
+                    <span>RSS订阅</span>
+                  </a>
+		</div>
+                
+              </div>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item dropdown">
+              <a class="nav-link dropdown-toggle" target="_self" href="javascript:;" role="button"
+                 data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                <i class="iconfont icon-user-fill"></i>
+                <span>个人</span>
+              </a>
+              <div class="dropdown-menu" aria-labelledby="navbarDropdown">
+                
+                  
+                  
+                  
+		<div >
+
+                  <a class="dropdown-item" href="/about/" target="_self" data-umami-event="Navigation-AboutMe">
+
+                    <i class="iconfont icon-guanyuwomen"></i>
+                    <span>关于</span>
+                  </a>
+		</div>
+                
+                  
+                  
+                  
+		<div >
+
+                  <a class="dropdown-item" href="/playlist/" target="_self" data-umami-event="Navigation-Music">
+
+                    <i class="iconfont icon-music"></i>
+                    <span>歌单</span>
+                  </a>
+		</div>
+                
+                  
+                  
+                  
+		<div >
+
+                  <a class="dropdown-item" href="https://uipv4.zywvvd.com:33035" target="_self" data-umami-event="Navigation-Nextcloud">
+
+                    <i class="iconfont icon-xuniyingpan"></i>
+                    <span>网盘</span>
+                  </a>
+		</div>
+                
+                  
+                  
+                  
+		<div >
+
+                  <a class="dropdown-item" href="https://uipv4.zywvvd.com:38920" target="_self" data-umami-event="Navigation-Emby">
+
+                    <i class="iconfont icon-meiti"></i>
+                    <span>影院</span>
+                  </a>
+		</div>
+                
+                  
+                  
+                  
+		<div >
+
+                  <a class="dropdown-item" href="https://uipv4.zywvvd.com:33036" target="_self" data-umami-event="Navigation-OneDev">
+
+                    <i class="iconfont icon-git"></i>
+                    <span>仓库</span>
+                  </a>
+		</div>
+                
+                  
+                  
+                  
+		<div >
+
+                  <a class="dropdown-item" href="https://uipv4.zywvvd.com:33041" target="_self" data-umami-event="Navigation-Wiki">
+
+                    <i class="iconfont icon-wiki"></i>
+                    <span>百科</span>
+                  </a>
+		</div>
+                
+              </div>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item dropdown">
+              <a class="nav-link dropdown-toggle" target="_self" href="javascript:;" role="button"
+                 data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                <i class="iconfont icon-ic_fly"></i>
+                <span>导航</span>
+              </a>
+              <div class="dropdown-menu" aria-labelledby="navbarDropdown">
+                
+                  
+                  
+                  
+		<div >
+
+                  <a class="dropdown-item" href="/site-map/" target="_self" data-umami-event="Navigation-SiteMap">
+
+                    <i class="iconfont icon-lianjie"></i>
+                    <span>链接</span>
+                  </a>
+		</div>
+                
+                  
+                  
+                  
+		<div >
+
+                  <a class="dropdown-item" href="/nodeppt/hexo/snavigation/" target="_self" data-umami-event="Navigation-Search">
+
+                    <i class="iconfont icon-sousuo"></i>
+                    <span>搜索</span>
+                  </a>
+		</div>
+                
+              </div>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item dropdown">
+              <a class="nav-link dropdown-toggle" target="_self" href="javascript:;" role="button"
+                 data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                <i class="iconfont icon-wangzhan"></i>
+                <span>站点</span>
+              </a>
+              <div class="dropdown-menu" aria-labelledby="navbarDropdown">
+                
+                  
+                  
+                  
+		<div >
+
+                  <a class="dropdown-item" href="https://uipv4.zywvvd.com:33039/share/0zx3o21oIpZTZqwC/%E5%8F%88%E8%A7%81%E8%8B%8D%E5%B2%9A" target="_self" data-umami-event="Navigation-Umami">
+
+                    <i class="iconfont icon-tongji2"></i>
+                    <span>站点分析</span>
+                  </a>
+		</div>
+                
+                  
+                  
+                  
+		<div >
+
+                  <a class="dropdown-item" href="/earth_sta/" target="_self" data-umami-event="Navigation-Globe">
+
+                    <i class="iconfont icon-tongjifenxi-xiangmubiaogetongji"></i>
+                    <span>访问统计</span>
+                  </a>
+		</div>
+                
+                  
+                  
+                  
+		<div >
+
+                  <a class="dropdown-item" href="https://uipv4.zywvvd.com:33034/status/show" target="_self" data-umami-event="Navigation-Monitor">
+
+                    <i class="iconfont icon-jiankong"></i>
+                    <span>站点监控</span>
+                  </a>
+		</div>
+                
+              </div>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item dropdown">
+              <a class="nav-link dropdown-toggle" target="_self" href="javascript:;" role="button"
+                 data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                <i class="iconfont icon-chuansong"></i>
+                <span>传送</span>
+              </a>
+              <div class="dropdown-menu" aria-labelledby="navbarDropdown">
+                
+                  
+                  
+                  
+		<div >
+
+                  <a class="dropdown-item" href="https://www.foreverblog.cn/go.html" target="_self" data-umami-event="Navigation-ForeverBolg">
+
+                    <i class="iconfont icon-a-BlackHole"></i>
+                    <span>十年之约</span>
+                  </a>
+		</div>
+                
+                  
+                  
+                  
+		<div >
+
+                  <a class="dropdown-item" href="https://www.travellings.cn/go.html" target="_self" data-umami-event="Navigation-DriveTo">
+
+                    <i class="iconfont icon-train1"></i>
+                    <span>开往</span>
+                  </a>
+		</div>
+                
+                  
+                  
+                  
+		<div >
+
+                  <a class="dropdown-item" href="https://bf.zzxworld.com/" target="_self" data-umami-event="Navigation-BlogFinder">
+
+                    <i class="iconfont icon-icon-"></i>
+                    <span>BlogFinder</span>
+                  </a>
+		</div>
+                
+              </div>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item dropdown">
+              <a class="nav-link dropdown-toggle" target="_self" href="javascript:;" role="button"
+                 data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                <i class="iconfont icon-gongju"></i>
+                <span>工具</span>
+              </a>
+              <div class="dropdown-menu" aria-labelledby="navbarDropdown">
+                
+                  
+                  
+                  
+		<div >
+
+                  <a class="dropdown-item" href="/navigates/calculator" target="_self" data-umami-event="Navigation-Calculator">
+
+                    <i class="iconfont icon-jisuan"></i>
+                    <span>计算器</span>
+                  </a>
+		</div>
+                
+                  
+                  
+                  
+		<div >
+
+                  <a class="dropdown-item" href="/navigates/webgraphviz" target="_self" data-umami-event="Navigation-WebGtaphviz">
+
+                    <i class="iconfont icon-tongyong-huatugongju2"></i>
+                    <span>Graphviz</span>
+                  </a>
+		</div>
+                
+              </div>
+            </li>
+          
+        
+        
+          <li class="nav-item" id="search-btn">
+            <a class="nav-link" target="_self" href="javascript:;" data-toggle="modal" data-target="#modalSearch" aria-label="Search">
+              <i class="iconfont icon-search"></i>
+            </a>
+          </li>
+          
+        
+        
+          <li class="nav-item" id="color-toggle-btn">
+            <a class="nav-link" target="_self" href="javascript:;" aria-label="Color Toggle">
+              <i class="iconfont icon-dark" id="color-toggle-icon"></i>
+            </a>
+          </li>
+        
+      </ul>
+    </div>
+  </div>
+</nav>
+
+  
+
+<div id="banner" class="banner" parallax=true
+     style="background: url('https://uipv4.zywvvd.com:33030/HexoFiles/new/bg-trans.png') no-repeat center center; background-size: cover;">
+  <div class="full-bg-img">
+    <div class="mask flex-center" style="background-color: rgba(0, 0, 0, 0)">
+      <div class="banner-text text-center fade-in-up">
+        <div class="h2">
+          
+            <span id="subtitle">离散分布重参数化 —— Gumbel-Softmax Trick 和 Gumbel分布</span>
+          
+        </div>
+
+        
+          
+  <div class="mt-3">
+    
+      <span class="post-meta mr-2">
+        <i class="iconfont icon-author" aria-hidden="true"></i>
+        Yiwei Zhang
+      </span>
+    
+    
+      <span class="post-meta">
+        <i class="iconfont icon-date-fill" aria-hidden="true"></i>
+        <time datetime="2024-03-26 23:09" pubdate>
+          2024年3月26日 晚上
+        </time>
+      </span>
+    
+  </div>
+
+  <div class="mt-1">
+    
+      <span class="post-meta mr-2">
+        <i class="iconfont icon-chart"></i>
+        
+          <!-- compatible with older versions-->
+          4.1k 字
+        
+      </span>
+    
+
+    
+      <span class="post-meta mr-2">
+        <i class="iconfont icon-clock-fill"></i>
+        
+        
+        
+          <!-- compatible with older versions-->
+          35 分钟
+        
+      </span>
+    
+
+    
+    
+      
+        <span id="vvdpost_container_page_pvuv" style="display: none">
+          <i class="iconfont icon-eye" aria-hidden="true"></i>
+          <span id="vvdpost_value_page_pv">0</span> 次&nbsp&nbsp
+		  <i class="iconfont icon-users" aria-hidden="true"></i>
+		  <span id="vvdpost_value_page_uv">0</span> 人&nbsp&nbsp
+		  <i class="iconfont icon-comment" aria-hidden="true"></i>
+		  <span id="vvdpost_value_page_cn">0</span> 条
+        </span>
+
+		<script>
+			console.log(window.location.pathname)
+			var httpRequest = new XMLHttpRequest();
+			httpRequest.open('POST', 'https://uipv4.zywvvd.com:33037/poststats', true);
+			httpRequest.setRequestHeader("Content-type","application/json");
+			httpRequest.send(JSON.stringify(window.location.pathname));
+			httpRequest.onreadystatechange = function () {//请求后的回调接口，可将请求成功后要执行的程序写在其中
+				if (httpRequest.readyState == 4 && httpRequest.status == 200) {//验证请求是否发送成功
+					var json = httpRequest.responseText;//获取到服务端返回的数据
+					var obj = JSON.parse(json);
+					var pvCtn = document.querySelector('#vvdpost_container_page_pvuv');
+					if (pvCtn) {
+						var pv_ele = document.querySelector('#vvdpost_value_page_pv');
+						var uv_ele = document.querySelector('#vvdpost_value_page_uv');
+						var cn_ele = document.querySelector('#vvdpost_value_page_cn');
+
+						if (uv_ele && uv_ele) {
+							pv_ele.innerText = obj.pv;
+							uv_ele.innerText = obj.uv;
+							cn_ele.innerText = obj.cn;
+							pvCtn.style.display = 'inline';
+							}
+						}
+					}
+			};
+		</script>
+      
+    
+  </div>
+
+
+        
+      </div>
+
+      
+        <div class="scroll-down-bar">
+          <i class="iconfont icon-arrowdown"></i>
+        </div>
+      
+    </div>
+  </div>
+</div>
+
+</div>
+
+
+	<script type="text/javascript" src="/vvd_js/jquery.js"></script>
+	<script async src="https://uipv4.zywvvd.com:33039/script.js" data-website-id="dd4a05c6-dde2-4743-9c3a-a79d6bee0778"></script>
+	<div class="banner" id='banner' >
+
+		<div class="full-bg-img" >
+
+			
+				<script>
+					var ua = navigator.userAgent;
+					var ipad = ua.match(/(iPad).*OS\s([\d_]+)/),
+						isIphone = !ipad && ua.match(/(iPhone\sOS)\s([\d_]+)/),
+						isAndroid = ua.match(/(Android)\s+([\d.]+)/),
+						isMobile = isIphone || isAndroid;
+
+					function set_video_attr(id){
+						var height = document.body.clientHeight
+						var width = document.body.clientWidth
+						var video_item = document.getElementById(id);
+
+						if (height / width < 0.56){
+							video_item.setAttribute('width', '100%');
+							video_item.setAttribute('height', 'auto');
+						} else {
+							video_item.setAttribute('height', '100%');
+							video_item.setAttribute('width', 'auto');
+						}
+					}
+
+					fetch('https://uipv4.zywvvd.com:33037/wallpaper-pair')
+					  .then(response => response.json()) // 解析JSON数据
+					  .then(data => {
+						console.log('获取链接成功');
+						video_url = data[0][0]
+						pre_show_image_url = data[0][1]
+
+						banner_obj = document.getElementById("banner")
+						banner_obj.style.cssText = "background: url('" + pre_show_image_url + "') no-repeat;"
+
+						vvd_banner_obj = document.getElementById("vvd_banner_img")
+						vvd_banner_content = "<img id='banner_img_item' src='" + pre_show_image_url + "'style='position: fixed; z-index: -999'>"
+						vvd_banner_obj.innerHTML = vvd_banner_content 
+
+						if (!isMobile) {
+							video_html_res = "<video id='video_item' style='position: fixed; z-index: -888;'  muted='muted' src=" + video_url + " autoplay='autoplay' loop='loop'></video>"
+							document.getElementById("banner_video_insert").innerHTML = video_html_res;
+							set_video_attr('video_item')
+							set_video_attr('banner_img_item')
+						}
+					    
+					  })
+					  .catch((error) => {
+					    console.error('请求失败,尝试本地获取背景图像：', error);
+	    					$.getJSON('/vvd_js/video_url.json', function(data){
+
+							var video_list_length = data.length
+							var seed = Math.random()
+							index = Math.floor(seed * video_list_length)
+
+							video_url = data[index][0]
+							pre_show_image_url = data[index][1]
+
+							banner_obj = document.getElementById("banner")
+							banner_obj.style.cssText = "background: url('" + pre_show_image_url + "') no-repeat;"
+
+							vvd_banner_obj = document.getElementById("vvd_banner_img")
+							vvd_banner_content = "<img id='banner_img_item' src='" + pre_show_image_url + "'style='position: fixed; z-index: -999'>"
+							vvd_banner_obj.innerHTML = vvd_banner_content 
+
+							if (!isMobile) {
+								video_html_res = "<video id='video_item' style='position: fixed; z-index: -888;'  muted='muted' src=" + video_url + " autoplay='autoplay' loop='loop'></video>"
+								document.getElementById("banner_video_insert").innerHTML = video_html_res;
+								set_video_attr('video_item')
+								set_video_attr('banner_img_item')
+							}
+						});
+					  });
+
+
+
+
+
+
+					if (!isMobile){
+						window.onresize = function(){
+							set_video_attr('video_item')
+							set_video_attr('banner_img_item')
+							}
+						}
+				</script>
+
+			
+
+
+			
+			</div>
+		</div>
+    </div>
+
+  </header>
+
+  <main>
+    
+      
+
+
+
+<div class="container-fluid nopadding-x">
+  <div class="row nomargin-x">
+    <div class="side-col d-none d-lg-block col-lg-2">
+      
+
+    </div>
+
+    <div class="col-lg-8 nopadding-x-md">
+      <div class="container nopadding-x-md" id="board-ctn">
+        <div id="board">
+          <article class="post-content mx-auto">
+
+            <!-- <h1 id="seo-header">离散分布重参数化 —— Gumbel-Softmax Trick 和 Gumbel分布</h1> -->
+
+            
+              <p id="updated-time" class="note note-info" style="">
+                
+                  
+                    <!-- compatible with older versions-->
+                    本文最后更新于：2024年5月7日 下午
+                  
+                
+              </p>
+            
+            
+              <div class="markdown-body">
+                
+                <blockquote>
+<p>重参数化也可以用在离散分布采样中，由于对我来说相比于连续分布的重参数技巧，离散重参数难理解很多，本文单独介绍离散部分的重参数化 。</p>
+</blockquote>
+<span id="more"></span>
+<h3 id="简介">简介</h3>
+<p>这篇文章从直观感觉讲起，先讲Gumbel-Softmax Trick用在哪里及如何运用，再编程感受Gumbel分布的效果，最后讨论数学证明。</p>
+<p><img src="https://uipv4.zywvvd.com:33030/HexoFiles/vvd_pc_upload_2023/202403272248468.png" srcset="/img/loading.gif" lazyload alt=""></p>
+<h3 id="问题来源">问题来源</h3>
+<p>通常在强化学习中，如果动作空间是离散的，比如上、下、左、右四个动作，通常的做法是网络输出一个四维的one-hot向量(不考虑空动作)，分别代表四个动作。比如 [1,0,0,0] 代表上，[0,1,0,0] 代表下等等。而具体取哪个动作呢，就根据输出的每个维度的大小，选择值最大的作为输出动作,即 $arg \max (v) $ .</p>
+<p>例如网络输出的四维向量为 $v=[−20,10,9.6,6.2]$，第二个维度取到最大值 10，那么输出的动作就是 [0,1,0,0]，也就是说，这和多类别的分类任务是一个道理。但是这种取法有个问题是不能计算梯度，也就不能更新网络。通常的做法是加softmax函数，把向量归一化，这样既能计算梯度，同时值的大小还能表示概率的含义。softmax函数定义如下：</p>
+
+$$
+ \sigma\left(z_{i}\right)=\frac{e^{z_{i}}}{\sum_{j=1}^{K} e^{z_{j}}} 
+$$
+
+<p>那么将 <code>v=[−20,10,9.6,6.2]</code> 通过softmax函数后有 $σ(v)=[0,0.591,0.396,0.013]$，这样做不会改变动作或者说类别的选取，同时 softmax 倾向于让最大值的概率显著大于其他值，比如这里10和9.6经过 softmax 放缩之后变成了 0.591 和 0.396，6.2 对应的概率更是变成了 0.013，这有利于把网络训成一个 one-hot 输出的形式，这种方式在分类问题中是常用方法。</p>
+<p>但是这么做还有一个问题，这个表示概率的向量 $σ(v)=[0,0.591,0.396,0.013]$ 并没有真正显示出概率的含义，因为一旦某个值最大，就选择相应的动作或者分类。比如 $σ(v)=[0,0.591,0.396,0.013]$ 和 $σ(v)=[0,0.9,0.1,0]$ 在类别选取的结果看来没有任何差别，都是选择第二个类别，但是从概率意义上讲差别是巨大的。所以需要一种方法不仅选出动作，而且遵从概率的含义。</p>
+<p>很直接的方法是依概率分布采样就完事了，比如直接用<code>np.random.choice</code>函数依照概率生成样本值，这样概率就有意义了。这样做确实可以，但是又有一个问题冒了出来：这种方式怎么计算梯度？不能计算梯度怎么用 BP 的方式更新网络？</p>
+<p>这时重参数(re-parameterization)技巧解决了这个问题，<a target="_blank" rel="noopener" href="https://casmls.github.io/general/2017/02/01/GumbelSoftmax.html">这里</a>有详尽的解释，不过比较晦涩。简单来说重参数技巧的一个用处是把采样的步骤移出计算图，这样整个图就可以计算梯度BP更新了。之前我一直在想分类任务直接softmax之后BP更新不就完事了吗，为什么非得采样。后来看了VAE和GAN之后明白，还有很多需要采样训练的任务。这里举简单的VAE(变分自编码器)的例子说明需要采样训练的任务以及重参数技巧，详细内容来自<a target="_blank" rel="noopener" href="https://www.bilibili.com/video/av20165127">视频</a>和<a target="_blank" rel="noopener" href="http://kvfrans.com/variational-autoencoders-explained/">博客</a>。</p>
+<h3 id="Re-parameterization-Trick">Re-parameterization Trick</h3>
+<p>最<strong>原始的自编码器</strong>通常长这样：</p>
+<p><img src="https://uipv4.zywvvd.com:33030/HexoFiles/vvd_pc_upload_2023/202403262318237.png" srcset="/img/loading.gif" lazyload alt=""></p>
+<p>左右两边是端到端的出入输出网络，中间的绿色是提取的特征向量，这是一种直接从图片提取特征的方式。<br>
+而 <strong>VAE</strong> 长这样:</p>
+<p><img src="https://uipv4.zywvvd.com:33030/HexoFiles/vvd_pc_upload_2023/202403262319030.png" srcset="/img/loading.gif" lazyload alt=""></p>
+<p>VAE的想法是不直接用网络去提取特征向量，而是提取这张图像的分布特征，也就把绿色的特征向量替换为分布的参数向量，比如说均值和标准差。然后需要decode图像的时候，就从encode出来的分布中采样得到特征向量样本，用这个样本去重建图像，这时怎么计算梯度的问题就出现了。</p>
+<p><strong>重参数技巧</strong>可以解决这个问题，它长下面这样:</p>
+<p><img src="https://uipv4.zywvvd.com:33030/HexoFiles/vvd_pc_upload_2023/202403262320397.png" srcset="/img/loading.gif" lazyload alt=""></p>
+<p>假设图中的 $x$ 和 $ϕ$ 表示 VAE 中的均值和标准差向量，它们是确定性的节点。而需要输出的样本 $z$ 是带有随机性的节点，重参数就是把带有随机性的 $z$ 变成确定性的节点，同时随机性用另一个输入节点 $ϵ$ 代替。例如，这里用正态分布采样，原本从均值为 $x$ 和标准差为 $ϕ$ 的正态分布 $N(x,ϕ2)$ 中采样得到 $z$。将其转化成从标准正态分布 $N(0,1)$中采样得到 $ϵ$,再计算得到 $z=x+ϵ⋅ϕ$ 。这样一来，采样的过程移出了计算图，整张计算图就可以计算梯度进行更新了，而新加的 $ϵ$ 的输入分支不做更新，只当成一个没有权重变化的输入。</p>
+<blockquote>
+<p>到这里，需要采样训练的任务实例以及重参数技巧基本有个概念了。</p>
+</blockquote>
+<h3 id="Gumbel-Max-trick">Gumbel-Max trick</h3>
+<p>VAE 的例子是一个连续分布(正态分布)的重参数，离散分布的情况也一样，首先需要可以采样，使得离散的概率分布有意义而不是只取概率最大的值，其次需要可以计算梯度。那么怎么做到的，具体操作如下：</p>
+<p>对于 $n$ 维概率向量 $π$ ,对 $π$ 对应的离散随机变量 $x_π$ 添加 $Gumbel$ 噪声，再取样:<br>
+$$<br>
+x_{\pi}=\arg \max \left(\log \left(\pi_{i}\right)+G_{i}\right)<br>
+$$<br>
+其中，$G_i$ 是独立同分布的标准 Gumbel 分布的随机变量，标准 Gumbel 分布的 CDF 为 $F(x)=e<sup>{-e</sup>{-x}} $。</p>
+<p>这就是 <code>Gumbel-Max trick</code>。</p>
+<h3 id="Gumbel-Softmax-Trick">Gumbel-Softmax Trick</h3>
+<p>可以看到  <code>Gumbel-Max trick</code> 中间有一个 <code>argmax</code> 操作，这是不可导的，所以用 softmax 函数代替，这就是 <code>Gumbel-Softmax Trick</code> 而 $G_i$ 可以通过Gumbel分布求逆从均匀分布生成，即:<br>
+$$<br>
+G_{i}=-\log \left(-\log \left(U_{i}\right)\right), U_{i} \sim U(0,1)<br>
+$$</p>
+<h4 id="具体实践">具体实践</h4>
+<ul>
+<li>
+<p>对于网络输出的一个 $n$ 维向量 $v$,生成 $n$ 个服从均匀分布 $U(0,1)$ 的独立样本 $ϵ_1,…,ϵ_n$</p>
+</li>
+<li>
+<p>通过 $G_i=−log(−log(ϵ_i))$ 计算得到 $G_i$</p>
+</li>
+<li>
+<p>对应相加得到新的值向量 $v′=[v_1+G_1,v_2+G_2,…,v_n+G_n]$</p>
+</li>
+<li>
+<p>通过 softmax 函数</p>
+
+  $$
+   \sigma_{\tau}\left(v_{i}^{\prime}\right)=\frac{e^{v_{i}^{\prime} / \tau}}{\sum_{j=1}^{n} e^{v_{j}^{\prime} / \tau}} 
+  $$
+
+
+</li>
+</ul>
+<p>计算概率大小得到最终的类别。其中 $τ$ 是温度参数。</p>
+<blockquote>
+<p>直观上感觉，对于强化学习来说，在选择动作之前加一个扰动，相当于增加探索度，感觉上是合理的。对于深度学习的任务来说，添加随机性去模拟分布的样本生成，也是合情合理的。</p>
+</blockquote>
+<h3 id="Gumbel分布采样效果">Gumbel分布采样效果</h3>
+<p>为什么使用Gumbel分布生成随机数，就能模拟离散概率分布的样本呢？这部分使用代码模拟来感受它的优越性。这部分例子和代码来自<a target="_blank" rel="noopener" href="http://amid.fish/humble-gumbel">这里</a>。</p>
+<p>Gumbel分布的概率密度函数:</p>
+
+$$
+ p(x)=\frac{1}{\beta} e^{-z-e^{-z}} 
+$$
+
+<p>其中 $ z=\frac{x-\mu}{\beta} $ 。</p>
+<h4 id="极值分布">极值分布</h4>
+<p>Gumbel分布是一类极值分布，那么它表示什么含义呢？</p>
+<p>这里举一个类似的喝水的例子。</p>
+<p>比如你每天都会喝很多次水(比如100次)，每次喝水的量也不一样。假设每次喝水的量服从正态分布 $N(μ,σ_2)$ (其实也有点不合理，毕竟喝水的多少不能取为负值，不过无伤大雅能理解就好，假设均值为5)，那么每天100次喝水里总会有一个最大值，这个最大值服从的分布就是Gumbel分布。实际上，只要是指数族分布，它的极值分布都服从Gumbel分布。那么上面这个例子的分布长什么样子呢，作图有：</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br></pre></td><td class="code"><pre><code class="hljs python"><span class="hljs-keyword">from</span> scipy.optimize <span class="hljs-keyword">import</span> curve_fit<br><span class="hljs-keyword">import</span> numpy <span class="hljs-keyword">as</span> np<br><span class="hljs-keyword">import</span> matplotlib.pyplot <span class="hljs-keyword">as</span> plt<br>mean_hunger = <span class="hljs-number">5</span><br>samples_per_day = <span class="hljs-number">100</span><br>n_days = <span class="hljs-number">10000</span><br>samples = np.random.normal(loc=mean_hunger, size=(n_days, samples_per_day))<br>daily_maxes = np.<span class="hljs-built_in">max</span>(samples, axis=<span class="hljs-number">1</span>)<br><br><span class="hljs-keyword">def</span> <span class="hljs-title function_">gumbel_pdf</span>(<span class="hljs-params">prob,loc,scale</span>):<br>    z = (prob-loc)/scale<br>    <span class="hljs-keyword">return</span> np.exp(-z-np.exp(-z))/scale<br><br><span class="hljs-keyword">def</span> <span class="hljs-title function_">plot_maxes</span>(<span class="hljs-params">daily_maxes</span>):<br>    probs,hungers,_=plt.hist(daily_maxes,density=<span class="hljs-literal">True</span>,bins=<span class="hljs-number">100</span>)<br>    plt.xlabel(<span class="hljs-string">&#x27;Volume&#x27;</span>)<br>    plt.ylabel(<span class="hljs-string">&#x27;Probability of Volume being daily maximum&#x27;</span>)<br>    (loc,scale),_=curve_fit(gumbel_pdf,hungers[:-<span class="hljs-number">1</span>],probs)<br>    <span class="hljs-comment">#curve_fit用于曲线拟合</span><br>    <span class="hljs-comment">#接受需要拟合的函数（函数的第一个参数是输入，后面的是要拟合的函数的参数）、输入数据、输出数据</span><br>    <span class="hljs-comment">#返回的是函数需要拟合的参数</span><br>    <span class="hljs-comment"># https://blog.csdn.net/guduruyu/article/details/70313176</span><br>    plt.plot(hungers,gumbel_pdf(hungers,loc,scale))<br>    <br>plt.figure()<br>plot_maxes(daily_maxes)<br>plt.show()<br><span class="hljs-keyword">pass</span><br></code></pre></td></tr></table></figure>
+<p><img src="https://uipv4.zywvvd.com:33030/HexoFiles/vvd_pc_upload_2023/202403272259542.png" srcset="/img/loading.gif" lazyload alt=""></p>
+<p>那么gumbel分布在离散分布的采样中效果如何呢？可以作图比较一下。先定义一个多项分布，作出真实的概率密度图。再通过采样的方式比较各种方法的效果。</p>
+<p>如下代码定义了一个7类别的多项分布，其真实的密度函数如下图</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br></pre></td><td class="code"><pre><code class="hljs python"><span class="hljs-keyword">from</span> scipy.optimize <span class="hljs-keyword">import</span> curve_fit<br><span class="hljs-keyword">import</span> numpy <span class="hljs-keyword">as</span> np<br><span class="hljs-keyword">import</span> matplotlib.pyplot <span class="hljs-keyword">as</span> plt<br><br><br>n_cats = <span class="hljs-number">7</span><br>cats = np.arange(n_cats)<br>probs = np.random.randint(low=<span class="hljs-number">1</span>, high=<span class="hljs-number">20</span>, size=n_cats)<br>probs = probs / <span class="hljs-built_in">sum</span>(probs)<br>logits = np.log(probs)<br><span class="hljs-keyword">def</span> <span class="hljs-title function_">plot_probs</span>():<br>    plt.bar(cats, probs)<br>    plt.xlabel(<span class="hljs-string">&quot;Category&quot;</span>)<br>    plt.ylabel(<span class="hljs-string">&quot;Probability&quot;</span>)<br><br><br>n_samples = <span class="hljs-number">1000</span><br><span class="hljs-keyword">def</span> <span class="hljs-title function_">plot_estimated_probs</span>(<span class="hljs-params">samples,ylabel=<span class="hljs-string">&#x27;&#x27;</span></span>):<br>    n_cats = np.<span class="hljs-built_in">max</span>(samples)+<span class="hljs-number">1</span><br>    estd_probs,_,_ = plt.hist(samples,bins=np.arange(n_cats+<span class="hljs-number">1</span>),align=<span class="hljs-string">&#x27;left&#x27;</span>,edgecolor=<span class="hljs-string">&#x27;white&#x27;</span>,density=<span class="hljs-literal">True</span>)<br>    plt.xlabel(<span class="hljs-string">&#x27;Category&#x27;</span>)<br>    plt.ylabel(ylabel+<span class="hljs-string">&#x27;Estimated probability&#x27;</span>)<br>    <span class="hljs-keyword">return</span> estd_probs<br><br><span class="hljs-keyword">def</span> <span class="hljs-title function_">print_probs</span>(<span class="hljs-params">probs</span>):<br>    <span class="hljs-built_in">print</span>(probs.tolist())<br><br>samples = np.random.choice(cats,p=probs,size=n_samples) <br><br><span class="hljs-keyword">def</span> <span class="hljs-title function_">sample_gumbel</span>(<span class="hljs-params">logits</span>):<br>    noise = np.random.gumbel(size=<span class="hljs-built_in">len</span>(logits))<br>    sample = np.argmax(logits+noise)<br>    <span class="hljs-keyword">return</span> sample<br>gumbel_samples = [sample_gumbel(logits) <span class="hljs-keyword">for</span> _ <span class="hljs-keyword">in</span> <span class="hljs-built_in">range</span>(n_samples)]<br><br><span class="hljs-keyword">def</span> <span class="hljs-title function_">sample_uniform</span>(<span class="hljs-params">logits</span>):<br>    noise = np.random.uniform(size=<span class="hljs-built_in">len</span>(logits))<br>    sample = np.argmax(logits+noise)<br>    <span class="hljs-keyword">return</span> sample<br>uniform_samples = [sample_uniform(logits) <span class="hljs-keyword">for</span> _ <span class="hljs-keyword">in</span> <span class="hljs-built_in">range</span>(n_samples)]<br><br><span class="hljs-keyword">def</span> <span class="hljs-title function_">sample_normal</span>(<span class="hljs-params">logits</span>):<br>    noise = np.random.normal(size=<span class="hljs-built_in">len</span>(logits))<br>    sample = np.argmax(logits+noise)<br>    <span class="hljs-keyword">return</span> sample<br>normal_samples = [sample_normal(logits) <span class="hljs-keyword">for</span> _ <span class="hljs-keyword">in</span> <span class="hljs-built_in">range</span>(n_samples)]<br><br>plt.figure(figsize=(<span class="hljs-number">10</span>,<span class="hljs-number">4</span>))<br>plt.subplot(<span class="hljs-number">1</span>,<span class="hljs-number">4</span>,<span class="hljs-number">1</span>)<br>plot_probs()<br>plt.subplot(<span class="hljs-number">1</span>,<span class="hljs-number">4</span>,<span class="hljs-number">2</span>)<br>gumbel_estd_probs = plot_estimated_probs(gumbel_samples,<span class="hljs-string">&#x27;Gumbel &#x27;</span>)<br>plt.subplot(<span class="hljs-number">1</span>,<span class="hljs-number">4</span>,<span class="hljs-number">3</span>)<br>normal_estd_probs = plot_estimated_probs(normal_samples,<span class="hljs-string">&#x27;Normal &#x27;</span>)<br>plt.subplot(<span class="hljs-number">1</span>,<span class="hljs-number">4</span>,<span class="hljs-number">4</span>)<br>uniform_estd_probs = plot_estimated_probs(uniform_samples,<span class="hljs-string">&#x27;Uniform &#x27;</span>)<br>plt.tight_layout()<br><br><span class="hljs-built_in">print</span>(<span class="hljs-string">&#x27;Original probabilities:\t\t&#x27;</span>,end=<span class="hljs-string">&#x27;&#x27;</span>)<br>print_probs(probs)<br><span class="hljs-built_in">print</span>(<span class="hljs-string">&#x27;Gumbel Estimated probabilities:\t&#x27;</span>,end=<span class="hljs-string">&#x27;&#x27;</span>)<br>print_probs(gumbel_estd_probs)<br><span class="hljs-built_in">print</span>(<span class="hljs-string">&#x27;Normal Estimated probabilities:\t&#x27;</span>,end=<span class="hljs-string">&#x27;&#x27;</span>)<br>print_probs(normal_estd_probs)<br><span class="hljs-built_in">print</span>(<span class="hljs-string">&#x27;Uniform Estimated probabilities:&#x27;</span>,end=<span class="hljs-string">&#x27;&#x27;</span>)<br>print_probs(uniform_estd_probs)<br><br>plt.figure()<br>plt.subplot(<span class="hljs-number">1</span>,<span class="hljs-number">2</span>,<span class="hljs-number">1</span>)<br>plot_probs()<br>plt.subplot(<span class="hljs-number">1</span>,<span class="hljs-number">2</span>,<span class="hljs-number">2</span>)<br>estd_probs = plot_estimated_probs(samples)<br>plt.tight_layout()<span class="hljs-comment">#紧凑显示图片</span><br><br><span class="hljs-built_in">print</span>(<span class="hljs-string">&#x27;Original probabilities:\t\t&#x27;</span>,end=<span class="hljs-string">&#x27;&#x27;</span>)<br>print_probs(probs)<br><span class="hljs-built_in">print</span>(<span class="hljs-string">&#x27;Estimated probabilities:\t&#x27;</span>,end=<span class="hljs-string">&#x27;&#x27;</span>)<br>print_probs(estd_probs)<br><br>plt.figure()<br>plot_probs()<br>plt.show()<br><span class="hljs-keyword">pass</span><br></code></pre></td></tr></table></figure>
+<figure class="highlight accesslog"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><code class="hljs accesslog">Original probabilities:         <span class="hljs-string">[0.24675324675324675, 0.1038961038961039, 0.03896103896103896, 0.23376623376623376, 0.09090909090909091, 0.14285714285714285, 0.14285714285714285]</span><br>Estimated probabilities:        <span class="hljs-string">[0.26, 0.109, 0.041, 0.244, 0.087, 0.113, 0.146]</span><br></code></pre></td></tr></table></figure>
+<p>真实分布</p>
+<p><img src="https://uipv4.zywvvd.com:33030/HexoFiles/vvd_pc_upload_2023/202403272330054.png" srcset="/img/loading.gif" lazyload alt=""></p>
+<p>随机采样，就是真实分布</p>
+<p><img src="https://uipv4.zywvvd.com:33030/HexoFiles/vvd_pc_upload_2023/202403272331981.png" srcset="/img/loading.gif" lazyload alt=""></p>
+<p>要是没有不能求梯度这个问题，直接从原分布采样是再好不过的。</p>
+<p>接着通过前述的方法添加Gumbel噪声采样，同时也添加正态分布和均匀分布的噪声作对比</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br></pre></td><td class="code"><pre><code class="hljs python"><span class="hljs-keyword">from</span> scipy.optimize <span class="hljs-keyword">import</span> curve_fit<br><span class="hljs-keyword">import</span> numpy <span class="hljs-keyword">as</span> np<br><span class="hljs-keyword">import</span> matplotlib.pyplot <span class="hljs-keyword">as</span> plt<br><br><br>n_cats = <span class="hljs-number">7</span><br>cats = np.arange(n_cats)<br>probs = np.random.randint(low=<span class="hljs-number">1</span>, high=<span class="hljs-number">20</span>, size=n_cats)<br>probs = probs / <span class="hljs-built_in">sum</span>(probs)<br>logits = np.log(probs)<br><span class="hljs-keyword">def</span> <span class="hljs-title function_">plot_probs</span>():<br>    plt.bar(cats, probs)<br>    plt.xlabel(<span class="hljs-string">&quot;Category&quot;</span>)<br>    plt.ylabel(<span class="hljs-string">&quot;Probability&quot;</span>)<br><br><br>n_samples = <span class="hljs-number">1000</span><br><span class="hljs-keyword">def</span> <span class="hljs-title function_">plot_estimated_probs</span>(<span class="hljs-params">samples,ylabel=<span class="hljs-string">&#x27;&#x27;</span></span>):<br>    n_cats = np.<span class="hljs-built_in">max</span>(samples)+<span class="hljs-number">1</span><br>    estd_probs,_,_ = plt.hist(samples,bins=np.arange(n_cats+<span class="hljs-number">1</span>),align=<span class="hljs-string">&#x27;left&#x27;</span>,edgecolor=<span class="hljs-string">&#x27;white&#x27;</span>,density=<span class="hljs-literal">True</span>)<br>    plt.xlabel(<span class="hljs-string">&#x27;Category&#x27;</span>)<br>    plt.ylabel(ylabel+<span class="hljs-string">&#x27;Estimated probability&#x27;</span>)<br>    <span class="hljs-keyword">return</span> estd_probs<br><br><span class="hljs-keyword">def</span> <span class="hljs-title function_">print_probs</span>(<span class="hljs-params">probs</span>):<br>    <span class="hljs-built_in">print</span>(probs.tolist())<br><br>samples = np.random.choice(cats,p=probs,size=n_samples) <br><br><span class="hljs-keyword">def</span> <span class="hljs-title function_">sample_gumbel</span>(<span class="hljs-params">logits</span>):<br>    noise = np.random.gumbel(size=<span class="hljs-built_in">len</span>(logits))<br>    sample = np.argmax(logits+noise)<br>    <span class="hljs-keyword">return</span> sample<br>gumbel_samples = [sample_gumbel(logits) <span class="hljs-keyword">for</span> _ <span class="hljs-keyword">in</span> <span class="hljs-built_in">range</span>(n_samples)]<br><br><span class="hljs-keyword">def</span> <span class="hljs-title function_">sample_uniform</span>(<span class="hljs-params">logits</span>):<br>    noise = np.random.uniform(size=<span class="hljs-built_in">len</span>(logits))<br>    sample = np.argmax(logits+noise)<br>    <span class="hljs-keyword">return</span> sample<br>uniform_samples = [sample_uniform(logits) <span class="hljs-keyword">for</span> _ <span class="hljs-keyword">in</span> <span class="hljs-built_in">range</span>(n_samples)]<br><br><span class="hljs-keyword">def</span> <span class="hljs-title function_">sample_normal</span>(<span class="hljs-params">logits</span>):<br>    noise = np.random.normal(size=<span class="hljs-built_in">len</span>(logits))<br>    sample = np.argmax(logits+noise)<br>    <span class="hljs-keyword">return</span> sample<br>normal_samples = [sample_normal(logits) <span class="hljs-keyword">for</span> _ <span class="hljs-keyword">in</span> <span class="hljs-built_in">range</span>(n_samples)]<br><br>plt.figure(figsize=(<span class="hljs-number">10</span>,<span class="hljs-number">4</span>))<br>plt.subplot(<span class="hljs-number">1</span>,<span class="hljs-number">4</span>,<span class="hljs-number">1</span>)<br>plot_probs()<br>plt.subplot(<span class="hljs-number">1</span>,<span class="hljs-number">4</span>,<span class="hljs-number">2</span>)<br>gumbel_estd_probs = plot_estimated_probs(gumbel_samples,<span class="hljs-string">&#x27;Gumbel &#x27;</span>)<br>plt.subplot(<span class="hljs-number">1</span>,<span class="hljs-number">4</span>,<span class="hljs-number">3</span>)<br>normal_estd_probs = plot_estimated_probs(normal_samples,<span class="hljs-string">&#x27;Normal &#x27;</span>)<br>plt.subplot(<span class="hljs-number">1</span>,<span class="hljs-number">4</span>,<span class="hljs-number">4</span>)<br>uniform_estd_probs = plot_estimated_probs(uniform_samples,<span class="hljs-string">&#x27;Uniform &#x27;</span>)<br>plt.tight_layout()<br><br><span class="hljs-built_in">print</span>(<span class="hljs-string">&#x27;Original probabilities:\t\t&#x27;</span>,end=<span class="hljs-string">&#x27;&#x27;</span>)<br>print_probs(probs)<br><span class="hljs-built_in">print</span>(<span class="hljs-string">&#x27;Gumbel Estimated probabilities:\t&#x27;</span>,end=<span class="hljs-string">&#x27;&#x27;</span>)<br>print_probs(gumbel_estd_probs)<br><span class="hljs-built_in">print</span>(<span class="hljs-string">&#x27;Normal Estimated probabilities:\t&#x27;</span>,end=<span class="hljs-string">&#x27;&#x27;</span>)<br>print_probs(normal_estd_probs)<br><span class="hljs-built_in">print</span>(<span class="hljs-string">&#x27;Uniform Estimated probabilities:&#x27;</span>,end=<span class="hljs-string">&#x27;&#x27;</span>)<br>print_probs(uniform_estd_probs)<br><br>plt.figure()<br>plt.subplot(<span class="hljs-number">1</span>,<span class="hljs-number">2</span>,<span class="hljs-number">1</span>)<br>plot_probs()<br>plt.subplot(<span class="hljs-number">1</span>,<span class="hljs-number">2</span>,<span class="hljs-number">2</span>)<br>estd_probs = plot_estimated_probs(samples)<br>plt.tight_layout()<span class="hljs-comment">#紧凑显示图片</span><br><br><span class="hljs-built_in">print</span>(<span class="hljs-string">&#x27;Original probabilities:\t\t&#x27;</span>,end=<span class="hljs-string">&#x27;&#x27;</span>)<br>print_probs(probs)<br><span class="hljs-built_in">print</span>(<span class="hljs-string">&#x27;Estimated probabilities:\t&#x27;</span>,end=<span class="hljs-string">&#x27;&#x27;</span>)<br>print_probs(estd_probs)<br><br>plt.figure()<br>plot_probs()<br>plt.show()<br><span class="hljs-keyword">pass</span><br></code></pre></td></tr></table></figure>
+<p><img src="https://uipv4.zywvvd.com:33030/HexoFiles/vvd_pc_upload_2023/202403272331563.png" srcset="/img/loading.gif" lazyload alt=""></p>
+<figure class="highlight apache"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><code class="hljs apache"><span class="hljs-attribute">Original</span> probabilities:        <span class="hljs-meta"> [0.24675324675324675, 0.1038961038961039, 0.03896103896103896, 0.23376623376623376, 0.09090909090909091, 0.14285714285714285, 0.14285714285714285]</span><br><span class="hljs-attribute">Gumbel</span> Estimated probabilities:<span class="hljs-meta"> [0.23, 0.109, 0.034, 0.219, 0.089, 0.16, 0.159]</span><br><span class="hljs-attribute">Normal</span> Estimated probabilities:<span class="hljs-meta"> [0.29, 0.094, 0.012, 0.284, 0.054, 0.138, 0.128]</span><br><span class="hljs-attribute">Uniform</span> Estimated probabilities:[<span class="hljs-number">0</span>.<span class="hljs-number">523</span>, <span class="hljs-number">0</span>.<span class="hljs-number">002</span>, <span class="hljs-number">0</span>.<span class="hljs-number">0</span>, <span class="hljs-number">0</span>.<span class="hljs-number">419</span>, <span class="hljs-number">0</span>.<span class="hljs-number">0</span>, <span class="hljs-number">0</span>.<span class="hljs-number">028</span>, <span class="hljs-number">0</span>.<span class="hljs-number">028</span>]<br></code></pre></td></tr></table></figure>
+<p>可以明显看到Gumbel噪声的采样效果是最好的，正态分布其次，均匀分布最差。也就是说可以用Gumbel分布做Re-parameterization使得整个图计算可导，同时样本点最接近真实分布的样本。</p>
+<h3 id="数学证明">数学证明</h3>
+<p>为什么添加 Gumbel 噪声有如此效果，下面阐述问题并给出证明。</p>
+<p>假设有一个 $K$ 维的输出向量，每个维度的值记为 $x_k$,通过 softmax 函数可得，取到每个维度的概率为：</p>
+
+$$
+ \pi_{k}=\frac{e^{x_{k}}}{\sum_{k^{\prime}=1}^{K} e^{x_{k^{\prime}}}} 
+$$
+
+<p>这是直接 softmax 得到的概率密度函数，如果换一种方式，对每个 $x_k$ 添加独立的标准 Gumbel 分布(尺度参数为1，位置参数为0)噪声，并选择值最大的维度作为输出，得到的概率密度同样为 $π_k$。</p>
+<p>下面给出Gumbel分布的概率密度函数和分布函数，并证明这件事情。</p>
+<p>尺度参数为1，位置参数为 $μ$ 的Gumbel分布的PDF为:</p>
+
+$$
+ f(z ; \mu)=e^{-(z-\mu)-e^{-(z-\mu)}} 
+$$
+CDF为
+$$
+ F(z ; \mu)=e^{-e^{-(z-\mu)}} 
+$$
+
+<p>假设第$k $个Gumbel分布对应 $x_k$,加和得到随机变量 $z_k=x_k+G_k$,即相当于 $z_k$ 服从尺度参数为1，位置参数为 $μ=x_k$的 Gumbel分布。要证明这样取得的随机变量 $z_k$与原随机变量相同，只需证明取到 $z_k$ 的概率为 $π_k$。也就是 $z_k$比其他所有 $z_{k′}(k′≠k)$大的概率为 $π_k$，即:</p>
+
+$$
+P\left(z_{k} \geq z_{k^{\prime}} ; \forall k^{\prime} \neq k \mid\left\{x_{k^{\prime}}\right\}_{k^{\prime}=1}^{K}\right)=\pi_{k}
+$$
+关于 $z_k$ 的条件累积概率分布函数为
+$$
+ \begin{array}{c}P\left(z_{k} \geq z_{k^{\prime}} ; \forall k^{\prime} \neq k \mid z_{k},\left\{x_{k^{\prime}}\right\}_{k^{\prime}=1}^{K}\right)=P\left(z_{1} \leq z_{k}\right) P\left(z_{2} \leq z_{k}\right) \cdots P\left(z_{k-1} \leq z_{k}\right) P\left(z_{k+1} \leq z_{k}\right) \cdots \\ \cdot P\left(z_{K} \leq z_{k}\right)\end{array} 
+$$
+即:
+$$
+P\left(z_{k} \geq z_{k^{\prime}} ; \forall k^{\prime} \neq k \mid z_{k},\left\{x_{k^{\prime}}\right\}_{k^{\prime}=1}^{K}\right)=\prod_{k^{\prime} \neq k} e^{-e^{-\left(z_{k}-x_{k^{\prime}}\right)}}
+$$
+对 $z_k$ 求积分可得边缘累积概率分布函数
+
+
+$$
+P\left(z_{k} \geq z_{k^{\prime}} ; \forall k^{\prime} \neq k \mid\left\{x_{k^{\prime}}\right\}_{k^{\prime}=1}^{K}\right)=\int P\left(z_{k} \geq z_{k^{\prime}} ; \forall k^{\prime} \neq k \mid z_{k},\left\{x_{k^{\prime}}\right\}_{k^{\prime}=1}^{K}\right) \cdot f\left(z_{k} ; x_{k}\right) d z_{k}
+$$
+带入式子有
+$$
+ P\left(z_{k} \geq z_{k^{\prime}} ; \forall k^{\prime} \neq k \mid\left\{x_{k^{\prime}}\right\}_{k^{\prime}=1}^{K}\right)=\int \prod_{k^{\prime} \neq k} e^{-e^{-\left(z_{k}-x_{k}\right)}} \cdot e^{-\left(z_{k}-x_{k}\right)-e^{-\left(z_{k}-x_{k}\right)}} d z_{k} 
+$$
+化简有
+$$
+ \begin{array}{l}P\left(z_{k} \geq z_{k^{\prime}} ; \forall k^{\prime} \neq k \mid\left\{x_{k^{\prime}}\right\}_{k^{\prime}=1}^{K}\right) \\ =\int \prod_{k^{\prime} \neq k} e^{-e^{-\left(z_{k}-x_{k^{\prime}}\right)}} \cdot e^{-\left(z_{k}-x_{k}\right)-e^{-\left(z_{k}-x_{k}\right)}} d z_{k} \\ =\int e^{-\sum_{k^{\prime} \neq k} e^{-\left(z_{k}-x_{k^{\prime}}\right)}-\left(z_{k}-x_{k}\right)-e^{-\left(z_{k}-x_{k}\right)}} d z_{k} \\ =\int e^{-\sum_{k^{\prime}=1}^{K} e^{-\left(z_{k}-x_{k^{\prime}}\right)}-\left(z_{k}-x_{k}\right)} d z_{k} \\ =\int e^{-\left(\sum_{k^{\prime}=1}^{K} e^{x^{\prime}}\right) e^{-z_{k}-z_{k}+x_{k}}} d z_{k} \\ =\int e^{-e^{-z_{k}+\ln \left(\sum_{k^{\prime}=1}^{K} e^{\left.x_{k^{\prime}}\right)}\right.}-z_{k}+x_{k}} d z_{k} \\ =\int e^{-e^{-\left(z_{k}-\ln \left(\sum_{k^{\prime}=1}^{K} e^{x_{k^{\prime}}}\right)\right)}-\left(z_{k}-\ln \left(\sum_{k^{\prime}=1}^{K} e^{x_{k^{\prime}}}\right)\right)-\ln \left(\sum_{k^{\prime}=1}^{K} e^{x_{k^{\prime}}}\right)+x_{k}} d z_{k} \\ =e^{-\ln \left(\sum_{k^{\prime}=1}^{K} e^{x_{k^{\prime}}}\right)+x_{k}} \int e^{-e^{-\left(z_{k}-\ln \left(\sum_{k^{\prime}=1}^{K} e^{\left.x_{k^{\prime}}\right)}\right)\right.}-\left(z_{k}-\ln \left(\sum_{k^{\prime}=1}^{K} e^{x_{k^{\prime}}}\right)\right)} d z_{k} \\ =\frac{e^{x_{k}}}{\sum_{k^{\prime}=1}^{K} e^{x_{k^{\prime}}}} \int e^{-e^{-\left(z_{k}-\ln \left(\sum_{k^{\prime}=1}^{K} e^{x_{k^{\prime}}}\right)\right)}-\left(z_{k}-\ln \left(\sum_{k^{\prime}=1}^{K} e^{x_{k^{\prime}}}\right)\right)} d z_{k} \\ =\frac{e^{x_{k}}}{\sum_{k^{\prime}=1}^{K} e^{x_{k^{\prime}}}} \int e^{-\left(z_{k}-\ln \left(\sum_{k^{\prime}=1}^{K} e^{x_{k^{\prime}}}\right)\right)-e^{-\left(z_{k}-\ln \left(\sum_{k^{\prime}=1}^{K} e^{x_{k^{\prime}}}\right)\right)}} d z_{k} \\\end{array} 
+$$
+
+
+积分里面是 $ \mu=\ln \left(\sum_{k^{\prime}=1}^{K} e^{x_{k^{\prime}}}\right) $ 的Gumbel分布，所以整个积分为1。则有
+$$
+ P\left(z_{k} \geq z_{k^{\prime}} ; \forall k^{\prime} \neq k \mid\left\{x_{k^{\prime}}\right\}_{k^{\prime}=1}^{K}\right)=\frac{e^{x_{k}}}{\sum_{k^{\prime}=1}^{K} e^{x_{k^{\prime}}}} 
+$$
+这和softmax的结果一致。
+
+
+<h3 id="参考资料">参考资料</h3>
+<ul>
+<li><a target="_blank" rel="noopener" href="https://www.cnblogs.com/initial-h/p/9468974.html">https://www.cnblogs.com/initial-h/p/9468974.html</a></li>
+<li><a target="_blank" rel="noopener" href="https://casmls.github.io/general/2017/02/01/GumbelSoftmax.html">https://casmls.github.io/general/2017/02/01/GumbelSoftmax.html</a></li>
+<li><a target="_blank" rel="noopener" href="http://amid.fish/humble-gumbel">http://amid.fish/humble-gumbel</a></li>
+</ul>
+<link rel="stylesheet" href="/css/spoiler.css" type="text/css"><script src="/js/spoiler.js" type="text/javascript" async></script>
+                
+
+
+				<br /><br />
+				<blockquote>
+					<p>文章链接：<br /> 
+					<a style="font-size: 0.85rem" target="_blank" rel="noopener" href="https://www.zywvvd.com/notes/study/deep-learning/generation/reparameterized/repara2/repara2/">https://www.zywvvd.com/notes/study/deep-learning/generation/reparameterized/repara2/repara2/</a>
+					</p>
+				</blockquote>
+
+
+              </div>
+            
+            <hr/>
+			
+			<!-- 添加打赏模块 -->
+			<div class="reward-container">
+				
+					<button id="rewardBtn" class="reward-btn">
+						 
+							❤ 打赏
+							
+					</button>
+					<p class="tea">“觉得不错的话，给点打赏吧 ୧(๑•̀⌄•́๑)૭”</p>
+					<div id="rewardImgContainer" class="reward-img-container">
+						<div class="singleImgContainer">
+							<img id="wechatImg" class="reward-img" src="https://uipv4.zywvvd.com:33030/HexoFiles/vvd_pc_upload/wechatpay.png" srcset="/img/loading.gif" lazyload alt="微信二维码">
+							<p class="wechatPay">微信支付</p>
+						</div>
+						<div class="singleImgContainer">
+							<img id="alipayImg" class="reward-img" src="https://uipv4.zywvvd.com:33030/HexoFiles/vvd_pc_upload/alipay.png" srcset="/img/loading.gif" lazyload alt="支付宝二维码">
+							<p class="aliPay">支付宝支付</p>
+						</div>
+					</div>
+				
+			</div>
+			
+            <div>
+              <div class="post-metas my-3">
+  
+    <div class="post-meta mr-3 d-flex align-items-center">
+      <i class="iconfont icon-category"></i>
+      
+
+<span class="category-chains">
+  
+  
+    
+      <span class="category-chain">
+        
+  <a href="/categories/Deep-Learning/" class="category-chain-item">Deep_Learning</a>
+  
+  
+
+      </span>
+    
+  
+</span>
+
+    </div>
+  
+  
+    <div class="post-meta">
+      <i class="iconfont icon-tags"></i>
+      
+        <a href="/tags/Deep-Learning/" class="print-no-link">#Deep_Learning</a>
+      
+    </div>
+  
+</div>
+
+
+              
+  
+
+  <div class="license-box my-3">
+    <div class="license-title">
+      <div>离散分布重参数化 —— Gumbel-Softmax Trick 和 Gumbel分布</div>
+      <div>https://www.zywvvd.com/notes/study/deep-learning/generation/reparameterized/repara2/repara2/</div>
+    </div>
+    <div class="license-meta">
+      
+        <div class="license-meta-item">
+          <div>作者</div>
+          <div>Yiwei Zhang</div>
+        </div>
+      
+      
+        <div class="license-meta-item license-meta-date">
+          <div>发布于</div>
+          <div>2024年3月26日</div>
+        </div>
+      
+      
+      
+        <div class="license-meta-item">
+          <div>许可协议</div>
+          <div>
+            
+              
+              
+                <a class="print-no-link" target="_blank" href="https://creativecommons.org/licenses/by/4.0/">
+                  <span class="hint--top hint--rounded" aria-label="BY - 署名">
+                    <i class="iconfont icon-by"></i>
+                  </span>
+                </a>
+              
+            
+          </div>
+        </div>
+      
+    </div>
+    <div class="license-icon iconfont"></div>
+  </div>
+
+
+
+              
+                <div class="post-prevnext my-3">
+                  <article class="post-prev col-6">
+                    
+                    
+                      <a href="/notes/study/information-theory/mutual-info/mutual-info/" title="互信息">
+                        <i class="iconfont icon-arrowleft"></i>
+                        <span class="hidden-mobile">互信息</span>
+                        <span class="visible-mobile">上一篇</span>
+                      </a>
+                    
+                  </article>
+                  <article class="post-next col-6">
+                    
+                    
+                      <a href="/notes/study/deep-learning/generation/reparameterized/reparameterized/" title="重参数化技巧 - 连续分布采样">
+                        <span class="hidden-mobile">重参数化技巧 - 连续分布采样</span>
+                        <span class="visible-mobile">下一篇</span>
+                        <i class="iconfont icon-arrowright"></i>
+                      </a>
+                    
+                  </article>
+                </div>
+              
+            </div>
+
+            
+  
+  
+    <article id="comments" lazyload>
+      
+  <div id="waline"></div>
+  <script type="text/javascript">
+    Fluid.utils.loadComments('#waline', function() {
+      Fluid.utils.createCssLink('https://lib.baomitu.com/waline/2.14.8/waline.min.css')
+      Fluid.utils.createScript('https://lib.baomitu.com/waline/2.14.8/waline.min.js', function() {
+        var options = Object.assign(
+          {"serverURL":"https://uipv4.zywvvd.com:33033/","path":"window.location.pathname","meta":["nick","mail","link"],"requiredMeta":["nick"],"lang":"zh-CN","emoji":["https://cdn.jsdelivr.net/gh/walinejs/emojis/weibo"],"dark":"html[data-user-color-scheme=\"dark\"]","wordLimit":0,"pageSize":10,"reaction":true,"locale":{"placeholder":"山高路远，常来玩吖 ~","reactionTitle":null}},
+          {
+            el: '#waline',
+            path: window.location.pathname
+          }
+        )
+        Waline.init(options);
+        Fluid.utils.waitElementVisible('#waline .vcontent', () => {
+          var imgSelector = '#waline .vcontent img:not(.vemoji)';
+          Fluid.plugins.imageCaption(imgSelector);
+          Fluid.plugins.fancyBox(imgSelector);
+        })
+      });
+    });
+  </script>
+  <noscript>Please enable JavaScript to view the comments</noscript>
+
+
+    </article>
+  
+
+
+          </article>
+        </div>
+      </div>
+    </div>
+
+    <div class="side-col d-none d-lg-block col-lg-2">
+      
+  <aside class="sidebar" style="margin-left: -1rem">
+    <div id="toc">
+  <p class="toc-header">
+    <i class="iconfont icon-list"></i>
+    <span>目录</span>
+  </p>
+  <div class="toc-body" id="toc-body"></div>
+</div>
+
+
+
+  </aside>
+
+
+    </div>
+  </div>
+</div>
+
+
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+  
+  
+
+
+
+
+
+  <script>
+  Fluid.utils.createScript('https://lib.baomitu.com/mermaid/8.14.0/mermaid.min.js', function() {
+    mermaid.initialize({"theme":"default"});
+
+    Fluid.utils.listenDOMLoaded(function() {
+      Fluid.events.registerRefreshCallback(function() {
+        if ('mermaid' in window) {
+          mermaid.init();
+        }
+      });
+    });
+  });
+</script>
+
+
+
+
+
+
+    
+
+    
+      <a id="scroll-top-button" aria-label="TOP" href="#" role="button">
+        <i class="iconfont icon-xiangshangjiantou" aria-hidden="true"></i>
+      </a>
+    
+
+    
+      <div class="modal fade" id="modalSearch" tabindex="-1" role="dialog" aria-labelledby="ModalLabel"
+     aria-hidden="true">
+  <div class="modal-dialog modal-dialog-scrollable modal-lg" role="document">
+    <div class="modal-content">
+      <div class="modal-header text-center">
+        <h4 class="modal-title w-100 font-weight-bold">搜索</h4>
+        <button type="button" id="local-search-close" class="close" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body mx-3">
+        <div class="md-form mb-5">
+          <input type="text" id="local-search-input" class="form-control validate">
+          <label data-error="x" data-success="v" for="local-search-input">关键词</label>
+        </div>
+        <div class="list-group" id="local-search-result"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+    
+
+    
+  </main>
+
+  <footer>
+    <div class="footer-inner">
+  
+    <div class="footer-content">
+       <div class="vvd_footer" style="font-size: 0.85rem;"> <a href="https://hexo.io" target="_blank" rel="nofollow noopener" color="#d7d8d9" data-umami-event="Footer-Hexo"><span class="umami--click--Footer-Hexo">Hexo</span></a> <i class="iconfont icon-love"></i> <a href="https://github.com/fluid-dev/hexo-theme-fluid" target="_blank" rel="nofollow noopener" data-umami-event="Footer-Fluid"><span class="umami--click--Footer-Fluid">Fluid</span></a> <i class="iconfont icon-love"></i> <a href="https://uipv4.zywvvd.com:33039/share/0zx3o21oIpZTZqwC/%E5%8F%88%E8%A7%81%E8%8B%8D%E5%B2%9A" target="_blank" rel="nofollow noopener" data-umami-event="Footer-Umami"><span class="umami--click--Footer-Umami">Umami</span></a> <div style="font-size: 0.85rem;"> <span id="timeDate">载入天数...</span> <span id="times">载入时分秒...</span> <script src="/vvd_js/duration.js"></script> </div> <div style="font-size: 0.85rem;"> <span> 总访问量 <span style="color: #d7d8d9;" id="PVstatic">0</span> 次&nbsp</span> <span> 总访客数 <span style="color: #d7d8d9;" id="UVstatic">0</span> 人&nbsp</span> <span> 当前在线 <span style="color: #d7d8d9;" id="ACTstatic">0</span> 人&nbsp</span> <script src="https://uipv4.zywvvd.com:33037/statistics" defer></script> </div> <div> <span> Copyright © 2020-2024. All Rights Reserved.</span> </div> <div style="font-size: 0.85rem;"> <a target="_blank" rel="noopener" href="https://developer.hitokoto.cn/" id="hitokoto_text"><span style="color: #d7d8d9;"  id="hitokoto"></span></a> <script src="https://uipv4.zywvvd.com:33044/?encode=js&select=%23hitokoto" defer></script> </div> <a href="https://icp.gov.moe/?keyword=20230615" target="_blank">萌ICP备20230615号</a>
+
+
+</div> 
+    </div>
+  
+  
+  
+  
+</div>
+
+  </footer>
+
+  <!-- Scripts -->
+  
+  <script  src="https://lib.baomitu.com/nprogress/0.2.0/nprogress.min.js" ></script>
+  <link  rel="stylesheet" href="https://lib.baomitu.com/nprogress/0.2.0/nprogress.min.css" />
+
+  <script>
+    NProgress.configure({"showSpinner":false,"trickleSpeed":100})
+    NProgress.start()
+    window.addEventListener('load', function() {
+      NProgress.done();
+    })
+  </script>
+
+
+<script  src="https://lib.baomitu.com/jquery/3.6.0/jquery.min.js" ></script>
+<script  src="https://lib.baomitu.com/twitter-bootstrap/4.6.1/js/bootstrap.min.js" ></script>
+<script  src="/js/events.js" ></script>
+<script  src="/js/plugins.js" ></script>
+
+
+
+
+
+  
+    <script  src="/js/img-lazyload.js" ></script>
+  
+
+
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/tocbot/4.18.2/tocbot.min.js', function() {
+    var toc = jQuery('#toc');
+    if (toc.length === 0 || !window.tocbot) { return; }
+    var boardCtn = jQuery('#board-ctn');
+    var boardTop = boardCtn.offset().top;
+
+    window.tocbot.init(Object.assign({
+      tocSelector     : '#toc-body',
+      contentSelector : '.markdown-body',
+      linkClass       : 'tocbot-link',
+      activeLinkClass : 'tocbot-active-link',
+      listClass       : 'tocbot-list',
+      isCollapsedClass: 'tocbot-is-collapsed',
+      collapsibleClass: 'tocbot-is-collapsible',
+      scrollSmooth    : true,
+      includeTitleTags: true,
+      headingsOffset  : -boardTop,
+    }, CONFIG.toc));
+    if (toc.find('.toc-list-item').length > 0) {
+      toc.css('visibility', 'visible');
+    }
+
+    Fluid.events.registerRefreshCallback(function() {
+      if ('tocbot' in window) {
+        tocbot.refresh();
+        var toc = jQuery('#toc');
+        if (toc.length === 0 || !tocbot) {
+          return;
+        }
+        if (toc.find('.toc-list-item').length > 0) {
+          toc.css('visibility', 'visible');
+        }
+      }
+    });
+  });
+</script>
+
+
+  <script src=https://lib.baomitu.com/clipboard.js/2.0.10/clipboard.min.js></script>
+
+  <script>Fluid.plugins.codeWidget();</script>
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/anchor-js/4.3.1/anchor.min.js', function() {
+    window.anchors.options = {
+      placement: CONFIG.anchorjs.placement,
+      visible  : CONFIG.anchorjs.visible
+    };
+    if (CONFIG.anchorjs.icon) {
+      window.anchors.options.icon = CONFIG.anchorjs.icon;
+    }
+    var el = (CONFIG.anchorjs.element || 'h1,h2,h3,h4,h5,h6').split(',');
+    var res = [];
+    for (var item of el) {
+      res.push('.markdown-body > ' + item.trim());
+    }
+    if (CONFIG.anchorjs.placement === 'left') {
+      window.anchors.options.class = 'anchorjs-link-left';
+    }
+    window.anchors.add(res.join(', '));
+
+    Fluid.events.registerRefreshCallback(function() {
+      if ('anchors' in window) {
+        anchors.removeAll();
+        var el = (CONFIG.anchorjs.element || 'h1,h2,h3,h4,h5,h6').split(',');
+        var res = [];
+        for (var item of el) {
+          res.push('.markdown-body > ' + item.trim());
+        }
+        if (CONFIG.anchorjs.placement === 'left') {
+          anchors.options.class = 'anchorjs-link-left';
+        }
+        anchors.add(res.join(', '));
+      }
+    });
+  });
+</script>
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/fancybox/3.5.7/jquery.fancybox.min.js', function() {
+    Fluid.plugins.fancyBox();
+  });
+</script>
+
+
+  <script>Fluid.plugins.imageCaption();</script>
+
+  
+      <script>
+        if (!window.MathJax) {
+          window.MathJax = {
+            tex    : {
+              inlineMath: { '[+]': [['$', '$']] }
+            },
+            options: {
+              renderActions: {
+                insertedScript: [200, () => {
+                  document.querySelectorAll('mjx-container').forEach(node => {
+                    let target = node.parentNode;
+                    if (target.nodeName.toLowerCase() === 'li') {
+                      target.parentNode.classList.add('has-jax');
+                    }
+                  });
+                }, '', false]
+              }
+            }
+          };
+        } else {
+          MathJax.startup.document.state(0);
+          MathJax.texReset();
+          MathJax.typeset();
+          MathJax.typesetPromise();
+        }
+
+        Fluid.events.registerRefreshCallback(function() {
+          if ('MathJax' in window && MathJax.startup.document && typeof MathJax.startup.document.state === 'function') {
+            MathJax.startup.document.state(0);
+            MathJax.texReset();
+            MathJax.typeset();
+            MathJax.typesetPromise();
+          }
+        });
+      </script>
+    
+
+  <script  src="https://lib.baomitu.com/mathjax/3.2.1/es5/tex-mml-chtml.js" ></script>
+
+  <script defer src="/js/leancloud.js" ></script>
+
+  <script  src="/js/local-search.js" ></script>
+
+
+
+
+  
+<script src="//cdn.jsdelivr.net/npm/aplayer/dist/APlayer.min.js"></script>
+<script src="//cdn.jsdelivr.net/gh/metowolf/MetingJS@1.2/dist/Meting.min.js"></script>
+<script src="/js/reward.js"></script>
+
+
+
+<!-- 主题的启动项，将它保持在最底部 -->
+<!-- the boot of the theme, keep it at the bottom -->
+<script  src="/js/boot.js" ></script>
+
+
+  <script type="text/javascript">
+    /*窗口监视*/
+    var originalTitle = document.title;
+    window.onblur = function(){document.title = "明眸如初"};
+    window.onfocus = function(){document.title = originalTitle};
+  </script>
+
+
+  <div id="tooltip-rightmenu" class="tooltip-rightmenu">如需原始右键菜单请按下 <strong>Ctrl+右键</strong></div>
+
+<div id="rightmenu-wrapper" style="">
+  <ul class="list-v rightmenu" id="rightmenu-content">
+	  <li class="navigation menuNavigation-Content">
+		<a class="nav icon-only fix-cursor-default" onclick="history.back()"><i class="iconfont icon-zuojiantou1"></i></a>
+		<a class="nav icon-only fix-cursor-default" onclick="history.forward()"><i class="iconfont icon-youjiantou1"></i></a>
+		<a class="nav icon-only fix-cursor-default" onclick="window.location.reload()"><i class="iconfont icon-shuaxin"></i></a>
+		<a  aria-label="TOP" href="#" role="button"><i class="iconfont icon-xiangshang"></i></a>
+	  </li>
+
+		<hr class="menuLoad-Content" style="display: block;">
+	  <li class="menuLoad-Content" style="display: block;">
+		<a class="vlts-menu fix-cursor-default" target="_self" href="javascript:;" data-toggle="modal" data-target="#modalSearch" aria-label="Search">
+		  <span>
+			  <i class="iconfont icon-sousuo1 rightmenu-icon"></i>
+			  站内搜索
+		  </span>
+		</a>
+	  </li>
+
+	  <li class="menuLoad-Content" style="display: block;">
+		<a class="vlts-menu fix-cursor-default"  href="https://www.zywvvd.com/messagebd/" data-group="link">
+		  <span>
+			  <i class="iconfont icon-yangshi_icon_tongyong_chat rightmenu-icon">  </i>
+			   留言吐槽 
+		   </span>
+		</a>
+	  </li>
+
+
+	  <li class="menuLoad-Content" style="display: block;">
+		<a class="vlts-menu fix-cursor-default" id="help" target="_blank" rel="noopener" href="https://www.foreverblog.cn/go.html" data-group="link">
+		<span>
+			  <i class="iconfont icon-a-BlackHole rightmenu-icon"></i>
+			  虫洞穿梭
+		  </span>
+		</a>
+	  </li>
+
+	<a id="scroll-top-button" aria-label="TOP" href="#" role="button" style="bottom: 20px; right: 52.6364px;">
+        <i class="iconfont icon-xiangshangjiantou" aria-hidden="true"></i>
+      </a>
+
+	<hr class="menuLoad-Content" style="display: block;">
+	
+	  <li class="menuLoad-Content" style="display: block;">
+		<a class="vlts-menu fix-cursor-default" id="destroy-airplane" target="_blank" rel="noopener"  data-group="link">
+		<span>
+			  <i class="iconfont icon-feiji rightmenu-icon"></i>
+			  破坏小飞机
+		  </span>
+		</a>
+	  </li>
+  </ul>
+</div>
+
+<script>
+	var ua = navigator.userAgent;
+	var ipad = ua.match(/(iPad).*OS\s([\d_]+)/),
+		isIphone = !ipad && ua.match(/(iPhone\sOS)\s([\d_]+)/),
+		isAndroid = ua.match(/(Android)\s+([\d.]+)/),
+		isMobile = isIphone || isAndroid;
+
+	if(!isMobile) {
+		// 为按钮添加事件处理器
+		document.getElementById('destroy-airplane').onclick = function() {
+		  console.log('飞机起飞！');
+		  // 定义要执行的JavaScript代码
+		var KICKASSVERSION='2.0';
+		var s = document.createElement('script');
+		s.type='text/javascript';
+		document.body.appendChild(s);
+		s.src='https://uipv4.zywvvd.com:33030/HexoFiles/js/games/airplane/airplane.js';
+		void(0);
+		};
+	}
+</script>
+
+
+
+
+
+<link href="/css/custom.css"type="text/css"rel="stylesheet"/>
+<script src="/vvd_js/right_menu.js" type="text/javascript"></script>
+<link href="/css/right_menu.css"type="text/css"rel="stylesheet"/>
+<script src="/vvd_js/go.js"></script>
+
+
+  <noscript>
+    <div class="noscript-warning">博客在允许 JavaScript 运行的环境下浏览效果更佳</div>
+  </noscript>
+<script src="/live2dw/lib/L2Dwidget.min.js?094cbace49a39548bed64abff5988b05"></script><script>L2Dwidget.init({"pluginRootPath":"live2dw/","pluginJsPath":"lib/","pluginModelPath":"assets/","tagMode":false,"log":false,"model":{"jsonPath":"/live2dw/assets/z16.model.json"},"display":{"position":"left","width":200,"height":400},"mobile":{"show":false},"react":{"opacity":0.9}});</script></body>
+</html>

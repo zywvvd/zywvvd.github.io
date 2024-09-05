@@ -1,0 +1,1597 @@
+
+
+<!DOCTYPE html>
+<html lang="zh-CN" data-default-color-scheme=auto>
+
+
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="baidu-site-verification" content="codeva-rLWafCJGYc" />
+  <link rel="apple-touch-icon" sizes="76x76" href="/image/avatar.png">
+  <link rel="icon" href="/image/avatar.png">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, shrink-to-fit=no">
+  <meta http-equiv="x-ua-compatible" content="ie=edge">
+  
+  <meta name="theme-color" content="#2f4154">
+  <meta name="author" content="Yiwei Zhang">
+  <meta name="keywords" content="人工智能, 深度学习, 个人博客, 机器学习">
+  
+    <meta name="description" content="透视 n 点问题，简称 PnP，源自相机标定，是计算机视觉的经典问题，广泛应用在机器人定位、SLAM、AR&#x2F;VR、摄影测量等领域。">
+<meta property="og:type" content="article">
+<meta property="og:title" content="PNP 算法">
+<meta property="og:url" content="https://www.zywvvd.com/notes/study/camera-imaging/pnp/pnp/index.html">
+<meta property="og:site_name" content="又见苍岚">
+<meta property="og:description" content="透视 n 点问题，简称 PnP，源自相机标定，是计算机视觉的经典问题，广泛应用在机器人定位、SLAM、AR&#x2F;VR、摄影测量等领域。">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="https://uipv4.zywvvd.com:33030/HexoFiles/vvd_image_files/202406261741841.png">
+<meta property="og:image" content="https://uipv4.zywvvd.com:33030/HexoFiles/vvd_image_files/202406261754998.png">
+<meta property="og:image" content="https://uipv4.zywvvd.com:33030/HexoFiles/vvd_image_files/202406261758608.png">
+<meta property="og:image" content="https://uipv4.zywvvd.com:33030/HexoFiles/vvd_image_files/202406261809412.png">
+<meta property="og:image" content="https://uipv4.zywvvd.com:33030/HexoFiles/vvd_image_files/202406261809395.png">
+<meta property="og:image" content="https://uipv4.zywvvd.com:33030/HexoFiles/vvd_image_files/202406261810876.png">
+<meta property="article:published_time" content="2024-06-26T09:01:39.000Z">
+<meta property="article:modified_time" content="2024-06-26T10:18:24.061Z">
+<meta property="article:author" content="Yiwei Zhang">
+<meta property="article:tag" content="Camera">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:image" content="https://uipv4.zywvvd.com:33030/HexoFiles/vvd_image_files/202406261741841.png">
+  
+  
+  
+  <title>PNP 算法 - 又见苍岚</title>
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/twitter-bootstrap/4.6.1/css/bootstrap.min.css" />
+
+
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/github-markdown-css/4.0.0/github-markdown.min.css" />
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/hint.css/2.7.0/hint.min.css" />
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/fancybox/3.5.7/jquery.fancybox.min.css" />
+
+
+
+<!-- 主题依赖的图标库，不要自行修改 -->
+<!-- Do not modify the link that theme dependent icons -->
+
+<link rel="stylesheet" href="//at.alicdn.com/t/font_1749284_hj8rtnfg7um.css">
+
+
+
+<link rel="stylesheet" href="//at.alicdn.com/t/font_1736178_lbnruvf0jn.css">
+
+
+<link  rel="stylesheet" href="/css/main.css" />
+
+
+  <link id="highlight-css" rel="stylesheet" href="/css/highlight.css" />
+  
+    <link id="highlight-css-dark" rel="stylesheet" href="/css/highlight-dark.css" />
+  
+
+
+
+  
+<link rel="stylesheet" href="/css/custom.css">
+<link rel="stylesheet" href="/css/reward.css">
+<link rel="stylesheet" href="//cdn.jsdelivr.net/npm/aplayer/dist/APlayer.min.css">
+
+
+
+  <script id="fluid-configs">
+    var Fluid = window.Fluid || {};
+    Fluid.ctx = Object.assign({}, Fluid.ctx)
+    var CONFIG = {"hostname":"www.zywvvd.com","root":"/","version":"1.9.7","typing":{"enable":true,"typeSpeed":90,"cursorChar":"_","loop":false,"scope":["home"]},"anchorjs":{"enable":true,"element":"h1,h2,h3,h4,h5,h6","placement":"left","visible":"hover","icon":""},"progressbar":{"enable":true,"height_px":3,"color":"#29d","options":{"showSpinner":false,"trickleSpeed":100}},"code_language":{"enable":true,"default":"TEXT"},"copy_btn":true,"image_caption":{"enable":true},"image_zoom":{"enable":true,"img_url_replace":["",""]},"toc":{"enable":true,"placement":"right","headingSelector":"h1,h2,h3,h4,h5,h6","collapseDepth":0},"lazyload":{"enable":true,"loading_img":"/img/loading.gif","onlypost":false,"offset_factor":2},"web_analytics":{"enable":true,"follow_dnt":true,"baidu":null,"google":null,"tencent":{"sid":null,"cid":null},"woyaola":null,"cnzz":null,"leancloud":{"app_id":"Cv0XNeBSBdAPAIuVj3PsyM3R-MdYXbMMI","app_key":"4PU1rNlGrqXWzhfW3dgq98oX","server_url":null,"path":"window.location.pathname","ignore_local":false},"gtag":null},"search_path":"/local-search.xml","include_content_in_search":true};
+
+    if (CONFIG.web_analytics.follow_dnt) {
+      var dntVal = navigator.doNotTrack || window.doNotTrack || navigator.msDoNotTrack;
+      Fluid.ctx.dnt = dntVal && (dntVal.startsWith('1') || dntVal.startsWith('yes') || dntVal.startsWith('on'));
+    }
+  </script>
+  <script  src="/js/utils.js" ></script>
+  <script  src="/js/color-schema.js" ></script>
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+    
+  
+
+
+
+  
+<meta name="generator" content="Hexo 7.2.0"><link rel="alternate" href="/atom.xml" title="又见苍岚" type="application/atom+xml">
+</head>
+
+
+<body>
+  
+<div id="Loadanimation" style="z-index:999999;">
+<div id="Loadanimation-center">
+   <div id="Loadanimation-center-absolute">
+       <div class="xccx_object" id="xccx_four"></div>
+       <div class="xccx_object" id="xccx_three"></div>
+       <div class="xccx_object" id="xccx_two"></div>
+       <div class="xccx_object" id="xccx_one"></div>
+   </div>
+</div>
+</div>
+
+<link href="/css/loading.css"type="text/css"rel="stylesheet"/>
+
+
+
+
+
+
+<div>
+	<div class='real_mask' style="
+		background-color: rgba(0,0,0,0.4);
+		width: 100%;
+		height: 100%;
+		position: fixed;
+		z-index: -777;
+	"></div>
+	<div id="banner_video_insert">
+	</div>	
+	<div id='vvd_banner_img'>
+	</div>
+</div>
+<div id="banner"></div>
+
+
+
+
+
+
+
+  <header>
+    
+
+<div class="header-inner" style="height: 80vh;">
+  <nav id="navbar" class="navbar fixed-top  navbar-expand-lg navbar-dark scrolling-navbar">
+  <div class="container">
+    <a class="navbar-brand" href="/">
+      <strong>CangLan</strong>
+    </a>
+
+    <button id="navbar-toggler-btn" class="navbar-toggler" type="button" data-toggle="collapse"
+            data-target="#navbarSupportedContent"
+            aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
+      <div class="animated-icon"><span></span><span></span><span></span></div>
+    </button>
+
+    <!-- Collapsible content -->
+    <div class="collapse navbar-collapse" id="navbarSupportedContent">
+      <ul class="navbar-nav ml-auto text-center">
+        
+          
+          
+          
+          
+            <li class="nav-item">
+		<div >
+		      <a class="nav-link" href="/" target="_self" data-umami-event="Navigation-Homepage">
+
+		        <i class="iconfont icon-home-fill"></i>
+		        <span>首页</span>
+		      </a>
+		</div>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item dropdown">
+              <a class="nav-link dropdown-toggle" target="_self" href="javascript:;" role="button"
+                 data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                <i class="iconfont icon-shuji1"></i>
+                <span>文章</span>
+              </a>
+              <div class="dropdown-menu" aria-labelledby="navbarDropdown">
+                
+                  
+                  
+                  
+		<div >
+
+                  <a class="dropdown-item" href="/archives/" target="_self" data-umami-event="Navigation-Archive">
+
+                    <i class="iconfont icon-archive-fill"></i>
+                    <span>归档</span>
+                  </a>
+		</div>
+                
+                  
+                  
+                  
+		<div >
+
+                  <a class="dropdown-item" href="/categories/" target="_self" data-umami-event="Navigation-Category">
+
+                    <i class="iconfont icon-category-fill"></i>
+                    <span>分类</span>
+                  </a>
+		</div>
+                
+                  
+                  
+                  
+		<div >
+
+                  <a class="dropdown-item" href="/tags/" target="_self" data-umami-event="Navigation-Tag">
+
+                    <i class="iconfont icon-tags-fill"></i>
+                    <span>标签</span>
+                  </a>
+		</div>
+                
+                  
+                  
+                  
+		<div >
+
+                  <a class="dropdown-item" href="/shuoshuo/" target="_self" data-umami-event="Navigation-Shuoshuo">
+
+                    <i class="iconfont icon-24gf-bubblesDots4"></i>
+                    <span>说说</span>
+                  </a>
+		</div>
+                
+              </div>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item dropdown">
+              <a class="nav-link dropdown-toggle" target="_self" href="javascript:;" role="button"
+                 data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                <i class="iconfont icon-momo"></i>
+                <span>社交</span>
+              </a>
+              <div class="dropdown-menu" aria-labelledby="navbarDropdown">
+                
+                  
+                  
+                  
+		<div >
+
+                  <a class="dropdown-item" href="/links/" target="_self" data-umami-event="Navigation-Friends">
+
+                    <i class="iconfont icon-link-fill"></i>
+                    <span>友链</span>
+                  </a>
+		</div>
+                
+                  
+                  
+                  
+		<div >
+
+                  <a class="dropdown-item" href="/messagebd/" target="_self" data-umami-event="Navigation-MessageBoard">
+
+                    <i class="iconfont icon-comment"></i>
+                    <span>留言板</span>
+                  </a>
+		</div>
+                
+                  
+                  
+                  
+		<div >
+
+                  <a class="dropdown-item" href="/atom.xml" target="_self" data-umami-event="Navigation-RSS">
+
+                    <i class="iconfont icon-dingyue"></i>
+                    <span>RSS订阅</span>
+                  </a>
+		</div>
+                
+              </div>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item dropdown">
+              <a class="nav-link dropdown-toggle" target="_self" href="javascript:;" role="button"
+                 data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                <i class="iconfont icon-user-fill"></i>
+                <span>个人</span>
+              </a>
+              <div class="dropdown-menu" aria-labelledby="navbarDropdown">
+                
+                  
+                  
+                  
+		<div >
+
+                  <a class="dropdown-item" href="/about/" target="_self" data-umami-event="Navigation-AboutMe">
+
+                    <i class="iconfont icon-guanyuwomen"></i>
+                    <span>关于</span>
+                  </a>
+		</div>
+                
+                  
+                  
+                  
+		<div >
+
+                  <a class="dropdown-item" href="/playlist/" target="_self" data-umami-event="Navigation-Music">
+
+                    <i class="iconfont icon-music"></i>
+                    <span>歌单</span>
+                  </a>
+		</div>
+                
+                  
+                  
+                  
+		<div >
+
+                  <a class="dropdown-item" href="https://uipv4.zywvvd.com:33035" target="_self" data-umami-event="Navigation-Nextcloud">
+
+                    <i class="iconfont icon-xuniyingpan"></i>
+                    <span>网盘</span>
+                  </a>
+		</div>
+                
+                  
+                  
+                  
+		<div >
+
+                  <a class="dropdown-item" href="https://uipv4.zywvvd.com:38920" target="_self" data-umami-event="Navigation-Emby">
+
+                    <i class="iconfont icon-meiti"></i>
+                    <span>影院</span>
+                  </a>
+		</div>
+                
+                  
+                  
+                  
+		<div >
+
+                  <a class="dropdown-item" href="https://uipv4.zywvvd.com:33036" target="_self" data-umami-event="Navigation-OneDev">
+
+                    <i class="iconfont icon-git"></i>
+                    <span>仓库</span>
+                  </a>
+		</div>
+                
+                  
+                  
+                  
+		<div >
+
+                  <a class="dropdown-item" href="https://uipv4.zywvvd.com:33041" target="_self" data-umami-event="Navigation-Wiki">
+
+                    <i class="iconfont icon-wiki"></i>
+                    <span>百科</span>
+                  </a>
+		</div>
+                
+              </div>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item dropdown">
+              <a class="nav-link dropdown-toggle" target="_self" href="javascript:;" role="button"
+                 data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                <i class="iconfont icon-ic_fly"></i>
+                <span>导航</span>
+              </a>
+              <div class="dropdown-menu" aria-labelledby="navbarDropdown">
+                
+                  
+                  
+                  
+		<div >
+
+                  <a class="dropdown-item" href="/site-map/" target="_self" data-umami-event="Navigation-SiteMap">
+
+                    <i class="iconfont icon-lianjie"></i>
+                    <span>链接</span>
+                  </a>
+		</div>
+                
+                  
+                  
+                  
+		<div >
+
+                  <a class="dropdown-item" href="/nodeppt/hexo/snavigation/" target="_self" data-umami-event="Navigation-Search">
+
+                    <i class="iconfont icon-sousuo"></i>
+                    <span>搜索</span>
+                  </a>
+		</div>
+                
+              </div>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item dropdown">
+              <a class="nav-link dropdown-toggle" target="_self" href="javascript:;" role="button"
+                 data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                <i class="iconfont icon-wangzhan"></i>
+                <span>站点</span>
+              </a>
+              <div class="dropdown-menu" aria-labelledby="navbarDropdown">
+                
+                  
+                  
+                  
+		<div >
+
+                  <a class="dropdown-item" href="https://uipv4.zywvvd.com:33039/share/0zx3o21oIpZTZqwC/%E5%8F%88%E8%A7%81%E8%8B%8D%E5%B2%9A" target="_self" data-umami-event="Navigation-Umami">
+
+                    <i class="iconfont icon-tongji2"></i>
+                    <span>站点分析</span>
+                  </a>
+		</div>
+                
+                  
+                  
+                  
+		<div >
+
+                  <a class="dropdown-item" href="/earth_sta/" target="_self" data-umami-event="Navigation-Globe">
+
+                    <i class="iconfont icon-tongjifenxi-xiangmubiaogetongji"></i>
+                    <span>访问统计</span>
+                  </a>
+		</div>
+                
+                  
+                  
+                  
+		<div >
+
+                  <a class="dropdown-item" href="https://uipv4.zywvvd.com:33034/status/show" target="_self" data-umami-event="Navigation-Monitor">
+
+                    <i class="iconfont icon-jiankong"></i>
+                    <span>站点监控</span>
+                  </a>
+		</div>
+                
+              </div>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item dropdown">
+              <a class="nav-link dropdown-toggle" target="_self" href="javascript:;" role="button"
+                 data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                <i class="iconfont icon-chuansong"></i>
+                <span>传送</span>
+              </a>
+              <div class="dropdown-menu" aria-labelledby="navbarDropdown">
+                
+                  
+                  
+                  
+		<div >
+
+                  <a class="dropdown-item" href="https://www.foreverblog.cn/go.html" target="_self" data-umami-event="Navigation-ForeverBolg">
+
+                    <i class="iconfont icon-a-BlackHole"></i>
+                    <span>十年之约</span>
+                  </a>
+		</div>
+                
+                  
+                  
+                  
+		<div >
+
+                  <a class="dropdown-item" href="https://www.travellings.cn/go.html" target="_self" data-umami-event="Navigation-DriveTo">
+
+                    <i class="iconfont icon-train1"></i>
+                    <span>开往</span>
+                  </a>
+		</div>
+                
+                  
+                  
+                  
+		<div >
+
+                  <a class="dropdown-item" href="https://bf.zzxworld.com/" target="_self" data-umami-event="Navigation-BlogFinder">
+
+                    <i class="iconfont icon-icon-"></i>
+                    <span>BlogFinder</span>
+                  </a>
+		</div>
+                
+              </div>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item dropdown">
+              <a class="nav-link dropdown-toggle" target="_self" href="javascript:;" role="button"
+                 data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                <i class="iconfont icon-gongju"></i>
+                <span>工具</span>
+              </a>
+              <div class="dropdown-menu" aria-labelledby="navbarDropdown">
+                
+                  
+                  
+                  
+		<div >
+
+                  <a class="dropdown-item" href="/navigates/calculator" target="_self" data-umami-event="Navigation-Calculator">
+
+                    <i class="iconfont icon-jisuan"></i>
+                    <span>计算器</span>
+                  </a>
+		</div>
+                
+                  
+                  
+                  
+		<div >
+
+                  <a class="dropdown-item" href="/navigates/webgraphviz" target="_self" data-umami-event="Navigation-WebGtaphviz">
+
+                    <i class="iconfont icon-tongyong-huatugongju2"></i>
+                    <span>Graphviz</span>
+                  </a>
+		</div>
+                
+              </div>
+            </li>
+          
+        
+        
+          <li class="nav-item" id="search-btn">
+            <a class="nav-link" target="_self" href="javascript:;" data-toggle="modal" data-target="#modalSearch" aria-label="Search">
+              <i class="iconfont icon-search"></i>
+            </a>
+          </li>
+          
+        
+        
+          <li class="nav-item" id="color-toggle-btn">
+            <a class="nav-link" target="_self" href="javascript:;" aria-label="Color Toggle">
+              <i class="iconfont icon-dark" id="color-toggle-icon"></i>
+            </a>
+          </li>
+        
+      </ul>
+    </div>
+  </div>
+</nav>
+
+  
+
+<div id="banner" class="banner" parallax=true
+     style="background: url('https://uipv4.zywvvd.com:33030/HexoFiles/new/bg-trans.png') no-repeat center center; background-size: cover;">
+  <div class="full-bg-img">
+    <div class="mask flex-center" style="background-color: rgba(0, 0, 0, 0)">
+      <div class="banner-text text-center fade-in-up">
+        <div class="h2">
+          
+            <span id="subtitle">PNP 算法</span>
+          
+        </div>
+
+        
+          
+  <div class="mt-3">
+    
+      <span class="post-meta mr-2">
+        <i class="iconfont icon-author" aria-hidden="true"></i>
+        Yiwei Zhang
+      </span>
+    
+    
+      <span class="post-meta">
+        <i class="iconfont icon-date-fill" aria-hidden="true"></i>
+        <time datetime="2024-06-26 17:01" pubdate>
+          2024年6月26日 下午
+        </time>
+      </span>
+    
+  </div>
+
+  <div class="mt-1">
+    
+      <span class="post-meta mr-2">
+        <i class="iconfont icon-chart"></i>
+        
+          <!-- compatible with older versions-->
+          2k 字
+        
+      </span>
+    
+
+    
+      <span class="post-meta mr-2">
+        <i class="iconfont icon-clock-fill"></i>
+        
+        
+        
+          <!-- compatible with older versions-->
+          17 分钟
+        
+      </span>
+    
+
+    
+    
+      
+        <span id="vvdpost_container_page_pvuv" style="display: none">
+          <i class="iconfont icon-eye" aria-hidden="true"></i>
+          <span id="vvdpost_value_page_pv">0</span> 次&nbsp&nbsp
+		  <i class="iconfont icon-users" aria-hidden="true"></i>
+		  <span id="vvdpost_value_page_uv">0</span> 人&nbsp&nbsp
+		  <i class="iconfont icon-comment" aria-hidden="true"></i>
+		  <span id="vvdpost_value_page_cn">0</span> 条
+        </span>
+
+		<script>
+			console.log(window.location.pathname)
+			var httpRequest = new XMLHttpRequest();
+			httpRequest.open('POST', 'https://uipv4.zywvvd.com:33037/poststats', true);
+			httpRequest.setRequestHeader("Content-type","application/json");
+			httpRequest.send(JSON.stringify(window.location.pathname));
+			httpRequest.onreadystatechange = function () {//请求后的回调接口，可将请求成功后要执行的程序写在其中
+				if (httpRequest.readyState == 4 && httpRequest.status == 200) {//验证请求是否发送成功
+					var json = httpRequest.responseText;//获取到服务端返回的数据
+					var obj = JSON.parse(json);
+					var pvCtn = document.querySelector('#vvdpost_container_page_pvuv');
+					if (pvCtn) {
+						var pv_ele = document.querySelector('#vvdpost_value_page_pv');
+						var uv_ele = document.querySelector('#vvdpost_value_page_uv');
+						var cn_ele = document.querySelector('#vvdpost_value_page_cn');
+
+						if (uv_ele && uv_ele) {
+							pv_ele.innerText = obj.pv;
+							uv_ele.innerText = obj.uv;
+							cn_ele.innerText = obj.cn;
+							pvCtn.style.display = 'inline';
+							}
+						}
+					}
+			};
+		</script>
+      
+    
+  </div>
+
+
+        
+      </div>
+
+      
+        <div class="scroll-down-bar">
+          <i class="iconfont icon-arrowdown"></i>
+        </div>
+      
+    </div>
+  </div>
+</div>
+
+</div>
+
+
+	<script type="text/javascript" src="/vvd_js/jquery.js"></script>
+	<script async src="https://uipv4.zywvvd.com:33039/script.js" data-website-id="dd4a05c6-dde2-4743-9c3a-a79d6bee0778"></script>
+	<div class="banner" id='banner' >
+
+		<div class="full-bg-img" >
+
+			
+				<script>
+					var ua = navigator.userAgent;
+					var ipad = ua.match(/(iPad).*OS\s([\d_]+)/),
+						isIphone = !ipad && ua.match(/(iPhone\sOS)\s([\d_]+)/),
+						isAndroid = ua.match(/(Android)\s+([\d.]+)/),
+						isMobile = isIphone || isAndroid;
+
+					function set_video_attr(id){
+						var height = document.body.clientHeight
+						var width = document.body.clientWidth
+						var video_item = document.getElementById(id);
+
+						if (height / width < 0.56){
+							video_item.setAttribute('width', '100%');
+							video_item.setAttribute('height', 'auto');
+						} else {
+							video_item.setAttribute('height', '100%');
+							video_item.setAttribute('width', 'auto');
+						}
+					}
+
+					fetch('https://uipv4.zywvvd.com:33037/wallpaper-pair')
+					  .then(response => response.json()) // 解析JSON数据
+					  .then(data => {
+						console.log('获取链接成功');
+						video_url = data[0][0]
+						pre_show_image_url = data[0][1]
+
+						banner_obj = document.getElementById("banner")
+						banner_obj.style.cssText = "background: url('" + pre_show_image_url + "') no-repeat;"
+
+						vvd_banner_obj = document.getElementById("vvd_banner_img")
+						vvd_banner_content = "<img id='banner_img_item' src='" + pre_show_image_url + "'style='position: fixed; z-index: -999'>"
+						vvd_banner_obj.innerHTML = vvd_banner_content 
+
+						if (!isMobile) {
+							video_html_res = "<video id='video_item' style='position: fixed; z-index: -888;'  muted='muted' src=" + video_url + " autoplay='autoplay' loop='loop'></video>"
+							document.getElementById("banner_video_insert").innerHTML = video_html_res;
+							set_video_attr('video_item')
+							set_video_attr('banner_img_item')
+						}
+					    
+					  })
+					  .catch((error) => {
+					    console.error('请求失败,尝试本地获取背景图像：', error);
+	    					$.getJSON('/vvd_js/video_url.json', function(data){
+
+							var video_list_length = data.length
+							var seed = Math.random()
+							index = Math.floor(seed * video_list_length)
+
+							video_url = data[index][0]
+							pre_show_image_url = data[index][1]
+
+							banner_obj = document.getElementById("banner")
+							banner_obj.style.cssText = "background: url('" + pre_show_image_url + "') no-repeat;"
+
+							vvd_banner_obj = document.getElementById("vvd_banner_img")
+							vvd_banner_content = "<img id='banner_img_item' src='" + pre_show_image_url + "'style='position: fixed; z-index: -999'>"
+							vvd_banner_obj.innerHTML = vvd_banner_content 
+
+							if (!isMobile) {
+								video_html_res = "<video id='video_item' style='position: fixed; z-index: -888;'  muted='muted' src=" + video_url + " autoplay='autoplay' loop='loop'></video>"
+								document.getElementById("banner_video_insert").innerHTML = video_html_res;
+								set_video_attr('video_item')
+								set_video_attr('banner_img_item')
+							}
+						});
+					  });
+
+
+
+
+
+
+					if (!isMobile){
+						window.onresize = function(){
+							set_video_attr('video_item')
+							set_video_attr('banner_img_item')
+							}
+						}
+				</script>
+
+			
+
+
+			
+			</div>
+		</div>
+    </div>
+
+  </header>
+
+  <main>
+    
+      
+
+
+
+<div class="container-fluid nopadding-x">
+  <div class="row nomargin-x">
+    <div class="side-col d-none d-lg-block col-lg-2">
+      
+
+    </div>
+
+    <div class="col-lg-8 nopadding-x-md">
+      <div class="container nopadding-x-md" id="board-ctn">
+        <div id="board">
+          <article class="post-content mx-auto">
+
+            <!-- <h1 id="seo-header">PNP 算法</h1> -->
+
+            
+              <p id="updated-time" class="note note-info" style="">
+                
+                  
+                    <!-- compatible with older versions-->
+                    本文最后更新于：2024年6月26日 晚上
+                  
+                
+              </p>
+            
+            
+              <div class="markdown-body">
+                
+                <blockquote>
+<p>透视 n 点问题，简称 PnP，源自相机标定，是计算机视觉的经典问题，广泛应用在机器人定位、SLAM、AR/VR、摄影测量等领域。</p>
+</blockquote>
+<span id="more"></span>
+<h3 id="问题定义">问题定义</h3>
+<p><strong>已知</strong>：相机的内参和畸变系数；世界坐标系中，n 个空间点坐标，以及投影在像平面上的像素坐标</p>
+<p><strong>求解</strong>：相机在世界坐标系下的位姿 R 和 t，即 {W} 到 {C} 的变换矩阵 $^w_cT$，如下图：</p>
+<p><img src="https://uipv4.zywvvd.com:33030/HexoFiles/vvd_image_files/202406261741841.png" srcset="/img/loading.gif" lazyload alt=""></p>
+<p>世界坐标系中的 3d 空间点，与投影到像平面的 2d 像素点，两者之间的关系为：</p>
+
+$$
+s\begin{bmatrix}u\\v\\1\end{bmatrix}=\begin{bmatrix}f_x&0&c_x\\0&f_y&c_y\\0&0&1\end{bmatrix}\begin{bmatrix}r_{11}&r_{12}&r_{13}&t_1\\r_{21}&r_{22}&r_{23}&t_2\\r_{31}&r_{32}&r_{33}&t_3\end{bmatrix}\begin{bmatrix}X_w\\Y_w\\Z_w\\1\end{bmatrix}
+$$
+
+
+<h3 id="分类">分类</h3>
+<p>根据给定空间点的数量，可将 PnP 问题分为两类：</p>
+<ul>
+<li>
+<p>第一类 $3≤n≤5$，选取的空间点较少，可通过联立方程组的方式求解，精度易受图像噪声影响，鲁棒性较差</p>
+</li>
+<li>
+<p>第二类 $n≥6$，选取的空间点较多，可转化为求解超定方程的问题，一般侧重于鲁棒性和实时性的平衡</p>
+</li>
+</ul>
+<h3 id="DLT-法">DLT 法</h3>
+<h4 id="转化为-Ax-0">转化为 Ax=0</h4>
+<p>令 $𝑃=𝐾[𝑅𝑡]$，$K$ 为相机内参矩阵，则 PnP 问题可简化为：已知 n 组 3d-2d 对应点，求解 $P_{3×4}$</p>
+<p>DLT (Direct Linear Transformation，直接线性变换)，便是直接利用这 n 组对应点，构建线性方程组来求解</p>
+
+$$
+s\begin{bmatrix}u\\v\\1\end{bmatrix}=\begin{bmatrix}p_{11}&p_{12}&p_{13}&p_{14}\\p_{21}&p_{22}&p_{23}&p_{23}\\p_{31}&p_{32}&p_{33}&p_{33}\end{bmatrix}\begin{bmatrix}X_w\\Y_w\\Z_w\\1\end{bmatrix}
+$$
+
+<p>简化符号 $X_w,Y_w,Z_w$ 为 $X,Y,Z$，展开得：</p>
+
+$$
+\left.\left\{\begin{array}{l}su=p_{11}X+p_{12}Y+p_{13}Z+p_{14}\\\\sv=p_{21}X+p_{22}Y+p_{23}Z+p_{24}\\\\s=p_{31}X+p_{32}Y+p_{33}Z+p_{34}\end{array}\right.\right.=>\left\{\begin{array}{l}Xp_{11}+Yp_{12}+Zp_{13}+p_{14}-uXp_{31}-uYp_{32}-uZp_{33}-up_{34}=0\\\\Xp_{21}+Yp_{22}+Zp_{23}+p_{24}-vXp_{31}-vYp_{32}-vZp_{33}-vp_{34}=0\end{array}\right.
+$$
+
+<p>未知数有 11 个 ($p_{34}$可约掉)，则至少需要 6 组对应点，写成矩阵形式如下：</p>
+
+$$
+\begin{bmatrix}X_1&Y_1&Z_1&1&0&0&0&0&-u_1X_1&-u_1Y_1&-u_1Z_1&-u_1\\0&0&0&0&X_1&Y_1&Z_1&1&-v_1X_1&-v_1Y_1&-v_1Z_1&-v_1\\\vdots&\vdots&\vdots&\vdots&\vdots&\vdots&\vdots&\vdots&\vdots&\vdots&\vdots\\\vdots&\vdots&\vdots&\vdots&\vdots&\vdots&\vdots&\vdots&\vdots&\vdots&\vdots\\X_n&Y_n&Z_n&1&0&0&0&0&-u_nX_n&-u_nY_1&-u_nZ_n&-u_n\\0&0&0&0&X_n&Y_n&Z_n&1&-v_nX_n&-v_nY_n&-v_nZ_n&-v_n\end{bmatrix}\begin{bmatrix}p_{11}\\p_{12}\\p_{13}\\p_{14}\\\vdots\\p_{32}\\p_{33}\\p_{34}\end{bmatrix}=\begin{bmatrix}0\\\vdots\\\vdots\\\vdots\\0\end{bmatrix}
+$$
+
+<p>因此，求解 $𝑃_{3×4}$ 便转化成了 $Ax=0$ 的问题</p>
+<h4 id="SVD-求-R-t">SVD 求 R t</h4>
+<p>给定相机内参矩阵 $K$，则有 $K[R|t]=λ[p_1 \text{ }p_2 \text{ }p_3\text{ }p_4]$</p>
+<p>考虑 $λ$ 符号无关，得 $𝜆𝑅=𝐾^{−1}[𝑝_1\text{ }𝑝_2\text{ }𝑝_3]$</p>
+<p>SVD 分解:</p>
+
+$$
+K^{-1}\left[\begin{matrix}p_1&p_2&p_3\end{matrix}\right]=\boldsymbol{U}\begin{bmatrix}d_{11}&&&\\&d_{22}&&\\&&&d_{33}\end{bmatrix}\boldsymbol{V}^T
+$$
+得到：
+$$
+\lambda\approx d_{11}\text{ 和 }\begin{cases}R=UV^T\\t=\frac{K^{-1}p_4}{d_{11}}\end{cases}
+$$
+
+
+<h3 id="P3P-法">P3P 法</h3>
+<p>当 n=3 时，PnP 即为 P3P，它有 4 个可能的解，求解方法是 余弦定理 + 向量点积</p>
+<h4 id="余弦定理">余弦定理</h4>
+<p>根据投影几何的消隐点和消隐线，构建 3d-2d 之间的几何关系，如下：</p>
+<p><img src="https://uipv4.zywvvd.com:33030/HexoFiles/vvd_image_files/202406261754998.png" srcset="/img/loading.gif" lazyload alt=""></p>
+<p>根据余弦定理，有：</p>
+
+$$
+\left.\left\{\begin{array}{l}d_1^2+d_2^2-2d_1d_2\cos\theta_{12}=p_{12}^2\\\\d_2^2+d_3^2-2d_2d_3\cos\theta_{23}=p_{23}^2\\\\d_3^2+d_1^2+2d_3d_2\cos\theta_23=p_{31}^2\end{array}\right.\right.
+$$
+
+<p>只有 $d_1,d_2,d_3$ 是未知数，求解方程组即可</p>
+<blockquote>
+<p>其中，有个关键的隐含点：<strong>给定相机内参，以及 3d-2d 的投影关系，则消隐线之间的夹角 $θ_{12}\text{ }θ_{23}\text{ }θ_{31}$ 是可计算得出的</strong></p>
+</blockquote>
+<h4 id="向量点积">向量点积</h4>
+<p>相机坐标系中，原点即为消隐点，原点到 3d-2d 的连线即为消隐线，如图所示：</p>
+<p><img src="https://uipv4.zywvvd.com:33030/HexoFiles/vvd_image_files/202406261758608.png" srcset="/img/loading.gif" lazyload alt=""></p>
+<p>如果知道 3d点 投影到像平面的 2d点，在相机坐标系中的坐标 $U_1,U_2,U_3$，则:</p>
+
+$$
+\cos\theta_{23}=\frac{\overrightarrow{OU_{2}}\cdot\overrightarrow{OU_{3}}}{||\overrightarrow{OU_{2}}|| ||\overrightarrow{OU_{3}}||}
+$$
+
+<p>具体到运算，可视为 世界坐标系 {W} 和 相机坐标系 {C} 重合，且 $Z=f$，则有:</p>
+
+$$
+[ R\quad t ]=\begin{bmatrix}1&0&0&0\\0&1&0&0\\0&0&1&0\end{bmatrix}=> s\begin{bmatrix}u\\v\\1\end{bmatrix}=\begin{bmatrix}f_x&0&c_x\\0&f_y&c_y\\0&0&1\end{bmatrix}\begin{bmatrix}X_c\\Y_c\\Z_c\end{bmatrix}
+$$
+
+<p>$K^{−1}$ 可用增广矩阵求得，且 $Z_c=f$，则有:</p>
+
+$$
+\begin{bmatrix}X_c\\Y_c\\f\end{bmatrix}=sK^{-1}\begin{bmatrix}u\\v\\1\end{bmatrix}
+$$
+
+记 $\vec{u}=\begin{bmatrix}X_c\\Y_c\\Z_c\end{bmatrix}$ , 则:
+$$
+\cos\theta_{12}=\frac{(K^{-1}\vec{u_1})^T(K^{-1}\vec{u_2})}{||K^{-1}\vec{u_1}|| ||K^{-1}\vec{u_2}||}
+$$
+
+<p>以此类推 $\cos\theta_{23}$ 和 $\cos\theta_{31}$</p>
+<h3 id="OpenCV-实现">OpenCV 实现</h3>
+<p>OpenCV 中解 PnP 的方法有 9 种，目前实现了 7 种，还有 2 种未实现，对应论文如下：</p>
+<ul>
+<li>
+<p><em>SOLVEPNP_P3P</em>        <a target="_blank" rel="noopener" href="http://www.mmrc.iss.ac.cn/tmp/papers/gao-ieee-pami.pdf">Complete Solution Classification for the Perspective-Three-Point Problem</a></p>
+</li>
+<li>
+<p><em>SOLVEPNP_AP3P</em>       <a target="_blank" rel="noopener" href="https://openaccess.thecvf.com/content_cvpr_2017/papers/Ke_An_Efficient_Algebraic_CVPR_2017_paper.pdf">An Efficient Algebraic Solution to the Perspective-Three-Point Problem</a></p>
+</li>
+<li>
+<p><em>SOLVEPNP_ITERATIVE</em>       基于 L-M 最优化方法，求解重投影误差最小的位姿</p>
+</li>
+<li>
+<p><em>SOLVEPNP_EPNP</em>              <a target="_blank" rel="noopener" href="https://www.tugraz.at/fileadmin/user_upload/Institute/ICG/Images/team_lepetit/publications/lepetit_ijcv08.pdf">EPnP: An Accurate O(n) Solution to the PnP Problem</a></p>
+</li>
+<li>
+<p><em>SOLVEPNP_SQPNP</em>             <a target="_blank" rel="noopener" href="http://www.ecva.net/papers/eccv_2020/papers_ECCV/papers/123460460.pdf">A Consistently Fast and Globally Optimal Solution to the Perspective-n-Point Problem</a></p>
+</li>
+<li>
+<p><em>SOLVEPNP_IPPE</em>                     <a target="_blank" rel="noopener" href="http://igt.ip.uca.fr/encov/publications/pubfiles/2014_Collins_etal_IJCV_plane.pdf">Infinitesimal Plane-based Pose Estimation</a>  输入的 3D 点需要共面且 n ≥ 4</p>
+</li>
+<li>
+<p><em>SOLVEPNP_IPPE_SQUARE</em>             SOLVEPNP_IPPE 的一种特殊情况，要求输入 4 个共面点的坐标，并且按照特定的顺序排列</p>
+</li>
+<li>
+<p><em>SOLVEPNP_DLS</em> (未实现)          <a target="_blank" rel="noopener" href="https://www-users.cse.umn.edu/~stergios/papers/ICCV-11-DLS-PnP.pdf">A Direct Least-Squares (DLS) Method for PnP</a>   实际调用 SOLVEPNP_EPNP</p>
+</li>
+<li>
+<p><em>SOLVEPNP_UPLP</em> (未实现)         <a target="_blank" rel="noopener" href="https://upcommons.upc.edu/bitstream/handle/2117/22931/1404-Exhaustive-linearization-for-robust-camera-pose-and-focal-length-estimation.pdf;sequence=1">Exhaustive Linearization for Robust Camera Pose and Focal Length Estimation</a>  实际调用 SOLVEPNP_EPNP</p>
+</li>
+</ul>
+<h4 id="solveP3P">solveP3P()</h4>
+<p>solveP3P() 的输入是 3 组 3d-2d 对应点，定义如下：</p>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><code class="hljs cpp"><span class="hljs-comment">// P3P has up to 4 solutions, and the solutions are sorted by reprojection errors(lowest to highest).</span><br><span class="hljs-function"><span class="hljs-type">int</span> <span class="hljs-title">solveP3P</span> <span class="hljs-params">(</span></span><br><span class="hljs-params"><span class="hljs-function">    InputArray     objectPoints,     <span class="hljs-comment">// object points, 3x3 1-channel or 1x3/3x1 3-channel. vector&lt;Point3f&gt; can be also passed</span></span></span><br><span class="hljs-params"><span class="hljs-function">    InputArray      imagePoints,     <span class="hljs-comment">// corresponding image points, 3x2 1-channel or 1x3/3x1 2-channel. vector&lt;Point2f&gt; can be also passed</span></span></span><br><span class="hljs-params"><span class="hljs-function">    InputArray     cameraMatrix,     <span class="hljs-comment">// camera intrinsic matrix</span></span></span><br><span class="hljs-params"><span class="hljs-function">    InputArray       distCoeffs,     <span class="hljs-comment">// distortion coefficients.If NULL/empty, the zero distortion coefficients are assumed.</span></span></span><br><span class="hljs-params"><span class="hljs-function">    OutputArrayOfArrays   rvecs,     <span class="hljs-comment">// rotation vectors</span></span></span><br><span class="hljs-params"><span class="hljs-function">    OutputArrayOfArrays   tvecs,     <span class="hljs-comment">// translation vectors</span></span></span><br><span class="hljs-params"><span class="hljs-function">    <span class="hljs-type">int</span>                   flags      <span class="hljs-comment">// solving method</span></span></span><br><span class="hljs-params"><span class="hljs-function">)</span></span>; 　　<br></code></pre></td></tr></table></figure>
+<h4 id="solvePnP-和-solvePnPGeneric">solvePnP() 和 solvePnPGeneric()</h4>
+<p>solvePnP() 实际上调用的是 solvePnPGeneric()，内部实现如下：</p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br></pre></td><td class="code"><pre><code class="hljs c++"><span class="hljs-function"><span class="hljs-type">bool</span> <span class="hljs-title">solvePnP</span><span class="hljs-params">(InputArray opoints, InputArray ipoints, InputArray cameraMatrix, InputArray distCoeffs, OutputArray rvec, OutputArray tvec, <span class="hljs-type">bool</span> useExtrinsicGuess, <span class="hljs-type">int</span> flags)</span></span><br><span class="hljs-function"></span>&#123;<br>    <span class="hljs-built_in">CV_INSTRUMENT_REGION</span>();<br> <br>    vector&lt;Mat&gt; rvecs, tvecs;<br>    <span class="hljs-type">int</span> solutions = <span class="hljs-built_in">solvePnPGeneric</span>(opoints, ipoints, cameraMatrix, distCoeffs, rvecs, tvecs, useExtrinsicGuess, (SolvePnPMethod)flags, rvec, tvec);<br> <br>    <span class="hljs-keyword">if</span> (solutions &gt; <span class="hljs-number">0</span>)<br>    &#123;<br>        <span class="hljs-type">int</span> rdepth = rvec.<span class="hljs-built_in">empty</span>() ? CV_64F : rvec.<span class="hljs-built_in">depth</span>();<br>        <span class="hljs-type">int</span> tdepth = tvec.<span class="hljs-built_in">empty</span>() ? CV_64F : tvec.<span class="hljs-built_in">depth</span>();<br>        rvecs[<span class="hljs-number">0</span>].<span class="hljs-built_in">convertTo</span>(rvec, rdepth);<br>        tvecs[<span class="hljs-number">0</span>].<span class="hljs-built_in">convertTo</span>(tvec, tdepth);<br>    &#125;<br> <br>    <span class="hljs-keyword">return</span> solutions &gt; <span class="hljs-number">0</span>;<br>&#125;<br></code></pre></td></tr></table></figure>
+<p>solvePnPGeneric() 除了求解相机位姿外，还可得到重投影误差，其定义如下：</p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><code class="hljs c++"><span class="hljs-function"><span class="hljs-type">bool</span> <span class="hljs-title">solvePnPGeneric</span> <span class="hljs-params">(</span></span><br><span class="hljs-params"><span class="hljs-function">    InputArray         objectPoints,    <span class="hljs-comment">// object points, Nx3 1-channel or 1xN/Nx1 3-channel, N is the number of points. vector&lt;Point3d&gt; can be also passed</span></span></span><br><span class="hljs-params"><span class="hljs-function">    InputArray          imagePoints,    <span class="hljs-comment">// corresponding image points, Nx2 1-channel or 1xN/Nx1 2-channel, N is the number of points. vector&lt;Point2d&gt; can be also passed</span></span></span><br><span class="hljs-params"><span class="hljs-function">    InputArray         cameraMatrix,    <span class="hljs-comment">// camera intrinsic matrix</span></span></span><br><span class="hljs-params"><span class="hljs-function">    InputArray           distCoeffs,    <span class="hljs-comment">// distortion coefficients</span></span></span><br><span class="hljs-params"><span class="hljs-function">    OutputArrayOfArrays        rvec,    <span class="hljs-comment">// rotation vector</span></span></span><br><span class="hljs-params"><span class="hljs-function">    OutputArrayOfArrays        tvec,    <span class="hljs-comment">// translation vector</span></span></span><br><span class="hljs-params"><span class="hljs-function">    <span class="hljs-type">bool</span>  useExtrinsicGuess = <span class="hljs-literal">false</span>,    <span class="hljs-comment">// used for SOLVEPNP_ITERATIVE. If true, use the provided rvec and tvec as initial approximations, and further optimize them.</span></span></span><br><span class="hljs-params"><span class="hljs-function">    SolvePnPMethod  flags = SOLVEPNP_ITERATIVE, <span class="hljs-comment">// solving method</span></span></span><br><span class="hljs-params"><span class="hljs-function">    InputArray               rvec = noArray(),  <span class="hljs-comment">// initial rotation vector when using SOLVEPNP_ITERATIVE and useExtrinsicGuess is set to true</span></span></span><br><span class="hljs-params"><span class="hljs-function">    InputArray               tvec = noArray(),  <span class="hljs-comment">// initial translation vector when using SOLVEPNP_ITERATIVE and useExtrinsicGuess is set to true</span></span></span><br><span class="hljs-params"><span class="hljs-function">    OutputArray reprojectionError = noArray()   <span class="hljs-comment">// optional vector of reprojection error, that is the RMS error</span></span></span><br><span class="hljs-params"><span class="hljs-function">)</span></span>; 　　<br></code></pre></td></tr></table></figure>
+<h4 id="solvePnPRansac">solvePnPRansac()</h4>
+<p>solvePnP() 的一个缺点是鲁棒性不强，对异常点敏感，这在相机标定中问题不大，因为标定板的图案已知，并且特征提取较为稳定</p>
+<p>然而，当相机拍摄实际物体时，因为特征难以稳定提取，会出现一些异常点，导致位姿估计的不准，因此，需要一种处理异常点的方法</p>
+<p>RANSAC 便是一种高效剔除异常点的方法，对应 solvePnPRansac()，它是一个重载函数，共有 2 种参数形式，第 1 种形式如下：</p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><code class="hljs c++"><span class="hljs-function"><span class="hljs-type">bool</span> <span class="hljs-title">solvePnPRansac</span> <span class="hljs-params">(</span></span><br><span class="hljs-params"><span class="hljs-function">    InputArray         objectPoints,    <span class="hljs-comment">// object points, Nx3 1-channel or 1xN/Nx1 3-channel, N is the number of points. vector&lt;Point3d&gt; can be also passed</span></span></span><br><span class="hljs-params"><span class="hljs-function">    InputArray          imagePoints,    <span class="hljs-comment">// corresponding image points, Nx2 1-channel or 1xN/Nx1 2-channel, N is the number of points. vector&lt;Point2d&gt; can be also passed</span></span></span><br><span class="hljs-params"><span class="hljs-function">    InputArray         cameraMatrix,    <span class="hljs-comment">// camera intrinsic matrix</span></span></span><br><span class="hljs-params"><span class="hljs-function">    InputArray           distCoeffs,    <span class="hljs-comment">// distortion coefficients</span></span></span><br><span class="hljs-params"><span class="hljs-function">    OutputArray                rvec,    <span class="hljs-comment">// rotation vector</span></span></span><br><span class="hljs-params"><span class="hljs-function">    OutputArray                tvec,    <span class="hljs-comment">// translation vector</span></span></span><br><span class="hljs-params"><span class="hljs-function">    <span class="hljs-type">bool</span>  useExtrinsicGuess = <span class="hljs-literal">false</span>,    <span class="hljs-comment">// used for SOLVEPNP_ITERATIVE. If true, use the provided rvec and tvec as initial approximations, and further optimize them.</span></span></span><br><span class="hljs-params"><span class="hljs-function">    <span class="hljs-type">int</span>       iterationsCount = <span class="hljs-number">100</span>,    <span class="hljs-comment">// number of iterations</span></span></span><br><span class="hljs-params"><span class="hljs-function">    <span class="hljs-type">float</span>   reprojectionError = <span class="hljs-number">8.0</span>,    <span class="hljs-comment">// inlier threshold value. It is the maximum allowed distance between the observed and computed point projections to consider it an inlier</span></span></span><br><span class="hljs-params"><span class="hljs-function">    <span class="hljs-type">double</span>        confidence = <span class="hljs-number">0.99</span>,    <span class="hljs-comment">// the probability that the algorithm produces a useful result</span></span></span><br><span class="hljs-params"><span class="hljs-function">    OutputArray inliers = noArray(),    <span class="hljs-comment">// output vector that contains indices of inliers in objectPoints and imagePoints</span></span></span><br><span class="hljs-params"><span class="hljs-function">    <span class="hljs-type">int</span>  flags = SOLVEPNP_ITERATIVE     <span class="hljs-comment">// solving method</span></span></span><br><span class="hljs-params"><span class="hljs-function">)</span></span>;　　<br></code></pre></td></tr></table></figure>
+<h4 id="solvePnPRefineLM-和-solvePnPRefineVVS">solvePnPRefineLM() 和 solvePnPRefineVVS()</h4>
+<p>OpenCV 中还有 2 个位姿细化函数：通过迭代不断减小重投影误差，从而求得最佳位姿，solvePnPRefineLM() 使用 L-M 算法，solvePnPRefineVVS() 则用虚拟视觉伺服 (Virtual Visual Servoing)</p>
+<p>solvePnPRefineLM() 的定义如下：</p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><code class="hljs c++"><span class="hljs-function"><span class="hljs-type">void</span> <span class="hljs-title">solvePnPRefineLM</span> <span class="hljs-params">(</span></span><br><span class="hljs-params"><span class="hljs-function">      InputArray      objectPoints,  <span class="hljs-comment">// object points, Nx3 1-channel or 1xN/Nx1 3-channel, N is the number of points</span></span></span><br><span class="hljs-params"><span class="hljs-function">      InputArray       imagePoints,  <span class="hljs-comment">// corresponding image points, Nx2 1-channel or 1xN/Nx1 2-channel</span></span></span><br><span class="hljs-params"><span class="hljs-function">      InputArray      cameraMatrix,  <span class="hljs-comment">// camera intrinsic matrix</span></span></span><br><span class="hljs-params"><span class="hljs-function">      InputArray        distCoeffs,  <span class="hljs-comment">// distortion coefficients</span></span></span><br><span class="hljs-params"><span class="hljs-function">      InputOutputArray      rvec,      <span class="hljs-comment">// input/output rotation vector</span></span></span><br><span class="hljs-params"><span class="hljs-function">      InputOutputArray      tvec,      <span class="hljs-comment">// input/output translation vector     </span></span></span><br><span class="hljs-params"><span class="hljs-function">      TermCriteria  criteria = TermCriteria(TermCriteria::EPS+TermCriteria::COUNT, <span class="hljs-number">20</span>, FLT_EPSILON) <span class="hljs-comment">// Criteria when to stop the LM iterative algorithm</span></span></span><br><span class="hljs-params"><span class="hljs-function">)</span></span>; 　<br></code></pre></td></tr></table></figure>
+<h3 id="应用实例">应用实例</h3>
+<h4 id="位姿估计-静态-标定板">位姿估计 (静态+标定板)</h4>
+<p>当手持标定板旋转不同角度时，利用相机内参 + solvePnP()，便可求出相机相对标定板的位姿</p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br></pre></td><td class="code"><pre><code class="hljs c++"><span class="hljs-meta">#<span class="hljs-keyword">include</span> <span class="hljs-string">&quot;opencv2/imgproc.hpp&quot;</span></span><br><span class="hljs-meta">#<span class="hljs-keyword">include</span> <span class="hljs-string">&quot;opencv2/highgui.hpp&quot;</span></span><br><span class="hljs-meta">#<span class="hljs-keyword">include</span> <span class="hljs-string">&quot;opencv2/calib3d.hpp&quot;</span></span><br> <br><span class="hljs-keyword">using</span> <span class="hljs-keyword">namespace</span> std;<br><span class="hljs-keyword">using</span> <span class="hljs-keyword">namespace</span> cv;<br> <br>Size kPatternSize = <span class="hljs-built_in">Size</span>(<span class="hljs-number">9</span>, <span class="hljs-number">6</span>);<br><span class="hljs-type">float</span> kSquareSize = <span class="hljs-number">0.025</span>;<br><span class="hljs-comment">// camera intrinsic parameters and distortion coefficient</span><br><span class="hljs-type">const</span> Mat cameraMatrix = (<span class="hljs-built_in">Mat_</span>&lt;<span class="hljs-type">double</span>&gt;(<span class="hljs-number">3</span>, <span class="hljs-number">3</span>) &lt;&lt; <span class="hljs-number">5.3591573396163199e+02</span>, <span class="hljs-number">0.0</span>, <span class="hljs-number">3.4228315473308373e+02</span>,<br>                                                <span class="hljs-number">0.0</span>, <span class="hljs-number">5.3591573396163199e+02</span>, <span class="hljs-number">2.3557082909788173e+02</span>,<br>                                                <span class="hljs-number">0.0</span>, <span class="hljs-number">0.0</span>, <span class="hljs-number">1.0</span>);<br><span class="hljs-type">const</span> Mat distCoeffs = (<span class="hljs-built_in">Mat_</span>&lt;<span class="hljs-type">double</span>&gt;(<span class="hljs-number">5</span>, <span class="hljs-number">1</span>) &lt;&lt; <span class="hljs-number">-2.6637260909660682e-01</span>, <span class="hljs-number">-3.8588898922304653e-02</span>, <span class="hljs-number">1.7831947042852964e-03</span>,<br>                                              <span class="hljs-number">-2.8122100441115472e-04</span>, <span class="hljs-number">2.3839153080878486e-01</span>);<br> <br><span class="hljs-function"><span class="hljs-type">int</span> <span class="hljs-title">main</span><span class="hljs-params">()</span></span><br><span class="hljs-function"></span>&#123;<br>    <span class="hljs-comment">// 1) read image</span><br>    Mat src = <span class="hljs-built_in">imread</span>(<span class="hljs-string">&quot;left07.jpg&quot;</span>);<br>    <span class="hljs-keyword">if</span> (src.<span class="hljs-built_in">empty</span>())<br>        <span class="hljs-keyword">return</span> <span class="hljs-number">-1</span>;<br>    <span class="hljs-comment">// prepare for subpixel corner</span><br>    Mat src_gray;<br>    <span class="hljs-built_in">cvtColor</span>(src, src_gray, COLOR_BGR2GRAY);<br> <br>    <span class="hljs-comment">// 2) find chessboard corners and subpixel refining</span><br>    vector&lt;Point2f&gt; corners;<br>    <span class="hljs-type">bool</span> patternfound = <span class="hljs-built_in">findChessboardCorners</span>(src, kPatternSize, corners);<br>    <span class="hljs-keyword">if</span> (patternfound) &#123;<br>        <span class="hljs-built_in">cornerSubPix</span>(src_gray, corners, <span class="hljs-built_in">Size</span>(<span class="hljs-number">11</span>, <span class="hljs-number">11</span>), <span class="hljs-built_in">Size</span>(<span class="hljs-number">-1</span>, <span class="hljs-number">-1</span>), <span class="hljs-built_in">TermCriteria</span>(TermCriteria::EPS + TermCriteria::MAX_ITER, <span class="hljs-number">30</span>, <span class="hljs-number">0.1</span>));<br>    &#125;<br>    <span class="hljs-keyword">else</span> &#123;<br>        <span class="hljs-keyword">return</span> <span class="hljs-number">-1</span>;<br>    &#125;<br> <br>    <span class="hljs-comment">// 3) object coordinates</span><br>    vector&lt;Point3f&gt; objectPoints;<br>    <span class="hljs-keyword">for</span> (<span class="hljs-type">int</span> i = <span class="hljs-number">0</span>; i &lt; kPatternSize.height; i++)<br>    &#123;<br>        <span class="hljs-keyword">for</span> (<span class="hljs-type">int</span> j = <span class="hljs-number">0</span>; j &lt; kPatternSize.width; j++)<br>        &#123;<br>            objectPoints.<span class="hljs-built_in">push_back</span>(<span class="hljs-built_in">Point3f</span>(<span class="hljs-built_in">float</span>(j * kSquareSize), <span class="hljs-built_in">float</span>(i * kSquareSize), <span class="hljs-number">0</span>));<br>        &#125;<br>    &#125;<br> <br>    <span class="hljs-comment">// 4) Rotation and Translation vectors</span><br>    Mat rvec, tvec;<br>    <span class="hljs-built_in">solvePnP</span>(objectPoints, corners, cameraMatrix, distCoeffs, rvec, tvec);<br> <br>    <span class="hljs-comment">// 5) project estimated pose on the image</span><br>    <span class="hljs-built_in">drawFrameAxes</span>(src, cameraMatrix, distCoeffs, rvec, tvec, <span class="hljs-number">2</span>*kSquareSize);<br>    <span class="hljs-built_in">imshow</span>(<span class="hljs-string">&quot;Pose estimation&quot;</span>, src);<br>    <span class="hljs-built_in">waitKey</span>();<br>&#125;　　<br></code></pre></td></tr></table></figure>
+<p>当标定板旋转不同角度时，相机所对应的位姿如下：</p>
+<p><img src="https://uipv4.zywvvd.com:33030/HexoFiles/vvd_image_files/202406261809412.png" srcset="/img/loading.gif" lazyload style="zoom:50%;" /><img src="https://uipv4.zywvvd.com:33030/HexoFiles/vvd_image_files/202406261809395.png" srcset="/img/loading.gif" lazyload style="zoom:50%;" /><img src="https://uipv4.zywvvd.com:33030/HexoFiles/vvd_image_files/202406261810876.png" srcset="/img/loading.gif" lazyload style="zoom:50%;" /></p>
+<h3 id="参考资料">参考资料</h3>
+<ul>
+<li><a target="_blank" rel="noopener" href="https://www.cnblogs.com/xinxue/p/15189486.html">https://www.cnblogs.com/xinxue/p/15189486.html</a></li>
+<li>OpenCV-Python Tutorials / Camera Calibration and 3D Reconstruction / <a target="_blank" rel="noopener" href="https://docs.opencv.org/master/d7/d53/tutorial_py_pose.html">Pose Estimation</a></li>
+<li>OpenCV Tutorials / Camera calibration and 3D reconstruction (calib3d module) / <a target="_blank" rel="noopener" href="https://docs.opencv.org/master/dc/d2c/tutorial_real_time_pose.html">Real time pose estimation of a textured object</a></li>
+</ul>
+<link rel="stylesheet" href="/css/spoiler.css" type="text/css"><script src="/js/spoiler.js" type="text/javascript" async></script>
+                
+
+
+				<br /><br />
+				<blockquote>
+					<p>文章链接：<br /> 
+					<a style="font-size: 0.85rem" target="_blank" rel="noopener" href="https://www.zywvvd.com/notes/study/camera-imaging/pnp/pnp/">https://www.zywvvd.com/notes/study/camera-imaging/pnp/pnp/</a>
+					</p>
+				</blockquote>
+
+
+              </div>
+            
+            <hr/>
+			
+			<!-- 添加打赏模块 -->
+			<div class="reward-container">
+				
+					<button id="rewardBtn" class="reward-btn">
+						 
+							❤ 打赏
+							
+					</button>
+					<p class="tea">“觉得不错的话，给点打赏吧 ୧(๑•̀⌄•́๑)૭”</p>
+					<div id="rewardImgContainer" class="reward-img-container">
+						<div class="singleImgContainer">
+							<img id="wechatImg" class="reward-img" src="https://uipv4.zywvvd.com:33030/HexoFiles/vvd_pc_upload/wechatpay.png" srcset="/img/loading.gif" lazyload alt="微信二维码">
+							<p class="wechatPay">微信支付</p>
+						</div>
+						<div class="singleImgContainer">
+							<img id="alipayImg" class="reward-img" src="https://uipv4.zywvvd.com:33030/HexoFiles/vvd_pc_upload/alipay.png" srcset="/img/loading.gif" lazyload alt="支付宝二维码">
+							<p class="aliPay">支付宝支付</p>
+						</div>
+					</div>
+				
+			</div>
+			
+            <div>
+              <div class="post-metas my-3">
+  
+    <div class="post-meta mr-3 d-flex align-items-center">
+      <i class="iconfont icon-category"></i>
+      
+
+<span class="category-chains">
+  
+  
+    
+      <span class="category-chain">
+        
+  <a href="/categories/Camera/" class="category-chain-item">Camera</a>
+  
+  
+
+      </span>
+    
+  
+</span>
+
+    </div>
+  
+  
+    <div class="post-meta">
+      <i class="iconfont icon-tags"></i>
+      
+        <a href="/tags/Camera/" class="print-no-link">#Camera</a>
+      
+    </div>
+  
+</div>
+
+
+              
+  
+
+  <div class="license-box my-3">
+    <div class="license-title">
+      <div>PNP 算法</div>
+      <div>https://www.zywvvd.com/notes/study/camera-imaging/pnp/pnp/</div>
+    </div>
+    <div class="license-meta">
+      
+        <div class="license-meta-item">
+          <div>作者</div>
+          <div>Yiwei Zhang</div>
+        </div>
+      
+      
+        <div class="license-meta-item license-meta-date">
+          <div>发布于</div>
+          <div>2024年6月26日</div>
+        </div>
+      
+      
+      
+        <div class="license-meta-item">
+          <div>许可协议</div>
+          <div>
+            
+              
+              
+                <a class="print-no-link" target="_blank" href="https://creativecommons.org/licenses/by/4.0/">
+                  <span class="hint--top hint--rounded" aria-label="BY - 署名">
+                    <i class="iconfont icon-by"></i>
+                  </span>
+                </a>
+              
+            
+          </div>
+        </div>
+      
+    </div>
+    <div class="license-icon iconfont"></div>
+  </div>
+
+
+
+              
+                <div class="post-prevnext my-3">
+                  <article class="post-prev col-6">
+                    
+                    
+                      <a href="/notes/study/camera-imaging/ypr/ypr/" title="姿态角">
+                        <i class="iconfont icon-arrowleft"></i>
+                        <span class="hidden-mobile">姿态角</span>
+                        <span class="visible-mobile">上一篇</span>
+                      </a>
+                    
+                  </article>
+                  <article class="post-next col-6">
+                    
+                    
+                      <a href="/notes/study/image-processing/opencv/opencv-onnx/opencv-onnx/" title="OpenCV 调用onnx模型">
+                        <span class="hidden-mobile">OpenCV 调用onnx模型</span>
+                        <span class="visible-mobile">下一篇</span>
+                        <i class="iconfont icon-arrowright"></i>
+                      </a>
+                    
+                  </article>
+                </div>
+              
+            </div>
+
+            
+  
+  
+    <article id="comments" lazyload>
+      
+  <div id="waline"></div>
+  <script type="text/javascript">
+    Fluid.utils.loadComments('#waline', function() {
+      Fluid.utils.createCssLink('https://lib.baomitu.com/waline/2.14.8/waline.min.css')
+      Fluid.utils.createScript('https://lib.baomitu.com/waline/2.14.8/waline.min.js', function() {
+        var options = Object.assign(
+          {"serverURL":"https://uipv4.zywvvd.com:33033/","path":"window.location.pathname","meta":["nick","mail","link"],"requiredMeta":["nick"],"lang":"zh-CN","emoji":["https://cdn.jsdelivr.net/gh/walinejs/emojis/weibo"],"dark":"html[data-user-color-scheme=\"dark\"]","wordLimit":0,"pageSize":10,"reaction":true,"locale":{"placeholder":"山高路远，常来玩吖 ~","reactionTitle":null}},
+          {
+            el: '#waline',
+            path: window.location.pathname
+          }
+        )
+        Waline.init(options);
+        Fluid.utils.waitElementVisible('#waline .vcontent', () => {
+          var imgSelector = '#waline .vcontent img:not(.vemoji)';
+          Fluid.plugins.imageCaption(imgSelector);
+          Fluid.plugins.fancyBox(imgSelector);
+        })
+      });
+    });
+  </script>
+  <noscript>Please enable JavaScript to view the comments</noscript>
+
+
+    </article>
+  
+
+
+          </article>
+        </div>
+      </div>
+    </div>
+
+    <div class="side-col d-none d-lg-block col-lg-2">
+      
+  <aside class="sidebar" style="margin-left: -1rem">
+    <div id="toc">
+  <p class="toc-header">
+    <i class="iconfont icon-list"></i>
+    <span>目录</span>
+  </p>
+  <div class="toc-body" id="toc-body"></div>
+</div>
+
+
+
+  </aside>
+
+
+    </div>
+  </div>
+</div>
+
+
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+  
+  
+
+
+
+
+
+  <script>
+  Fluid.utils.createScript('https://lib.baomitu.com/mermaid/8.14.0/mermaid.min.js', function() {
+    mermaid.initialize({"theme":"default"});
+
+    Fluid.utils.listenDOMLoaded(function() {
+      Fluid.events.registerRefreshCallback(function() {
+        if ('mermaid' in window) {
+          mermaid.init();
+        }
+      });
+    });
+  });
+</script>
+
+
+
+
+
+
+    
+
+    
+      <a id="scroll-top-button" aria-label="TOP" href="#" role="button">
+        <i class="iconfont icon-xiangshangjiantou" aria-hidden="true"></i>
+      </a>
+    
+
+    
+      <div class="modal fade" id="modalSearch" tabindex="-1" role="dialog" aria-labelledby="ModalLabel"
+     aria-hidden="true">
+  <div class="modal-dialog modal-dialog-scrollable modal-lg" role="document">
+    <div class="modal-content">
+      <div class="modal-header text-center">
+        <h4 class="modal-title w-100 font-weight-bold">搜索</h4>
+        <button type="button" id="local-search-close" class="close" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body mx-3">
+        <div class="md-form mb-5">
+          <input type="text" id="local-search-input" class="form-control validate">
+          <label data-error="x" data-success="v" for="local-search-input">关键词</label>
+        </div>
+        <div class="list-group" id="local-search-result"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+    
+
+    
+  </main>
+
+  <footer>
+    <div class="footer-inner">
+  
+    <div class="footer-content">
+       <div class="vvd_footer" style="font-size: 0.85rem;"> <a href="https://hexo.io" target="_blank" rel="nofollow noopener" color="#d7d8d9" data-umami-event="Footer-Hexo"><span class="umami--click--Footer-Hexo">Hexo</span></a> <i class="iconfont icon-love"></i> <a href="https://github.com/fluid-dev/hexo-theme-fluid" target="_blank" rel="nofollow noopener" data-umami-event="Footer-Fluid"><span class="umami--click--Footer-Fluid">Fluid</span></a> <i class="iconfont icon-love"></i> <a href="https://uipv4.zywvvd.com:33039/share/0zx3o21oIpZTZqwC/%E5%8F%88%E8%A7%81%E8%8B%8D%E5%B2%9A" target="_blank" rel="nofollow noopener" data-umami-event="Footer-Umami"><span class="umami--click--Footer-Umami">Umami</span></a> <div style="font-size: 0.85rem;"> <span id="timeDate">载入天数...</span> <span id="times">载入时分秒...</span> <script src="/vvd_js/duration.js"></script> </div> <div style="font-size: 0.85rem;"> <span> 总访问量 <span style="color: #d7d8d9;" id="PVstatic">0</span> 次&nbsp</span> <span> 总访客数 <span style="color: #d7d8d9;" id="UVstatic">0</span> 人&nbsp</span> <span> 当前在线 <span style="color: #d7d8d9;" id="ACTstatic">0</span> 人&nbsp</span> <script src="https://uipv4.zywvvd.com:33037/statistics" defer></script> </div> <div> <span> Copyright © 2020-2024. All Rights Reserved.</span> </div> <div style="font-size: 0.85rem;"> <a target="_blank" rel="noopener" href="https://developer.hitokoto.cn/" id="hitokoto_text"><span style="color: #d7d8d9;"  id="hitokoto"></span></a> <script src="https://uipv4.zywvvd.com:33044/?encode=js&select=%23hitokoto" defer></script> </div> <a href="https://icp.gov.moe/?keyword=20230615" target="_blank">萌ICP备20230615号</a>
+
+
+</div> 
+    </div>
+  
+  
+  
+  
+</div>
+
+  </footer>
+
+  <!-- Scripts -->
+  
+  <script  src="https://lib.baomitu.com/nprogress/0.2.0/nprogress.min.js" ></script>
+  <link  rel="stylesheet" href="https://lib.baomitu.com/nprogress/0.2.0/nprogress.min.css" />
+
+  <script>
+    NProgress.configure({"showSpinner":false,"trickleSpeed":100})
+    NProgress.start()
+    window.addEventListener('load', function() {
+      NProgress.done();
+    })
+  </script>
+
+
+<script  src="https://lib.baomitu.com/jquery/3.6.0/jquery.min.js" ></script>
+<script  src="https://lib.baomitu.com/twitter-bootstrap/4.6.1/js/bootstrap.min.js" ></script>
+<script  src="/js/events.js" ></script>
+<script  src="/js/plugins.js" ></script>
+
+
+
+
+
+  
+    <script  src="/js/img-lazyload.js" ></script>
+  
+
+
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/tocbot/4.18.2/tocbot.min.js', function() {
+    var toc = jQuery('#toc');
+    if (toc.length === 0 || !window.tocbot) { return; }
+    var boardCtn = jQuery('#board-ctn');
+    var boardTop = boardCtn.offset().top;
+
+    window.tocbot.init(Object.assign({
+      tocSelector     : '#toc-body',
+      contentSelector : '.markdown-body',
+      linkClass       : 'tocbot-link',
+      activeLinkClass : 'tocbot-active-link',
+      listClass       : 'tocbot-list',
+      isCollapsedClass: 'tocbot-is-collapsed',
+      collapsibleClass: 'tocbot-is-collapsible',
+      scrollSmooth    : true,
+      includeTitleTags: true,
+      headingsOffset  : -boardTop,
+    }, CONFIG.toc));
+    if (toc.find('.toc-list-item').length > 0) {
+      toc.css('visibility', 'visible');
+    }
+
+    Fluid.events.registerRefreshCallback(function() {
+      if ('tocbot' in window) {
+        tocbot.refresh();
+        var toc = jQuery('#toc');
+        if (toc.length === 0 || !tocbot) {
+          return;
+        }
+        if (toc.find('.toc-list-item').length > 0) {
+          toc.css('visibility', 'visible');
+        }
+      }
+    });
+  });
+</script>
+
+
+  <script src=https://lib.baomitu.com/clipboard.js/2.0.10/clipboard.min.js></script>
+
+  <script>Fluid.plugins.codeWidget();</script>
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/anchor-js/4.3.1/anchor.min.js', function() {
+    window.anchors.options = {
+      placement: CONFIG.anchorjs.placement,
+      visible  : CONFIG.anchorjs.visible
+    };
+    if (CONFIG.anchorjs.icon) {
+      window.anchors.options.icon = CONFIG.anchorjs.icon;
+    }
+    var el = (CONFIG.anchorjs.element || 'h1,h2,h3,h4,h5,h6').split(',');
+    var res = [];
+    for (var item of el) {
+      res.push('.markdown-body > ' + item.trim());
+    }
+    if (CONFIG.anchorjs.placement === 'left') {
+      window.anchors.options.class = 'anchorjs-link-left';
+    }
+    window.anchors.add(res.join(', '));
+
+    Fluid.events.registerRefreshCallback(function() {
+      if ('anchors' in window) {
+        anchors.removeAll();
+        var el = (CONFIG.anchorjs.element || 'h1,h2,h3,h4,h5,h6').split(',');
+        var res = [];
+        for (var item of el) {
+          res.push('.markdown-body > ' + item.trim());
+        }
+        if (CONFIG.anchorjs.placement === 'left') {
+          anchors.options.class = 'anchorjs-link-left';
+        }
+        anchors.add(res.join(', '));
+      }
+    });
+  });
+</script>
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/fancybox/3.5.7/jquery.fancybox.min.js', function() {
+    Fluid.plugins.fancyBox();
+  });
+</script>
+
+
+  <script>Fluid.plugins.imageCaption();</script>
+
+  
+      <script>
+        if (!window.MathJax) {
+          window.MathJax = {
+            tex    : {
+              inlineMath: { '[+]': [['$', '$']] }
+            },
+            options: {
+              renderActions: {
+                insertedScript: [200, () => {
+                  document.querySelectorAll('mjx-container').forEach(node => {
+                    let target = node.parentNode;
+                    if (target.nodeName.toLowerCase() === 'li') {
+                      target.parentNode.classList.add('has-jax');
+                    }
+                  });
+                }, '', false]
+              }
+            }
+          };
+        } else {
+          MathJax.startup.document.state(0);
+          MathJax.texReset();
+          MathJax.typeset();
+          MathJax.typesetPromise();
+        }
+
+        Fluid.events.registerRefreshCallback(function() {
+          if ('MathJax' in window && MathJax.startup.document && typeof MathJax.startup.document.state === 'function') {
+            MathJax.startup.document.state(0);
+            MathJax.texReset();
+            MathJax.typeset();
+            MathJax.typesetPromise();
+          }
+        });
+      </script>
+    
+
+  <script  src="https://lib.baomitu.com/mathjax/3.2.1/es5/tex-mml-chtml.js" ></script>
+
+  <script defer src="/js/leancloud.js" ></script>
+
+  <script  src="/js/local-search.js" ></script>
+
+
+
+
+  
+<script src="//cdn.jsdelivr.net/npm/aplayer/dist/APlayer.min.js"></script>
+<script src="//cdn.jsdelivr.net/gh/metowolf/MetingJS@1.2/dist/Meting.min.js"></script>
+<script src="/js/reward.js"></script>
+
+
+
+<!-- 主题的启动项，将它保持在最底部 -->
+<!-- the boot of the theme, keep it at the bottom -->
+<script  src="/js/boot.js" ></script>
+
+
+  <script type="text/javascript">
+    /*窗口监视*/
+    var originalTitle = document.title;
+    window.onblur = function(){document.title = "明眸如初"};
+    window.onfocus = function(){document.title = originalTitle};
+  </script>
+
+
+  <div id="tooltip-rightmenu" class="tooltip-rightmenu">如需原始右键菜单请按下 <strong>Ctrl+右键</strong></div>
+
+<div id="rightmenu-wrapper" style="">
+  <ul class="list-v rightmenu" id="rightmenu-content">
+	  <li class="navigation menuNavigation-Content">
+		<a class="nav icon-only fix-cursor-default" onclick="history.back()"><i class="iconfont icon-zuojiantou1"></i></a>
+		<a class="nav icon-only fix-cursor-default" onclick="history.forward()"><i class="iconfont icon-youjiantou1"></i></a>
+		<a class="nav icon-only fix-cursor-default" onclick="window.location.reload()"><i class="iconfont icon-shuaxin"></i></a>
+		<a  aria-label="TOP" href="#" role="button"><i class="iconfont icon-xiangshang"></i></a>
+	  </li>
+
+		<hr class="menuLoad-Content" style="display: block;">
+	  <li class="menuLoad-Content" style="display: block;">
+		<a class="vlts-menu fix-cursor-default" target="_self" href="javascript:;" data-toggle="modal" data-target="#modalSearch" aria-label="Search">
+		  <span>
+			  <i class="iconfont icon-sousuo1 rightmenu-icon"></i>
+			  站内搜索
+		  </span>
+		</a>
+	  </li>
+
+	  <li class="menuLoad-Content" style="display: block;">
+		<a class="vlts-menu fix-cursor-default"  href="https://www.zywvvd.com/messagebd/" data-group="link">
+		  <span>
+			  <i class="iconfont icon-yangshi_icon_tongyong_chat rightmenu-icon">  </i>
+			   留言吐槽 
+		   </span>
+		</a>
+	  </li>
+
+
+	  <li class="menuLoad-Content" style="display: block;">
+		<a class="vlts-menu fix-cursor-default" id="help" target="_blank" rel="noopener" href="https://www.foreverblog.cn/go.html" data-group="link">
+		<span>
+			  <i class="iconfont icon-a-BlackHole rightmenu-icon"></i>
+			  虫洞穿梭
+		  </span>
+		</a>
+	  </li>
+
+	<a id="scroll-top-button" aria-label="TOP" href="#" role="button" style="bottom: 20px; right: 52.6364px;">
+        <i class="iconfont icon-xiangshangjiantou" aria-hidden="true"></i>
+      </a>
+
+	<hr class="menuLoad-Content" style="display: block;">
+	
+	  <li class="menuLoad-Content" style="display: block;">
+		<a class="vlts-menu fix-cursor-default" id="destroy-airplane" target="_blank" rel="noopener"  data-group="link">
+		<span>
+			  <i class="iconfont icon-feiji rightmenu-icon"></i>
+			  破坏小飞机
+		  </span>
+		</a>
+	  </li>
+  </ul>
+</div>
+
+<script>
+	var ua = navigator.userAgent;
+	var ipad = ua.match(/(iPad).*OS\s([\d_]+)/),
+		isIphone = !ipad && ua.match(/(iPhone\sOS)\s([\d_]+)/),
+		isAndroid = ua.match(/(Android)\s+([\d.]+)/),
+		isMobile = isIphone || isAndroid;
+
+	if(!isMobile) {
+		// 为按钮添加事件处理器
+		document.getElementById('destroy-airplane').onclick = function() {
+		  console.log('飞机起飞！');
+		  // 定义要执行的JavaScript代码
+		var KICKASSVERSION='2.0';
+		var s = document.createElement('script');
+		s.type='text/javascript';
+		document.body.appendChild(s);
+		s.src='https://uipv4.zywvvd.com:33030/HexoFiles/js/games/airplane/airplane.js';
+		void(0);
+		};
+	}
+</script>
+
+
+
+
+
+<link href="/css/custom.css"type="text/css"rel="stylesheet"/>
+<script src="/vvd_js/right_menu.js" type="text/javascript"></script>
+<link href="/css/right_menu.css"type="text/css"rel="stylesheet"/>
+<script src="/vvd_js/go.js"></script>
+
+
+  <noscript>
+    <div class="noscript-warning">博客在允许 JavaScript 运行的环境下浏览效果更佳</div>
+  </noscript>
+<script src="/live2dw/lib/L2Dwidget.min.js?094cbace49a39548bed64abff5988b05"></script><script>L2Dwidget.init({"pluginRootPath":"live2dw/","pluginJsPath":"lib/","pluginModelPath":"assets/","tagMode":false,"log":false,"model":{"jsonPath":"/live2dw/assets/z16.model.json"},"display":{"position":"left","width":200,"height":400},"mobile":{"show":false},"react":{"opacity":0.9}});</script></body>
+</html>
