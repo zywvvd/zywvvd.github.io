@@ -24,11 +24,23 @@
 <meta property="og:site_name" content="又见苍岚">
 <meta property="og:description" content="FastBEV 在纯视觉方案中性价比较高，本文记录代码复现过程。">
 <meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="https://uipv4.zywvvd.com:33030/HexoFiles/vvd_image_files/202409091011848.png">
+<meta property="og:image" content="https://uipv4.zywvvd.com:33030/HexoFiles/vvd_image_files/202409091019703.png">
+<meta property="og:image" content="https://uipv4.zywvvd.com:33030/HexoFiles/vvd_image_files/202409091021532.png">
+<meta property="og:image" content="https://uipv4.zywvvd.com:33030/HexoFiles/vvd_image_files/202409091022170.png">
+<meta property="og:image" content="https://uipv4.zywvvd.com:33030/HexoFiles/vvd_image_files/202409091024049.png">
+<meta property="og:image" content="https://uipv4.zywvvd.com:33030/HexoFiles/vvd_image_files/202409091024346.png">
+<meta property="og:image" content="https://uipv4.zywvvd.com:33030/HexoFiles/vvd_image_files/202409091025880.png">
+<meta property="og:image" content="https://uipv4.zywvvd.com:33030/HexoFiles/vvd_image_files/202409091027527.png">
+<meta property="og:image" content="https://uipv4.zywvvd.com:33030/HexoFiles/vvd_image_files/202409091028217.png">
+<meta property="og:image" content="https://uipv4.zywvvd.com:33030/HexoFiles/vvd_image_files/202409091032326.png">
+<meta property="og:image" content="https://uipv4.zywvvd.com:33030/HexoFiles/vvd_image_files/202409091036683.png">
 <meta property="article:published_time" content="2024-09-06T03:30:58.000Z">
-<meta property="article:modified_time" content="2024-09-06T09:14:22.261Z">
+<meta property="article:modified_time" content="2024-09-09T02:36:39.445Z">
 <meta property="article:author" content="Yiwei Zhang">
 <meta property="article:tag" content="Deep_Learning">
 <meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:image" content="https://uipv4.zywvvd.com:33030/HexoFiles/vvd_image_files/202409091011848.png">
   
   
   
@@ -630,7 +642,7 @@
         <i class="iconfont icon-chart"></i>
         
           <!-- compatible with older versions-->
-          103 字
+          1.1k 字
         
       </span>
     
@@ -642,7 +654,7 @@
         
         
           <!-- compatible with older versions-->
-          1 分钟
+          9 分钟
         
       </span>
     
@@ -830,7 +842,7 @@
                 
                   
                     <!-- compatible with older versions-->
-                    本文最后更新于：2024年9月6日 下午
+                    本文最后更新于：2024年9月9日 上午
                   
                 
               </p>
@@ -855,11 +867,141 @@
 <li>模型训练</li>
 </ol>
 <h3 id="环境准备">环境准备</h3>
+<h4 id="环境需求">环境需求</h4>
+<ul>
+<li>CUDA&gt;=9.2</li>
+<li>GCC&gt;=5.4</li>
+<li>Python&gt;=3.6</li>
+<li>Pytorch&gt;=1.8.1</li>
+<li>Torchvision&gt;=0.9.1</li>
+<li>MMCV-full==1.4.0</li>
+<li>MMDetection==2.14.0</li>
+<li>MMSegmentation==0.14.1</li>
+</ul>
+<p>上述环境为官方代码仓库所记录的需求</p>
+<h4 id="实际环境">实际环境</h4>
+<p>这里记录我的环境配置</p>
+<ul>
+<li>Ubuntu 22.04</li>
+<li>CUDA 11.3</li>
+<li>gcc / g++ 9.5.0</li>
+<li>python 3.8.19</li>
+<li>pytorch 1.10.0+cu113</li>
+<li>torchvision 0.11.0+cu113</li>
+<li>mmcv-full 1.4.0</li>
+<li>mmdetection 2.14.0</li>
+<li>mmsegmentation 0.14.1</li>
+<li>mmdet3d 0.16.0</li>
+</ul>
+<h4 id="环境配置">环境配置</h4>
+<p>说明： 这里说明一下，为之后的同学填坑</p>
+<ol>
+<li>
+<p>mmcv-full 1.4.0 比较久远了其实，因此所需环境也比较古老，mmlab 提供的 <a target="_blank" rel="noopener" href="https://download.openmmlab.com/mmcv/dist/index.html">whl</a> 并未包含该版本，因此安装需要自己编译，但是编译过程中需要引入 pytorch 的 <code>THC/THC.h</code> <a target="_blank" rel="noopener" href="https://discuss.pytorch.org/t/question-about-thc-thc-h/147145">头文件</a>，而 pytorch 在 1.10 以后的版本（1.11+）将该文件删除了，因此最高 pytorch 版本为 1.10</p>
+</li>
+<li>
+<p>mmcv-full 和 pytorch 版本既然锁死，到 Pytorch 的安装界面中可以看到，1.10 版本的 torch 支持最高版本的 CUDA 为 11.3, 因此 CUDA 版本我定在了 11.3</p>
+</li>
+<li>
+<p>在 <a target="_blank" rel="noopener" href="https://docs.nvidia.com/cuda/archive/11.3.0/cuda-installation-guide-linux/index.html">cuda 11.3</a> 的官方文档中，记录了所需的 gcc 版本</p>
+<p><img src="https://uipv4.zywvvd.com:33030/HexoFiles/vvd_image_files/202409091011848.png" srcset="/img/loading.gif" lazyload alt=""></p>
+<p>可以看到 gcc 版本为 9.x，因此我在当前使用了 9.5 的 gcc 版本</p>
+</li>
+<li>
+<p>其他环境正常安装就好了</p>
+</li>
+</ol>
+<h5 id="CUDA-11-3">CUDA 11.3</h5>
+<p>下载地址：<a target="_blank" rel="noopener" href="https://developer.nvidia.com/cuda-11.3.0-download-archive">https://developer.nvidia.com/cuda-11.3.0-download-archive</a></p>
+<h5 id="pytorch">pytorch</h5>
 <figure class="highlight apache"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><code class="hljs apache"><span class="hljs-attribute">pip</span> install torch==<span class="hljs-number">1</span>.<span class="hljs-number">10</span>.<span class="hljs-number">0</span>+cu113 -f https://download.pytorch.org/whl/torch_stable.html<br><span class="hljs-attribute">pip</span> install torchvision==<span class="hljs-number">0</span>.<span class="hljs-number">11</span>.<span class="hljs-number">0</span>+cu113 -f https://download.pytorch.org/whl/torch_stable.html<br></code></pre></td></tr></table></figure>
+<h5 id="gcc-版本">gcc 版本</h5>
+<p><a href="https://www.zywvvd.com/notes/system/linux/gcc-multi-version/gcc-multi-version/">gcc 版本选择</a></p>
+<h5 id="python-packages">python packages</h5>
+<figure class="highlight apache"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><code class="hljs apache"><span class="hljs-comment"># 安装mmcv-full</span><br><span class="hljs-attribute">pip</span> install mmcv-full==<span class="hljs-number">1</span>.<span class="hljs-number">4</span>.<span class="hljs-number">0</span><br><br><span class="hljs-comment"># 安装mmdet</span><br><span class="hljs-attribute">pip</span> install mmdet==<span class="hljs-number">2</span>.<span class="hljs-number">14</span>.<span class="hljs-number">0</span><br><br><span class="hljs-comment"># 安装mmdet</span><br><span class="hljs-attribute">pip</span> install mmsegmentation==<span class="hljs-number">0</span>.<span class="hljs-number">14</span>.<span class="hljs-number">1</span><br></code></pre></td></tr></table></figure>
+<h4 id="下载-fastBev-源码">下载 fastBev 源码</h4>
+<p>仓库地址：<a target="_blank" rel="noopener" href="https://github.com/Sense-GVT/Fast-BEV">https://github.com/Sense-GVT/Fast-BEV</a></p>
+<p>将 fast-bev 安装到 python 环境</p>
+<figure class="highlight cmake"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs cmake">pip <span class="hljs-keyword">install</span> -v -e . <br></code></pre></td></tr></table></figure>
+<h3 id="准备数据集">准备数据集</h3>
+<h4 id="数据下载">数据下载</h4>
+<p>nuscenes数据集，<a target="_blank" rel="noopener" href="https://www.nuscenes.org/nuscenes#download">nuscenes下载地址</a></p>
+<p>这里只测试 nuscense 提供 mini 版本, 下载 map 跟 mini：</p>
+<p><img src="https://uipv4.zywvvd.com:33030/HexoFiles/vvd_image_files/202409091019703.png" srcset="/img/loading.gif" lazyload alt=""></p>
+<ul>
+<li>
+<p>下载后得到2个压缩的文件</p>
+<ul>
+<li>nuScenes-map-expansion-v1.3.zip</li>
+<li>v1.0-mini.tgz</li>
+</ul>
+</li>
+<li>
+<p>解压到当前目录<br>
+解压得到<code>nuScenes-map-expansion-v1.3与v1.0-mini</code>两个目录, 把<code>nuScenes-map-expansion-v1.3</code>中的三个文件复制到<code>v1.0-mini/map</code>目录下。最终得到新<code>v1.0-mini</code>目录，就行训练所需的数据集。</p>
+</li>
+</ul>
+<p><img src="https://uipv4.zywvvd.com:33030/HexoFiles/vvd_image_files/202409091021532.png" srcset="/img/loading.gif" lazyload alt=""></p>
+<ul>
+<li>
+<p>数据集转换为FastBEV支持格式</p>
+<p>进入<code>Fast-BEV</code>工程目标, 创建data目录，然后将上面的<code>v1.0-mini</code>文件夹复制到<code>./Fast-BEV/data</code>下, 并将<code>v1.0-mini</code>重命名为<code>nuscenes</code>， 目录结构如下图所示：</p>
+<p><img src="https://uipv4.zywvvd.com:33030/HexoFiles/vvd_image_files/202409091022170.png" srcset="/img/loading.gif" lazyload alt=""></p>
+<p>因为使用的mini数据集, 转换时候加上参数<code>--version</code> 该数据未提供<code>v1.0-test</code>文件</p>
+<p>如果使用全部的nuscenes数据可以不加<code>--version</code></p>
+</li>
+</ul>
+<h4 id="数据生成">数据生成</h4>
+<ol>
+<li><strong>运行create_data.py</strong></li>
+</ol>
+<figure class="highlight jboss-cli"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs jboss-cli">python tools/create_data.py nuscenes <span class="hljs-params">--root-path</span> <span class="hljs-string">./data/nuscenes</span> <span class="hljs-params">--out-dir</span> <span class="hljs-string">./data/nuscenes</span> <span class="hljs-params">--extra-tag</span> nuscenes <span class="hljs-params">--workers</span> 10 <span class="hljs-params">--version</span> v1.0-mini<br></code></pre></td></tr></table></figure>
+<p>执行后，产生下面红框中的文件</p>
+<p><img src="https://uipv4.zywvvd.com:33030/HexoFiles/vvd_image_files/202409091024049.png" srcset="/img/loading.gif" lazyload alt=""></p>
+<ol start="2">
+<li><strong>运行nuscenes_seq_converter.py</strong></li>
+</ol>
+<p>由于使用的mini数据集无test文件，需要修改<strong>nuscenes_seq_converter.py</strong>文件，找到代码15行和20行，修改如下：</p>
+<p><img src="https://uipv4.zywvvd.com:33030/HexoFiles/vvd_image_files/202409091024346.png" srcset="/img/loading.gif" lazyload alt=""></p>
+<p>修改后，运行：</p>
+<figure class="highlight vim"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs vim"><span class="hljs-keyword">python</span> tools/data_converter/nuscenes_seq_converter.<span class="hljs-keyword">py</span><br></code></pre></td></tr></table></figure>
+<p>生成 <strong><code>nuscenes_infos_train_4d_interval3_max60.pkl</code></strong> 与 <strong><code>nuscenes_infos_val_4d_interval3_max60.pkl</code></strong> 两个文件,<br>
+这两个文件就是训练需要的数据集，如下图所示：</p>
+<p><img src="https://uipv4.zywvvd.com:33030/HexoFiles/vvd_image_files/202409091025880.png" srcset="/img/loading.gif" lazyload alt=""></p>
+<ol start="3">
+<li>
+<p>修改 <code>dataset</code> 文件 <code>nuscenes_monocular_dataset_map_2.py</code></p>
+<p><img src="https://uipv4.zywvvd.com:33030/HexoFiles/vvd_image_files/202409091027527.png" srcset="/img/loading.gif" lazyload alt=""></p>
+<p>修改第 27 行</p>
+<p><img src="https://uipv4.zywvvd.com:33030/HexoFiles/vvd_image_files/202409091028217.png" srcset="/img/loading.gif" lazyload alt=""></p>
+</li>
+</ol>
+<h3 id="训练">训练</h3>
+<h4 id="预训练模型">预训练模型</h4>
+<p>模型 <a target="_blank" rel="noopener" href="https://drive.google.com/drive/folders/19BD4totDHtwnHtOqTdn0xYJh7stwYd9l">下载链接</a> ，提供了<code>r18,r34,r50</code>三种残差网络模型。这里下载 <code>cascade_mask_rcnn_r18_fpn_coco-mstrain_3x_20e_nuim_bbox_mAP_0.5110_segm_mAP_0.4070.pth</code></p>
+<p>下载后，新建一个<code>pretrained_models</code>目录放入其中。</p>
+<p><img src="https://uipv4.zywvvd.com:33030/HexoFiles/vvd_image_files/202409091032326.png" srcset="/img/loading.gif" lazyload alt=""></p>
+<h4 id="修改配置文件"><strong>修改配置文件</strong></h4>
+<p>以 <strong><code>configs/fastbev/exp/paper/fastbev_m0_r18_s256x704_v200x200x4_c192_d2_f4.py</code></strong>,文件为例：</p>
+<ul>
+<li>将该配置文件中的将SyncBN改成BN，将AdamW2换成Adam;</li>
+<li>该配置文件中146行代码去掉注释; 147-150代码加上注释, 如下所示</li>
+</ul>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><code class="hljs python">file_client_args = <span class="hljs-built_in">dict</span>(backend=<span class="hljs-string">&#x27;disk&#x27;</span>)<br><span class="hljs-comment"># file_client_args = dict(</span><br><span class="hljs-comment"># backend=&#x27;petrel&#x27;,</span><br><span class="hljs-comment"># path_mapping=dict(&#123;</span><br><span class="hljs-comment"># data_root: &#x27;public-1424:s3://openmmlab/datasets/detection3d/nuscenes/&#x27;&#125;))</span><br></code></pre></td></tr></table></figure>
+<p>安装setuptools-58.0.4版本</p>
+<figure class="highlight apache"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs apache"><span class="hljs-attribute">pip</span> install setuptools==<span class="hljs-number">58</span>.<span class="hljs-number">0</span>.<span class="hljs-number">4</span><br></code></pre></td></tr></table></figure>
+<p>配置文件中预训练模型地址修改， 代码331行，<code>load_from</code>参数指向第1步下载的预训练模型地址，如果不知道相对路径，可以直接给绝对路径，我这里是相对路径</p>
+<figure class="highlight 1c"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs 1c">load_from = &#x27;pretrained_models/cascade_mask_rcnn_r18_fpn_coco-mstrain_3x_20e_nuim_bbox_mAP_0.<span class="hljs-number">5110</span>_segm_mAP_0.<span class="hljs-number">4070</span>.pth&#x27;<br></code></pre></td></tr></table></figure>
+<h4 id="训练-2"><strong>训练</strong></h4>
+<figure class="highlight stylus"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs stylus">python tools/train<span class="hljs-selector-class">.py</span> configs/fastbev/exp/paper/fastbev_m0_r18_s256x704_v200x200x4_c192_d2_f4<span class="hljs-selector-class">.py</span> <span class="hljs-attr">--work-dir</span> work_dir <span class="hljs-attr">--gpu-ids</span> <span class="hljs-number">0</span><br></code></pre></td></tr></table></figure>
+<p>参数说明</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><code class="hljs python">--gpu-ids  <span class="hljs-number">0</span>代表gpu使用第<span class="hljs-number">1</span>块。本机只有一块gpu<br>--work-<span class="hljs-built_in">dir</span>  输出文件目录，包含日志等文件<br>其他参数详情建train.py中parse_args()函数<br></code></pre></td></tr></table></figure>
+<p><img src="https://uipv4.zywvvd.com:33030/HexoFiles/vvd_image_files/202409091036683.png" srcset="/img/loading.gif" lazyload alt=""></p>
 <h3 id="参考资料">参考资料</h3>
 <ul>
 <li><a target="_blank" rel="noopener" href="https://blog.csdn.net/h904798869/article/details/130317240?spm=1001.2014.3001.5502">https://blog.csdn.net/h904798869/article/details/130317240?spm=1001.2014.3001.5502</a></li>
 <li><a target="_blank" rel="noopener" href="https://github.com/Sense-GVT/Fast-BEV">https://github.com/Sense-GVT/Fast-BEV</a></li>
+<li><a target="_blank" rel="noopener" href="https://download.openmmlab.com/mmcv/dist/index.html">https://download.openmmlab.com/mmcv/dist/index.html</a></li>
 </ul>
 <link rel="stylesheet" href="/css/spoiler.css" type="text/css"><script src="/js/spoiler.js" type="text/javascript" async></script>
                 
