@@ -27,7 +27,7 @@
 <meta property="og:image" content="https://uipv4.zywvvd.com:33030/HexoFiles/vvd_image_files/202410101345316.png">
 <meta property="og:image" content="https://uipv4.zywvvd.com:33030/HexoFiles/vvd_image_files/202410101346996.png">
 <meta property="article:published_time" content="2024-10-10T03:42:58.000Z">
-<meta property="article:modified_time" content="2024-10-10T05:48:04.563Z">
+<meta property="article:modified_time" content="2024-10-10T06:20:24.249Z">
 <meta property="article:author" content="Yiwei Zhang">
 <meta property="article:tag" content="3D">
 <meta name="twitter:card" content="summary_large_image">
@@ -900,11 +900,13 @@
 <p>ICP算法本质上是基于最小二乘法的最优配准方法。该算法重复进行选择对应关系点对， 计算最优刚体变换，直到满足正确配准的收敛精度要求。算法的目的是要找到待配准点云数据与参考云数据之间的旋转参数R和平移参数 T，使得两点数据之间满足某种度量准则下的最优匹配。</p>
 <h3 id="ICP-算法描述">ICP 算法描述</h3>
 <p><img src="https://uipv4.zywvvd.com:33030/HexoFiles/vvd_image_files/202410101346996.png" srcset="/img/loading.gif" lazyload alt=""></p>
-<p>对于 $𝑇$ 是刚性变换的情形，点云配准问题可以描述为：<br>
-$$<br>
-\begin{equation} R^{\ast}, t^{\ast} = \mathop{\arg\min}<em>{R, t} \frac{1}{|P_s|} \sum</em>{i=1}^{|P_s|} || p_t^i - (R \cdot p_s^i + t) ||^2 \end{equation}<br>
-$$<br>
-这里 $𝑝_𝑠$ 和 $p_t$ 是源点云和目标点云中的一一对应点。</p>
+<p>对于 $𝑇$ 是刚性变换的情形，点云配准问题可以描述为：</p>
+
+$$
+\begin{equation} R^{\ast}, t^{\ast} = \mathop{\arg\min}_{R, t} \frac{1}{|P_s|} \sum_{i=1}^{|P_s|} || p_t^i - (R \cdot p_s^i + t) ||^2 \end{equation}
+$$
+
+<p>这里 $𝑝_𝑠$ 和 $p_t$ 是源点云和目标点云中的一一对应点。</p>
 <p>ICP 算法的直观想法如下：</p>
 <ul>
 <li>如果我们知道两幅点云上点的对应关系，那么我们可以用 Least Squares 来求解 R, t 参数；</li>
@@ -947,93 +949,109 @@ $$<br>
 </ul>
 <h4 id="求解最优变换（Find-Best-Transform）">求解最优变换（Find Best Transform）</h4>
 <p>对于 point-to-point ICP 问题，求最优变换是有闭形式解（closed-form solution）的，可以借助 SVD 分解来计算。</p>
-<p>先给出结论，在已知点的对应关系的情况下，设 $\bar p_s$, $\bar p_t$ 分别表示源点云和目标点云的质心，令 $\hat p_s^i = p_s^i - \bar p_s$，$\hat p_t^i = p_t^i - \bar p_t$ ，令:<br>
-$$<br>
-H = \sum_{i=1}^{|P_s|} {\hat p_s^i} {\hat p_t<sup>i}</sup>T<br>
-$$<br>
-，这是一个 $3 \times3$ 矩阵，对 H 进行 SVD 分解得到 $H = U \Sigma V^T$ ，则 point-to-point ICP 问题最优旋转为：<br>
-$$<br>
-\begin{equation} R^{\ast} = V U^T \end{equation}<br>
-$$<br>
-最优平移为：<br>
-$$<br>
-\begin{equation} t^{\ast} = \bar p_t - R^{\ast} \bar p_s \end{equation}<br>
-$$<br>
-下面分别给出证明。</p>
+<p>先给出结论，在已知点的对应关系的情况下，设 $\bar p_s$, $\bar p_t$ 分别表示源点云和目标点云的质心，令 $\hat p_s^i = p_s^i - \bar p_s$，$\hat p_t^i = p_t^i - \bar p_t$ ，令:</p>
+
+$$
+H = \sum_{i=1}^{|P_s|} {\hat p_s^i} {\hat p_t^i}^T
+$$
+这是一个 $3 \times3$ 矩阵，对 H 进行 SVD 分解得到 $H = U \Sigma V^T$ ，则 point-to-point ICP 问题最优旋转为：
+$$
+\begin{equation} R^{\ast} = V U^T \end{equation}
+$$
+最优平移为：
+$$
+\begin{equation} t^{\ast} = \bar p_t - R^{\ast} \bar p_s \end{equation}
+$$
+下面分别给出证明。
+
+
 <h5 id="计算最优平移">计算最优平移</h5>
-<p>令 $N = |P_s|$ ，设 $F(t) = \sum_{i=1}^{N} ||(R \cdot p_s^i + t) - p_t<sup>i||</sup>2$ ，对其进行求导，则有：<br>
-$$<br>
-\begin{equation} \begin{aligned} \frac{\partial F}{\partial t} &amp;= \sum_{i=1}^{N} 2 (R \cdot p_s^i + t - p_t^i) \ &amp;= 2nt + 2R\sum_{i=1}<sup>{N}p_s</sup>i - 2\sum_{i=1}<sup>{N}p_t</sup>i \end{aligned} \end{equation}<br>
-$$<br>
-令导数为 0 ，则有：<br>
-$$<br>
-\begin{equation} \begin{aligned} t &amp;= \frac{1}{N} \sum_{i=1}^{N} p_t^i - R \frac{1}{N} \sum_{i=1}^{N} p_s^i \ &amp;= \bar p_t - R \bar p_s \end{aligned} \end{equation}<br>
-$$<br>
-无论 R 取值如何，根据上式我们都可以求得最优的 t，使得 loss 最小。下面我们来推导最优旋转的计算公式。</p>
+
+
+令 $N = |P_s|$ ，设 $F(t) = \sum_{i=1}^{N} ||(R \cdot p_s^i + t) - p_t^i||^2$ ，对其进行求导，则有：
+$$
+\begin{equation} \begin{aligned} \frac{\partial F}{\partial t} &= \sum_{i=1}^{N} 2 (R \cdot p_s^i + t - p_t^i) \\ &= 2nt + 2R\sum_{i=1}^{N}p_s^i - 2\sum_{i=1}^{N}p_t^i \end{aligned} \end{equation}
+$$
+令导数为 0 ，则有：
+$$
+\begin{equation} \begin{aligned} t &= \frac{1}{N} \sum_{i=1}^{N} p_t^i - R \frac{1}{N} \sum_{i=1}^{N} p_s^i \\ &= \bar p_t - R \bar p_s \end{aligned} \end{equation}
+$$
+
+<p>无论 R 取值如何，根据上式我们都可以求得最优的 t，使得 loss 最小。下面我们来推导最优旋转的计算公式。</p>
 <h5 id="计算最优旋转">计算最优旋转</h5>
 <p>经过最优平移的推导，我们知道无论旋转如何取值，都可以通过计算点云的质心来得到最优平移，为了下面计算上的简便，我们不妨不考虑平移的影响，先将源点云和目标点云都转换到质心坐标下，这也就是之前令 $\hat p_s^i = p_s^i - \bar p_s$ , $\hat p_t^i = p_t^i - \bar p_t$ 的意义。</p>
 <blockquote>
 <p>下面我们用 $\hat p_s^i$ 和 $\hat p_t^i$ 进行推导。</p>
 </blockquote>
-<p>不考虑平移，则 loss 可以写成：<br>
-$$<br>
-\begin{equation} F® = \sum_{i=1}^{N} ||R \cdot \hat p_s^i - \hat p_t<sup>i||</sup>2 \end{equation}<br>
-$$<br>
-先化简 $||R \cdot \hat p_s^i - \hat p_t<sup>i||</sup>2$:<br>
-$$<br>
-\begin{equation} \begin{aligned} ||R \cdot \hat p_s^i - \hat p_t<sup>i||</sup>2 &amp;= (R \cdot \hat p_s^i - \hat p_t<sup>i)</sup>T(R \cdot \hat p_s^i - \hat p_t^i) \ &amp;= ({\hat p_s<sup>i}</sup>T R^T - {\hat p_t<sup>i}</sup>T)(R \cdot \hat p_s^i - \hat p_t^i) \ &amp;= {\hat p_s<sup>i}</sup>T R^T R {\hat p_s^i} - {\hat p_t<sup>i}</sup>T R {\hat p_s^i} - {\hat p_s<sup>i}</sup>T R^T {\hat p_t^i} + {\hat p_t<sup>i}</sup>T {\hat p_t^i} \ &amp;= ||{\hat p_s<sup>i}||</sup>2 + ||{\hat p_t<sup>i}||</sup>2 - {\hat p_t<sup>i}</sup>T R {\hat p_s^i} - {\hat p_s<sup>i}</sup>T R^T {\hat p_t^i} \ &amp;= ||{\hat p_s<sup>i}||</sup>2 + ||{\hat p_t<sup>i}||</sup>2 - 2{\hat p_t<sup>i}</sup>T R {\hat p_s^i} \end{aligned} \end{equation}<br>
-$$</p>
+<p>不考虑平移，则 loss 可以写成：</p>
+
+$$
+\begin{equation} F(R) = \sum_{i=1}^{N} ||R \cdot \hat p_s^i - \hat p_t^i||^2 \end{equation}
+$$
+先化简 $||R \cdot \hat p_s^i - \hat p_t^i||^2$:
+$$
+\begin{equation} \begin{aligned} ||R \cdot \hat p_s^i - \hat p_t^i||^2 &= (R \cdot \hat p_s^i - \hat p_t^i)^T(R \cdot \hat p_s^i - \hat p_t^i) \\ &= ({\hat p_s^i}^T R^T - {\hat p_t^i}^T)(R \cdot \hat p_s^i - \hat p_t^i) \\ &= {\hat p_s^i}^T R^T R {\hat p_s^i} - {\hat p_t^i}^T R {\hat p_s^i} - {\hat p_s^i}^T R^T {\hat p_t^i} + {\hat p_t^i}^T {\hat p_t^i} \\ &= ||{\hat p_s^i}||^2 + ||{\hat p_t^i}||^2 - {\hat p_t^i}^T R {\hat p_s^i} - {\hat p_s^i}^T R^T {\hat p_t^i} \\ &= ||{\hat p_s^i}||^2 + ||{\hat p_t^i}||^2 - 2{\hat p_t^i}^T R {\hat p_s^i} \end{aligned} \end{equation}
+$$
+
+
 <blockquote>
-<p>这里利用到了 $R^T R = I$ 和 ${\hat p_t<sup>i}</sup>T R {\hat p_s^i} = {\hat p_s<sup>i}</sup>T R^T {\hat p_t^i}$ （标量的转置等于自身）的性质。</p>
+这里利用到了 $R^T R = I$ 和 ${\hat p_t^i}^T R {\hat p_s^i} = {\hat p_s^i}^T R^T {\hat p_t^i}$ （标量的转置等于自身）的性质。
 </blockquote>
-<p>由于点的坐标是确定的(和 R 无关)，所以最小化原 loss 等价于求：<br>
-$$<br>
-\begin{equation} R^{\ast} = \mathop{\arg\min}<em>{R} (-2 \sum</em>{i=1}^{N} {\hat p_t<sup>i}</sup>T R {\hat p_s^i}) \end{equation}<br>
-$$<br>
-也即为求：<br>
-$$<br>
-\begin{equation} R^{\ast} = \mathop{\arg\max}<em>{R} (\sum</em>{i=1}^{N} {\hat p_t<sup>i}</sup>T R {\hat p_s^i}) \end{equation}<br>
-$$<br>
-注意到 $\sum_{i=1}^{N} {\hat p_t<sup>i}</sup>T R {\hat p_s^i} = trace(P_t^T R P_s)$ （由矩阵乘法及 trace 的定义可得）</p>
-<p>则问题转化为：<br>
-$$<br>
-\begin{equation} R^{\ast} = \mathop{\arg\max}<em>{R} trace(P_t^T R P_s) \end{equation}<br>
-$$<br>
-根据 trace 的性质 $trace(AB)=trace(BA)$，（这里不要求 A, B 为方阵，只要 $A*B$ 是方阵即可），有：<br>
-$$<br>
-\begin{equation} trace(P_t^T R P_s) = trace(R P_s P_t^T) \end{equation}<br>
-$$<br>
-还记得前面定义的矩阵 H 和其 SVD 分解吗？带入上式得到：<br>
-$$<br>
-\begin{equation} \begin{aligned} trace(P_t^T R P_s) &amp;= trace(R P_s P_t^T) \ &amp;= trace(R H) \ &amp;= trace(R U \Sigma V^T) \ &amp;= trace(\Sigma V^T R U) \end{aligned} \end{equation}<br>
-$$<br>
-注意这里 $𝑉,𝑈,𝑅$ 都是正交矩阵（orthogonal matrices），所以 $V^T R U$ 也是正交矩阵。令<br>
-$$<br>
-M = V^T R U = \left[ \begin{array}{cccc} m</em>{11} &amp; m_{12} &amp; m_{13} \ m_{21} &amp; m_{22} &amp; m_{23} \ m_{31} &amp; m_{32} &amp; m_{33} \end{array} \right]<br>
-$$<br>
-则有：<br>
-$$<br>
-\begin{equation} \begin{aligned} trace(\Sigma V^T R U) &amp;= trace(\Sigma M) \ &amp; = \sigma_1 m_{11} + \sigma_2 m_{22} + \sigma_1 m_{33} \end{aligned} \end{equation}<br>
-$$<br>
-根据奇异值非负的性质和正交矩阵的性质（正交矩阵中的元素绝对值不大于 1），容易证得只有当 𝑀 为单位阵时 $trace(ΣM)$ 最大，即：<br>
-$$<br>
-\begin{equation} \begin{aligned} V^T R U = I \ R = V U^T \end{aligned} \end{equation}<br>
-$$<br>
-所以有 $R^{\ast} = V U^T$。</p>
-<p>最后还需要进行 Orientation rectification，即验证 $R^{\ast} = V U^T$ 是不是一个旋转矩阵（检查是否有 $|R|=1$），因为存在 $|R|=−1$ 的可能，此时 $𝑅$ 表示的不是旋转而是一个 reflection，所以我们还要给上述优化求解加上一个 $|R|=1$ 的约束。</p>
-<p>根据矩阵行列式的性质，以及 $U, V$ 都是正交阵：<br>
-$$<br>
-\begin{equation} \begin{aligned} |M| &amp;= |V^T| |U| |R| \ &amp;= |V^T| |U| = \pm 1 \end{aligned} \end{equation}<br>
-$$<br>
-如果 $|VU^T|=1$，则 $|M|=1$， $R<sup>∗=VU</sup>T$ 已经给出最优旋转；如果 $|VU^T|=−1$，则 $|M|=−1$，我们需要求解此时的 $𝑅$，也就是分析 $M$ 应该具有何种形式。具体的讨论请参考<a target="_blank" rel="noopener" href="http://www.math.pku.edu.cn/teachers/yaoy/Fall2011/arun.pdf">这里</a>，本文直接给出结论：当 $|M|=−1$ 时，使得 $𝑡𝑟𝑎𝑐𝑒(Σ𝑀) $ 最大的 $𝑀$ 为：<br>
-$$<br>
-\begin{equation} M = \left[ \begin{array}{cccc} 1 &amp; 0 &amp; 0 \ 0 &amp; 1 &amp; 0 \ 0 &amp; 0 &amp; -1 \end{array} \right] \end{equation}<br>
-$$<br>
-综合考虑 $|M|=1$ 和 $|M|=−1$ 两种情况，我们可以得到：<br>
-$$<br>
-\begin{equation} R^{\ast} = V \left[ \begin{array}{cccc} 1 &amp; 0 &amp; 0 \ 0 &amp; 1 &amp; 0 \ 0 &amp; 0 &amp; |V U^T| \end{array} \right] U^T \end{equation}<br>
-$$<br>
-简单总结一下求解最优变换的步骤：</p>
+<p>由于点的坐标是确定的(和 R 无关)，所以最小化原 loss 等价于求：</p>
+
+$$
+\begin{equation} R^{\ast} = \mathop{\arg\min}_{R} (-2 \sum_{i=1}^{N} {\hat p_t^i}^T R {\hat p_s^i}) \end{equation}
+$$
+也即为求：
+$$
+\begin{equation} R^{\ast} = \mathop{\arg\max}_{R} (\sum_{i=1}^{N} {\hat p_t^i}^T R {\hat p_s^i}) \end{equation}
+$$
+注意到 $\sum_{i=1}^{N} {\hat p_t^i}^T R {\hat p_s^i} = trace(P_t^T R P_s)$ （由矩阵乘法及 trace 的定义可得）
+
+则问题转化为：
+$$
+\begin{equation} R^{\ast} = \mathop{\arg\max}_{R} trace(P_t^T R P_s) \end{equation}
+$$
+根据 trace 的性质 $trace(AB)=trace(BA)$，（这里不要求 A, B 为方阵，只要 $A*B$ 是方阵即可），有：
+$$
+\begin{equation} trace(P_t^T R P_s) = trace(R P_s P_t^T) \end{equation}
+$$
+还记得前面定义的矩阵 H 和其 SVD 分解吗？带入上式得到：
+$$
+\begin{equation} \begin{aligned} trace(P_t^T R P_s) &= trace(R P_s P_t^T) \\ &= trace(R H) \\ &= trace(R U \Sigma V^T) \\ &= trace(\Sigma V^T R U) \end{aligned} \end{equation}
+$$
+注意这里 $𝑉,𝑈,𝑅$ 都是正交矩阵（orthogonal matrices），所以 $V^T R U$ 也是正交矩阵。令
+$$
+M = V^T R U = \left[ \begin{array}{cccc} m_{11} & m_{12} & m_{13} \\ m_{21} & m_{22} & m_{23} \\ m_{31} & m_{32} & m_{33} \end{array} \right]
+$$
+则有：
+$$
+\begin{equation} \begin{aligned} trace(\Sigma V^T R U) &= trace(\Sigma M) \\ & = \sigma_1 m_{11} + \sigma_2 m_{22} + \sigma_1 m_{33} \end{aligned} \end{equation}
+$$
+根据奇异值非负的性质和正交矩阵的性质（正交矩阵中的元素绝对值不大于 1），容易证得只有当 𝑀 为单位阵时 $trace(ΣM)$ 最大，即：
+$$
+\begin{equation} \begin{aligned} V^T R U = I \\ R = V U^T \end{aligned} \end{equation}
+$$
+所以有 $R^{\ast} = V U^T$。
+
+最后还需要进行 Orientation rectification，即验证 $R^{\ast} = V U^T$ 是不是一个旋转矩阵（检查是否有 $|R|=1$），因为存在 $|R|=−1$ 的可能，此时 $𝑅$ 表示的不是旋转而是一个 reflection，所以我们还要给上述优化求解加上一个 $|R|=1$ 的约束。
+
+根据矩阵行列式的性质，以及 $U, V$ 都是正交阵：
+$$
+\begin{equation} \begin{aligned} |M| &= |V^T| |U| |R| \\ &= |V^T| |U| = \pm 1 \end{aligned} \end{equation}
+$$
+
+<p>如果 $|VU^T|=1$，则 $|M|=1$， $R<sup>∗=VU</sup>T$ 已经给出最优旋转；如果 $|VU^T|=−1$，则 $|M|=−1$，我们需要求解此时的 $𝑅$，也就是分析 $M$ 应该具有何种形式。具体的讨论请参考<a target="_blank" rel="noopener" href="http://www.math.pku.edu.cn/teachers/yaoy/Fall2011/arun.pdf">这里</a>，本文直接给出结论：当 $|M|=−1$ 时，使得 $𝑡𝑟𝑎𝑐𝑒(Σ𝑀) $ 最大的 $𝑀$ 为：</p>
+
+$$
+\begin{equation} M = \left[ \begin{array}{cccc} 1 & 0 & 0 \\ 0 & 1 & 0 \\ 0 & 0 & -1 \end{array} \right] \end{equation}
+$$
+综合考虑 $|M|=1$ 和 $|M|=−1$ 两种情况，我们可以得到：
+$$
+\begin{equation} R^{\ast} = V \left[ \begin{array}{cccc} 1 & 0 & 0 \\ 0 & 1 & 0 \\ 0 & 0 & |V U^T| \end{array} \right] U^T \end{equation}
+$$
+
+<p>简单总结一下求解最优变换的步骤：</p>
 <ol>
 <li>计算源点云和目标点云质心；</li>
 <li>将源点云和目标点云转换到质心坐标系；</li>
