@@ -17,22 +17,22 @@
   <meta name="author" content="Yiwei Zhang">
   <meta name="keywords" content="人工智能, 深度学习, 个人博客, 机器学习">
   
-    <meta name="description" content="ICP (Iterative Closest Point) 算法是基于 EM(Expectation-maximization algorithm)思想的方法，采用交替迭代法优化得到最优值，本文记录相关内容。">
+    <meta name="description" content="点云NDT算法（Normal Distribution Transform）是一种基于高斯分布的点云配准方法。与ICP算法相比，NDT算法更适用于不规则形状、噪声和部分遮挡的场景，本文记录相关内容。">
 <meta property="og:type" content="article">
-<meta property="og:title" content="三维点云配准 -- ICP 算法">
-<meta property="og:url" content="https://www.zywvvd.com/notes/3d/icp/icp/index.html">
+<meta property="og:title" content="三维点云配准 -- NDT 算法">
+<meta property="og:url" content="https://www.zywvvd.com/notes/3d/registration/ndt/index.html">
 <meta property="og:site_name" content="又见苍岚">
-<meta property="og:description" content="ICP (Iterative Closest Point) 算法是基于 EM(Expectation-maximization algorithm)思想的方法，采用交替迭代法优化得到最优值，本文记录相关内容。">
+<meta property="og:description" content="点云NDT算法（Normal Distribution Transform）是一种基于高斯分布的点云配准方法。与ICP算法相比，NDT算法更适用于不规则形状、噪声和部分遮挡的场景，本文记录相关内容。">
 <meta property="og:locale" content="zh_CN">
-<meta property="article:published_time" content="2024-10-10T03:42:58.000Z">
-<meta property="article:modified_time" content="2024-10-10T05:42:02.208Z">
+<meta property="article:published_time" content="2024-10-10T05:42:58.000Z">
+<meta property="article:modified_time" content="2024-10-10T06:02:43.478Z">
 <meta property="article:author" content="Yiwei Zhang">
 <meta property="article:tag" content="3D">
 <meta name="twitter:card" content="summary_large_image">
   
   
   
-  <title>三维点云配准 -- ICP 算法 - 又见苍岚</title>
+  <title>三维点云配准 -- NDT 算法 - 又见苍岚</title>
 
   <link  rel="stylesheet" href="https://lib.baomitu.com/twitter-bootstrap/4.6.1/css/bootstrap.min.css" />
 
@@ -601,7 +601,7 @@
       <div class="banner-text text-center fade-in-up">
         <div class="h2">
           
-            <span id="subtitle">三维点云配准 -- ICP 算法</span>
+            <span id="subtitle">三维点云配准 -- NDT 算法</span>
           
         </div>
 
@@ -617,8 +617,8 @@
     
       <span class="post-meta">
         <i class="iconfont icon-date-fill" aria-hidden="true"></i>
-        <time datetime="2024-10-10 11:42" pubdate>
-          2024年10月10日 中午
+        <time datetime="2024-10-10 13:42" pubdate>
+          2024年10月10日 下午
         </time>
       </span>
     
@@ -630,7 +630,7 @@
         <i class="iconfont icon-chart"></i>
         
           <!-- compatible with older versions-->
-          3k 字
+          908 字
         
       </span>
     
@@ -642,7 +642,7 @@
         
         
           <!-- compatible with older versions-->
-          25 分钟
+          8 分钟
         
       </span>
     
@@ -823,7 +823,7 @@
         <div id="board">
           <article class="post-content mx-auto">
 
-            <!-- <h1 id="seo-header">三维点云配准 -- ICP 算法</h1> -->
+            <!-- <h1 id="seo-header">三维点云配准 -- NDT 算法</h1> -->
 
             
               <p id="updated-time" class="note note-info" style="">
@@ -839,236 +839,65 @@
               <div class="markdown-body">
                 
                 <blockquote>
-<p>ICP (Iterative Closest Point) 算法是基于 EM(Expectation-maximization algorithm)思想的方法，采用交替迭代法优化得到最优值，本文记录相关内容。</p>
+<p>点云NDT算法（Normal Distribution Transform）是一种基于高斯分布的点云配准方法。与ICP算法相比，NDT算法更适用于不规则形状、噪声和部分遮挡的场景，本文记录相关内容。</p>
 </blockquote>
 <span id="more"></span>
-<h3 id="问题描述">问题描述</h3>
-<p>点云配准（Point Cloud Registration）指的是输入两幅点云 $𝑃_𝑠$ (source) 和 $𝑃_𝑡$ (target) ，输出一个变换 $𝑇$ 使得 $𝑇(𝑃_𝑠)$ 和 $𝑃_𝑡$ 的重合程度尽可能高。变换 $𝑇$ 可以是刚性的(rigid)，也可以不是，本文下面只考虑刚性变换，即变换只包括旋转、平移。</p>
-<p>点云配准可以分为粗配准（Coarse Registration）和精配准（Fine Registration）两步。粗配准指的是在两幅点云之间的变换完全未知的情况下进行较为粗糙的配准，目的主要是为精配准提供较好的变换初值；精配准则是给定一个初始变换，进一步优化得到更精确的变换。</p>
-<h4 id="常用方法">常用方法</h4>
-<ol>
-<li>
-<p>ICP</p>
-<p>缺点：</p>
-<figure class="highlight css"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><code class="hljs css"><span class="hljs-selector-tag">A</span>．要剔除不合适的点对（点对距离过大、包含边界点的点对）<br><span class="hljs-selector-tag">B</span>．基于点对的配准，并没有包含局部形状的信息<br>C．每次迭代都要搜索最近点，计算代价高昂<br></code></pre></td></tr></table></figure>
-<p>存在多种优化了的变体算法，如八叉树等</p>
-</li>
-<li>
-<p>IDC</p>
-<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs undefined">ICP的一种改进，采用极坐标代替笛卡尔坐标进行最近点搜索匹配<br></code></pre></td></tr></table></figure>
-</li>
-<li>
-<p>PIC</p>
-<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs undefined">考虑了点云的噪音和初始位置的不确定性<br></code></pre></td></tr></table></figure>
-</li>
-<li>
-<p>Point-based probabilistic registration</p>
-<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs undefined">需要首先建立深度图的三角面片<br></code></pre></td></tr></table></figure>
-</li>
-<li>
-<p>NDT——正态分布变换：</p>
-<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><code class="hljs undefined">计算正态分布是一个一次性的工作（初始化），不需要消耗大量代价计算最近邻搜索匹配点   <br>概率密度函数在两幅图像采集之间的时间可以离线计算出来  <br></code></pre></td></tr></table></figure>
-</li>
-<li>
-<p>Gaussian fields</p>
-<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs undefined">和NDT正态分布变换类似，利用高斯混合模型考察点和点的距离和点周围表面的相似性<br></code></pre></td></tr></table></figure>
-</li>
-<li>
-<p>Quadratic patches</p>
-</li>
-<li>
-<p>Likelihood-field matching——随机场匹配</p>
-</li>
-<li>
-<p>CRF匹配</p>
-<figure class="highlight x86asm"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs x86asm">缺点： 运行速度慢，在<span class="hljs-number">3d</span>中实时性能不好，误差大。<br></code></pre></td></tr></table></figure>
-</li>
-<li>
-<p>Branch-and-bound registration</p>
-</li>
-<li>
-<p>Registration using local geometric features</p>
-</li>
-</ol>
-<p>目前应用最广泛的点云精配准算法是迭代最近点算法（Iterative Closest Point, ICP）及各种变种 ICP 算法。</p>
-<h3 id="ICP-算法描述">ICP 算法描述</h3>
-<p>对于 $𝑇$ 是刚性变换的情形，点云配准问题可以描述为：<br>
-$$<br>
-\begin{equation} R^{\ast}, t^{\ast} = \mathop{\arg\min}<em>{R, t} \frac{1}{|P_s|} \sum</em>{i=1}^{|P_s|} || p_t^i - (R \cdot p_s^i + t) ||^2 \end{equation}<br>
-$$<br>
-这里 $𝑝_𝑠$ 和 $p_t$ 是源点云和目标点云中的一一对应点。</p>
-<p>ICP 算法的直观想法如下：</p>
+<h3 id="NDT"><strong>NDT</strong></h3>
+<p>将点云转换为高斯分布的函数形式，通过计算不同高斯分布函数之间的匹配来进行点云配准。具体来说，算法首先将一个点云转换为三维高斯分布函数（即NDT分布），然后通过最小化两个点云之间的NDT分布函数之间的KL散度来进行点云配准。</p>
+<p>具体来说，NDT算法首先将原始点云数据离散化为一个三维的网格（voxel grid），并对每个网格中的点云进行采样和特征提取。这里采用了点云法向量作为特征，通过计算每个网格中点云的均值和协方差矩阵，可以得到一个高斯分布，即一个GMM。NDT算法会将目标点云和参考点云都转化成GMM的形式，然后计算两个GMM之间的KL散度，用于评估它们之间的相似度。在计算KL散度时，NDT算法采用了一种高效的方法，即通过将每个网格中心点的高斯分布变换到参考点云坐标系下，可以大大减少计算复杂度。</p>
+<p>最后，NDT算法通过最小化两个GMM之间的KL散度来计算相对位姿变换，得到一个最优的刚体变换矩阵，从而实现点云配准。由于NDT算法采用了高效的计算方法，因此在处理大规模点云数据时具有较高的效率和精度。</p>
+<h4 id="简要步骤">简要步骤</h4>
+<p>主要分为两步：NDT建图和NDT匹配。</p>
 <ul>
-<li>如果我们知道两幅点云上点的对应关系，那么我们可以用 Least Squares 来求解 R, t 参数；</li>
-<li>怎么知道点的对应关系呢？如果我们已经知道了一个大概靠谱的 R, t 参数，那么我们可以通过贪心的方式找两幅点云上点的对应关系（直接找距离最近的点作为对应点）。</li>
-</ul>
-<p>ICP 算法实际上就是交替进行上述两个步骤，迭代进行计算，直到收敛。</p>
-<p>ICP 一般算法流程为：</p>
-<ol>
-<li>点云预处理
-<ul>
-<li>滤波、清理数据等</li>
-</ul>
+<li>
+<p>在NDT建图阶段，算法将一个点云转换为高斯分布函数，并将其存储为一个栅格地图。</p>
 </li>
-<li>匹配
-<ul>
-<li>应用上一步求解出的变换，找最近点</li>
-</ul>
+<li>
+<p>在NDT匹配阶段，算法将两个点云都转换为高斯分布函数，并使用最小化KL散度的方法来找到它们之间的最佳匹配。</p>
 </li>
-<li>加权
-<ul>
-<li>调整一些对应点对的权重</li>
 </ul>
-</li>
-<li>剔除不合理的对应点对</li>
-<li>计算 loss</li>
-<li>最小化 loss，求解当前最优变换</li>
-<li>回到步骤 2. 进行迭代，直到收敛</li>
-</ol>
-<p>整体上来看，ICP 把点云配准问题拆分成了两个子问题：</p>
-<ul>
-<li>找最近点</li>
-<li>找最优变换</li>
-</ul>
-<h4 id="找最近对应点（Find-Closet-Point）">找最近对应点（Find Closet Point）</h4>
-<p>利用初始 $R_0$、$𝑡_0$ 或上一次迭代得到的 $R_{k−1}$、$t_{k−1}$ 对初始点云进行变换，得到一个临时的变换点云，然后用这个点云和目标点云进行比较，找出源点云中每一个点在目标点云中的最近邻点。</p>
-<p>如果直接进行比较找最近邻点，需要进行两重循环，计算复杂度为 $O(|P_s|⋅|P_t|) $，这一步会比较耗时，常见的加速方法有：</p>
-<ul>
-<li>设置距离阈值，当点与点距离小于一定阈值就认为找到了对应点，不用遍历完整个点集；</li>
-<li>使用 ANN(Approximate Nearest Neighbor) 加速查找，常用的有 KD-tree；KD-tree 建树的计算复杂度为 <code>O(N log(N))</code>，查找通常复杂度为 <code>O(log(N))</code>（最坏情况下 <code>O(N)</code>）。</li>
-</ul>
-<h4 id="求解最优变换（Find-Best-Transform）">求解最优变换（Find Best Transform）</h4>
-<p>对于 point-to-point ICP 问题，求最优变换是有闭形式解（closed-form solution）的，可以借助 SVD 分解来计算。</p>
-<p>先给出结论，在已知点的对应关系的情况下，设 $\bar p_s$, $\bar p_t$ 分别表示源点云和目标点云的质心，令 $\hat p_s^i = p_s^i - \bar p_s$，$\hat p_t^i = p_t^i - \bar p_t$ ，令:<br>
-$$<br>
-H = \sum_{i=1}^{|P_s|} {\hat p_s^i} {\hat p_t<sup>i}</sup>T<br>
-$$<br>
-，这是一个 $3 \times3$ 矩阵，对 H 进行 SVD 分解得到 $H = U \Sigma V^T$ ，则 point-to-point ICP 问题最优旋转为：<br>
-$$<br>
-\begin{equation} R^{\ast} = V U^T \end{equation}<br>
-$$<br>
-最优平移为：<br>
-$$<br>
-\begin{equation} t^{\ast} = \bar p_t - R^{\ast} \bar p_s \end{equation}<br>
-$$<br>
-下面分别给出证明。</p>
-<h5 id="计算最优平移">计算最优平移</h5>
-<p>令 $N = |P_s|$ ，设 $F(t) = \sum_{i=1}^{N} ||(R \cdot p_s^i + t) - p_t<sup>i||</sup>2$ ，对其进行求导，则有：<br>
-$$<br>
-\begin{equation} \begin{aligned} \frac{\partial F}{\partial t} &amp;= \sum_{i=1}^{N} 2 (R \cdot p_s^i + t - p_t^i) \ &amp;= 2nt + 2R\sum_{i=1}<sup>{N}p_s</sup>i - 2\sum_{i=1}<sup>{N}p_t</sup>i \end{aligned} \end{equation}<br>
-$$<br>
-令导数为 0 ，则有：<br>
-$$<br>
-\begin{equation} \begin{aligned} t &amp;= \frac{1}{N} \sum_{i=1}^{N} p_t^i - R \frac{1}{N} \sum_{i=1}^{N} p_s^i \ &amp;= \bar p_t - R \bar p_s \end{aligned} \end{equation}<br>
-$$<br>
-无论 R 取值如何，根据上式我们都可以求得最优的 t，使得 loss 最小。下面我们来推导最优旋转的计算公式。</p>
-<h5 id="计算最优旋转">计算最优旋转</h5>
-<p>经过最优平移的推导，我们知道无论旋转如何取值，都可以通过计算点云的质心来得到最优平移，为了下面计算上的简便，我们不妨不考虑平移的影响，先将源点云和目标点云都转换到质心坐标下，这也就是之前令 $\hat p_s^i = p_s^i - \bar p_s$ , $\hat p_t^i = p_t^i - \bar p_t$ 的意义。</p>
 <blockquote>
-<p>下面我们用 $\hat p_s^i$ 和 $\hat p_t^i$ 进行推导。</p>
+<p>与ICP算法相比，NDT算法具有更高的配准精度和鲁棒性，尤其是在噪声和不规则形状的情况下。然而，NDT算法的计算量相对较大，需要较长的处理时间。</p>
 </blockquote>
-<p>不考虑平移，则 loss 可以写成：<br>
-$$<br>
-\begin{equation} F® = \sum_{i=1}^{N} ||R \cdot \hat p_s^i - \hat p_t<sup>i||</sup>2 \end{equation}<br>
-$$<br>
-先化简 $||R \cdot \hat p_s^i - \hat p_t<sup>i||</sup>2$:<br>
-$$<br>
-\begin{equation} \begin{aligned} ||R \cdot \hat p_s^i - \hat p_t<sup>i||</sup>2 &amp;= (R \cdot \hat p_s^i - \hat p_t<sup>i)</sup>T(R \cdot \hat p_s^i - \hat p_t^i) \ &amp;= ({\hat p_s<sup>i}</sup>T R^T - {\hat p_t<sup>i}</sup>T)(R \cdot \hat p_s^i - \hat p_t^i) \ &amp;= {\hat p_s<sup>i}</sup>T R^T R {\hat p_s^i} - {\hat p_t<sup>i}</sup>T R {\hat p_s^i} - {\hat p_s<sup>i}</sup>T R^T {\hat p_t^i} + {\hat p_t<sup>i}</sup>T {\hat p_t^i} \ &amp;= ||{\hat p_s<sup>i}||</sup>2 + ||{\hat p_t<sup>i}||</sup>2 - {\hat p_t<sup>i}</sup>T R {\hat p_s^i} - {\hat p_s<sup>i}</sup>T R^T {\hat p_t^i} \ &amp;= ||{\hat p_s<sup>i}||</sup>2 + ||{\hat p_t<sup>i}||</sup>2 - 2{\hat p_t<sup>i}</sup>T R {\hat p_s^i} \end{aligned} \end{equation}<br>
+<h3 id="NDT算法">NDT算法</h3>
+<ol>
+<li>将空间（reference scan）划分成各个格子cell</li>
+<li>将点云投票到各个格子</li>
+<li>计算格子的正态分布PDF参数</li>
+</ol>
+<p>$$<br>
+\begin{aligned}&amp;\vec{\mu}=\frac{1}{m}\sum_{k=1}<sup>{m}\vec{y}_{k},\&amp;\Sigma=\frac{1}{m-1}\sum_{k=1}</sup>{m}(\vec{y}<em>{k}-\vec{\mu})(\vec{y}</em>{k}-\vec{\mu})^{\mathrm{T}},\end{aligned}<br>
+$$</p>
+<ol start="4">
+<li>
+<p>将第二幅scan的每个点按转移矩阵T的变换</p>
+</li>
+<li>
+<p>第二幅scan的点落于reference的哪个格子，计算响应的概率分布函数</p>
+</li>
+</ol>
+<p>$$<br>
+p(\vec x)=\frac{1}{(2\pi)^{D/2}\sqrt{|\Sigma|}}\exp\left(-\frac{(\vec x-\vec\mu)<sup>{\mathrm{T}}\Sigma</sup>{-1}(\vec x-\vec\mu)}{2}\right)<br>
+$$</p>
+<ol start="6">
+<li>求所有点的最优值，目标函数为</li>
+</ol>
+<p>$$<br>
+\Psi=\prod_{k=1}^np(T(\vec{p},\vec{x}_k))<br>
 $$</p>
 <blockquote>
-<p>这里利用到了 $R^T R = I$ 和 ${\hat p_t<sup>i}</sup>T R {\hat p_s^i} = {\hat p_s<sup>i}</sup>T R^T {\hat p_t^i}$ （标量的转置等于自身）的性质。</p>
+<figure class="highlight excel"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><code class="hljs excel">PDF可以当做表面的近似表达，协方差矩阵的特征向量和特征值可以表达表面信息（朝向、平整度）<br>格子内少于<span class="hljs-number">3</span>个点，经常会协方差矩阵不存在逆矩阵，所以只计算点数大于<span class="hljs-number">5</span>的<span class="hljs-built_in">cell</span>，涉及到下采样方法。<br></code></pre></td></tr></table></figure>
 </blockquote>
-<p>由于点的坐标是确定的(和 R 无关)，所以最小化原 loss 等价于求：<br>
-$$<br>
-\begin{equation} R^{\ast} = \mathop{\arg\min}<em>{R} (-2 \sum</em>{i=1}^{N} {\hat p_t<sup>i}</sup>T R {\hat p_s^i}) \end{equation}<br>
-$$<br>
-也即为求：<br>
-$$<br>
-\begin{equation} R^{\ast} = \mathop{\arg\max}<em>{R} (\sum</em>{i=1}^{N} {\hat p_t<sup>i}</sup>T R {\hat p_s^i}) \end{equation}<br>
-$$<br>
-注意到 $\sum_{i=1}^{N} {\hat p_t<sup>i}</sup>T R {\hat p_s^i} = trace(P_t^T R P_s)$ （由矩阵乘法及 trace 的定义可得）</p>
-<p>则问题转化为：<br>
-$$<br>
-\begin{equation} R^{\ast} = \mathop{\arg\max}<em>{R} trace(P_t^T R P_s) \end{equation}<br>
-$$<br>
-根据 trace 的性质 $trace(AB)=trace(BA)$，（这里不要求 A, B 为方阵，只要 $A*B$ 是方阵即可），有：<br>
-$$<br>
-\begin{equation} trace(P_t^T R P_s) = trace(R P_s P_t^T) \end{equation}<br>
-$$<br>
-还记得前面定义的矩阵 H 和其 SVD 分解吗？带入上式得到：<br>
-$$<br>
-\begin{equation} \begin{aligned} trace(P_t^T R P_s) &amp;= trace(R P_s P_t^T) \ &amp;= trace(R H) \ &amp;= trace(R U \Sigma V^T) \ &amp;= trace(\Sigma V^T R U) \end{aligned} \end{equation}<br>
-$$<br>
-注意这里 $𝑉,𝑈,𝑅$ 都是正交矩阵（orthogonal matrices），所以 $V^T R U$ 也是正交矩阵。令<br>
-$$<br>
-M = V^T R U = \left[ \begin{array}{cccc} m</em>{11} &amp; m_{12} &amp; m_{13} \ m_{21} &amp; m_{22} &amp; m_{23} \ m_{31} &amp; m_{32} &amp; m_{33} \end{array} \right]<br>
-$$<br>
-则有：<br>
-$$<br>
-\begin{equation} \begin{aligned} trace(\Sigma V^T R U) &amp;= trace(\Sigma M) \ &amp; = \sigma_1 m_{11} + \sigma_2 m_{22} + \sigma_1 m_{33} \end{aligned} \end{equation}<br>
-$$<br>
-根据奇异值非负的性质和正交矩阵的性质（正交矩阵中的元素绝对值不大于 1），容易证得只有当 𝑀 为单位阵时 $trace(ΣM)$ 最大，即：<br>
-$$<br>
-\begin{equation} \begin{aligned} V^T R U = I \ R = V U^T \end{aligned} \end{equation}<br>
-$$<br>
-所以有 $R^{\ast} = V U^T$。</p>
-<p>最后还需要进行 Orientation rectification，即验证 $R^{\ast} = V U^T$ 是不是一个旋转矩阵（检查是否有 $|R|=1$），因为存在 $|R|=−1$ 的可能，此时 $𝑅$ 表示的不是旋转而是一个 reflection，所以我们还要给上述优化求解加上一个 $|R|=1$ 的约束。</p>
-<p>根据矩阵行列式的性质，以及 $U, V$ 都是正交阵：<br>
-$$<br>
-\begin{equation} \begin{aligned} |M| &amp;= |V^T| |U| |R| \ &amp;= |V^T| |U| = \pm 1 \end{aligned} \end{equation}<br>
-$$<br>
-如果 $|VU^T|=1$，则 $|M|=1$， $R<sup>∗=VU</sup>T$ 已经给出最优旋转；如果 $|VU^T|=−1$，则 $|M|=−1$，我们需要求解此时的 $𝑅$，也就是分析 $M$ 应该具有何种形式。具体的讨论请参考<a target="_blank" rel="noopener" href="http://www.math.pku.edu.cn/teachers/yaoy/Fall2011/arun.pdf">这里</a>，本文直接给出结论：当 $|M|=−1$ 时，使得 $𝑡𝑟𝑎𝑐𝑒(Σ𝑀) $ 最大的 $𝑀$ 为：<br>
-$$<br>
-\begin{equation} M = \left[ \begin{array}{cccc} 1 &amp; 0 &amp; 0 \ 0 &amp; 1 &amp; 0 \ 0 &amp; 0 &amp; -1 \end{array} \right] \end{equation}<br>
-$$<br>
-综合考虑 $|M|=1$ 和 $|M|=−1$ 两种情况，我们可以得到：<br>
-$$<br>
-\begin{equation} R^{\ast} = V \left[ \begin{array}{cccc} 1 &amp; 0 &amp; 0 \ 0 &amp; 1 &amp; 0 \ 0 &amp; 0 &amp; |V U^T| \end{array} \right] U^T \end{equation}<br>
-$$<br>
-简单总结一下求解最优变换的步骤：</p>
-<ol>
-<li>计算源点云和目标点云质心；</li>
-<li>将源点云和目标点云转换到质心坐标系；</li>
-<li>计算矩阵 H（形式类似“协方差矩阵”）；</li>
-<li>对 H 求 SVD 分解，根据公式求得 $𝑅^∗$；</li>
-<li>根据公式计算 $𝑡^∗$。</li>
-</ol>
-<h5 id="迭代">迭代</h5>
-<p>每一次迭代我们都会得到当前的最优变换参数 $R_k,t_k$ ，然后将该变换作用于当前源点云；“找最近对应点”和“求解最优变换”这两步不停迭代进行，直到满足迭代终止条件，常用的终止条件有：</p>
 <ul>
-<li>$R_k,t_k$ 的变化量小于一定值</li>
-<li>loss 变化量小于一定值</li>
-<li>达到最大迭代次数</li>
-</ul>
-<h3 id="ICP-的优缺点及一些改进算法">ICP 的优缺点及一些改进算法</h3>
-<p>ICP 优点：</p>
-<ul>
-<li>简单，不必对点云进行分割和特征提取</li>
-<li>初值较好情况下，精度和收敛性都不错</li>
-</ul>
-<p>ICP 缺点：</p>
-<ul>
-<li>找最近对应点的计算开销较大</li>
-<li>只考虑了点与点距离，缺少对点云结构信息的利用</li>
-</ul>
-<p>原始的 ICP 算法计算开销大，对初始变换敏感，容易陷入局部最优解。自 ICP 提出以来，有相当多的 ICP 改进算法，简要列举一些：</p>
-<ul>
-<li>Point-to-Plane ICP，原始 ICP 算法的代价函数中使用的 point-to-point 距离，point-to-plane 则是考虑源顶点到目标顶点所在面的距离，比起直接计算点到点距离，考虑了点云的局部结构，精度更高，不容易陷入局部最优；但要注意 point-to-plane 的优化是一个非线性问题，速度比较慢，一般使用其线性化近似；</li>
-<li>Plane-to-Plane ICP，point-to-plane 只考虑目标点云局部结构， plane-to-plane 顾名思义就是也考虑源点云的局部结构，计算面到面的距离；</li>
-<li>Generalized ICP (GICP)，综合考虑 point-to-point、point-to-plane 和 plane-to-plane 策略，精度、鲁棒性都有所提高；</li>
-<li>Normal Iterative Closest Point (NICP)，考虑法向量和局部曲率，更进一步利用了点云的局部结构信息，其论文中实验结果比 GICP 的性能更好。</li>
-</ul>
-<h3 id="实际使用中的一些注意事项">实际使用中的一些注意事项</h3>
-<ul>
-<li>ICP 比较依赖于变换初值，平移比较简单，直接用点云质心来估计；旋转初值的话可以手动调一个粗略值，或者沿每个轴的旋转进行采样、组合来尝试（不适合实时性应用）；</li>
-<li>点太多的话可以先降采样；</li>
-<li>找到一些 anchor 点对（比如先用特征点匹配），可以帮助加速收敛；</li>
-<li>对应用场景引入一些合理假设，比如限制旋转、平移的范围，变换自由度数量等。</li>
+<li>
+<p>NDT的优化：</p>
+<p>格子参数最重要，太大导致精度不高，太小导致内存过高，并且只有两幅图像相差不大的情况才能匹配</p>
+</li>
 </ul>
 <h3 id="参考资料">参考资料</h3>
 <ul>
-<li><a target="_blank" rel="noopener" href="https://yilingui.xyz/2019/11/20/191120_point_cloud_registration_icp/">https://yilingui.xyz/2019/11/20/191120_point_cloud_registration_icp/</a></li>
-<li><a target="_blank" rel="noopener" href="https://www.cnblogs.com/sddai/p/6129446.html">https://www.cnblogs.com/sddai/p/6129446.html</a></li>
+<li><a target="_blank" rel="noopener" href="https://blog.csdn.net/u013019296/article/details/129458116">https://blog.csdn.net/u013019296/article/details/129458116</a></li>
+<li><a target="_blank" rel="noopener" href="https://ghx0x0.github.io/2014/12/30/NDT-match/">https://ghx0x0.github.io/2014/12/30/NDT-match/</a></li>
 </ul>
 <link rel="stylesheet" href="/css/spoiler.css" type="text/css"><script src="/js/spoiler.js" type="text/javascript" async></script>
                 
@@ -1077,7 +906,7 @@ $$<br>
 				<br /><br />
 				<blockquote>
 					<p>文章链接：<br /> 
-					<a style="font-size: 0.85rem" target="_blank" rel="noopener" href="https://www.zywvvd.com/notes/3d/icp/icp/">https://www.zywvvd.com/notes/3d/icp/icp/</a>
+					<a style="font-size: 0.85rem" target="_blank" rel="noopener" href="https://www.zywvvd.com/notes/3d/registration/ndt/">https://www.zywvvd.com/notes/3d/registration/ndt/</a>
 					</p>
 				</blockquote>
 
@@ -1148,8 +977,8 @@ $$<br>
 
   <div class="license-box my-3">
     <div class="license-title">
-      <div>三维点云配准 -- ICP 算法</div>
-      <div>https://www.zywvvd.com/notes/3d/icp/icp/</div>
+      <div>三维点云配准 -- NDT 算法</div>
+      <div>https://www.zywvvd.com/notes/3d/registration/ndt/</div>
     </div>
     <div class="license-meta">
       
@@ -1197,8 +1026,8 @@ $$<br>
                   <article class="post-next col-6">
                     
                     
-                      <a href="/notes/study/camera-imaging/fisheye-cali/fisheye-cali/" title="鱼眼相机畸变矫正">
-                        <span class="hidden-mobile">鱼眼相机畸变矫正</span>
+                      <a href="/notes/3d/registration/icp/" title="三维点云配准 -- ICP 算法">
+                        <span class="hidden-mobile">三维点云配准 -- ICP 算法</span>
                         <span class="visible-mobile">下一篇</span>
                         <i class="iconfont icon-arrowright"></i>
                       </a>
