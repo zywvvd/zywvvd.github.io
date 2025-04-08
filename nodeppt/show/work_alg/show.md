@@ -205,7 +205,7 @@ H -->I
 
 #### 模块协作流程
 
-![](https://uipv4.zywvvd.com:33030/HexoFiles/vvd_image_files/202501141631394.jpg)
+![](https://uipv4.zywvvd.com:33030/HexoFiles/vvd_image_files/202503111006204.png)
 
 <slide class="bg-white">
 
@@ -699,7 +699,7 @@ AlgTask
 
 
 
-### **结果反馈**<font color=#CCC size=4> （开发中）</font>
+### **结果反馈**<font color=#CCC size=4> </font>
 
 <font color=#CCC size=4> 相关模块: `无人机控制者`</font>
 
@@ -727,7 +727,7 @@ AlgTask
 
 :::{.content-left}
 
-### **数据标注**<font color=#CCC size=4> （开发中）</font>
+### **数据标注**<font color=#CCC size=4> </font>
 
 <font color=#CCC size=4> 相关模块: `数据标注者`</font>
 
@@ -843,4 +843,5 @@ AlgTask
 4. **数据需求**</p></p>
 5. **3D 模型需求**</p></p>
 6. **boeye 产品使用逻辑**</p></p>
-7. **分布式结果汇总逻辑**</p>
+7. **分布式结果汇总逻辑**</p></p>
+8. **视频流实现方式**
