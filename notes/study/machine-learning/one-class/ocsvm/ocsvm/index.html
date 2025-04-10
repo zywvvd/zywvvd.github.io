@@ -1,0 +1,1725 @@
+
+
+<!DOCTYPE html>
+<html lang="zh-CN" data-default-color-scheme=auto>
+
+
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="baidu-site-verification" content="codeva-rLWafCJGYc" />
+  <link rel="apple-touch-icon" sizes="76x76" href="/image/avatar.png">
+  <link rel="icon" href="/image/avatar.png">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, shrink-to-fit=no">
+  <meta http-equiv="x-ua-compatible" content="ie=edge">
+  
+  <meta name="theme-color" content="#2f4154">
+  <meta name="author" content="Yiwei Zhang">
+  <meta name="keywords" content="人工智能, 深度学习, 个人博客, 机器学习">
+  
+    <meta name="description" content="SMV 被广泛用于数据二分类，在变种中也有做异常检测的应用，本文记录异常检测算法 OCSVM（One Class SVM）。">
+<meta property="og:type" content="article">
+<meta property="og:title" content="异常检测 One Class SVM 算法的个人理解">
+<meta property="og:url" content="https://www.zywvvd.com/notes/study/machine-learning/one-class/ocsvm/ocsvm/index.html">
+<meta property="og:site_name" content="又见苍岚">
+<meta property="og:description" content="SMV 被广泛用于数据二分类，在变种中也有做异常检测的应用，本文记录异常检测算法 OCSVM（One Class SVM）。">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="https://uipv4.zywvvd.com:33030/HexoFiles/vvd_pc_upload/202210291222925.jpg">
+<meta property="article:published_time" content="2022-10-29T03:49:24.000Z">
+<meta property="article:modified_time" content="2024-05-07T05:57:50.540Z">
+<meta property="article:author" content="Yiwei Zhang">
+<meta property="article:tag" content="Machine_Learning">
+<meta property="article:tag" content="Anomaly_Detection">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:image" content="https://uipv4.zywvvd.com:33030/HexoFiles/vvd_pc_upload/202210291222925.jpg">
+  
+  
+  
+  <title>异常检测 One Class SVM 算法的个人理解 - 又见苍岚</title>
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/twitter-bootstrap/4.6.1/css/bootstrap.min.css" />
+
+
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/github-markdown-css/4.0.0/github-markdown.min.css" />
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/hint.css/2.7.0/hint.min.css" />
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/fancybox/3.5.7/jquery.fancybox.min.css" />
+
+
+
+<!-- 主题依赖的图标库，不要自行修改 -->
+<!-- Do not modify the link that theme dependent icons -->
+
+<link rel="stylesheet" href="//at.alicdn.com/t/font_1749284_hj8rtnfg7um.css">
+
+
+
+<link rel="stylesheet" href="//at.alicdn.com/t/font_1736178_lbnruvf0jn.css">
+
+
+<link  rel="stylesheet" href="/css/main.css" />
+
+
+  <link id="highlight-css" rel="stylesheet" href="/css/highlight.css" />
+  
+    <link id="highlight-css-dark" rel="stylesheet" href="/css/highlight-dark.css" />
+  
+
+
+
+  
+<link rel="stylesheet" href="/css/custom.css">
+<link rel="stylesheet" href="/css/reward.css">
+<link rel="stylesheet" href="//cdn.jsdelivr.net/npm/aplayer/dist/APlayer.min.css">
+
+
+
+  <script id="fluid-configs">
+    var Fluid = window.Fluid || {};
+    Fluid.ctx = Object.assign({}, Fluid.ctx)
+    var CONFIG = {"hostname":"www.zywvvd.com","root":"/","version":"1.9.7","typing":{"enable":true,"typeSpeed":90,"cursorChar":"_","loop":false,"scope":["home"]},"anchorjs":{"enable":true,"element":"h1,h2,h3,h4,h5,h6","placement":"left","visible":"hover","icon":""},"progressbar":{"enable":true,"height_px":3,"color":"#29d","options":{"showSpinner":false,"trickleSpeed":100}},"code_language":{"enable":true,"default":"TEXT"},"copy_btn":true,"image_caption":{"enable":true},"image_zoom":{"enable":true,"img_url_replace":["",""]},"toc":{"enable":true,"placement":"right","headingSelector":"h1,h2,h3,h4,h5,h6","collapseDepth":0},"lazyload":{"enable":true,"loading_img":"/img/loading.gif","onlypost":false,"offset_factor":2},"web_analytics":{"enable":true,"follow_dnt":true,"baidu":null,"google":null,"tencent":{"sid":null,"cid":null},"woyaola":null,"cnzz":null,"leancloud":{"app_id":"Cv0XNeBSBdAPAIuVj3PsyM3R-MdYXbMMI","app_key":"4PU1rNlGrqXWzhfW3dgq98oX","server_url":null,"path":"window.location.pathname","ignore_local":false},"gtag":null},"search_path":"/local-search.xml","include_content_in_search":true};
+
+    if (CONFIG.web_analytics.follow_dnt) {
+      var dntVal = navigator.doNotTrack || window.doNotTrack || navigator.msDoNotTrack;
+      Fluid.ctx.dnt = dntVal && (dntVal.startsWith('1') || dntVal.startsWith('yes') || dntVal.startsWith('on'));
+    }
+  </script>
+  <script  src="/js/utils.js" ></script>
+  <script  src="/js/color-schema.js" ></script>
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+    
+  
+
+
+
+  
+<meta name="generator" content="Hexo 7.2.0"><link rel="alternate" href="/atom.xml" title="又见苍岚" type="application/atom+xml">
+</head>
+
+
+<body>
+  
+<div id="Loadanimation" style="z-index:999999;">
+<div id="Loadanimation-center">
+   <div id="Loadanimation-center-absolute">
+       <div class="xccx_object" id="xccx_four"></div>
+       <div class="xccx_object" id="xccx_three"></div>
+       <div class="xccx_object" id="xccx_two"></div>
+       <div class="xccx_object" id="xccx_one"></div>
+   </div>
+</div>
+</div>
+
+<link href="/css/loading.css"type="text/css"rel="stylesheet"/>
+
+
+
+
+
+
+<div>
+	<div class='real_mask' style="
+		background-color: rgba(0,0,0,0.4);
+		width: 100%;
+		height: 100%;
+		position: fixed;
+		z-index: -777;
+	"></div>
+	<div id="banner_video_insert">
+	</div>	
+	<div id='vvd_banner_img'>
+	</div>
+</div>
+<div id="banner"></div>
+
+
+
+
+
+
+
+  <header>
+    
+
+<div class="header-inner" style="height: 80vh;">
+  <nav id="navbar" class="navbar fixed-top  navbar-expand-lg navbar-dark scrolling-navbar">
+  <div class="container">
+    <a class="navbar-brand" href="/">
+      <strong>CangLan</strong>
+    </a>
+
+    <button id="navbar-toggler-btn" class="navbar-toggler" type="button" data-toggle="collapse"
+            data-target="#navbarSupportedContent"
+            aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
+      <div class="animated-icon"><span></span><span></span><span></span></div>
+    </button>
+
+    <!-- Collapsible content -->
+    <div class="collapse navbar-collapse" id="navbarSupportedContent">
+      <ul class="navbar-nav ml-auto text-center">
+        
+          
+          
+          
+          
+            <li class="nav-item">
+		<div >
+		      <a class="nav-link" href="/" target="_self" data-umami-event="Navigation-Homepage">
+
+		        <i class="iconfont icon-home-fill"></i>
+		        <span>首页</span>
+		      </a>
+		</div>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item dropdown">
+              <a class="nav-link dropdown-toggle" target="_self" href="javascript:;" role="button"
+                 data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                <i class="iconfont icon-shuji1"></i>
+                <span>文章</span>
+              </a>
+              <div class="dropdown-menu" aria-labelledby="navbarDropdown">
+                
+                  
+                  
+                  
+		<div >
+
+                  <a class="dropdown-item" href="/archives/" target="_self" data-umami-event="Navigation-Archive">
+
+                    <i class="iconfont icon-archive-fill"></i>
+                    <span>归档</span>
+                  </a>
+		</div>
+                
+                  
+                  
+                  
+		<div >
+
+                  <a class="dropdown-item" href="/categories/" target="_self" data-umami-event="Navigation-Category">
+
+                    <i class="iconfont icon-category-fill"></i>
+                    <span>分类</span>
+                  </a>
+		</div>
+                
+                  
+                  
+                  
+		<div >
+
+                  <a class="dropdown-item" href="/tags/" target="_self" data-umami-event="Navigation-Tag">
+
+                    <i class="iconfont icon-tags-fill"></i>
+                    <span>标签</span>
+                  </a>
+		</div>
+                
+                  
+                  
+                  
+		<div >
+
+                  <a class="dropdown-item" href="/shuoshuo/" target="_self" data-umami-event="Navigation-Shuoshuo">
+
+                    <i class="iconfont icon-24gf-bubblesDots4"></i>
+                    <span>说说</span>
+                  </a>
+		</div>
+                
+              </div>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item dropdown">
+              <a class="nav-link dropdown-toggle" target="_self" href="javascript:;" role="button"
+                 data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                <i class="iconfont icon-momo"></i>
+                <span>社交</span>
+              </a>
+              <div class="dropdown-menu" aria-labelledby="navbarDropdown">
+                
+                  
+                  
+                  
+		<div >
+
+                  <a class="dropdown-item" href="/links/" target="_self" data-umami-event="Navigation-Friends">
+
+                    <i class="iconfont icon-link-fill"></i>
+                    <span>友链</span>
+                  </a>
+		</div>
+                
+                  
+                  
+                  
+		<div >
+
+                  <a class="dropdown-item" href="/messagebd/" target="_self" data-umami-event="Navigation-MessageBoard">
+
+                    <i class="iconfont icon-comment"></i>
+                    <span>留言板</span>
+                  </a>
+		</div>
+                
+                  
+                  
+                  
+		<div >
+
+                  <a class="dropdown-item" href="/atom.xml" target="_self" data-umami-event="Navigation-RSS">
+
+                    <i class="iconfont icon-dingyue"></i>
+                    <span>RSS订阅</span>
+                  </a>
+		</div>
+                
+                  
+                  
+                  
+		<div >
+
+                  <a class="dropdown-item" href="/reccomments/" target="_self" data-umami-event="Navigation-Recent-Comments">
+
+                    <i class="iconfont icon-icon-pinglunguanli-pinglunliebiao"></i>
+                    <span>近期评论</span>
+                  </a>
+		</div>
+                
+              </div>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item dropdown">
+              <a class="nav-link dropdown-toggle" target="_self" href="javascript:;" role="button"
+                 data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                <i class="iconfont icon-user-fill"></i>
+                <span>个人</span>
+              </a>
+              <div class="dropdown-menu" aria-labelledby="navbarDropdown">
+                
+                  
+                  
+                  
+		<div >
+
+                  <a class="dropdown-item" href="/about/" target="_self" data-umami-event="Navigation-AboutMe">
+
+                    <i class="iconfont icon-guanyuwomen"></i>
+                    <span>关于</span>
+                  </a>
+		</div>
+                
+                  
+                  
+                  
+		<div >
+
+                  <a class="dropdown-item" href="/playlist/" target="_self" data-umami-event="Navigation-Music">
+
+                    <i class="iconfont icon-music"></i>
+                    <span>歌单</span>
+                  </a>
+		</div>
+                
+                  
+                  
+                  
+		<div >
+
+                  <a class="dropdown-item" href="https://uipv4.zywvvd.com:33035" target="_self" data-umami-event="Navigation-Nextcloud">
+
+                    <i class="iconfont icon-xuniyingpan"></i>
+                    <span>网盘</span>
+                  </a>
+		</div>
+                
+                  
+                  
+                  
+		<div >
+
+                  <a class="dropdown-item" href="https://uipv4.zywvvd.com:38920" target="_self" data-umami-event="Navigation-Emby">
+
+                    <i class="iconfont icon-meiti"></i>
+                    <span>影院</span>
+                  </a>
+		</div>
+                
+                  
+                  
+                  
+		<div >
+
+                  <a class="dropdown-item" href="https://uipv4.zywvvd.com:33036" target="_self" data-umami-event="Navigation-OneDev">
+
+                    <i class="iconfont icon-git"></i>
+                    <span>仓库</span>
+                  </a>
+		</div>
+                
+                  
+                  
+                  
+		<div >
+
+                  <a class="dropdown-item" href="https://uipv4.zywvvd.com:33041" target="_self" data-umami-event="Navigation-Wiki">
+
+                    <i class="iconfont icon-wiki"></i>
+                    <span>百科</span>
+                  </a>
+		</div>
+                
+              </div>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item dropdown">
+              <a class="nav-link dropdown-toggle" target="_self" href="javascript:;" role="button"
+                 data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                <i class="iconfont icon-ic_fly"></i>
+                <span>导航</span>
+              </a>
+              <div class="dropdown-menu" aria-labelledby="navbarDropdown">
+                
+                  
+                  
+                  
+		<div >
+
+                  <a class="dropdown-item" href="/site-map/" target="_self" data-umami-event="Navigation-SiteMap">
+
+                    <i class="iconfont icon-lianjie"></i>
+                    <span>链接</span>
+                  </a>
+		</div>
+                
+                  
+                  
+                  
+		<div >
+
+                  <a class="dropdown-item" href="/nodeppt/hexo/snavigation/" target="_self" data-umami-event="Navigation-Search">
+
+                    <i class="iconfont icon-sousuo"></i>
+                    <span>搜索</span>
+                  </a>
+		</div>
+                
+              </div>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item dropdown">
+              <a class="nav-link dropdown-toggle" target="_self" href="javascript:;" role="button"
+                 data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                <i class="iconfont icon-wangzhan"></i>
+                <span>站点</span>
+              </a>
+              <div class="dropdown-menu" aria-labelledby="navbarDropdown">
+                
+                  
+                  
+                  
+		<div >
+
+                  <a class="dropdown-item" href="https://uipv4.zywvvd.com:33039/share/0zx3o21oIpZTZqwC/%E5%8F%88%E8%A7%81%E8%8B%8D%E5%B2%9A" target="_self" data-umami-event="Navigation-Umami">
+
+                    <i class="iconfont icon-tongji2"></i>
+                    <span>站点分析</span>
+                  </a>
+		</div>
+                
+                  
+                  
+                  
+		<div >
+
+                  <a class="dropdown-item" href="/earth_sta/" target="_self" data-umami-event="Navigation-Globe">
+
+                    <i class="iconfont icon-tongjifenxi-xiangmubiaogetongji"></i>
+                    <span>访问统计</span>
+                  </a>
+		</div>
+                
+                  
+                  
+                  
+		<div >
+
+                  <a class="dropdown-item" href="https://uipv4.zywvvd.com:33034/status/show" target="_self" data-umami-event="Navigation-Monitor">
+
+                    <i class="iconfont icon-jiankong"></i>
+                    <span>站点监控</span>
+                  </a>
+		</div>
+                
+              </div>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item dropdown">
+              <a class="nav-link dropdown-toggle" target="_self" href="javascript:;" role="button"
+                 data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                <i class="iconfont icon-chuansong"></i>
+                <span>传送</span>
+              </a>
+              <div class="dropdown-menu" aria-labelledby="navbarDropdown">
+                
+                  
+                  
+                  
+		<div >
+
+                  <a class="dropdown-item" href="https://www.foreverblog.cn/go.html" target="_self" data-umami-event="Navigation-ForeverBolg">
+
+                    <i class="iconfont icon-a-BlackHole"></i>
+                    <span>十年之约</span>
+                  </a>
+		</div>
+                
+                  
+                  
+                  
+		<div >
+
+                  <a class="dropdown-item" href="https://www.travellings.cn/go.html" target="_self" data-umami-event="Navigation-DriveTo">
+
+                    <i class="iconfont icon-train1"></i>
+                    <span>开往</span>
+                  </a>
+		</div>
+                
+                  
+                  
+                  
+		<div >
+
+                  <a class="dropdown-item" href="https://bf.zzxworld.com/" target="_self" data-umami-event="Navigation-BlogFinder">
+
+                    <i class="iconfont icon-icon-"></i>
+                    <span>BlogFinder</span>
+                  </a>
+		</div>
+                
+              </div>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item dropdown">
+              <a class="nav-link dropdown-toggle" target="_self" href="javascript:;" role="button"
+                 data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                <i class="iconfont icon-gongju"></i>
+                <span>工具</span>
+              </a>
+              <div class="dropdown-menu" aria-labelledby="navbarDropdown">
+                
+                  
+                  
+                  
+		<div >
+
+                  <a class="dropdown-item" href="/navigates/calculator" target="_self" data-umami-event="Navigation-Calculator">
+
+                    <i class="iconfont icon-jisuan"></i>
+                    <span>计算器</span>
+                  </a>
+		</div>
+                
+                  
+                  
+                  
+		<div >
+
+                  <a class="dropdown-item" href="/navigates/webgraphviz" target="_self" data-umami-event="Navigation-WebGtaphviz">
+
+                    <i class="iconfont icon-tongyong-huatugongju2"></i>
+                    <span>Graphviz</span>
+                  </a>
+		</div>
+                
+              </div>
+            </li>
+          
+        
+        
+          <li class="nav-item" id="search-btn">
+            <a class="nav-link" target="_self" href="javascript:;" data-toggle="modal" data-target="#modalSearch" aria-label="Search">
+              <i class="iconfont icon-search"></i>
+            </a>
+          </li>
+          
+        
+        
+          <li class="nav-item" id="color-toggle-btn">
+            <a class="nav-link" target="_self" href="javascript:;" aria-label="Color Toggle">
+              <i class="iconfont icon-dark" id="color-toggle-icon"></i>
+            </a>
+          </li>
+        
+      </ul>
+    </div>
+  </div>
+</nav>
+
+  
+
+<div id="banner" class="banner" parallax=true
+     style="background: url('https://uipv4.zywvvd.com:33030/HexoFiles/new/bg-trans.png') no-repeat center center; background-size: cover;">
+  <div class="full-bg-img">
+    <div class="mask flex-center" style="background-color: rgba(0, 0, 0, 0)">
+      <div class="banner-text text-center fade-in-up">
+        <div class="h2">
+          
+            <span id="subtitle">异常检测 One Class SVM 算法的个人理解</span>
+          
+        </div>
+
+        
+          
+  <div class="mt-3">
+    
+      <span class="post-meta mr-2">
+        <i class="iconfont icon-author" aria-hidden="true"></i>
+        Yiwei Zhang
+      </span>
+    
+    
+      <span class="post-meta">
+        <i class="iconfont icon-date-fill" aria-hidden="true"></i>
+        <time datetime="2022-10-29 11:49" pubdate>
+          2022年10月29日 中午
+        </time>
+      </span>
+    
+  </div>
+
+  <div class="mt-1">
+    
+      <span class="post-meta mr-2">
+        <i class="iconfont icon-chart"></i>
+        
+          <!-- compatible with older versions-->
+          2k 字
+        
+      </span>
+    
+
+    
+      <span class="post-meta mr-2">
+        <i class="iconfont icon-clock-fill"></i>
+        
+        
+        
+          <!-- compatible with older versions-->
+          17 分钟
+        
+      </span>
+    
+
+    
+    
+      
+        <span id="vvdpost_container_page_pvuv" style="display: none">
+          <i class="iconfont icon-eye" aria-hidden="true"></i>
+          <span id="vvdpost_value_page_pv">0</span> 次&nbsp&nbsp
+		  <i class="iconfont icon-users" aria-hidden="true"></i>
+		  <span id="vvdpost_value_page_uv">0</span> 人&nbsp&nbsp
+		  <i class="iconfont icon-comment" aria-hidden="true"></i>
+		  <span id="vvdpost_value_page_cn">0</span> 条
+        </span>
+
+		<script>
+			console.log(window.location.pathname)
+			var httpRequest = new XMLHttpRequest();
+			httpRequest.open('POST', 'https://uipv4.zywvvd.com:33037/poststats', true);
+			httpRequest.setRequestHeader("Content-type","application/json");
+			httpRequest.send(JSON.stringify(window.location.pathname));
+			httpRequest.onreadystatechange = function () {//请求后的回调接口，可将请求成功后要执行的程序写在其中
+				if (httpRequest.readyState == 4 && httpRequest.status == 200) {//验证请求是否发送成功
+					var json = httpRequest.responseText;//获取到服务端返回的数据
+					var obj = JSON.parse(json);
+					var pvCtn = document.querySelector('#vvdpost_container_page_pvuv');
+					if (pvCtn) {
+						var pv_ele = document.querySelector('#vvdpost_value_page_pv');
+						var uv_ele = document.querySelector('#vvdpost_value_page_uv');
+						var cn_ele = document.querySelector('#vvdpost_value_page_cn');
+
+						if (uv_ele && uv_ele) {
+							pv_ele.innerText = obj.pv;
+							uv_ele.innerText = obj.uv;
+							cn_ele.innerText = obj.cn;
+							pvCtn.style.display = 'inline';
+							}
+						}
+					}
+			};
+		</script>
+      
+    
+  </div>
+
+
+        
+      </div>
+
+      
+        <div class="scroll-down-bar">
+          <i class="iconfont icon-arrowdown"></i>
+        </div>
+      
+    </div>
+  </div>
+</div>
+
+</div>
+
+
+	<script type="text/javascript" src="/vvd_js/jquery.js"></script>
+	<script async src="https://uipv4.zywvvd.com:33039/script.js" data-website-id="dd4a05c6-dde2-4743-9c3a-a79d6bee0778"></script>
+	<div class="banner" id='banner' >
+
+		<div class="full-bg-img" >
+
+			
+				<script>
+					var ua = navigator.userAgent;
+					var ipad = ua.match(/(iPad).*OS\s([\d_]+)/),
+						isIphone = !ipad && ua.match(/(iPhone\sOS)\s([\d_]+)/),
+						isAndroid = ua.match(/(Android)\s+([\d.]+)/),
+						isMobile = isIphone || isAndroid;
+
+					function set_video_attr(id){
+						var height = document.body.clientHeight
+						var width = document.body.clientWidth
+						var video_item = document.getElementById(id);
+
+						if (height / width < 0.56){
+							video_item.setAttribute('width', '100%');
+							video_item.setAttribute('height', 'auto');
+						} else {
+							video_item.setAttribute('height', '100%');
+							video_item.setAttribute('width', 'auto');
+						}
+					}
+
+					fetch('https://uipv4.zywvvd.com:33037/wallpaper-pair')
+					  .then(response => response.json()) // 解析JSON数据
+					  .then(data => {
+						console.log('获取链接成功');
+						video_url = data[0][0]
+						pre_show_image_url = data[0][1]
+
+						banner_obj = document.getElementById("banner")
+						banner_obj.style.cssText = "background: url('" + pre_show_image_url + "') no-repeat;"
+
+						vvd_banner_obj = document.getElementById("vvd_banner_img")
+						vvd_banner_content = "<img id='banner_img_item' src='" + pre_show_image_url + "'style='position: fixed; z-index: -999'>"
+						vvd_banner_obj.innerHTML = vvd_banner_content 
+
+						if (!isMobile) {
+							video_html_res = "<video id='video_item' style='position: fixed; z-index: -888;'  muted='muted' src=" + video_url + " autoplay='autoplay' loop='loop'></video>"
+							document.getElementById("banner_video_insert").innerHTML = video_html_res;
+							set_video_attr('video_item')
+							set_video_attr('banner_img_item')
+						}
+					    
+					  })
+					  .catch((error) => {
+					    console.error('请求失败,尝试本地获取背景图像：', error);
+	    					$.getJSON('/vvd_js/video_url.json', function(data){
+
+							var video_list_length = data.length
+							var seed = Math.random()
+							index = Math.floor(seed * video_list_length)
+
+							video_url = data[index][0]
+							pre_show_image_url = data[index][1]
+
+							banner_obj = document.getElementById("banner")
+							banner_obj.style.cssText = "background: url('" + pre_show_image_url + "') no-repeat;"
+
+							vvd_banner_obj = document.getElementById("vvd_banner_img")
+							vvd_banner_content = "<img id='banner_img_item' src='" + pre_show_image_url + "'style='position: fixed; z-index: -999'>"
+							vvd_banner_obj.innerHTML = vvd_banner_content 
+
+							if (!isMobile) {
+								video_html_res = "<video id='video_item' style='position: fixed; z-index: -888;'  muted='muted' src=" + video_url + " autoplay='autoplay' loop='loop'></video>"
+								document.getElementById("banner_video_insert").innerHTML = video_html_res;
+								set_video_attr('video_item')
+								set_video_attr('banner_img_item')
+							}
+						});
+					  });
+
+
+
+
+
+
+					if (!isMobile){
+						window.onresize = function(){
+							set_video_attr('video_item')
+							set_video_attr('banner_img_item')
+							}
+						}
+				</script>
+
+			
+
+
+			
+			</div>
+		</div>
+    </div>
+
+  </header>
+
+  <main>
+    
+      
+
+
+
+<div class="container-fluid nopadding-x">
+  <div class="row nomargin-x">
+    <div class="side-col d-none d-lg-block col-lg-2">
+      
+
+    </div>
+
+    <div class="col-lg-8 nopadding-x-md">
+      <div class="container nopadding-x-md" id="board-ctn">
+        <div id="board">
+          <article class="post-content mx-auto">
+
+            <!-- <h1 id="seo-header">异常检测 One Class SVM 算法的个人理解</h1> -->
+
+            
+              <p id="updated-time" class="note note-info" style="">
+                
+                  
+                    <!-- compatible with older versions-->
+                    本文最后更新于：2024年5月7日 下午
+                  
+                
+              </p>
+            
+            
+              <div class="markdown-body">
+                
+                <blockquote>
+<p>SMV 被广泛用于数据二分类，在变种中也有做异常检测的应用，本文记录异常检测算法 OCSVM（One Class SVM）。</p>
+</blockquote>
+<span id="more"></span>
+<p><img src="https://uipv4.zywvvd.com:33030/HexoFiles/vvd_pc_upload/202210291222925.jpg" srcset="/img/loading.gif" lazyload alt=""></p>
+<h3 id="OCSMV-的思想">OCSMV 的思想</h3>
+<ul>
+<li>
+<p>异常检测是工业领域或应对样本不均衡时的常用方法，训练异常检测模型时往往仅运用 1 类标签数据</p>
+</li>
+<li>
+<p>在 SVM 下实现异常检测时也是仅有一类数据，The <a target="_blank" rel="noopener" href="https://scholar.google.nl/citations?view_op=view_citation&amp;hl=en&amp;user=DZ-fHPgAAAAJ&amp;cstart=400&amp;pagesize=100&amp;sortby=pubdate&amp;citation_for_view=DZ-fHPgAAAAJ:GFxP56DSvIMC">Support Vector Method For Novelty Detection by Schölkopf et al.</a> 基本上将所有的数据点与零点在特征空间 F 分离开，并且最大化分离超平面到零点的距离。实现的思路是找到一个超平面将所有样本都放在一侧，同时让这个平面距离原点的距离更远</p>
+</li>
+<li>
+<p>也就是找到一个相对于原点来说最“紧致”的平面</p>
+</li>
+<li>
+<p>在测试数据时，在平面远离原点一侧的数据我们认为是同类数据，反之出现在靠近原点一侧的数据则认为是异常数据</p>
+</li>
+</ul>
+<h3 id="优化目标由来">优化目标由来</h3>
+<h4 id="论文描述的优化目标">论文描述的优化目标</h4>
+<ul>
+<li>在论文中，直接给出了 OCSVM 的优化目标：</li>
+</ul>
+
+$$
+\begin{array}{c}
+\min _{w, \zeta_{i}, \rho} \frac{1}{2}\|w\|^{2}+\frac{1}{\nu n} \sum_{i=1}^{n} \zeta_{i}-\rho \\
+s.t.  \left(w^{T} \phi\left(x_{i}\right)\right)>\rho-\zeta_{i}, i=1, \ldots, n \\
+ \zeta_{i}>0 
+ \end{array}
+$$
+
+
+<ul>
+<li>其中 $ \zeta_{i} $ 表示松弛变量， $ \nu $ 类似于二分类SVM中的 $ C $，表示正则项系数，用于软 SMV 模型的训练，给训练数据中的异常留个余地</li>
+<li>论文中并没有叙述这个公式是怎么来的，我按照自己对 SVM 和 OCSVM 的目标的理解尝试做了推导，如有不当烦请指正</li>
+</ul>
+<h4 id="直接根据定义推导优化目标">直接根据定义推导优化目标</h4>
+<ul>
+<li>假设我们有 $n$ 个 $m$ 维数据 ${x_1,x_2, …,x_n},x\in R^m$，都是同一类数据，以此建立 One Class   SVM 模型，如果<strong>我们暂时不加入松弛变量</strong></li>
+<li>SVM 模型框架不变，目标是寻找一个超平面，在此处我们将超平面方程表示为：</li>
+</ul>
+<p>$$<br>
+f(x)=w^{T} x- \rho =0<br>
+$$</p>
+<ul>
+<li>既然我们的目的是将现有数据和原点区分开，那么我们不妨假设现有数据标签为 1，那么对样本的约束为：</li>
+</ul>
+<p>$$<br>
+w^Tx_i-\rho \geq0<br>
+$$</p>
+<ul>
+<li>在满足约束的条件下我们的优化目标是使得原点到平面的几何间隔最大，根据我们已经知道的 <a href="/notes/study/machine-learning/about-svm/svm-summarize/svm-summarize/#%E5%87%A0%E4%BD%95%E9%97%B4%E9%9A%94">SVM 的推导过程</a>，几何间隔为：</li>
+</ul>
+<p>$$<br>
+\gamma=\frac{f(x)}{||w||}<br>
+$$</p>
+<ul>
+<li>几何间隔是分正负的，此时事实上分为两种情况：
+<ul>
+<li>如果该平面的位置无论如何都会将原点和数据分到平面的同一侧时，几何间隔非正，要使得几何间隔最大，需要拉近原点和平面的距离</li>
+<li>如果平面可以将原点和数据分开，此时几何间隔为正，那么就要拉远原点和平面的距离</li>
+</ul>
+</li>
+<li>原点到屏幕的几何距离（几何间隔的绝对值）为：</li>
+</ul>
+<p>$$<br>
+l=\frac{|f(0)|}{||w||}=\frac{|\rho|}{||w||}<br>
+$$</p>
+<ul>
+<li>
+<p>原点在平面的“数据侧”还是“数据的另一侧”取决于 $\rho$ 的符号：</p>
+<ul>
+<li>
+<p>当 $\rho &gt; 0 $ 时：<br>
+$$<br>
+w^T0-\rho &lt; 0<br>
+$$<br>
+此时原点和在“数据的另一侧”</p>
+</li>
+<li>
+<p>当 $\rho \leq 0 $ 时：<br>
+$$<br>
+w^T0-\rho \geq 0<br>
+$$<br>
+此时原点和数据在一起，在“数据侧”</p>
+</li>
+</ul>
+</li>
+<li>
+<p>因此在约束条件下的 $l$，我们的优化目标也分情况讨论：</p>
+<ul>
+<li>
+<p>当 $\rho &gt;0$，需要最大化平面到原点的距离，当前优化问题变为：</p>
+
+    $$
+    \begin{array}{c}
+    \max \frac{\rho}{||w||}\\
+    s.t. w^Tx_i-\rho \geq0，i\in\{1,2,...,n\}\\
+    \rho >0
+    \end{array}
+    $$
+    
+</li>
+<li>
+<p>$\rho \leq0$，需要最小化平面到原点的距离，当前优化问题变为：</p>
+
+
+$$
+\begin{array}{c}
+\max \frac{\rho}{||w||}\\
+s.t. w^Tx_i-\rho \geq0，i\in\{1,2,...,n\}\\
+\rho \leq 0
+\end{array}
+$$
+
+
+</li>
+</ul>
+</li>
+<li>
+<p>这是可以发现，两种情况下的优化目标事实上是相同的，那么我们可以合并两种情况，拿掉对 $\rho$ 的约束，得到原始的 OCSVM 优化目标：</p>
+</li>
+</ul>
+
+$$
+\begin{array}{c}
+\max \frac{\rho}{||w||}\\
+s.t. w^Tx_i-\rho \geq0，i\in\{1,2,...,n\}\\
+
+\end{array}
+$$
+
+
+<ul>
+<li>
+<p>很漂亮，但是之后的计算并不容易，因为考虑到 $\rho$ 的符号存在变数，优化目标会纠结：</p>
+<ul>
+<li>
+<p>当  $\rho &gt;0$，我们的目标等价于：</p>
+
+  $$
+  \begin{array}{c}
+  \max \rho \\
+  \min ||w||
+  \end{array}
+  $$
+  
+</li>
+</ul>
+<p>即：<br>
+$$<br>
+\min ||w||-\rho<br>
+$$</p>
+<ul>
+<li>
+<p>当  $\rho \leq 0$，我们的目标等价于：</p>
+
+
+  $$
+  \begin{array}{c}
+  \max \rho \\
+  \max ||w||
+  \end{array}
+  $$
+
+  
+</li>
+</ul>
+<p>即：<br>
+$$<br>
+\min -||w||-\rho<br>
+$$</p>
+</li>
+<li>
+<p>这就不好搞了，也和论文中的优化目标相悖</p>
+</li>
+<li>
+<p>由于 $\rho$ 的符号会左右优化目标，按照数据原始样貌训练 OCSVM 很可能难以优化下去</p>
+</li>
+</ul>
+<h4 id="加入松弛变量">加入松弛变量</h4>
+<ul>
+<li>既然直接搞搞不了，论文作者在文中事实上有一句话为问题加了额外的约束：</li>
+</ul>
+<blockquote>
+<p>To separate the data set from the origin, we solve the following quadratic program</p>
+</blockquote>
+<ul>
+<li>也就是说这个平面必须将原点和数据分开</li>
+<li>分不开？咱们加核函数：</li>
+</ul>
+<p>$$<br>
+\left(w^{T} \phi\left(x_{i}\right)\right)-\rho &gt; 0<br>
+$$</p>
+<ul>
+<li>还分不开？那就加软间隔惩罚项，这回必须保证平面把原点和数据给我分开喽，实在分不开的点就记个账，在优化目标上付点代价假装他分开了：</li>
+</ul>
+<p>$$<br>
+\left(w^{T} \phi\left(x_{i}\right)\right)&gt;\rho-\zeta_{i}<br>
+$$</p>
+<ul>
+<li>这样的话我们就多了个假设，该超平面已经将原点和数据区分开，那么就强行按照   $\rho &gt;0$ 的情况优化，我们上文讨论过优化目标是：</li>
+</ul>
+<p>$$<br>
+\min ||w||-\rho<br>
+$$</p>
+<ul>
+<li>等价于：</li>
+</ul>
+<p>$$<br>
+\min \frac{1}{2}||w||^{2}-\rho<br>
+$$</p>
+<ul>
+<li>再加入软间隔的代价补偿，就得到了原始论文中的优化目标：</li>
+</ul>
+
+$$
+\begin{array}{c}
+\min _{w, \zeta_{i}, \rho} \frac{1}{2}\|w\|^{2}+\frac{1}{\nu n} \sum_{i=1}^{n} \zeta_{i}-\rho \\
+s.t.  \left(w^{T} \phi\left(x_{i}\right)\right)>\rho-\zeta_{i}, i=1, \ldots, n \\
+ \zeta_{i}>0 
+ \end{array}
+$$
+
+<h4 id="终极纠结">终极纠结</h4>
+<ul>
+<li>我有点死钻牛角尖了，在上述优化目标没有强制加上 $\rho \geq 0$ 的情况下，我认为还是有可能解出 $\rho &lt; 0 $ 的</li>
+<li>那么一旦这种情况出现，个人认为此时的边界很可能不是最优边界，因为此时正在 $\min ||w||$，平面距离原点的几何距离可能并不会很小，也就是这不是一个包裹住所有数据的最”紧致“平面</li>
+</ul>
+<h3 id="求解和-infer">求解和 infer</h3>
+<ul>
+<li>求解上述优化函数就可以直接上 SVM 的套路了，原始问题 -&gt; 对偶问题 -&gt; SMO 解拉格朗日乘子 …</li>
+<li>推断测试数据时，直接用公式：</li>
+</ul>
+
+$$
+f(x)=sign\left(\left(w^{T} \phi\left(x_{i}\right)\right)-\rho\right) =sign( \sum_{i=1}^{n n} \alpha_{i} K\left(x, x_{i}\right)-\rho )
+$$
+
+<ul>
+<li>负数即为异常样本</li>
+</ul>
+<h3 id="Python-实现">Python 实现</h3>
+<blockquote>
+<p>引用一位<a target="_blank" rel="noopener" href="https://cyeninesky3.medium.com/oneclass-svm-%E7%95%B0%E5%B8%B8%E6%AA%A2%E6%B8%AC%E4%BB%BB%E5%8B%99-anomaly-detection-%E7%9A%84%E7%AE%97%E6%B3%95%E7%90%86%E8%A7%A3%E8%88%87%E5%AF%A6%E8%B8%90-cf5f0bbb01c0">大佬文章</a>的代码：</p>
+</blockquote>
+<ul>
+<li>核心算法用 sklearn 库实现：</li>
+</ul>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br></pre></td><td class="code"><pre><code class="hljs python"><span class="hljs-keyword">import</span> numpy <span class="hljs-keyword">as</span> np<br><span class="hljs-keyword">import</span> matplotlib.pyplot <span class="hljs-keyword">as</span> plt<br><span class="hljs-keyword">import</span> matplotlib.font_manager<br><span class="hljs-keyword">from</span> sklearn <span class="hljs-keyword">import</span> svm<br><br><span class="hljs-string">&quot;&quot;&quot;</span><br><span class="hljs-string">Anomaly detection: generate data, and fit the model using scikit-learn OneClassSvm.</span><br><span class="hljs-string">scikit-learn Reference: </span><br><span class="hljs-string">https://scikit-learn.org/stable/modules/generated/sklearn.svm.OneClassSVM.html</span><br><span class="hljs-string">&quot;&quot;&quot;</span><br><span class="hljs-comment"># Generate train/test/abnormal data</span><br>X = <span class="hljs-number">0.3</span> * np.random.randn(<span class="hljs-number">100</span>, <span class="hljs-number">2</span>) <br>XX = <span class="hljs-number">0.3</span> * np.random.randn(<span class="hljs-number">20</span>, <span class="hljs-number">2</span>)<br>X_train = np.r_[X + <span class="hljs-number">2</span>, X - <span class="hljs-number">2</span>]<br>X_test = np.r_[XX + <span class="hljs-number">2</span>, XX - <span class="hljs-number">2</span>]<br>X_outliers = np.random.uniform(low=-<span class="hljs-number">4</span>, high=<span class="hljs-number">4</span>, size=(<span class="hljs-number">20</span>, <span class="hljs-number">2</span>))<br><br><span class="hljs-comment"># fit the model</span><br>clf = svm.OneClassSVM(nu=<span class="hljs-number">0.5</span>, kernel=<span class="hljs-string">&#x27;rbf&#x27;</span>, gamma=<span class="hljs-number">0.1</span>)<br>clf.fit(X_train)<br>y_pred_train = clf.predict(X_train) <span class="hljs-comment"># return 1,-1</span><br>y_pred_test = clf.predict(X_test)   <span class="hljs-comment"># return 1,-1</span><br>y_pred_outliers = clf.predict(X_outliers)<br><br><span class="hljs-comment"># fp/fn</span><br>n_error_train = y_pred_train[y_pred_train == -<span class="hljs-number">1</span>].size<br>n_error_test = y_pred_test[y_pred_test == -<span class="hljs-number">1</span>].size<br>n_error_outliers = y_pred_outliers[y_pred_outliers == <span class="hljs-number">1</span>].size <br><br><br><span class="hljs-string">&quot;&quot;&quot;</span><br><span class="hljs-string">Visualization of the result.</span><br><span class="hljs-string">&quot;&quot;&quot;</span><br>xx, yy = np.meshgrid(np.linspace(-<span class="hljs-number">5</span>, <span class="hljs-number">5</span>, <span class="hljs-number">500</span>), np.linspace(-<span class="hljs-number">5</span>, <span class="hljs-number">5</span>, <span class="hljs-number">500</span>))<br><br><span class="hljs-comment"># plot the line, the points, and the nearest vectors to the plane</span><br>Z = clf.decision_function(np.c_[xx.ravel(), yy.ravel()])<br>Z = Z.reshape(xx.shape)<br>plt.figure(figsize=(<span class="hljs-number">10</span>,<span class="hljs-number">6</span>))<br>plt.title(<span class="hljs-string">&#x27;Novelty Detection&#x27;</span>)<br>plt.contourf(xx, yy, Z, levels=np.linspace(Z.<span class="hljs-built_in">min</span>(), <span class="hljs-number">0</span>, <span class="hljs-number">7</span>), cmap=plt.cm.PuBu)<br>a = plt.contour(xx, yy, Z, levels=[<span class="hljs-number">0</span>], linewidths=<span class="hljs-number">2</span>, colors=<span class="hljs-string">&#x27;darkred&#x27;</span>)<br>plt.contourf(xx, yy, Z, levels=[<span class="hljs-number">0</span>, Z.<span class="hljs-built_in">max</span>()], colors=<span class="hljs-string">&#x27;palevioletred&#x27;</span>)<br><br>s = <span class="hljs-number">40</span><br>b1 = plt.scatter(X_train[:, <span class="hljs-number">0</span>], X_train[:, <span class="hljs-number">1</span>], c=<span class="hljs-string">&#x27;white&#x27;</span>, s=s, edgecolors=<span class="hljs-string">&#x27;k&#x27;</span>)<br>b2 = plt.scatter(X_test[:, <span class="hljs-number">0</span>], X_test[:, <span class="hljs-number">1</span>], c=<span class="hljs-string">&#x27;blueviolet&#x27;</span>, s=s,<br>                 edgecolors=<span class="hljs-string">&#x27;k&#x27;</span>)<br>c = plt.scatter(X_outliers[:, <span class="hljs-number">0</span>], X_outliers[:, <span class="hljs-number">1</span>], c=<span class="hljs-string">&#x27;gold&#x27;</span>, s=s,<br>                edgecolors=<span class="hljs-string">&#x27;k&#x27;</span>)<br>plt.axis(<span class="hljs-string">&#x27;tight&#x27;</span>)<br>plt.xlim((-<span class="hljs-number">5</span>, <span class="hljs-number">5</span>))<br>plt.ylim((-<span class="hljs-number">5</span>, <span class="hljs-number">5</span>))<br>plt.legend([a.collections[<span class="hljs-number">0</span>], b1, b2, c],<br>           [<span class="hljs-string">&#x27;learned frontier&#x27;</span>, <span class="hljs-string">&#x27;training observations&#x27;</span>,<br>            <span class="hljs-string">&#x27;new regular observations&#x27;</span>, <span class="hljs-string">&#x27;new abnormal observations&#x27;</span>],<br>           loc=<span class="hljs-string">&#x27;upper left&#x27;</span>,<br>           prop=matplotlib.font_manager.FontProperties(size=<span class="hljs-number">11</span>))<br>plt.xlabel(<br>    <span class="hljs-string">&#x27;error train: %d/200 ; errors novel regular: %d/40 ; &#x27;</span><br>    <span class="hljs-string">&#x27;errors novel abnormal: %d/40&#x27;</span><br>    % (n_error_train, n_error_test, n_error_outliers))<br>plt.show()<br></code></pre></td></tr></table></figure>
+<ul>
+<li>运行效果：</li>
+</ul>
+<p><img src="https://uipv4.zywvvd.com:33030/HexoFiles/vvd_pc_upload/202210291421718.jpg" srcset="/img/loading.gif" lazyload alt=""></p>
+<h3 id="原始论文">原始论文</h3>
+<iframe src='https://uipv4.zywvvd.com:33030/HexoFiles/js/vvd_js/pdfjs/web/viewer.html?file=https://uipv4.zywvvd.com:33030/HexoFiles/vvd_pc_upload/202210291424682.pdf' style='width:100%;height:650px'></iframe>
+<h3 id="参考资料">参考资料</h3>
+<ul>
+<li>
+<p><a target="_blank" rel="noopener" href="https://proceedings.neurips.cc/paper/1999/hash/8725fb777f25776ffa9076e44fcfd776-Abstract.html">Support vector method for novelty detection</a></p>
+</li>
+<li>
+<p><a target="_blank" rel="noopener" href="https://zhuanlan.zhihu.com/p/32784067">https://zhuanlan.zhihu.com/p/32784067</a></p>
+</li>
+<li>
+<p><a target="_blank" rel="noopener" href="https://blog.csdn.net/u011698800/article/details/109458355">https://blog.csdn.net/u011698800/article/details/109458355</a></p>
+</li>
+<li>
+<p><a target="_blank" rel="noopener" href="https://cyeninesky3.medium.com/oneclass-svm-%E7%95%B0%E5%B8%B8%E6%AA%A2%E6%B8%AC%E4%BB%BB%E5%8B%99-anomaly-detection-%E7%9A%84%E7%AE%97%E6%B3%95%E7%90%86%E8%A7%A3%E8%88%87%E5%AF%A6%E8%B8%90-cf5f0bbb01c0">https://cyeninesky3.medium.com/oneclass-svm-異常檢測任務-anomaly-detection-的算法理解與實踐-cf5f0bbb01c0</a></p>
+</li>
+</ul>
+<link rel="stylesheet" href="/css/spoiler.css" type="text/css"><script src="/js/spoiler.js" type="text/javascript" async></script>
+                
+
+
+				<br /><br />
+				<blockquote>
+					<p>文章链接：<br /> 
+					<a style="font-size: 0.85rem" target="_blank" rel="noopener" href="https://www.zywvvd.com/notes/study/machine-learning/one-class/ocsvm/ocsvm/">https://www.zywvvd.com/notes/study/machine-learning/one-class/ocsvm/ocsvm/</a>
+					</p>
+				</blockquote>
+
+
+              </div>
+            
+            <hr/>
+			
+			<!-- 添加打赏模块 -->
+			<div class="reward-container">
+				
+					<button id="rewardBtn" class="reward-btn">
+						 
+							❤ 打赏
+							
+					</button>
+					<p class="tea">“觉得不错的话，给点打赏吧 ୧(๑•̀⌄•́๑)૭”</p>
+					<div id="rewardImgContainer" class="reward-img-container">
+						<div class="singleImgContainer">
+							<img id="wechatImg" class="reward-img" src="https://uipv4.zywvvd.com:33030/HexoFiles/vvd_pc_upload/wechatpay.png" srcset="/img/loading.gif" lazyload alt="微信二维码">
+							<p class="wechatPay">微信支付</p>
+						</div>
+						<div class="singleImgContainer">
+							<img id="alipayImg" class="reward-img" src="https://uipv4.zywvvd.com:33030/HexoFiles/vvd_pc_upload/alipay.png" srcset="/img/loading.gif" lazyload alt="支付宝二维码">
+							<p class="aliPay">支付宝支付</p>
+						</div>
+					</div>
+				
+			</div>
+			
+            <div>
+              <div class="post-metas my-3">
+  
+    <div class="post-meta mr-3 d-flex align-items-center">
+      <i class="iconfont icon-category"></i>
+      
+
+<span class="category-chains">
+  
+  
+    
+      <span class="category-chain">
+        
+  <a href="/categories/Machine-Learning/" class="category-chain-item">Machine_Learning</a>
+  
+  
+    <span>></span>
+    
+  <a href="/categories/Machine-Learning/Anomaly-Detection/" class="category-chain-item">Anomaly_Detection</a>
+  
+  
+
+  
+
+      </span>
+    
+  
+</span>
+
+    </div>
+  
+  
+    <div class="post-meta">
+      <i class="iconfont icon-tags"></i>
+      
+        <a href="/tags/Machine-Learning/" class="print-no-link">#Machine_Learning</a>
+      
+        <a href="/tags/Anomaly-Detection/" class="print-no-link">#Anomaly_Detection</a>
+      
+    </div>
+  
+</div>
+
+
+              
+  
+
+  <div class="license-box my-3">
+    <div class="license-title">
+      <div>异常检测 One Class SVM 算法的个人理解</div>
+      <div>https://www.zywvvd.com/notes/study/machine-learning/one-class/ocsvm/ocsvm/</div>
+    </div>
+    <div class="license-meta">
+      
+        <div class="license-meta-item">
+          <div>作者</div>
+          <div>Yiwei Zhang</div>
+        </div>
+      
+      
+        <div class="license-meta-item license-meta-date">
+          <div>发布于</div>
+          <div>2022年10月29日</div>
+        </div>
+      
+      
+      
+        <div class="license-meta-item">
+          <div>许可协议</div>
+          <div>
+            
+              
+              
+                <a class="print-no-link" target="_blank" href="https://creativecommons.org/licenses/by/4.0/">
+                  <span class="hint--top hint--rounded" aria-label="BY - 署名">
+                    <i class="iconfont icon-by"></i>
+                  </span>
+                </a>
+              
+            
+          </div>
+        </div>
+      
+    </div>
+    <div class="license-icon iconfont"></div>
+  </div>
+
+
+
+              
+                <div class="post-prevnext my-3">
+                  <article class="post-prev col-6">
+                    
+                    
+                      <a href="/notes/study/machine-learning/about-svm/svm-kernel/svm-kernel/" title="SVM 中的核函数 (kernel function)">
+                        <i class="iconfont icon-arrowleft"></i>
+                        <span class="hidden-mobile">SVM 中的核函数 (kernel function)</span>
+                        <span class="visible-mobile">上一篇</span>
+                      </a>
+                    
+                  </article>
+                  <article class="post-next col-6">
+                    
+                    
+                      <a href="/notes/coding/cpp/opencv-image-watch/opencv-image-watch/" title="OpenCV image watch 插件安装与使用">
+                        <span class="hidden-mobile">OpenCV image watch 插件安装与使用</span>
+                        <span class="visible-mobile">下一篇</span>
+                        <i class="iconfont icon-arrowright"></i>
+                      </a>
+                    
+                  </article>
+                </div>
+              
+            </div>
+
+            
+  
+  
+    <article id="comments" lazyload>
+      
+  <div id="waline"></div>
+  <script type="text/javascript">
+    Fluid.utils.loadComments('#waline', function() {
+      Fluid.utils.createCssLink('https://lib.baomitu.com/waline/2.14.8/waline.min.css')
+      Fluid.utils.createScript('https://lib.baomitu.com/waline/2.14.8/waline.min.js', function() {
+        var options = Object.assign(
+          {"serverURL":"https://uipv4.zywvvd.com:33033/","path":"window.location.pathname","meta":["nick","mail","link"],"requiredMeta":["nick"],"lang":"zh-CN","emoji":["https://cdn.jsdelivr.net/gh/walinejs/emojis/weibo"],"dark":"html[data-user-color-scheme=\"dark\"]","wordLimit":0,"pageSize":10,"reaction":true,"locale":{"placeholder":"山高路远，常来玩吖 ~","reactionTitle":null}},
+          {
+            el: '#waline',
+            path: window.location.pathname
+          }
+        )
+        Waline.init(options);
+        Fluid.utils.waitElementVisible('#waline .vcontent', () => {
+          var imgSelector = '#waline .vcontent img:not(.vemoji)';
+          Fluid.plugins.imageCaption(imgSelector);
+          Fluid.plugins.fancyBox(imgSelector);
+        })
+      });
+    });
+  </script>
+  <noscript>Please enable JavaScript to view the comments</noscript>
+
+
+    </article>
+  
+
+
+          </article>
+        </div>
+      </div>
+    </div>
+
+    <div class="side-col d-none d-lg-block col-lg-2">
+      
+  <aside class="sidebar" style="margin-left: -1rem">
+    <div id="toc">
+  <p class="toc-header">
+    <i class="iconfont icon-list"></i>
+    <span>目录</span>
+  </p>
+  <div class="toc-body" id="toc-body"></div>
+</div>
+
+
+
+  </aside>
+
+
+    </div>
+  </div>
+</div>
+
+
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+  
+  
+
+
+
+
+
+  <script>
+  Fluid.utils.createScript('https://lib.baomitu.com/mermaid/8.14.0/mermaid.min.js', function() {
+    mermaid.initialize({"theme":"default"});
+
+    Fluid.utils.listenDOMLoaded(function() {
+      Fluid.events.registerRefreshCallback(function() {
+        if ('mermaid' in window) {
+          mermaid.init();
+        }
+      });
+    });
+  });
+</script>
+
+
+
+
+
+
+    
+
+    
+      <a id="scroll-top-button" aria-label="TOP" href="#" role="button">
+        <i class="iconfont icon-xiangshangjiantou" aria-hidden="true"></i>
+      </a>
+    
+
+    
+      <div class="modal fade" id="modalSearch" tabindex="-1" role="dialog" aria-labelledby="ModalLabel"
+     aria-hidden="true">
+  <div class="modal-dialog modal-dialog-scrollable modal-lg" role="document">
+    <div class="modal-content">
+      <div class="modal-header text-center">
+        <h4 class="modal-title w-100 font-weight-bold">搜索</h4>
+        <button type="button" id="local-search-close" class="close" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body mx-3">
+        <div class="md-form mb-5">
+          <input type="text" id="local-search-input" class="form-control validate">
+          <label data-error="x" data-success="v" for="local-search-input">关键词</label>
+        </div>
+        <div class="list-group" id="local-search-result"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+    
+
+    
+  </main>
+
+  <footer>
+    <div class="footer-inner">
+  
+    <div class="footer-content">
+       <div class="vvd_footer" style="font-size: 0.85rem;"> <a href="https://hexo.io" target="_blank" rel="nofollow noopener" color="#d7d8d9" data-umami-event="Footer-Hexo"><span class="umami--click--Footer-Hexo">Hexo</span></a> <i class="iconfont icon-love"></i> <a href="https://github.com/fluid-dev/hexo-theme-fluid" target="_blank" rel="nofollow noopener" data-umami-event="Footer-Fluid"><span class="umami--click--Footer-Fluid">Fluid</span></a> <i class="iconfont icon-love"></i> <a href="https://uipv4.zywvvd.com:33039/share/0zx3o21oIpZTZqwC/%E5%8F%88%E8%A7%81%E8%8B%8D%E5%B2%9A" target="_blank" rel="nofollow noopener" data-umami-event="Footer-Umami"><span class="umami--click--Footer-Umami">Umami</span></a> <div style="font-size: 0.85rem;"> <span id="timeDate">载入天数...</span> <span id="times">载入时分秒...</span> <script src="/vvd_js/duration.js"></script> </div> <div style="font-size: 0.85rem;"> <span> 总访问量 <span style="color: #d7d8d9;" id="PVstatic">0</span> 次&nbsp</span> <span> 总访客数 <span style="color: #d7d8d9;" id="UVstatic">0</span> 人&nbsp</span> <span> 当前在线 <span style="color: #d7d8d9;" id="ACTstatic">0</span> 人&nbsp</span> <script src="https://uipv4.zywvvd.com:33037/statistics" defer></script> </div> <div> <span> Copyright © 2020-2024. All Rights Reserved.</span> </div> <div style="font-size: 0.85rem;"> <a target="_blank" rel="noopener" href="https://developer.hitokoto.cn/" id="hitokoto_text"><span style="color: #d7d8d9;"  id="hitokoto"></span></a> <script src="https://uipv4.zywvvd.com:33044/?encode=js&select=%23hitokoto" defer></script> </div> <a href="https://icp.gov.moe/?keyword=20230615" target="_blank">萌ICP备20230615号</a>
+
+
+</div> 
+    </div>
+  
+  
+  
+  
+</div>
+
+  </footer>
+
+  <!-- Scripts -->
+  
+  <script  src="https://lib.baomitu.com/nprogress/0.2.0/nprogress.min.js" ></script>
+  <link  rel="stylesheet" href="https://lib.baomitu.com/nprogress/0.2.0/nprogress.min.css" />
+
+  <script>
+    NProgress.configure({"showSpinner":false,"trickleSpeed":100})
+    NProgress.start()
+    window.addEventListener('load', function() {
+      NProgress.done();
+    })
+  </script>
+
+
+<script  src="https://lib.baomitu.com/jquery/3.6.0/jquery.min.js" ></script>
+<script  src="https://lib.baomitu.com/twitter-bootstrap/4.6.1/js/bootstrap.min.js" ></script>
+<script  src="/js/events.js" ></script>
+<script  src="/js/plugins.js" ></script>
+
+
+
+
+
+  
+    <script  src="/js/img-lazyload.js" ></script>
+  
+
+
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/tocbot/4.18.2/tocbot.min.js', function() {
+    var toc = jQuery('#toc');
+    if (toc.length === 0 || !window.tocbot) { return; }
+    var boardCtn = jQuery('#board-ctn');
+    var boardTop = boardCtn.offset().top;
+
+    window.tocbot.init(Object.assign({
+      tocSelector     : '#toc-body',
+      contentSelector : '.markdown-body',
+      linkClass       : 'tocbot-link',
+      activeLinkClass : 'tocbot-active-link',
+      listClass       : 'tocbot-list',
+      isCollapsedClass: 'tocbot-is-collapsed',
+      collapsibleClass: 'tocbot-is-collapsible',
+      scrollSmooth    : true,
+      includeTitleTags: true,
+      headingsOffset  : -boardTop,
+    }, CONFIG.toc));
+    if (toc.find('.toc-list-item').length > 0) {
+      toc.css('visibility', 'visible');
+    }
+
+    Fluid.events.registerRefreshCallback(function() {
+      if ('tocbot' in window) {
+        tocbot.refresh();
+        var toc = jQuery('#toc');
+        if (toc.length === 0 || !tocbot) {
+          return;
+        }
+        if (toc.find('.toc-list-item').length > 0) {
+          toc.css('visibility', 'visible');
+        }
+      }
+    });
+  });
+</script>
+
+
+  <script src=https://lib.baomitu.com/clipboard.js/2.0.10/clipboard.min.js></script>
+
+  <script>Fluid.plugins.codeWidget();</script>
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/anchor-js/4.3.1/anchor.min.js', function() {
+    window.anchors.options = {
+      placement: CONFIG.anchorjs.placement,
+      visible  : CONFIG.anchorjs.visible
+    };
+    if (CONFIG.anchorjs.icon) {
+      window.anchors.options.icon = CONFIG.anchorjs.icon;
+    }
+    var el = (CONFIG.anchorjs.element || 'h1,h2,h3,h4,h5,h6').split(',');
+    var res = [];
+    for (var item of el) {
+      res.push('.markdown-body > ' + item.trim());
+    }
+    if (CONFIG.anchorjs.placement === 'left') {
+      window.anchors.options.class = 'anchorjs-link-left';
+    }
+    window.anchors.add(res.join(', '));
+
+    Fluid.events.registerRefreshCallback(function() {
+      if ('anchors' in window) {
+        anchors.removeAll();
+        var el = (CONFIG.anchorjs.element || 'h1,h2,h3,h4,h5,h6').split(',');
+        var res = [];
+        for (var item of el) {
+          res.push('.markdown-body > ' + item.trim());
+        }
+        if (CONFIG.anchorjs.placement === 'left') {
+          anchors.options.class = 'anchorjs-link-left';
+        }
+        anchors.add(res.join(', '));
+      }
+    });
+  });
+</script>
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/fancybox/3.5.7/jquery.fancybox.min.js', function() {
+    Fluid.plugins.fancyBox();
+  });
+</script>
+
+
+  <script>Fluid.plugins.imageCaption();</script>
+
+  
+      <script>
+        if (!window.MathJax) {
+          window.MathJax = {
+            tex    : {
+              inlineMath: { '[+]': [['$', '$']] }
+            },
+            options: {
+              renderActions: {
+                insertedScript: [200, () => {
+                  document.querySelectorAll('mjx-container').forEach(node => {
+                    let target = node.parentNode;
+                    if (target.nodeName.toLowerCase() === 'li') {
+                      target.parentNode.classList.add('has-jax');
+                    }
+                  });
+                }, '', false]
+              }
+            }
+          };
+        } else {
+          MathJax.startup.document.state(0);
+          MathJax.texReset();
+          MathJax.typeset();
+          MathJax.typesetPromise();
+        }
+
+        Fluid.events.registerRefreshCallback(function() {
+          if ('MathJax' in window && MathJax.startup.document && typeof MathJax.startup.document.state === 'function') {
+            MathJax.startup.document.state(0);
+            MathJax.texReset();
+            MathJax.typeset();
+            MathJax.typesetPromise();
+          }
+        });
+      </script>
+    
+
+  <script  src="https://lib.baomitu.com/mathjax/3.2.1/es5/tex-mml-chtml.js" ></script>
+
+  <script defer src="/js/leancloud.js" ></script>
+
+  <script  src="/js/local-search.js" ></script>
+
+
+
+
+  
+<script src="//cdn.jsdelivr.net/npm/aplayer/dist/APlayer.min.js"></script>
+<script src="//cdn.jsdelivr.net/gh/metowolf/MetingJS@1.2/dist/Meting.min.js"></script>
+<script src="/js/reward.js"></script>
+
+
+
+<!-- 主题的启动项，将它保持在最底部 -->
+<!-- the boot of the theme, keep it at the bottom -->
+<script  src="/js/boot.js" ></script>
+
+
+  <script type="text/javascript">
+    /*窗口监视*/
+    var originalTitle = document.title;
+    window.onblur = function(){document.title = "明眸如初"};
+    window.onfocus = function(){document.title = originalTitle};
+  </script>
+
+
+  <div id="tooltip-rightmenu" class="tooltip-rightmenu">如需原始右键菜单请按下 <strong>Ctrl+右键</strong></div>
+
+<div id="rightmenu-wrapper" style="">
+  <ul class="list-v rightmenu" id="rightmenu-content">
+	  <li class="navigation menuNavigation-Content">
+		<a class="nav icon-only fix-cursor-default" onclick="history.back()"><i class="iconfont icon-zuojiantou1"></i></a>
+		<a class="nav icon-only fix-cursor-default" onclick="history.forward()"><i class="iconfont icon-youjiantou1"></i></a>
+		<a class="nav icon-only fix-cursor-default" onclick="window.location.reload()"><i class="iconfont icon-shuaxin"></i></a>
+		<a  aria-label="TOP" href="#" role="button"><i class="iconfont icon-xiangshang"></i></a>
+	  </li>
+
+		<hr class="menuLoad-Content" style="display: block;">
+	  <li class="menuLoad-Content" style="display: block;">
+		<a class="vlts-menu fix-cursor-default" target="_self" href="javascript:;" data-toggle="modal" data-target="#modalSearch" aria-label="Search">
+		  <span>
+			  <i class="iconfont icon-sousuo1 rightmenu-icon"></i>
+			  站内搜索
+		  </span>
+		</a>
+	  </li>
+
+	  <li class="menuLoad-Content" style="display: block;">
+		<a class="vlts-menu fix-cursor-default"  href="https://www.zywvvd.com/messagebd/" data-group="link">
+		  <span>
+			  <i class="iconfont icon-yangshi_icon_tongyong_chat rightmenu-icon">  </i>
+			   留言吐槽 
+		   </span>
+		</a>
+	  </li>
+
+
+	  <li class="menuLoad-Content" style="display: block;">
+		<a class="vlts-menu fix-cursor-default" id="help" target="_blank" rel="noopener" href="https://www.foreverblog.cn/go.html" data-group="link">
+		<span>
+			  <i class="iconfont icon-a-BlackHole rightmenu-icon"></i>
+			  虫洞穿梭
+		  </span>
+		</a>
+	  </li>
+
+	<a id="scroll-top-button" aria-label="TOP" href="#" role="button" style="bottom: 20px; right: 52.6364px;">
+        <i class="iconfont icon-xiangshangjiantou" aria-hidden="true"></i>
+      </a>
+
+	<hr class="menuLoad-Content" style="display: block;">
+	
+	  <li class="menuLoad-Content" style="display: block;">
+		<a class="vlts-menu fix-cursor-default" id="destroy-airplane" target="_blank" rel="noopener"  data-group="link">
+		<span>
+			  <i class="iconfont icon-feiji rightmenu-icon"></i>
+			  破坏小飞机
+		  </span>
+		</a>
+	  </li>
+  </ul>
+</div>
+
+<script>
+	var ua = navigator.userAgent;
+	var ipad = ua.match(/(iPad).*OS\s([\d_]+)/),
+		isIphone = !ipad && ua.match(/(iPhone\sOS)\s([\d_]+)/),
+		isAndroid = ua.match(/(Android)\s+([\d.]+)/),
+		isMobile = isIphone || isAndroid;
+
+	if(!isMobile) {
+		// 为按钮添加事件处理器
+		document.getElementById('destroy-airplane').onclick = function() {
+		  console.log('飞机起飞！');
+		  // 定义要执行的JavaScript代码
+		var KICKASSVERSION='2.0';
+		var s = document.createElement('script');
+		s.type='text/javascript';
+		document.body.appendChild(s);
+		s.src='https://uipv4.zywvvd.com:33030/HexoFiles/js/games/airplane/airplane.js';
+		void(0);
+		};
+	}
+</script>
+
+
+
+
+
+<link href="/css/custom.css"type="text/css"rel="stylesheet"/>
+<script src="/vvd_js/right_menu.js" type="text/javascript"></script>
+<link href="/css/right_menu.css"type="text/css"rel="stylesheet"/>
+<script src="/vvd_js/go.js"></script>
+
+
+  <noscript>
+    <div class="noscript-warning">博客在允许 JavaScript 运行的环境下浏览效果更佳</div>
+  </noscript>
+<script src="/live2dw/lib/L2Dwidget.min.js?094cbace49a39548bed64abff5988b05"></script><script>L2Dwidget.init({"pluginRootPath":"live2dw/","pluginJsPath":"lib/","pluginModelPath":"assets/","tagMode":false,"log":false,"model":{"jsonPath":"/live2dw/assets/z16.model.json"},"display":{"position":"left","width":200,"height":400},"mobile":{"show":false},"react":{"opacity":0.9}});</script></body>
+</html>

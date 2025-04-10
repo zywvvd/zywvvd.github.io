@@ -1,0 +1,1558 @@
+
+
+<!DOCTYPE html>
+<html lang="zh-CN" data-default-color-scheme=auto>
+
+
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="baidu-site-verification" content="codeva-rLWafCJGYc" />
+  <link rel="apple-touch-icon" sizes="76x76" href="/image/avatar.png">
+  <link rel="icon" href="/image/avatar.png">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, shrink-to-fit=no">
+  <meta http-equiv="x-ua-compatible" content="ie=edge">
+  
+  <meta name="theme-color" content="#2f4154">
+  <meta name="author" content="Yiwei Zhang">
+  <meta name="keywords" content="人工智能, 深度学习, 个人博客, 机器学习">
+  
+    <meta name="description" content="Meta 宣布推出一个全新的 AI 模型 Image Joint Embedding Predictive Architecture (I-JEPA)，可通过对图像的自我监督学习来学习世界的抽象表征，实现比现有模型更准确地分析和完成未完成的图像。">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Meta 自监督学习 I-JEPA 论文笔记">
+<meta property="og:url" content="https://www.zywvvd.com/notes/study/deep-learning/self-supervised/i-jepa/i-jepa/index.html">
+<meta property="og:site_name" content="又见苍岚">
+<meta property="og:description" content="Meta 宣布推出一个全新的 AI 模型 Image Joint Embedding Predictive Architecture (I-JEPA)，可通过对图像的自我监督学习来学习世界的抽象表征，实现比现有模型更准确地分析和完成未完成的图像。">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="https://uipv4.zywvvd.com:33030/HexoFiles/vvd_file_mt/202306251603592.jpg">
+<meta property="og:image" content="https://uipv4.zywvvd.com:33030/HexoFiles/vvd_file_mt/202306251606868.jpg">
+<meta property="og:image" content="https://uipv4.zywvvd.com:33030/HexoFiles/vvd_file_mt/202306251608175.jpg">
+<meta property="og:image" content="https://uipv4.zywvvd.com:33030/HexoFiles/vvd_file_mt/202306251610302.jpg">
+<meta property="og:image" content="https://uipv4.zywvvd.com:33030/HexoFiles/vvd_file_mt/202306251611955.jpg">
+<meta property="og:image" content="https://uipv4.zywvvd.com:33030/HexoFiles/vvd_file_mt/202306251619909.jpg">
+<meta property="og:image" content="https://uipv4.zywvvd.com:33030/HexoFiles/vvd_file_mt/202306251639702.jpg">
+<meta property="og:image" content="https://uipv4.zywvvd.com:33030/HexoFiles/vvd_file_mt/202306251641785.jpg">
+<meta property="og:image" content="https://uipv4.zywvvd.com:33030/HexoFiles/vvd_file_mt/202306251642022.jpg">
+<meta property="og:image" content="https://uipv4.zywvvd.com:33030/HexoFiles/vvd_file_mt/202306251644395.jpg">
+<meta property="article:published_time" content="2023-06-25T07:40:41.000Z">
+<meta property="article:modified_time" content="2024-05-07T05:57:50.532Z">
+<meta property="article:author" content="Yiwei Zhang">
+<meta property="article:tag" content="Deep_Learning">
+<meta property="article:tag" content="Self_Supervised_Learning">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:image" content="https://uipv4.zywvvd.com:33030/HexoFiles/vvd_file_mt/202306251603592.jpg">
+  
+  
+  
+  <title>Meta 自监督学习 I-JEPA 论文笔记 - 又见苍岚</title>
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/twitter-bootstrap/4.6.1/css/bootstrap.min.css" />
+
+
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/github-markdown-css/4.0.0/github-markdown.min.css" />
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/hint.css/2.7.0/hint.min.css" />
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/fancybox/3.5.7/jquery.fancybox.min.css" />
+
+
+
+<!-- 主题依赖的图标库，不要自行修改 -->
+<!-- Do not modify the link that theme dependent icons -->
+
+<link rel="stylesheet" href="//at.alicdn.com/t/font_1749284_hj8rtnfg7um.css">
+
+
+
+<link rel="stylesheet" href="//at.alicdn.com/t/font_1736178_lbnruvf0jn.css">
+
+
+<link  rel="stylesheet" href="/css/main.css" />
+
+
+  <link id="highlight-css" rel="stylesheet" href="/css/highlight.css" />
+  
+    <link id="highlight-css-dark" rel="stylesheet" href="/css/highlight-dark.css" />
+  
+
+
+
+  
+<link rel="stylesheet" href="/css/custom.css">
+<link rel="stylesheet" href="/css/reward.css">
+<link rel="stylesheet" href="//cdn.jsdelivr.net/npm/aplayer/dist/APlayer.min.css">
+
+
+
+  <script id="fluid-configs">
+    var Fluid = window.Fluid || {};
+    Fluid.ctx = Object.assign({}, Fluid.ctx)
+    var CONFIG = {"hostname":"www.zywvvd.com","root":"/","version":"1.9.7","typing":{"enable":true,"typeSpeed":90,"cursorChar":"_","loop":false,"scope":["home"]},"anchorjs":{"enable":true,"element":"h1,h2,h3,h4,h5,h6","placement":"left","visible":"hover","icon":""},"progressbar":{"enable":true,"height_px":3,"color":"#29d","options":{"showSpinner":false,"trickleSpeed":100}},"code_language":{"enable":true,"default":"TEXT"},"copy_btn":true,"image_caption":{"enable":true},"image_zoom":{"enable":true,"img_url_replace":["",""]},"toc":{"enable":true,"placement":"right","headingSelector":"h1,h2,h3,h4,h5,h6","collapseDepth":0},"lazyload":{"enable":true,"loading_img":"/img/loading.gif","onlypost":false,"offset_factor":2},"web_analytics":{"enable":true,"follow_dnt":true,"baidu":null,"google":null,"tencent":{"sid":null,"cid":null},"woyaola":null,"cnzz":null,"leancloud":{"app_id":"Cv0XNeBSBdAPAIuVj3PsyM3R-MdYXbMMI","app_key":"4PU1rNlGrqXWzhfW3dgq98oX","server_url":null,"path":"window.location.pathname","ignore_local":false},"gtag":null},"search_path":"/local-search.xml","include_content_in_search":true};
+
+    if (CONFIG.web_analytics.follow_dnt) {
+      var dntVal = navigator.doNotTrack || window.doNotTrack || navigator.msDoNotTrack;
+      Fluid.ctx.dnt = dntVal && (dntVal.startsWith('1') || dntVal.startsWith('yes') || dntVal.startsWith('on'));
+    }
+  </script>
+  <script  src="/js/utils.js" ></script>
+  <script  src="/js/color-schema.js" ></script>
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+    
+  
+
+
+
+  
+<meta name="generator" content="Hexo 7.2.0"><link rel="alternate" href="/atom.xml" title="又见苍岚" type="application/atom+xml">
+</head>
+
+
+<body>
+  
+<div id="Loadanimation" style="z-index:999999;">
+<div id="Loadanimation-center">
+   <div id="Loadanimation-center-absolute">
+       <div class="xccx_object" id="xccx_four"></div>
+       <div class="xccx_object" id="xccx_three"></div>
+       <div class="xccx_object" id="xccx_two"></div>
+       <div class="xccx_object" id="xccx_one"></div>
+   </div>
+</div>
+</div>
+
+<link href="/css/loading.css"type="text/css"rel="stylesheet"/>
+
+
+
+
+
+
+<div>
+	<div class='real_mask' style="
+		background-color: rgba(0,0,0,0.4);
+		width: 100%;
+		height: 100%;
+		position: fixed;
+		z-index: -777;
+	"></div>
+	<div id="banner_video_insert">
+	</div>	
+	<div id='vvd_banner_img'>
+	</div>
+</div>
+<div id="banner"></div>
+
+
+
+
+
+
+
+  <header>
+    
+
+<div class="header-inner" style="height: 80vh;">
+  <nav id="navbar" class="navbar fixed-top  navbar-expand-lg navbar-dark scrolling-navbar">
+  <div class="container">
+    <a class="navbar-brand" href="/">
+      <strong>CangLan</strong>
+    </a>
+
+    <button id="navbar-toggler-btn" class="navbar-toggler" type="button" data-toggle="collapse"
+            data-target="#navbarSupportedContent"
+            aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
+      <div class="animated-icon"><span></span><span></span><span></span></div>
+    </button>
+
+    <!-- Collapsible content -->
+    <div class="collapse navbar-collapse" id="navbarSupportedContent">
+      <ul class="navbar-nav ml-auto text-center">
+        
+          
+          
+          
+          
+            <li class="nav-item">
+		<div >
+		      <a class="nav-link" href="/" target="_self" data-umami-event="Navigation-Homepage">
+
+		        <i class="iconfont icon-home-fill"></i>
+		        <span>首页</span>
+		      </a>
+		</div>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item dropdown">
+              <a class="nav-link dropdown-toggle" target="_self" href="javascript:;" role="button"
+                 data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                <i class="iconfont icon-shuji1"></i>
+                <span>文章</span>
+              </a>
+              <div class="dropdown-menu" aria-labelledby="navbarDropdown">
+                
+                  
+                  
+                  
+		<div >
+
+                  <a class="dropdown-item" href="/archives/" target="_self" data-umami-event="Navigation-Archive">
+
+                    <i class="iconfont icon-archive-fill"></i>
+                    <span>归档</span>
+                  </a>
+		</div>
+                
+                  
+                  
+                  
+		<div >
+
+                  <a class="dropdown-item" href="/categories/" target="_self" data-umami-event="Navigation-Category">
+
+                    <i class="iconfont icon-category-fill"></i>
+                    <span>分类</span>
+                  </a>
+		</div>
+                
+                  
+                  
+                  
+		<div >
+
+                  <a class="dropdown-item" href="/tags/" target="_self" data-umami-event="Navigation-Tag">
+
+                    <i class="iconfont icon-tags-fill"></i>
+                    <span>标签</span>
+                  </a>
+		</div>
+                
+                  
+                  
+                  
+		<div >
+
+                  <a class="dropdown-item" href="/shuoshuo/" target="_self" data-umami-event="Navigation-Shuoshuo">
+
+                    <i class="iconfont icon-24gf-bubblesDots4"></i>
+                    <span>说说</span>
+                  </a>
+		</div>
+                
+              </div>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item dropdown">
+              <a class="nav-link dropdown-toggle" target="_self" href="javascript:;" role="button"
+                 data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                <i class="iconfont icon-momo"></i>
+                <span>社交</span>
+              </a>
+              <div class="dropdown-menu" aria-labelledby="navbarDropdown">
+                
+                  
+                  
+                  
+		<div >
+
+                  <a class="dropdown-item" href="/links/" target="_self" data-umami-event="Navigation-Friends">
+
+                    <i class="iconfont icon-link-fill"></i>
+                    <span>友链</span>
+                  </a>
+		</div>
+                
+                  
+                  
+                  
+		<div >
+
+                  <a class="dropdown-item" href="/messagebd/" target="_self" data-umami-event="Navigation-MessageBoard">
+
+                    <i class="iconfont icon-comment"></i>
+                    <span>留言板</span>
+                  </a>
+		</div>
+                
+                  
+                  
+                  
+		<div >
+
+                  <a class="dropdown-item" href="/atom.xml" target="_self" data-umami-event="Navigation-RSS">
+
+                    <i class="iconfont icon-dingyue"></i>
+                    <span>RSS订阅</span>
+                  </a>
+		</div>
+                
+                  
+                  
+                  
+		<div >
+
+                  <a class="dropdown-item" href="/reccomments/" target="_self" data-umami-event="Navigation-Recent-Comments">
+
+                    <i class="iconfont icon-icon-pinglunguanli-pinglunliebiao"></i>
+                    <span>近期评论</span>
+                  </a>
+		</div>
+                
+              </div>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item dropdown">
+              <a class="nav-link dropdown-toggle" target="_self" href="javascript:;" role="button"
+                 data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                <i class="iconfont icon-user-fill"></i>
+                <span>个人</span>
+              </a>
+              <div class="dropdown-menu" aria-labelledby="navbarDropdown">
+                
+                  
+                  
+                  
+		<div >
+
+                  <a class="dropdown-item" href="/about/" target="_self" data-umami-event="Navigation-AboutMe">
+
+                    <i class="iconfont icon-guanyuwomen"></i>
+                    <span>关于</span>
+                  </a>
+		</div>
+                
+                  
+                  
+                  
+		<div >
+
+                  <a class="dropdown-item" href="/playlist/" target="_self" data-umami-event="Navigation-Music">
+
+                    <i class="iconfont icon-music"></i>
+                    <span>歌单</span>
+                  </a>
+		</div>
+                
+                  
+                  
+                  
+		<div >
+
+                  <a class="dropdown-item" href="https://uipv4.zywvvd.com:33035" target="_self" data-umami-event="Navigation-Nextcloud">
+
+                    <i class="iconfont icon-xuniyingpan"></i>
+                    <span>网盘</span>
+                  </a>
+		</div>
+                
+                  
+                  
+                  
+		<div >
+
+                  <a class="dropdown-item" href="https://uipv4.zywvvd.com:38920" target="_self" data-umami-event="Navigation-Emby">
+
+                    <i class="iconfont icon-meiti"></i>
+                    <span>影院</span>
+                  </a>
+		</div>
+                
+                  
+                  
+                  
+		<div >
+
+                  <a class="dropdown-item" href="https://uipv4.zywvvd.com:33036" target="_self" data-umami-event="Navigation-OneDev">
+
+                    <i class="iconfont icon-git"></i>
+                    <span>仓库</span>
+                  </a>
+		</div>
+                
+                  
+                  
+                  
+		<div >
+
+                  <a class="dropdown-item" href="https://uipv4.zywvvd.com:33041" target="_self" data-umami-event="Navigation-Wiki">
+
+                    <i class="iconfont icon-wiki"></i>
+                    <span>百科</span>
+                  </a>
+		</div>
+                
+              </div>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item dropdown">
+              <a class="nav-link dropdown-toggle" target="_self" href="javascript:;" role="button"
+                 data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                <i class="iconfont icon-ic_fly"></i>
+                <span>导航</span>
+              </a>
+              <div class="dropdown-menu" aria-labelledby="navbarDropdown">
+                
+                  
+                  
+                  
+		<div >
+
+                  <a class="dropdown-item" href="/site-map/" target="_self" data-umami-event="Navigation-SiteMap">
+
+                    <i class="iconfont icon-lianjie"></i>
+                    <span>链接</span>
+                  </a>
+		</div>
+                
+                  
+                  
+                  
+		<div >
+
+                  <a class="dropdown-item" href="/nodeppt/hexo/snavigation/" target="_self" data-umami-event="Navigation-Search">
+
+                    <i class="iconfont icon-sousuo"></i>
+                    <span>搜索</span>
+                  </a>
+		</div>
+                
+              </div>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item dropdown">
+              <a class="nav-link dropdown-toggle" target="_self" href="javascript:;" role="button"
+                 data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                <i class="iconfont icon-wangzhan"></i>
+                <span>站点</span>
+              </a>
+              <div class="dropdown-menu" aria-labelledby="navbarDropdown">
+                
+                  
+                  
+                  
+		<div >
+
+                  <a class="dropdown-item" href="https://uipv4.zywvvd.com:33039/share/0zx3o21oIpZTZqwC/%E5%8F%88%E8%A7%81%E8%8B%8D%E5%B2%9A" target="_self" data-umami-event="Navigation-Umami">
+
+                    <i class="iconfont icon-tongji2"></i>
+                    <span>站点分析</span>
+                  </a>
+		</div>
+                
+                  
+                  
+                  
+		<div >
+
+                  <a class="dropdown-item" href="/earth_sta/" target="_self" data-umami-event="Navigation-Globe">
+
+                    <i class="iconfont icon-tongjifenxi-xiangmubiaogetongji"></i>
+                    <span>访问统计</span>
+                  </a>
+		</div>
+                
+                  
+                  
+                  
+		<div >
+
+                  <a class="dropdown-item" href="https://uipv4.zywvvd.com:33034/status/show" target="_self" data-umami-event="Navigation-Monitor">
+
+                    <i class="iconfont icon-jiankong"></i>
+                    <span>站点监控</span>
+                  </a>
+		</div>
+                
+              </div>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item dropdown">
+              <a class="nav-link dropdown-toggle" target="_self" href="javascript:;" role="button"
+                 data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                <i class="iconfont icon-chuansong"></i>
+                <span>传送</span>
+              </a>
+              <div class="dropdown-menu" aria-labelledby="navbarDropdown">
+                
+                  
+                  
+                  
+		<div >
+
+                  <a class="dropdown-item" href="https://www.foreverblog.cn/go.html" target="_self" data-umami-event="Navigation-ForeverBolg">
+
+                    <i class="iconfont icon-a-BlackHole"></i>
+                    <span>十年之约</span>
+                  </a>
+		</div>
+                
+                  
+                  
+                  
+		<div >
+
+                  <a class="dropdown-item" href="https://www.travellings.cn/go.html" target="_self" data-umami-event="Navigation-DriveTo">
+
+                    <i class="iconfont icon-train1"></i>
+                    <span>开往</span>
+                  </a>
+		</div>
+                
+                  
+                  
+                  
+		<div >
+
+                  <a class="dropdown-item" href="https://bf.zzxworld.com/" target="_self" data-umami-event="Navigation-BlogFinder">
+
+                    <i class="iconfont icon-icon-"></i>
+                    <span>BlogFinder</span>
+                  </a>
+		</div>
+                
+              </div>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item dropdown">
+              <a class="nav-link dropdown-toggle" target="_self" href="javascript:;" role="button"
+                 data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                <i class="iconfont icon-gongju"></i>
+                <span>工具</span>
+              </a>
+              <div class="dropdown-menu" aria-labelledby="navbarDropdown">
+                
+                  
+                  
+                  
+		<div >
+
+                  <a class="dropdown-item" href="/navigates/calculator" target="_self" data-umami-event="Navigation-Calculator">
+
+                    <i class="iconfont icon-jisuan"></i>
+                    <span>计算器</span>
+                  </a>
+		</div>
+                
+                  
+                  
+                  
+		<div >
+
+                  <a class="dropdown-item" href="/navigates/webgraphviz" target="_self" data-umami-event="Navigation-WebGtaphviz">
+
+                    <i class="iconfont icon-tongyong-huatugongju2"></i>
+                    <span>Graphviz</span>
+                  </a>
+		</div>
+                
+              </div>
+            </li>
+          
+        
+        
+          <li class="nav-item" id="search-btn">
+            <a class="nav-link" target="_self" href="javascript:;" data-toggle="modal" data-target="#modalSearch" aria-label="Search">
+              <i class="iconfont icon-search"></i>
+            </a>
+          </li>
+          
+        
+        
+          <li class="nav-item" id="color-toggle-btn">
+            <a class="nav-link" target="_self" href="javascript:;" aria-label="Color Toggle">
+              <i class="iconfont icon-dark" id="color-toggle-icon"></i>
+            </a>
+          </li>
+        
+      </ul>
+    </div>
+  </div>
+</nav>
+
+  
+
+<div id="banner" class="banner" parallax=true
+     style="background: url('https://uipv4.zywvvd.com:33030/HexoFiles/new/bg-trans.png') no-repeat center center; background-size: cover;">
+  <div class="full-bg-img">
+    <div class="mask flex-center" style="background-color: rgba(0, 0, 0, 0)">
+      <div class="banner-text text-center fade-in-up">
+        <div class="h2">
+          
+            <span id="subtitle">Meta 自监督学习 I-JEPA 论文笔记</span>
+          
+        </div>
+
+        
+          
+  <div class="mt-3">
+    
+      <span class="post-meta mr-2">
+        <i class="iconfont icon-author" aria-hidden="true"></i>
+        Yiwei Zhang
+      </span>
+    
+    
+      <span class="post-meta">
+        <i class="iconfont icon-date-fill" aria-hidden="true"></i>
+        <time datetime="2023-06-25 15:40" pubdate>
+          2023年6月25日 下午
+        </time>
+      </span>
+    
+  </div>
+
+  <div class="mt-1">
+    
+      <span class="post-meta mr-2">
+        <i class="iconfont icon-chart"></i>
+        
+          <!-- compatible with older versions-->
+          4.5k 字
+        
+      </span>
+    
+
+    
+      <span class="post-meta mr-2">
+        <i class="iconfont icon-clock-fill"></i>
+        
+        
+        
+          <!-- compatible with older versions-->
+          38 分钟
+        
+      </span>
+    
+
+    
+    
+      
+        <span id="vvdpost_container_page_pvuv" style="display: none">
+          <i class="iconfont icon-eye" aria-hidden="true"></i>
+          <span id="vvdpost_value_page_pv">0</span> 次&nbsp&nbsp
+		  <i class="iconfont icon-users" aria-hidden="true"></i>
+		  <span id="vvdpost_value_page_uv">0</span> 人&nbsp&nbsp
+		  <i class="iconfont icon-comment" aria-hidden="true"></i>
+		  <span id="vvdpost_value_page_cn">0</span> 条
+        </span>
+
+		<script>
+			console.log(window.location.pathname)
+			var httpRequest = new XMLHttpRequest();
+			httpRequest.open('POST', 'https://uipv4.zywvvd.com:33037/poststats', true);
+			httpRequest.setRequestHeader("Content-type","application/json");
+			httpRequest.send(JSON.stringify(window.location.pathname));
+			httpRequest.onreadystatechange = function () {//请求后的回调接口，可将请求成功后要执行的程序写在其中
+				if (httpRequest.readyState == 4 && httpRequest.status == 200) {//验证请求是否发送成功
+					var json = httpRequest.responseText;//获取到服务端返回的数据
+					var obj = JSON.parse(json);
+					var pvCtn = document.querySelector('#vvdpost_container_page_pvuv');
+					if (pvCtn) {
+						var pv_ele = document.querySelector('#vvdpost_value_page_pv');
+						var uv_ele = document.querySelector('#vvdpost_value_page_uv');
+						var cn_ele = document.querySelector('#vvdpost_value_page_cn');
+
+						if (uv_ele && uv_ele) {
+							pv_ele.innerText = obj.pv;
+							uv_ele.innerText = obj.uv;
+							cn_ele.innerText = obj.cn;
+							pvCtn.style.display = 'inline';
+							}
+						}
+					}
+			};
+		</script>
+      
+    
+  </div>
+
+
+        
+      </div>
+
+      
+        <div class="scroll-down-bar">
+          <i class="iconfont icon-arrowdown"></i>
+        </div>
+      
+    </div>
+  </div>
+</div>
+
+</div>
+
+
+	<script type="text/javascript" src="/vvd_js/jquery.js"></script>
+	<script async src="https://uipv4.zywvvd.com:33039/script.js" data-website-id="dd4a05c6-dde2-4743-9c3a-a79d6bee0778"></script>
+	<div class="banner" id='banner' >
+
+		<div class="full-bg-img" >
+
+			
+				<script>
+					var ua = navigator.userAgent;
+					var ipad = ua.match(/(iPad).*OS\s([\d_]+)/),
+						isIphone = !ipad && ua.match(/(iPhone\sOS)\s([\d_]+)/),
+						isAndroid = ua.match(/(Android)\s+([\d.]+)/),
+						isMobile = isIphone || isAndroid;
+
+					function set_video_attr(id){
+						var height = document.body.clientHeight
+						var width = document.body.clientWidth
+						var video_item = document.getElementById(id);
+
+						if (height / width < 0.56){
+							video_item.setAttribute('width', '100%');
+							video_item.setAttribute('height', 'auto');
+						} else {
+							video_item.setAttribute('height', '100%');
+							video_item.setAttribute('width', 'auto');
+						}
+					}
+
+					fetch('https://uipv4.zywvvd.com:33037/wallpaper-pair')
+					  .then(response => response.json()) // 解析JSON数据
+					  .then(data => {
+						console.log('获取链接成功');
+						video_url = data[0][0]
+						pre_show_image_url = data[0][1]
+
+						banner_obj = document.getElementById("banner")
+						banner_obj.style.cssText = "background: url('" + pre_show_image_url + "') no-repeat;"
+
+						vvd_banner_obj = document.getElementById("vvd_banner_img")
+						vvd_banner_content = "<img id='banner_img_item' src='" + pre_show_image_url + "'style='position: fixed; z-index: -999'>"
+						vvd_banner_obj.innerHTML = vvd_banner_content 
+
+						if (!isMobile) {
+							video_html_res = "<video id='video_item' style='position: fixed; z-index: -888;'  muted='muted' src=" + video_url + " autoplay='autoplay' loop='loop'></video>"
+							document.getElementById("banner_video_insert").innerHTML = video_html_res;
+							set_video_attr('video_item')
+							set_video_attr('banner_img_item')
+						}
+					    
+					  })
+					  .catch((error) => {
+					    console.error('请求失败,尝试本地获取背景图像：', error);
+	    					$.getJSON('/vvd_js/video_url.json', function(data){
+
+							var video_list_length = data.length
+							var seed = Math.random()
+							index = Math.floor(seed * video_list_length)
+
+							video_url = data[index][0]
+							pre_show_image_url = data[index][1]
+
+							banner_obj = document.getElementById("banner")
+							banner_obj.style.cssText = "background: url('" + pre_show_image_url + "') no-repeat;"
+
+							vvd_banner_obj = document.getElementById("vvd_banner_img")
+							vvd_banner_content = "<img id='banner_img_item' src='" + pre_show_image_url + "'style='position: fixed; z-index: -999'>"
+							vvd_banner_obj.innerHTML = vvd_banner_content 
+
+							if (!isMobile) {
+								video_html_res = "<video id='video_item' style='position: fixed; z-index: -888;'  muted='muted' src=" + video_url + " autoplay='autoplay' loop='loop'></video>"
+								document.getElementById("banner_video_insert").innerHTML = video_html_res;
+								set_video_attr('video_item')
+								set_video_attr('banner_img_item')
+							}
+						});
+					  });
+
+
+
+
+
+
+					if (!isMobile){
+						window.onresize = function(){
+							set_video_attr('video_item')
+							set_video_attr('banner_img_item')
+							}
+						}
+				</script>
+
+			
+
+
+			
+			</div>
+		</div>
+    </div>
+
+  </header>
+
+  <main>
+    
+      
+
+
+
+<div class="container-fluid nopadding-x">
+  <div class="row nomargin-x">
+    <div class="side-col d-none d-lg-block col-lg-2">
+      
+
+    </div>
+
+    <div class="col-lg-8 nopadding-x-md">
+      <div class="container nopadding-x-md" id="board-ctn">
+        <div id="board">
+          <article class="post-content mx-auto">
+
+            <!-- <h1 id="seo-header">Meta 自监督学习 I-JEPA 论文笔记</h1> -->
+
+            
+              <p id="updated-time" class="note note-info" style="">
+                
+                  
+                    <!-- compatible with older versions-->
+                    本文最后更新于：2024年5月7日 下午
+                  
+                
+              </p>
+            
+            
+              <div class="markdown-body">
+                
+                <blockquote>
+<p>Meta 宣布推出一个全新的 AI 模型 Image Joint Embedding Predictive Architecture (I-JEPA)，可通过对图像的自我监督学习来学习世界的抽象表征，实现比现有模型更准确地分析和完成未完成的图像。</p>
+</blockquote>
+<span id="more"></span>
+<h3 id="简介">简介</h3>
+<p>I-JEPA ( Image Joint Embedding Predictive Architecture ) 是一种自监督学习框架，结合了 联合嵌入架构 (Joint-Embedding Architecture) 和 生成架构 (Generative Architecture) 的特性提出。</p>
+<p>结合了 Meta 首席 AI 科学家 Yann LeCun 所提倡的类人推理方式，帮助避免 AI 生成图像常见的一些错误，比如多出的手指。I-JEPA 在多项计算机视觉任务上表现出色，且计算效率比其他广泛使用的计算机视觉模型高得多。</p>
+<p>论文链接：<a target="_blank" rel="noopener" href="https://arxiv.org/pdf/2301.08243.pdf">https://arxiv.org/pdf/2301.08243.pdf</a></p>
+<h3 id="摘要">摘要</h3>
+<p>本文展示了一种学习高度语义图像表示的方法，而不依赖于手工制作的数据增强。本文介绍了基于图像的联合嵌入预测架构 (I-JEPA)，这是一种用于从图像进行自监督学习的非生成方法。</p>
+<p>I-JEPA 背后的想法很简单：从单个内容块，预测同一图像中各种目标块的表示。引导 I-JEPA 生成语义表示的核心设计选择是掩码策略；具体来说，至关重要的是：</p>
+<p>(a) 预测图像中的几个目标块</p>
+<p>(b) 对具有足够大尺度的目标块进行采样（占据图像的 15%–20%）</p>
+<p>© 使用足够信息（空间分布）的内容块。</p>
+<p>根据经验，当与 Vision Transformers 结合使用时，本文发现 I-JEPA 具有高度可扩展性。例如，本文在 ImageNet 上使用 32 个 A100 GPU 在 38 小时内训练了 ViT-Huge/16，以在需要不同抽象级别的各种任务（从线性分类到目标计数和深度预测）中实现强大的下游性能。</p>
+<h3 id="引言">引言</h3>
+<p>在计算机视觉中，有两种常见的图像自监督学习方法：<strong>基于不变性的方法</strong> 和 <strong>生成方法</strong> 。</p>
+<h4 id="不变性的方法"><strong>不变性的方法</strong></h4>
+<p>模型接受两个输入，相似的两个输入模型输出相近的 嵌入信息，否则输出不同的嵌入信息。常用的方法是使用一组手工制作的数据增强来构建，例如随机缩放、裁剪和颜色抖动。这些预训练方法可以产生高语义级别的表示，但它们也引入了强烈的偏差，这可能对某些下游任务甚至具有不同数据分布的预训练任务不利。通常，我们是不清楚如何为需要不同抽象级别的任务概括这些偏差的。例如，图像分类和实例分割不需要相同的不变性 。此外，将这些特定于图像的增强推广到其他模式（例如音频）并不简单。</p>
+<h4 id="生成方法">生成方法</h4>
+<p>认知学习理论表明，生物系统中表示学习背后的驱动机制是适应内部模型 以 预测感官输入反应 。这个想法是自监督生成方法的核心，它删除或破坏部分输入 并 学习预测损坏的内容。特别是，掩码去噪方法通过在像素或tokens级别从输入重建随机屏蔽的图像块来学习表示。 掩码的预训练任务 比 视图不变性方法 需要更少的先验知识，并且很容易泛化到图像模态之外。</p>
+<p>然而，由此产生的表示通常具有较低的语义级别，并且在现成的评估（例如，线性探测）和 语义分类任务监督有限的迁移设置中 表现弱于 基于不变性的预训练。因此，需要更复杂的适应机制（例如，端到端微调）来充分利用这些方法的优势。</p>
+<h4 id="本文工作">本文工作</h4>
+<p>在这项工作中，探索了如何在 不使用通过图像变换编码的额外先验知识的情况下 提高自监督表示的语义水平。为此，本文引入了基于图像的联合嵌入预测架构(I-JEPA) 。下图提供了该方法的说明。I-JEPA 背后的想法是预测抽象表示空间中的缺失信息；例如，给定单个内容块，预测同一图像中各种目标块的表示，其中目标表示由学习的目标编码器网络计算。<br>
+<img src="https://uipv4.zywvvd.com:33030/HexoFiles/vvd_file_mt/202306251603592.jpg" srcset="/img/loading.gif" lazyload alt=""></p>
+<p>与在像素/token空间中进行预测的生成方法相比，I-JEPA 利用抽象的预测目标，可能会消除不必要的像素级细节，从而使模型学习更多的语义特征。</p>
+<p>另一个引导 I-JEPA 产生语义表示的核心设计选择是 提出的多块掩码策略。具体来说，本文证明了使用信息丰富的（空间分布的）内容块 预测图像中的几个目标块（具有足够大的比例）的重要性。</p>
+<p>通过广泛的实证评估，本文证明：</p>
+<p>I-JEPA 在 不使用手工的视图增强 的情况下 学习强大的现成的语义表示（参见下图）。 I-JEPA 在 ImageNet-1K 线性探测、半监督 1% ImageNet-1K 和语义迁移任务上优于像素重建方法，例如 MAE。</p>
+<p><img src="https://uipv4.zywvvd.com:33030/HexoFiles/vvd_file_mt/202306251606868.jpg" srcset="/img/loading.gif" lazyload alt=""></p>
+<p>I-JEPA 在语义任务上与视图不变的预训练方法相比具有竞争力，并且在目标计数和深度预测等低级视觉任务上 取得了更好的性能。通过使用具有较少刚性归纳偏差的更简单模型，I-JEPA 适用于更广泛的任务集。</p>
+<p>I-JEPA 还具有可扩展性和高效性。在 ImageNet 上预训练 ViT-H/14 需要大约 2400 个 GPU 小时，比使用 iBOT 预训练的 ViTB/16 快 50%，比使用 MAE 预训练的 ViT-L/16 效率高 140%。在表示空间中进行预测 显著减少了自监督预训练所需的总计算量。</p>
+<h3 id="背景知识">背景知识</h3>
+<p>自监督学习是一种表示学习方法，在这种方法中，系统 学习捕捉 其输入之间的关系。使用基于能量的模型 (EBM) [47] 的框架可以很容易地描述这个目标，其中自监督的目标是 将高能量分配给不兼容的输入，并将低能量分配给兼容的输入。许多现有的自监督学习的生成和非生成方法确实可以在这个框架中使用。</p>
+<h4 id="联合嵌入架构（Joint-Embedding-Architecture）">联合嵌入架构（Joint-Embedding Architecture）</h4>
+<blockquote>
+<p>基于不变性的方法，对比方法</p>
+</blockquote>
+<p><img src="https://uipv4.zywvvd.com:33030/HexoFiles/vvd_file_mt/202306251608175.jpg" srcset="/img/loading.gif" lazyload alt=""></p>
+<blockquote>
+<p>(a) 联合嵌入架构学习为兼容的输入 x、y 输出相似的嵌入，为不兼容的输入输出不同的嵌入。</p>
+</blockquote>
+<p>可以使用联合嵌入架构 (JEA) 在 EBM 框架中进行基于不变性的预训练；参见上图。联合嵌入架构学习为兼容的输入 x、y 输出相似嵌入，为不兼容的输入输出不同嵌入。在基于图像的预训练环境中，兼容的 x、y 对通常是通过将手工制作的数据增强随机应用于同一输入图像来构建的。</p>
+<p>JEA 的主要挑战是表征崩溃，其中能量形状是平坦的（即，无论输入如何，编码器都会产生恒定的输出）。在过去的几年中，已经研究了几种方法来防止表示崩溃，例如 显式推开负样本嵌入的对比损失 ，最小化嵌入之间的信息冗余的非对比损失，以及 最大化平均嵌入熵的基于聚类的方法。还有一些启发式方法利用 x 编码器和 y 编码器之间的非对称架构设计来避免崩溃。</p>
+<h4 id="生成架构-（Generative-Architectures）">生成架构 （Generative Architectures）</h4>
+<p><img src="https://uipv4.zywvvd.com:33030/HexoFiles/vvd_file_mt/202306251610302.jpg" srcset="/img/loading.gif" lazyload alt=""></p>
+<blockquote>
+<p>(b) 生成架构学习直接从兼容信号 x 重建信号 y，使用以附加（可能是潜在的）变量 z 为条件的解码器网络以促进重建。</p>
+</blockquote>
+<p>用于自监督学习的 基于重建的方法 也可以使用生成架构投射到 EBM 的框架中；参见上图。生成架构 学习直接从兼容信号 x 重建信号 y，使用以附加（可能是潜在的）变量 z 为条件的解码器网络以促进重建。在基于图像的预训练内容中，计算机视觉中的一种常见方法是 使用掩码生成兼容的 x, y 对，其中 x 是图像 y 的副本，但其中一些patches被掩码。然后，条件变量 z 对应于一组（可能是可学习的）掩码和位置tokens，它向解码器指定要重建哪些图像块。只要 z 的信息容量比信号 y 低，这些架构就不会担心表示崩溃。</p>
+<h4 id="联合嵌入预测架构（Joint-Embedding-Predictive-Architecture）">联合嵌入预测架构（Joint-Embedding Predictive Architecture）</h4>
+<p><img src="https://uipv4.zywvvd.com:33030/HexoFiles/vvd_file_mt/202306251611955.jpg" srcset="/img/loading.gif" lazyload alt=""></p>
+<blockquote>
+<p>联合嵌入预测架构 学习从兼容信号 x 预测信号 y 的嵌入，使用以附加（可能是潜在的）变量 z 为条件的预测网络来促进预测。</p>
+</blockquote>
+<p>如上图所示，联合嵌入预测架构在概念上类似于生成架构；然而，一个关键的区别是损失函数应用于嵌入空间，而不是输入空间。 JEPA 学习从兼容信号 x 预测信号 y 的嵌入，使用以附加（可能是潜在的）变量 z 为条件的预测网络来促进预测。本文提出的 I-JEPA 在 使用掩码的图像内容中 提供了该架构的实例。</p>
+<p>与联合嵌入架构相比，JEPA 不寻求对一组手工制作的数据增强不变的表示，而是寻求在以附加信息 z 为条件时 相互预测的表示。然而，与联合嵌入架构一样，表示崩溃也是 JEPA 的一个问题。本文 利用 x 和 y 编码器之间的非对称架构 来避免 I-JEPA 中的表示崩溃。</p>
+<h3 id="方法（Method）">方法（Method）</h3>
+<p>现在描述提出的基于图像的联合嵌入预测架构 (I-JEPA)。总体目标如下：<strong>给定内容块，预测同一图像中各种目标块的表示</strong>。本文使用 Vision Transformer(ViT) 架构作为内容编码器、目标编码器和预测器。 ViT 由一堆变换器层组成，每个变换器层由一个自注意力操作和一个全连接的 MLP 组成。本文的编码器/预测器架构让人想起生成掩码自动编码器 (MAE)方法。然而，一个关键的区别是 I-JEPA 方法是非生成的，并且预测是在表示空间中进行的。</p>
+<h4 id="目标（Targets）">目标（Targets）</h4>
+<p>首先描述我们如何在 I-JEPA 框架中生成目标：在 I-JEPA 中，目标对应于图像块的表示。给定输入图像 y，我们将其转换为 N 个非重叠块patch的序列，并将其通过目标编码器 $ f_{\bar{\theta}} $ 获得相应的块级表示 $S_y = {S_{y1}, . . . ,S_{yN} }$ 其中 $S_{yk}$ 是与第 k 个patch关联的表示。为了获得损失的目标，我们从目标表示 $s_y$ 中随机抽取 M 个（可能重叠的）块block。我们用 $B_i$ 表示第 i 个块对应的掩码，用  $ \boldsymbol{s}_{y}(i)=\left\{s_{y^{J}}\right\}_{j \omega B_{i}} $ 表示 它的块级表示。通常，我们将 M 设置为 4，并以 (0.75, 1.5) 范围内的随机长宽比和 (0.15, 0.2) 范围内的随机比例 对块进行采样。请注意，目标块（target blocks）是通过掩码目标编码器的输出 而不是输入来获得的。这种区别对于确保高语义级别的目标表示至关重要。</p>
+<h4 id="内容块（Context）">内容块（Context）</h4>
+<p>I-JEPA 背后的目标是从单个内容块预测目标块表示。为了获得 I-JEPA 中的内容，我们首先从图像中采样单个内容块 x，其范围为 (0.85, 1.0) 和单位纵横比。我们用 $B_x$ 表示与内容块 x 关联的掩码。由于目标块是独立于内容块采样的，因此可能存在明显的重叠。为了确保有效的预测任务，我们从内容块中删除任何重叠区域。下图显示了实践中各种内容和目标块的示例。接下来，掩码内容块 x 通过内容编码器 $f_θ$ 提供相应的 patch 级表示 $ \boldsymbol{s}_{x}=\left\{\boldsymbol{s}_{x_{j}}\right\}_{j \in B_{x}} $.</p>
+<p><img src="https://uipv4.zywvvd.com:33030/HexoFiles/vvd_file_mt/202306251619909.jpg" srcset="/img/loading.gif" lazyload alt=""></p>
+<h4 id="预测-Prediction">预测 (Prediction)</h4>
+<p>给定 内容编码器的输出 $S_x$，我们希望 预测 M 个目标块表示 $S_y(1), . . . , S_y(M) $。为此，对于 对应于目标掩码 $B_i$ 的给定目标块 $S_y(i)$，预测器 $g_φ(·,·)$ 将内容编码器的输出 $S_x$ 和 我们希望预测的每个 patch 的掩码 tokens 作为输入，$ \left\{\boldsymbol{m}_{j}\right\}_{j \in B_{i}} $  并输出 patch 级预测 $  \hat{\boldsymbol{s}}_{y}(i)= \left\{\hat{s}_{y_{j}}\right\}_{j \in B_{i}}=g_{\phi}\left(\boldsymbol{s}_{x},\left\{\boldsymbol{m}_{j}\right\}_{j \in B_{i}}\right) $ 。 掩码tokens由一个共享的可学习向量参数化，并添加了位置嵌入。由于我们希望对 M 个目标块进行预测，因此我们<strong>应用预测器 M 次</strong>，每次以对应于我们希望预测的目标块位置的掩码 tokens 为条件，并获得预测  $ \hat{\boldsymbol{s}}_{y}(1), \ldots, \hat{\boldsymbol{s}}_{y}(M) $。</p>
+<h4 id="损失计算（Loss）">损失计算（Loss）</h4>
+<p>计算基于内容块预测的 patch 级的特征表示 $ \hat{s}_{y}(i) $ 和目标块 patch 级的特征表示  $ {s}_{y}(i) $ 的 $L_2$ 距离作为损失函数：</p>
+
+$$
+ \frac{1}{M} \sum_{i=1}^{M} D\left(\hat{s}_{y}(i), \boldsymbol{s}_{y}(i)\right)=\frac{1}{M} \sum_{i=1}^{M} \sum_{j \in B_{i}}\left\|\hat{s}_{y_{j}}-\boldsymbol{s}_{y_{j}}\right\|_{2}^{2} 
+$$
+
+<p>预测器的参数 φ 和内容编码器 θ 是通过基于梯度的优化学习的，而目标编码器的参数 $ \bar{\theta} $ 是通过内容编码器参数的指数移动平均值更新的。事实证明，使用指数移动平均目标编码器对于使用 Vision Transformers 训练 JEA 至关重要，本文发现 I-JEPA 也是如此。</p>
+<h3 id="图像分类应用">图像分类应用</h3>
+<p>文章展示了在 ImageNet 分类能力上的自监督模型性能，证明了该自监督学习框架的能力和结构合理。</p>
+<p><img src="https://uipv4.zywvvd.com:33030/HexoFiles/vvd_file_mt/202306251639702.jpg" srcset="/img/loading.gif" lazyload alt=""></p>
+<h3 id="可扩展性">可扩展性</h3>
+<h4 id="模型效率">模型效率</h4>
+<p>​        与以前的方法相比，I-JEPA 具有高度可扩展性。下图显示了 1% ImageNet-1K 的半监督评估随 GPU 小时数的变化。 I-JEPA 比以前的方法需要更少的计算，并且在不依赖手工数据增强的情况下实现强大的性能。与直接使用像素作为目标的基于重建的方法（例如 MAE）相比，I-JEPA 通过在表示空间中计算目标引入了额外的开销（每次迭代的时间大约慢 7%）。然而，由于 I-JEPA 收敛的迭代次数减少了大约 5 倍，我们在实践中仍然看到显著的计算节省。与基于视图不变性的方法（例如 iBOT）相比，iBOT 依靠手工制作的数据增强来创建和处理每个图像的多个视图，IJEPA 的运行速度也快得多。特别是，最大的 I-JEPA 模型 (ViT-H/14) 比最小的 iBOT 模型 (ViT-S/16) 需要更少的计算。<br>
+<img src="https://uipv4.zywvvd.com:33030/HexoFiles/vvd_file_mt/202306251641785.jpg" srcset="/img/loading.gif" lazyload alt=""></p>
+<h4 id="缩放数据-模型大小">缩放数据/模型大小</h4>
+<p>本文还发现 I-JEPA 可以从更大数据集的预训练中获益。下表显示了在增加预训练数据集的大小时（IN1K 与 IN22K）在语义和低级任务上的迁移学习性能。当在更大、更多样化的数据集上进行预训练时，迁移学习在这些概念上不同的任务上的性能会提高。</p>
+<p>同时下表还显示 I-JEPA 在 IN22K 上进行预训练时受益于更大的模型尺寸。与 ViT-H/14 模型相比，预训练 ViT-G/16 显著提高了 Place205 和 INat18 等图像分类任务的下游性能。 ViT-G/16 模型不会提高低级下游任务的性能。 ViT-G/16 使用较大的输入patch大小，这可能不利于局部预测任务。</p>
+<p><img src="https://uipv4.zywvvd.com:33030/HexoFiles/vvd_file_mt/202306251642022.jpg" srcset="/img/loading.gif" lazyload alt=""></p>
+<h3 id="预测可视化">预测可视化</h3>
+<p>I-JEPA 中 预测器 的作用是 获取内容编码器的输出，并以位置掩码tokens为条件，预测掩码标记指定位置处 目标黑色的表示。一个自然的问题是，以位置掩码标记为条件的预测器 是否 正在学习 正确地捕获目标中的位置不确定性。为了定性地研究这个问题，本文将预测器的输出可视化。预训练后，我们冻结内容编码器 和 预测器权重，并按照 RCDM 框架训练解码器，将预测器输出的平均池化映射回像素空间。下图显示了各种随机种子的解码器输出。样本间共有的特性 表示着 包含在平均池化预测变量表征中的信息。 I-JEPA 预测器正确捕获位置不确定性 并 生成具有正确姿势的高级对象部分（例如，鸟的背部和汽车的顶部）。样本之间不同的特性表示着 表征中 未包含的信息。在这种情况下，I-JEPA 预测器会丢弃精确的低级细节以及背景信息。<br>
+<img src="https://uipv4.zywvvd.com:33030/HexoFiles/vvd_file_mt/202306251644395.jpg" srcset="/img/loading.gif" lazyload alt=""></p>
+<h3 id="结论">结论</h3>
+<p>本文提出了 I-JEPA，这是一种简单有效的学习语义图像表示的方法，无需依赖手工制作的数据增强。本文表明，通过在表示空间中进行预测，I-JEPA 比像素重建方法收敛得更快，并且可以学习高语义级别的表示。与基于视图不变性的方法相比，I-JEPA 强调了一种使用联合嵌入架构学习一般表示的途径，而不依赖于手工制作的视图增强。</p>
+<h3 id="原始论文">原始论文</h3>
+<iframe src='https://uipv4.zywvvd.com:33030/HexoFiles/js/vvd_js/pdfjs/web/viewer.html?file=https://uipv4.zywvvd.com:33030/HexoFiles/pdf/ijepa.pdf' style='width:100%;height:900px'></iframe>
+### 参考资料
+<ul>
+<li><a target="_blank" rel="noopener" href="https://arxiv.org/pdf/2301.08243.pdf">https://arxiv.org/pdf/2301.08243.pdf</a></li>
+<li><a target="_blank" rel="noopener" href="https://blog.csdn.net/yoooool_/article/details/129011503">https://blog.csdn.net/yoooool_/article/details/129011503</a></li>
+<li><a target="_blank" rel="noopener" href="https://baijiahao.baidu.com/s?id=1768843236426429078&amp;wfr=spider&amp;for=pc">https://baijiahao.baidu.com/s?id=1768843236426429078&amp;wfr=spider&amp;for=pc</a></li>
+</ul>
+<link rel="stylesheet" href="/css/spoiler.css" type="text/css"><script src="/js/spoiler.js" type="text/javascript" async></script>
+                
+
+
+				<br /><br />
+				<blockquote>
+					<p>文章链接：<br /> 
+					<a style="font-size: 0.85rem" target="_blank" rel="noopener" href="https://www.zywvvd.com/notes/study/deep-learning/self-supervised/i-jepa/i-jepa/">https://www.zywvvd.com/notes/study/deep-learning/self-supervised/i-jepa/i-jepa/</a>
+					</p>
+				</blockquote>
+
+
+              </div>
+            
+            <hr/>
+			
+			<!-- 添加打赏模块 -->
+			<div class="reward-container">
+				
+					<button id="rewardBtn" class="reward-btn">
+						 
+							❤ 打赏
+							
+					</button>
+					<p class="tea">“觉得不错的话，给点打赏吧 ୧(๑•̀⌄•́๑)૭”</p>
+					<div id="rewardImgContainer" class="reward-img-container">
+						<div class="singleImgContainer">
+							<img id="wechatImg" class="reward-img" src="https://uipv4.zywvvd.com:33030/HexoFiles/vvd_pc_upload/wechatpay.png" srcset="/img/loading.gif" lazyload alt="微信二维码">
+							<p class="wechatPay">微信支付</p>
+						</div>
+						<div class="singleImgContainer">
+							<img id="alipayImg" class="reward-img" src="https://uipv4.zywvvd.com:33030/HexoFiles/vvd_pc_upload/alipay.png" srcset="/img/loading.gif" lazyload alt="支付宝二维码">
+							<p class="aliPay">支付宝支付</p>
+						</div>
+					</div>
+				
+			</div>
+			
+            <div>
+              <div class="post-metas my-3">
+  
+    <div class="post-meta mr-3 d-flex align-items-center">
+      <i class="iconfont icon-category"></i>
+      
+
+<span class="category-chains">
+  
+  
+    
+      <span class="category-chain">
+        
+  <a href="/categories/Deep-Learning/" class="category-chain-item">Deep_Learning</a>
+  
+  
+    <span>></span>
+    
+  <a href="/categories/Deep-Learning/Self-Supervised-Learning/" class="category-chain-item">Self_Supervised_Learning</a>
+  
+  
+
+  
+
+      </span>
+    
+  
+</span>
+
+    </div>
+  
+  
+    <div class="post-meta">
+      <i class="iconfont icon-tags"></i>
+      
+        <a href="/tags/Deep-Learning/" class="print-no-link">#Deep_Learning</a>
+      
+        <a href="/tags/Self-Supervised-Learning/" class="print-no-link">#Self_Supervised_Learning</a>
+      
+    </div>
+  
+</div>
+
+
+              
+  
+
+  <div class="license-box my-3">
+    <div class="license-title">
+      <div>Meta 自监督学习 I-JEPA 论文笔记</div>
+      <div>https://www.zywvvd.com/notes/study/deep-learning/self-supervised/i-jepa/i-jepa/</div>
+    </div>
+    <div class="license-meta">
+      
+        <div class="license-meta-item">
+          <div>作者</div>
+          <div>Yiwei Zhang</div>
+        </div>
+      
+      
+        <div class="license-meta-item license-meta-date">
+          <div>发布于</div>
+          <div>2023年6月25日</div>
+        </div>
+      
+      
+      
+        <div class="license-meta-item">
+          <div>许可协议</div>
+          <div>
+            
+              
+              
+                <a class="print-no-link" target="_blank" href="https://creativecommons.org/licenses/by/4.0/">
+                  <span class="hint--top hint--rounded" aria-label="BY - 署名">
+                    <i class="iconfont icon-by"></i>
+                  </span>
+                </a>
+              
+            
+          </div>
+        </div>
+      
+    </div>
+    <div class="license-icon iconfont"></div>
+  </div>
+
+
+
+              
+                <div class="post-prevnext my-3">
+                  <article class="post-prev col-6">
+                    
+                    
+                      <a href="/notes/study/audio/voiceprint-recognition/voiceprint-recognition/" title="声纹识别 ECAPA-TDNN">
+                        <i class="iconfont icon-arrowleft"></i>
+                        <span class="hidden-mobile">声纹识别 ECAPA-TDNN</span>
+                        <span class="visible-mobile">上一篇</span>
+                      </a>
+                    
+                  </article>
+                  <article class="post-next col-6">
+                    
+                    
+                      <a href="/notes/study/audio/baidu-speech-recognition/baidu-speech-recognition/" title="调用 Baidu 语音识别接口识别短句">
+                        <span class="hidden-mobile">调用 Baidu 语音识别接口识别短句</span>
+                        <span class="visible-mobile">下一篇</span>
+                        <i class="iconfont icon-arrowright"></i>
+                      </a>
+                    
+                  </article>
+                </div>
+              
+            </div>
+
+            
+  
+  
+    <article id="comments" lazyload>
+      
+  <div id="waline"></div>
+  <script type="text/javascript">
+    Fluid.utils.loadComments('#waline', function() {
+      Fluid.utils.createCssLink('https://lib.baomitu.com/waline/2.14.8/waline.min.css')
+      Fluid.utils.createScript('https://lib.baomitu.com/waline/2.14.8/waline.min.js', function() {
+        var options = Object.assign(
+          {"serverURL":"https://uipv4.zywvvd.com:33033/","path":"window.location.pathname","meta":["nick","mail","link"],"requiredMeta":["nick"],"lang":"zh-CN","emoji":["https://cdn.jsdelivr.net/gh/walinejs/emojis/weibo"],"dark":"html[data-user-color-scheme=\"dark\"]","wordLimit":0,"pageSize":10,"reaction":true,"locale":{"placeholder":"山高路远，常来玩吖 ~","reactionTitle":null}},
+          {
+            el: '#waline',
+            path: window.location.pathname
+          }
+        )
+        Waline.init(options);
+        Fluid.utils.waitElementVisible('#waline .vcontent', () => {
+          var imgSelector = '#waline .vcontent img:not(.vemoji)';
+          Fluid.plugins.imageCaption(imgSelector);
+          Fluid.plugins.fancyBox(imgSelector);
+        })
+      });
+    });
+  </script>
+  <noscript>Please enable JavaScript to view the comments</noscript>
+
+
+    </article>
+  
+
+
+          </article>
+        </div>
+      </div>
+    </div>
+
+    <div class="side-col d-none d-lg-block col-lg-2">
+      
+  <aside class="sidebar" style="margin-left: -1rem">
+    <div id="toc">
+  <p class="toc-header">
+    <i class="iconfont icon-list"></i>
+    <span>目录</span>
+  </p>
+  <div class="toc-body" id="toc-body"></div>
+</div>
+
+
+
+  </aside>
+
+
+    </div>
+  </div>
+</div>
+
+
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+  
+  
+
+
+
+
+
+  <script>
+  Fluid.utils.createScript('https://lib.baomitu.com/mermaid/8.14.0/mermaid.min.js', function() {
+    mermaid.initialize({"theme":"default"});
+
+    Fluid.utils.listenDOMLoaded(function() {
+      Fluid.events.registerRefreshCallback(function() {
+        if ('mermaid' in window) {
+          mermaid.init();
+        }
+      });
+    });
+  });
+</script>
+
+
+
+
+
+
+    
+
+    
+      <a id="scroll-top-button" aria-label="TOP" href="#" role="button">
+        <i class="iconfont icon-xiangshangjiantou" aria-hidden="true"></i>
+      </a>
+    
+
+    
+      <div class="modal fade" id="modalSearch" tabindex="-1" role="dialog" aria-labelledby="ModalLabel"
+     aria-hidden="true">
+  <div class="modal-dialog modal-dialog-scrollable modal-lg" role="document">
+    <div class="modal-content">
+      <div class="modal-header text-center">
+        <h4 class="modal-title w-100 font-weight-bold">搜索</h4>
+        <button type="button" id="local-search-close" class="close" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body mx-3">
+        <div class="md-form mb-5">
+          <input type="text" id="local-search-input" class="form-control validate">
+          <label data-error="x" data-success="v" for="local-search-input">关键词</label>
+        </div>
+        <div class="list-group" id="local-search-result"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+    
+
+    
+  </main>
+
+  <footer>
+    <div class="footer-inner">
+  
+    <div class="footer-content">
+       <div class="vvd_footer" style="font-size: 0.85rem;"> <a href="https://hexo.io" target="_blank" rel="nofollow noopener" color="#d7d8d9" data-umami-event="Footer-Hexo"><span class="umami--click--Footer-Hexo">Hexo</span></a> <i class="iconfont icon-love"></i> <a href="https://github.com/fluid-dev/hexo-theme-fluid" target="_blank" rel="nofollow noopener" data-umami-event="Footer-Fluid"><span class="umami--click--Footer-Fluid">Fluid</span></a> <i class="iconfont icon-love"></i> <a href="https://uipv4.zywvvd.com:33039/share/0zx3o21oIpZTZqwC/%E5%8F%88%E8%A7%81%E8%8B%8D%E5%B2%9A" target="_blank" rel="nofollow noopener" data-umami-event="Footer-Umami"><span class="umami--click--Footer-Umami">Umami</span></a> <div style="font-size: 0.85rem;"> <span id="timeDate">载入天数...</span> <span id="times">载入时分秒...</span> <script src="/vvd_js/duration.js"></script> </div> <div style="font-size: 0.85rem;"> <span> 总访问量 <span style="color: #d7d8d9;" id="PVstatic">0</span> 次&nbsp</span> <span> 总访客数 <span style="color: #d7d8d9;" id="UVstatic">0</span> 人&nbsp</span> <span> 当前在线 <span style="color: #d7d8d9;" id="ACTstatic">0</span> 人&nbsp</span> <script src="https://uipv4.zywvvd.com:33037/statistics" defer></script> </div> <div> <span> Copyright © 2020-2024. All Rights Reserved.</span> </div> <div style="font-size: 0.85rem;"> <a target="_blank" rel="noopener" href="https://developer.hitokoto.cn/" id="hitokoto_text"><span style="color: #d7d8d9;"  id="hitokoto"></span></a> <script src="https://uipv4.zywvvd.com:33044/?encode=js&select=%23hitokoto" defer></script> </div> <a href="https://icp.gov.moe/?keyword=20230615" target="_blank">萌ICP备20230615号</a>
+
+
+</div> 
+    </div>
+  
+  
+  
+  
+</div>
+
+  </footer>
+
+  <!-- Scripts -->
+  
+  <script  src="https://lib.baomitu.com/nprogress/0.2.0/nprogress.min.js" ></script>
+  <link  rel="stylesheet" href="https://lib.baomitu.com/nprogress/0.2.0/nprogress.min.css" />
+
+  <script>
+    NProgress.configure({"showSpinner":false,"trickleSpeed":100})
+    NProgress.start()
+    window.addEventListener('load', function() {
+      NProgress.done();
+    })
+  </script>
+
+
+<script  src="https://lib.baomitu.com/jquery/3.6.0/jquery.min.js" ></script>
+<script  src="https://lib.baomitu.com/twitter-bootstrap/4.6.1/js/bootstrap.min.js" ></script>
+<script  src="/js/events.js" ></script>
+<script  src="/js/plugins.js" ></script>
+
+
+
+
+
+  
+    <script  src="/js/img-lazyload.js" ></script>
+  
+
+
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/tocbot/4.18.2/tocbot.min.js', function() {
+    var toc = jQuery('#toc');
+    if (toc.length === 0 || !window.tocbot) { return; }
+    var boardCtn = jQuery('#board-ctn');
+    var boardTop = boardCtn.offset().top;
+
+    window.tocbot.init(Object.assign({
+      tocSelector     : '#toc-body',
+      contentSelector : '.markdown-body',
+      linkClass       : 'tocbot-link',
+      activeLinkClass : 'tocbot-active-link',
+      listClass       : 'tocbot-list',
+      isCollapsedClass: 'tocbot-is-collapsed',
+      collapsibleClass: 'tocbot-is-collapsible',
+      scrollSmooth    : true,
+      includeTitleTags: true,
+      headingsOffset  : -boardTop,
+    }, CONFIG.toc));
+    if (toc.find('.toc-list-item').length > 0) {
+      toc.css('visibility', 'visible');
+    }
+
+    Fluid.events.registerRefreshCallback(function() {
+      if ('tocbot' in window) {
+        tocbot.refresh();
+        var toc = jQuery('#toc');
+        if (toc.length === 0 || !tocbot) {
+          return;
+        }
+        if (toc.find('.toc-list-item').length > 0) {
+          toc.css('visibility', 'visible');
+        }
+      }
+    });
+  });
+</script>
+
+
+  <script src=https://lib.baomitu.com/clipboard.js/2.0.10/clipboard.min.js></script>
+
+  <script>Fluid.plugins.codeWidget();</script>
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/anchor-js/4.3.1/anchor.min.js', function() {
+    window.anchors.options = {
+      placement: CONFIG.anchorjs.placement,
+      visible  : CONFIG.anchorjs.visible
+    };
+    if (CONFIG.anchorjs.icon) {
+      window.anchors.options.icon = CONFIG.anchorjs.icon;
+    }
+    var el = (CONFIG.anchorjs.element || 'h1,h2,h3,h4,h5,h6').split(',');
+    var res = [];
+    for (var item of el) {
+      res.push('.markdown-body > ' + item.trim());
+    }
+    if (CONFIG.anchorjs.placement === 'left') {
+      window.anchors.options.class = 'anchorjs-link-left';
+    }
+    window.anchors.add(res.join(', '));
+
+    Fluid.events.registerRefreshCallback(function() {
+      if ('anchors' in window) {
+        anchors.removeAll();
+        var el = (CONFIG.anchorjs.element || 'h1,h2,h3,h4,h5,h6').split(',');
+        var res = [];
+        for (var item of el) {
+          res.push('.markdown-body > ' + item.trim());
+        }
+        if (CONFIG.anchorjs.placement === 'left') {
+          anchors.options.class = 'anchorjs-link-left';
+        }
+        anchors.add(res.join(', '));
+      }
+    });
+  });
+</script>
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/fancybox/3.5.7/jquery.fancybox.min.js', function() {
+    Fluid.plugins.fancyBox();
+  });
+</script>
+
+
+  <script>Fluid.plugins.imageCaption();</script>
+
+  
+      <script>
+        if (!window.MathJax) {
+          window.MathJax = {
+            tex    : {
+              inlineMath: { '[+]': [['$', '$']] }
+            },
+            options: {
+              renderActions: {
+                insertedScript: [200, () => {
+                  document.querySelectorAll('mjx-container').forEach(node => {
+                    let target = node.parentNode;
+                    if (target.nodeName.toLowerCase() === 'li') {
+                      target.parentNode.classList.add('has-jax');
+                    }
+                  });
+                }, '', false]
+              }
+            }
+          };
+        } else {
+          MathJax.startup.document.state(0);
+          MathJax.texReset();
+          MathJax.typeset();
+          MathJax.typesetPromise();
+        }
+
+        Fluid.events.registerRefreshCallback(function() {
+          if ('MathJax' in window && MathJax.startup.document && typeof MathJax.startup.document.state === 'function') {
+            MathJax.startup.document.state(0);
+            MathJax.texReset();
+            MathJax.typeset();
+            MathJax.typesetPromise();
+          }
+        });
+      </script>
+    
+
+  <script  src="https://lib.baomitu.com/mathjax/3.2.1/es5/tex-mml-chtml.js" ></script>
+
+  <script defer src="/js/leancloud.js" ></script>
+
+  <script  src="/js/local-search.js" ></script>
+
+
+
+
+  
+<script src="//cdn.jsdelivr.net/npm/aplayer/dist/APlayer.min.js"></script>
+<script src="//cdn.jsdelivr.net/gh/metowolf/MetingJS@1.2/dist/Meting.min.js"></script>
+<script src="/js/reward.js"></script>
+
+
+
+<!-- 主题的启动项，将它保持在最底部 -->
+<!-- the boot of the theme, keep it at the bottom -->
+<script  src="/js/boot.js" ></script>
+
+
+  <script type="text/javascript">
+    /*窗口监视*/
+    var originalTitle = document.title;
+    window.onblur = function(){document.title = "明眸如初"};
+    window.onfocus = function(){document.title = originalTitle};
+  </script>
+
+
+  <div id="tooltip-rightmenu" class="tooltip-rightmenu">如需原始右键菜单请按下 <strong>Ctrl+右键</strong></div>
+
+<div id="rightmenu-wrapper" style="">
+  <ul class="list-v rightmenu" id="rightmenu-content">
+	  <li class="navigation menuNavigation-Content">
+		<a class="nav icon-only fix-cursor-default" onclick="history.back()"><i class="iconfont icon-zuojiantou1"></i></a>
+		<a class="nav icon-only fix-cursor-default" onclick="history.forward()"><i class="iconfont icon-youjiantou1"></i></a>
+		<a class="nav icon-only fix-cursor-default" onclick="window.location.reload()"><i class="iconfont icon-shuaxin"></i></a>
+		<a  aria-label="TOP" href="#" role="button"><i class="iconfont icon-xiangshang"></i></a>
+	  </li>
+
+		<hr class="menuLoad-Content" style="display: block;">
+	  <li class="menuLoad-Content" style="display: block;">
+		<a class="vlts-menu fix-cursor-default" target="_self" href="javascript:;" data-toggle="modal" data-target="#modalSearch" aria-label="Search">
+		  <span>
+			  <i class="iconfont icon-sousuo1 rightmenu-icon"></i>
+			  站内搜索
+		  </span>
+		</a>
+	  </li>
+
+	  <li class="menuLoad-Content" style="display: block;">
+		<a class="vlts-menu fix-cursor-default"  href="https://www.zywvvd.com/messagebd/" data-group="link">
+		  <span>
+			  <i class="iconfont icon-yangshi_icon_tongyong_chat rightmenu-icon">  </i>
+			   留言吐槽 
+		   </span>
+		</a>
+	  </li>
+
+
+	  <li class="menuLoad-Content" style="display: block;">
+		<a class="vlts-menu fix-cursor-default" id="help" target="_blank" rel="noopener" href="https://www.foreverblog.cn/go.html" data-group="link">
+		<span>
+			  <i class="iconfont icon-a-BlackHole rightmenu-icon"></i>
+			  虫洞穿梭
+		  </span>
+		</a>
+	  </li>
+
+	<a id="scroll-top-button" aria-label="TOP" href="#" role="button" style="bottom: 20px; right: 52.6364px;">
+        <i class="iconfont icon-xiangshangjiantou" aria-hidden="true"></i>
+      </a>
+
+	<hr class="menuLoad-Content" style="display: block;">
+	
+	  <li class="menuLoad-Content" style="display: block;">
+		<a class="vlts-menu fix-cursor-default" id="destroy-airplane" target="_blank" rel="noopener"  data-group="link">
+		<span>
+			  <i class="iconfont icon-feiji rightmenu-icon"></i>
+			  破坏小飞机
+		  </span>
+		</a>
+	  </li>
+  </ul>
+</div>
+
+<script>
+	var ua = navigator.userAgent;
+	var ipad = ua.match(/(iPad).*OS\s([\d_]+)/),
+		isIphone = !ipad && ua.match(/(iPhone\sOS)\s([\d_]+)/),
+		isAndroid = ua.match(/(Android)\s+([\d.]+)/),
+		isMobile = isIphone || isAndroid;
+
+	if(!isMobile) {
+		// 为按钮添加事件处理器
+		document.getElementById('destroy-airplane').onclick = function() {
+		  console.log('飞机起飞！');
+		  // 定义要执行的JavaScript代码
+		var KICKASSVERSION='2.0';
+		var s = document.createElement('script');
+		s.type='text/javascript';
+		document.body.appendChild(s);
+		s.src='https://uipv4.zywvvd.com:33030/HexoFiles/js/games/airplane/airplane.js';
+		void(0);
+		};
+	}
+</script>
+
+
+
+
+
+<link href="/css/custom.css"type="text/css"rel="stylesheet"/>
+<script src="/vvd_js/right_menu.js" type="text/javascript"></script>
+<link href="/css/right_menu.css"type="text/css"rel="stylesheet"/>
+<script src="/vvd_js/go.js"></script>
+
+
+  <noscript>
+    <div class="noscript-warning">博客在允许 JavaScript 运行的环境下浏览效果更佳</div>
+  </noscript>
+<script src="/live2dw/lib/L2Dwidget.min.js?094cbace49a39548bed64abff5988b05"></script><script>L2Dwidget.init({"pluginRootPath":"live2dw/","pluginJsPath":"lib/","pluginModelPath":"assets/","tagMode":false,"log":false,"model":{"jsonPath":"/live2dw/assets/z16.model.json"},"display":{"position":"left","width":200,"height":400},"mobile":{"show":false},"react":{"opacity":0.9}});</script></body>
+</html>

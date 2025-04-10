@@ -1,0 +1,1568 @@
+
+
+<!DOCTYPE html>
+<html lang="zh-CN" data-default-color-scheme=auto>
+
+
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="baidu-site-verification" content="codeva-rLWafCJGYc" />
+  <link rel="apple-touch-icon" sizes="76x76" href="/image/avatar.png">
+  <link rel="icon" href="/image/avatar.png">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, shrink-to-fit=no">
+  <meta http-equiv="x-ua-compatible" content="ie=edge">
+  
+  <meta name="theme-color" content="#2f4154">
+  <meta name="author" content="Yiwei Zhang">
+  <meta name="keywords" content="人工智能, 深度学习, 个人博客, 机器学习">
+  
+    <meta name="description" content="YOLO v9 提出了可编程梯度信息（PGI）的概念，设计了新的网络架构（GELAN），结果显示二者对于检测性能提升和参数利用率提升都发挥了重要作用。">
+<meta property="og:type" content="article">
+<meta property="og:title" content="YOLO v9">
+<meta property="og:url" content="https://www.zywvvd.com/notes/study/deep-learning/detection/yolo/yolov9-intr/yolov9-intr/index.html">
+<meta property="og:site_name" content="又见苍岚">
+<meta property="og:description" content="YOLO v9 提出了可编程梯度信息（PGI）的概念，设计了新的网络架构（GELAN），结果显示二者对于检测性能提升和参数利用率提升都发挥了重要作用。">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="https://uipv4.zywvvd.com:33030/HexoFiles/vvd_pc_upload_2023/202403212236645.png">
+<meta property="og:image" content="https://uipv4.zywvvd.com:33030/HexoFiles/vvd_pc_upload_2023/202403212247518.png">
+<meta property="og:image" content="https://uipv4.zywvvd.com:33030/HexoFiles/vvd_pc_upload_2023/202403212310656.jpg">
+<meta property="og:image" content="https://uipv4.zywvvd.com:33030/HexoFiles/vvd_pc_upload_2023/202403212251907.png">
+<meta property="og:image" content="https://uipv4.zywvvd.com:33030/HexoFiles/vvd_pc_upload_2023/202403212305838.png">
+<meta property="og:image" content="https://uipv4.zywvvd.com:33030/HexoFiles/vvd_pc_upload_2023/202403212308140.png">
+<meta property="article:published_time" content="2024-03-19T15:32:33.000Z">
+<meta property="article:modified_time" content="2024-05-07T05:57:50.532Z">
+<meta property="article:author" content="Yiwei Zhang">
+<meta property="article:tag" content="Deep_Learning">
+<meta property="article:tag" content="Detection">
+<meta property="article:tag" content="YOLO">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:image" content="https://uipv4.zywvvd.com:33030/HexoFiles/vvd_pc_upload_2023/202403212236645.png">
+  
+  
+  
+  <title>YOLO v9 - 又见苍岚</title>
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/twitter-bootstrap/4.6.1/css/bootstrap.min.css" />
+
+
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/github-markdown-css/4.0.0/github-markdown.min.css" />
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/hint.css/2.7.0/hint.min.css" />
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/fancybox/3.5.7/jquery.fancybox.min.css" />
+
+
+
+<!-- 主题依赖的图标库，不要自行修改 -->
+<!-- Do not modify the link that theme dependent icons -->
+
+<link rel="stylesheet" href="//at.alicdn.com/t/font_1749284_hj8rtnfg7um.css">
+
+
+
+<link rel="stylesheet" href="//at.alicdn.com/t/font_1736178_lbnruvf0jn.css">
+
+
+<link  rel="stylesheet" href="/css/main.css" />
+
+
+  <link id="highlight-css" rel="stylesheet" href="/css/highlight.css" />
+  
+    <link id="highlight-css-dark" rel="stylesheet" href="/css/highlight-dark.css" />
+  
+
+
+
+  
+<link rel="stylesheet" href="/css/custom.css">
+<link rel="stylesheet" href="/css/reward.css">
+<link rel="stylesheet" href="//cdn.jsdelivr.net/npm/aplayer/dist/APlayer.min.css">
+
+
+
+  <script id="fluid-configs">
+    var Fluid = window.Fluid || {};
+    Fluid.ctx = Object.assign({}, Fluid.ctx)
+    var CONFIG = {"hostname":"www.zywvvd.com","root":"/","version":"1.9.7","typing":{"enable":true,"typeSpeed":90,"cursorChar":"_","loop":false,"scope":["home"]},"anchorjs":{"enable":true,"element":"h1,h2,h3,h4,h5,h6","placement":"left","visible":"hover","icon":""},"progressbar":{"enable":true,"height_px":3,"color":"#29d","options":{"showSpinner":false,"trickleSpeed":100}},"code_language":{"enable":true,"default":"TEXT"},"copy_btn":true,"image_caption":{"enable":true},"image_zoom":{"enable":true,"img_url_replace":["",""]},"toc":{"enable":true,"placement":"right","headingSelector":"h1,h2,h3,h4,h5,h6","collapseDepth":0},"lazyload":{"enable":true,"loading_img":"/img/loading.gif","onlypost":false,"offset_factor":2},"web_analytics":{"enable":true,"follow_dnt":true,"baidu":null,"google":null,"tencent":{"sid":null,"cid":null},"woyaola":null,"cnzz":null,"leancloud":{"app_id":"Cv0XNeBSBdAPAIuVj3PsyM3R-MdYXbMMI","app_key":"4PU1rNlGrqXWzhfW3dgq98oX","server_url":null,"path":"window.location.pathname","ignore_local":false},"gtag":null},"search_path":"/local-search.xml","include_content_in_search":true};
+
+    if (CONFIG.web_analytics.follow_dnt) {
+      var dntVal = navigator.doNotTrack || window.doNotTrack || navigator.msDoNotTrack;
+      Fluid.ctx.dnt = dntVal && (dntVal.startsWith('1') || dntVal.startsWith('yes') || dntVal.startsWith('on'));
+    }
+  </script>
+  <script  src="/js/utils.js" ></script>
+  <script  src="/js/color-schema.js" ></script>
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+    
+  
+
+
+
+  
+<meta name="generator" content="Hexo 7.2.0"><link rel="alternate" href="/atom.xml" title="又见苍岚" type="application/atom+xml">
+</head>
+
+
+<body>
+  
+<div id="Loadanimation" style="z-index:999999;">
+<div id="Loadanimation-center">
+   <div id="Loadanimation-center-absolute">
+       <div class="xccx_object" id="xccx_four"></div>
+       <div class="xccx_object" id="xccx_three"></div>
+       <div class="xccx_object" id="xccx_two"></div>
+       <div class="xccx_object" id="xccx_one"></div>
+   </div>
+</div>
+</div>
+
+<link href="/css/loading.css"type="text/css"rel="stylesheet"/>
+
+
+
+
+
+
+<div>
+	<div class='real_mask' style="
+		background-color: rgba(0,0,0,0.4);
+		width: 100%;
+		height: 100%;
+		position: fixed;
+		z-index: -777;
+	"></div>
+	<div id="banner_video_insert">
+	</div>	
+	<div id='vvd_banner_img'>
+	</div>
+</div>
+<div id="banner"></div>
+
+
+
+
+
+
+
+  <header>
+    
+
+<div class="header-inner" style="height: 80vh;">
+  <nav id="navbar" class="navbar fixed-top  navbar-expand-lg navbar-dark scrolling-navbar">
+  <div class="container">
+    <a class="navbar-brand" href="/">
+      <strong>CangLan</strong>
+    </a>
+
+    <button id="navbar-toggler-btn" class="navbar-toggler" type="button" data-toggle="collapse"
+            data-target="#navbarSupportedContent"
+            aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
+      <div class="animated-icon"><span></span><span></span><span></span></div>
+    </button>
+
+    <!-- Collapsible content -->
+    <div class="collapse navbar-collapse" id="navbarSupportedContent">
+      <ul class="navbar-nav ml-auto text-center">
+        
+          
+          
+          
+          
+            <li class="nav-item">
+		<div >
+		      <a class="nav-link" href="/" target="_self" data-umami-event="Navigation-Homepage">
+
+		        <i class="iconfont icon-home-fill"></i>
+		        <span>首页</span>
+		      </a>
+		</div>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item dropdown">
+              <a class="nav-link dropdown-toggle" target="_self" href="javascript:;" role="button"
+                 data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                <i class="iconfont icon-shuji1"></i>
+                <span>文章</span>
+              </a>
+              <div class="dropdown-menu" aria-labelledby="navbarDropdown">
+                
+                  
+                  
+                  
+		<div >
+
+                  <a class="dropdown-item" href="/archives/" target="_self" data-umami-event="Navigation-Archive">
+
+                    <i class="iconfont icon-archive-fill"></i>
+                    <span>归档</span>
+                  </a>
+		</div>
+                
+                  
+                  
+                  
+		<div >
+
+                  <a class="dropdown-item" href="/categories/" target="_self" data-umami-event="Navigation-Category">
+
+                    <i class="iconfont icon-category-fill"></i>
+                    <span>分类</span>
+                  </a>
+		</div>
+                
+                  
+                  
+                  
+		<div >
+
+                  <a class="dropdown-item" href="/tags/" target="_self" data-umami-event="Navigation-Tag">
+
+                    <i class="iconfont icon-tags-fill"></i>
+                    <span>标签</span>
+                  </a>
+		</div>
+                
+                  
+                  
+                  
+		<div >
+
+                  <a class="dropdown-item" href="/shuoshuo/" target="_self" data-umami-event="Navigation-Shuoshuo">
+
+                    <i class="iconfont icon-24gf-bubblesDots4"></i>
+                    <span>说说</span>
+                  </a>
+		</div>
+                
+              </div>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item dropdown">
+              <a class="nav-link dropdown-toggle" target="_self" href="javascript:;" role="button"
+                 data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                <i class="iconfont icon-momo"></i>
+                <span>社交</span>
+              </a>
+              <div class="dropdown-menu" aria-labelledby="navbarDropdown">
+                
+                  
+                  
+                  
+		<div >
+
+                  <a class="dropdown-item" href="/links/" target="_self" data-umami-event="Navigation-Friends">
+
+                    <i class="iconfont icon-link-fill"></i>
+                    <span>友链</span>
+                  </a>
+		</div>
+                
+                  
+                  
+                  
+		<div >
+
+                  <a class="dropdown-item" href="/messagebd/" target="_self" data-umami-event="Navigation-MessageBoard">
+
+                    <i class="iconfont icon-comment"></i>
+                    <span>留言板</span>
+                  </a>
+		</div>
+                
+                  
+                  
+                  
+		<div >
+
+                  <a class="dropdown-item" href="/atom.xml" target="_self" data-umami-event="Navigation-RSS">
+
+                    <i class="iconfont icon-dingyue"></i>
+                    <span>RSS订阅</span>
+                  </a>
+		</div>
+                
+                  
+                  
+                  
+		<div >
+
+                  <a class="dropdown-item" href="/reccomments/" target="_self" data-umami-event="Navigation-Recent-Comments">
+
+                    <i class="iconfont icon-icon-pinglunguanli-pinglunliebiao"></i>
+                    <span>近期评论</span>
+                  </a>
+		</div>
+                
+              </div>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item dropdown">
+              <a class="nav-link dropdown-toggle" target="_self" href="javascript:;" role="button"
+                 data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                <i class="iconfont icon-user-fill"></i>
+                <span>个人</span>
+              </a>
+              <div class="dropdown-menu" aria-labelledby="navbarDropdown">
+                
+                  
+                  
+                  
+		<div >
+
+                  <a class="dropdown-item" href="/about/" target="_self" data-umami-event="Navigation-AboutMe">
+
+                    <i class="iconfont icon-guanyuwomen"></i>
+                    <span>关于</span>
+                  </a>
+		</div>
+                
+                  
+                  
+                  
+		<div >
+
+                  <a class="dropdown-item" href="/playlist/" target="_self" data-umami-event="Navigation-Music">
+
+                    <i class="iconfont icon-music"></i>
+                    <span>歌单</span>
+                  </a>
+		</div>
+                
+                  
+                  
+                  
+		<div >
+
+                  <a class="dropdown-item" href="https://uipv4.zywvvd.com:33035" target="_self" data-umami-event="Navigation-Nextcloud">
+
+                    <i class="iconfont icon-xuniyingpan"></i>
+                    <span>网盘</span>
+                  </a>
+		</div>
+                
+                  
+                  
+                  
+		<div >
+
+                  <a class="dropdown-item" href="https://uipv4.zywvvd.com:38920" target="_self" data-umami-event="Navigation-Emby">
+
+                    <i class="iconfont icon-meiti"></i>
+                    <span>影院</span>
+                  </a>
+		</div>
+                
+                  
+                  
+                  
+		<div >
+
+                  <a class="dropdown-item" href="https://uipv4.zywvvd.com:33036" target="_self" data-umami-event="Navigation-OneDev">
+
+                    <i class="iconfont icon-git"></i>
+                    <span>仓库</span>
+                  </a>
+		</div>
+                
+                  
+                  
+                  
+		<div >
+
+                  <a class="dropdown-item" href="https://uipv4.zywvvd.com:33041" target="_self" data-umami-event="Navigation-Wiki">
+
+                    <i class="iconfont icon-wiki"></i>
+                    <span>百科</span>
+                  </a>
+		</div>
+                
+              </div>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item dropdown">
+              <a class="nav-link dropdown-toggle" target="_self" href="javascript:;" role="button"
+                 data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                <i class="iconfont icon-ic_fly"></i>
+                <span>导航</span>
+              </a>
+              <div class="dropdown-menu" aria-labelledby="navbarDropdown">
+                
+                  
+                  
+                  
+		<div >
+
+                  <a class="dropdown-item" href="/site-map/" target="_self" data-umami-event="Navigation-SiteMap">
+
+                    <i class="iconfont icon-lianjie"></i>
+                    <span>链接</span>
+                  </a>
+		</div>
+                
+                  
+                  
+                  
+		<div >
+
+                  <a class="dropdown-item" href="/nodeppt/hexo/snavigation/" target="_self" data-umami-event="Navigation-Search">
+
+                    <i class="iconfont icon-sousuo"></i>
+                    <span>搜索</span>
+                  </a>
+		</div>
+                
+              </div>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item dropdown">
+              <a class="nav-link dropdown-toggle" target="_self" href="javascript:;" role="button"
+                 data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                <i class="iconfont icon-wangzhan"></i>
+                <span>站点</span>
+              </a>
+              <div class="dropdown-menu" aria-labelledby="navbarDropdown">
+                
+                  
+                  
+                  
+		<div >
+
+                  <a class="dropdown-item" href="https://uipv4.zywvvd.com:33039/share/0zx3o21oIpZTZqwC/%E5%8F%88%E8%A7%81%E8%8B%8D%E5%B2%9A" target="_self" data-umami-event="Navigation-Umami">
+
+                    <i class="iconfont icon-tongji2"></i>
+                    <span>站点分析</span>
+                  </a>
+		</div>
+                
+                  
+                  
+                  
+		<div >
+
+                  <a class="dropdown-item" href="/earth_sta/" target="_self" data-umami-event="Navigation-Globe">
+
+                    <i class="iconfont icon-tongjifenxi-xiangmubiaogetongji"></i>
+                    <span>访问统计</span>
+                  </a>
+		</div>
+                
+                  
+                  
+                  
+		<div >
+
+                  <a class="dropdown-item" href="https://uipv4.zywvvd.com:33034/status/show" target="_self" data-umami-event="Navigation-Monitor">
+
+                    <i class="iconfont icon-jiankong"></i>
+                    <span>站点监控</span>
+                  </a>
+		</div>
+                
+              </div>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item dropdown">
+              <a class="nav-link dropdown-toggle" target="_self" href="javascript:;" role="button"
+                 data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                <i class="iconfont icon-chuansong"></i>
+                <span>传送</span>
+              </a>
+              <div class="dropdown-menu" aria-labelledby="navbarDropdown">
+                
+                  
+                  
+                  
+		<div >
+
+                  <a class="dropdown-item" href="https://www.foreverblog.cn/go.html" target="_self" data-umami-event="Navigation-ForeverBolg">
+
+                    <i class="iconfont icon-a-BlackHole"></i>
+                    <span>十年之约</span>
+                  </a>
+		</div>
+                
+                  
+                  
+                  
+		<div >
+
+                  <a class="dropdown-item" href="https://www.travellings.cn/go.html" target="_self" data-umami-event="Navigation-DriveTo">
+
+                    <i class="iconfont icon-train1"></i>
+                    <span>开往</span>
+                  </a>
+		</div>
+                
+                  
+                  
+                  
+		<div >
+
+                  <a class="dropdown-item" href="https://bf.zzxworld.com/" target="_self" data-umami-event="Navigation-BlogFinder">
+
+                    <i class="iconfont icon-icon-"></i>
+                    <span>BlogFinder</span>
+                  </a>
+		</div>
+                
+              </div>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item dropdown">
+              <a class="nav-link dropdown-toggle" target="_self" href="javascript:;" role="button"
+                 data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                <i class="iconfont icon-gongju"></i>
+                <span>工具</span>
+              </a>
+              <div class="dropdown-menu" aria-labelledby="navbarDropdown">
+                
+                  
+                  
+                  
+		<div >
+
+                  <a class="dropdown-item" href="/navigates/calculator" target="_self" data-umami-event="Navigation-Calculator">
+
+                    <i class="iconfont icon-jisuan"></i>
+                    <span>计算器</span>
+                  </a>
+		</div>
+                
+                  
+                  
+                  
+		<div >
+
+                  <a class="dropdown-item" href="/navigates/webgraphviz" target="_self" data-umami-event="Navigation-WebGtaphviz">
+
+                    <i class="iconfont icon-tongyong-huatugongju2"></i>
+                    <span>Graphviz</span>
+                  </a>
+		</div>
+                
+              </div>
+            </li>
+          
+        
+        
+          <li class="nav-item" id="search-btn">
+            <a class="nav-link" target="_self" href="javascript:;" data-toggle="modal" data-target="#modalSearch" aria-label="Search">
+              <i class="iconfont icon-search"></i>
+            </a>
+          </li>
+          
+        
+        
+          <li class="nav-item" id="color-toggle-btn">
+            <a class="nav-link" target="_self" href="javascript:;" aria-label="Color Toggle">
+              <i class="iconfont icon-dark" id="color-toggle-icon"></i>
+            </a>
+          </li>
+        
+      </ul>
+    </div>
+  </div>
+</nav>
+
+  
+
+<div id="banner" class="banner" parallax=true
+     style="background: url('https://uipv4.zywvvd.com:33030/HexoFiles/new/bg-trans.png') no-repeat center center; background-size: cover;">
+  <div class="full-bg-img">
+    <div class="mask flex-center" style="background-color: rgba(0, 0, 0, 0)">
+      <div class="banner-text text-center fade-in-up">
+        <div class="h2">
+          
+            <span id="subtitle">YOLO v9</span>
+          
+        </div>
+
+        
+          
+  <div class="mt-3">
+    
+      <span class="post-meta mr-2">
+        <i class="iconfont icon-author" aria-hidden="true"></i>
+        Yiwei Zhang
+      </span>
+    
+    
+      <span class="post-meta">
+        <i class="iconfont icon-date-fill" aria-hidden="true"></i>
+        <time datetime="2024-03-19 23:32" pubdate>
+          2024年3月19日 晚上
+        </time>
+      </span>
+    
+  </div>
+
+  <div class="mt-1">
+    
+      <span class="post-meta mr-2">
+        <i class="iconfont icon-chart"></i>
+        
+          <!-- compatible with older versions-->
+          6.9k 字
+        
+      </span>
+    
+
+    
+      <span class="post-meta mr-2">
+        <i class="iconfont icon-clock-fill"></i>
+        
+        
+        
+          <!-- compatible with older versions-->
+          58 分钟
+        
+      </span>
+    
+
+    
+    
+      
+        <span id="vvdpost_container_page_pvuv" style="display: none">
+          <i class="iconfont icon-eye" aria-hidden="true"></i>
+          <span id="vvdpost_value_page_pv">0</span> 次&nbsp&nbsp
+		  <i class="iconfont icon-users" aria-hidden="true"></i>
+		  <span id="vvdpost_value_page_uv">0</span> 人&nbsp&nbsp
+		  <i class="iconfont icon-comment" aria-hidden="true"></i>
+		  <span id="vvdpost_value_page_cn">0</span> 条
+        </span>
+
+		<script>
+			console.log(window.location.pathname)
+			var httpRequest = new XMLHttpRequest();
+			httpRequest.open('POST', 'https://uipv4.zywvvd.com:33037/poststats', true);
+			httpRequest.setRequestHeader("Content-type","application/json");
+			httpRequest.send(JSON.stringify(window.location.pathname));
+			httpRequest.onreadystatechange = function () {//请求后的回调接口，可将请求成功后要执行的程序写在其中
+				if (httpRequest.readyState == 4 && httpRequest.status == 200) {//验证请求是否发送成功
+					var json = httpRequest.responseText;//获取到服务端返回的数据
+					var obj = JSON.parse(json);
+					var pvCtn = document.querySelector('#vvdpost_container_page_pvuv');
+					if (pvCtn) {
+						var pv_ele = document.querySelector('#vvdpost_value_page_pv');
+						var uv_ele = document.querySelector('#vvdpost_value_page_uv');
+						var cn_ele = document.querySelector('#vvdpost_value_page_cn');
+
+						if (uv_ele && uv_ele) {
+							pv_ele.innerText = obj.pv;
+							uv_ele.innerText = obj.uv;
+							cn_ele.innerText = obj.cn;
+							pvCtn.style.display = 'inline';
+							}
+						}
+					}
+			};
+		</script>
+      
+    
+  </div>
+
+
+        
+      </div>
+
+      
+        <div class="scroll-down-bar">
+          <i class="iconfont icon-arrowdown"></i>
+        </div>
+      
+    </div>
+  </div>
+</div>
+
+</div>
+
+
+	<script type="text/javascript" src="/vvd_js/jquery.js"></script>
+	<script async src="https://uipv4.zywvvd.com:33039/script.js" data-website-id="dd4a05c6-dde2-4743-9c3a-a79d6bee0778"></script>
+	<div class="banner" id='banner' >
+
+		<div class="full-bg-img" >
+
+			
+				<script>
+					var ua = navigator.userAgent;
+					var ipad = ua.match(/(iPad).*OS\s([\d_]+)/),
+						isIphone = !ipad && ua.match(/(iPhone\sOS)\s([\d_]+)/),
+						isAndroid = ua.match(/(Android)\s+([\d.]+)/),
+						isMobile = isIphone || isAndroid;
+
+					function set_video_attr(id){
+						var height = document.body.clientHeight
+						var width = document.body.clientWidth
+						var video_item = document.getElementById(id);
+
+						if (height / width < 0.56){
+							video_item.setAttribute('width', '100%');
+							video_item.setAttribute('height', 'auto');
+						} else {
+							video_item.setAttribute('height', '100%');
+							video_item.setAttribute('width', 'auto');
+						}
+					}
+
+					fetch('https://uipv4.zywvvd.com:33037/wallpaper-pair')
+					  .then(response => response.json()) // 解析JSON数据
+					  .then(data => {
+						console.log('获取链接成功');
+						video_url = data[0][0]
+						pre_show_image_url = data[0][1]
+
+						banner_obj = document.getElementById("banner")
+						banner_obj.style.cssText = "background: url('" + pre_show_image_url + "') no-repeat;"
+
+						vvd_banner_obj = document.getElementById("vvd_banner_img")
+						vvd_banner_content = "<img id='banner_img_item' src='" + pre_show_image_url + "'style='position: fixed; z-index: -999'>"
+						vvd_banner_obj.innerHTML = vvd_banner_content 
+
+						if (!isMobile) {
+							video_html_res = "<video id='video_item' style='position: fixed; z-index: -888;'  muted='muted' src=" + video_url + " autoplay='autoplay' loop='loop'></video>"
+							document.getElementById("banner_video_insert").innerHTML = video_html_res;
+							set_video_attr('video_item')
+							set_video_attr('banner_img_item')
+						}
+					    
+					  })
+					  .catch((error) => {
+					    console.error('请求失败,尝试本地获取背景图像：', error);
+	    					$.getJSON('/vvd_js/video_url.json', function(data){
+
+							var video_list_length = data.length
+							var seed = Math.random()
+							index = Math.floor(seed * video_list_length)
+
+							video_url = data[index][0]
+							pre_show_image_url = data[index][1]
+
+							banner_obj = document.getElementById("banner")
+							banner_obj.style.cssText = "background: url('" + pre_show_image_url + "') no-repeat;"
+
+							vvd_banner_obj = document.getElementById("vvd_banner_img")
+							vvd_banner_content = "<img id='banner_img_item' src='" + pre_show_image_url + "'style='position: fixed; z-index: -999'>"
+							vvd_banner_obj.innerHTML = vvd_banner_content 
+
+							if (!isMobile) {
+								video_html_res = "<video id='video_item' style='position: fixed; z-index: -888;'  muted='muted' src=" + video_url + " autoplay='autoplay' loop='loop'></video>"
+								document.getElementById("banner_video_insert").innerHTML = video_html_res;
+								set_video_attr('video_item')
+								set_video_attr('banner_img_item')
+							}
+						});
+					  });
+
+
+
+
+
+
+					if (!isMobile){
+						window.onresize = function(){
+							set_video_attr('video_item')
+							set_video_attr('banner_img_item')
+							}
+						}
+				</script>
+
+			
+
+
+			
+			</div>
+		</div>
+    </div>
+
+  </header>
+
+  <main>
+    
+      
+
+
+
+<div class="container-fluid nopadding-x">
+  <div class="row nomargin-x">
+    <div class="side-col d-none d-lg-block col-lg-2">
+      
+
+    </div>
+
+    <div class="col-lg-8 nopadding-x-md">
+      <div class="container nopadding-x-md" id="board-ctn">
+        <div id="board">
+          <article class="post-content mx-auto">
+
+            <!-- <h1 id="seo-header">YOLO v9</h1> -->
+
+            
+              <p id="updated-time" class="note note-info" style="">
+                
+                  
+                    <!-- compatible with older versions-->
+                    本文最后更新于：2024年5月7日 下午
+                  
+                
+              </p>
+            
+            
+              <div class="markdown-body">
+                
+                <blockquote>
+<p>YOLO v9 提出了可编程梯度信息（PGI）的概念，设计了新的网络架构（GELAN），结果显示二者对于检测性能提升和参数利用率提升都发挥了重要作用。</p>
+</blockquote>
+<span id="more"></span>
+<h3 id="重要链接">重要链接</h3>
+<ul>
+<li>论文地址：<a target="_blank" rel="noopener" href="https://arxiv.org/abs/2402.13616">https://arxiv.org/abs/2402.13616</a></li>
+<li>开源代码：<a target="_blank" rel="noopener" href="https://github.com/WongKinYiu/yolov9">https://github.com/WongKinYiu/yolov9</a></li>
+</ul>
+<h3 id="摘要"><strong>摘要</strong></h3>
+<p>当今的深度学习方法专注于设计最合适的目标函数，以使模型的预测结果与实际情况最接近。同时，必须设计一个合适的架构，以便获取足够的信息进行预测。现有方法忽略了一个事实，即当输入数据经过逐层特征提取和空间变换时，大量信息将会丢失。本文将深入探讨当数据通过深度网络传输时的数据丢失重要问题，即信息瓶颈和可逆函数。我们提出了可编程梯度信息（PGI）的概念，以处理深度网络所需的各种变化，以实现多个目标。PGI可以为目标任务提供完整的输入信息来计算目标函数，从而获得可靠的梯度信息以更新网络权重。此外，基于梯度路径规划设计了一种新的轻量级网络架构——广义高效层聚合网络（GELAN）。GELAN的架构证实了PGI在轻量级模型上取得了优异的结果。我们在基于MS COCO数据集的目标检测上验证了提出的GELAN和PGI。结果显示，GELAN仅使用常规卷积算子即可实现比基于深度卷积开发的最先进方法更好的参数利用率。PGI可用于各种模型，从轻量级到大型。它可用于获取完整信息，使得从头开始训练的模型可以获得比使用大型数据集预训练的最先进模型更好的结果。</p>
+<img src="https://uipv4.zywvvd.com:33030/HexoFiles/vvd_pc_upload_2023/202403212236645.png" srcset="/img/loading.gif" lazyload style="zoom:53%;" />
+<h3 id="简介"><strong>简介</strong></h3>
+<p>基于深度学习的模型在各个领域，如计算机视觉、语言处理和语音识别等方面，已经展示出远远优于过去人工智能系统的性能。近年来，深度学习领域的研究人员主要关注如何开发更强大的系统架构和学习方法，例如CNNs、Transformers、Perceivers和Mambas等。此外，一些研究人员尝试开发更通用的目标函数，如损失函数、标签分配和辅助监督等。上述研究都试图精确地找到输入和目标任务之间的映射关系。然而，大多数过去的方法忽视了在前向传播过程中输入数据可能会存在大量信息丢失的事实。这种信息丢失会导致偏倚的梯度流，随后用于更新模型。上述问题可能导致深度网络建立目标与输入之间的错误关联，使得训练模型产生不正确的预测。</p>
+<p><img src="https://uipv4.zywvvd.com:33030/HexoFiles/vvd_pc_upload_2023/202403212247518.png" srcset="/img/loading.gif" lazyload alt="图2"></p>
+<p>在深度网络中，输入数据在前向传播过程中丢失信息的现象通常被称为信息瓶颈，其示意图如图2所示。目前，主要可以缓解这一现象的方法有：（1）使用可逆架构：该方法主要使用重复的输入数据并以显式方式保留输入数据的信息；（2）使用掩模建模：主要利用重构损失，采用隐式方式最大化提取的特征并保留输入信息；（3）引入深度监督概念：利用未丢失太多重要信息的浅层特征，预先建立特征到目标的映射，以确保重要信息能够传递到更深层。然而，以上方法在训练和推理过程中存在不同的缺点。例如，可逆架构需要额外的层来结合重复输入数据，这会显著增加推理成本。此外，由于输入数据层到输出层不能有太深的路径，这一限制会使训练过程中难以建模高阶语义信息。至于掩模建模，其重构损失有时会与目标损失冲突。此外，大多数掩模机制还会与数据产生不正确的关联。对于深度监督机制来说，它会产生误差累积，如果浅监督在训练过程中丢失信息，后续层将无法检索所需信息。以上现象在困难任务和小模型上会更显著。</p>
+<p>为了解决上述问题，我们提出了一个新概念，即可编程梯度信息（PGI）。该概念通过辅助可逆分支生成可靠的梯度，使深层特征仍然保持执行目标任务的关键特性。辅助可逆分支的设计可以避免传统深度监督过程可能导致的语义丢失，这种过程集成了多路径特征。换句话说，我们正在在不同语义层次上编程梯度信息传播，从而实现最佳的训练结果。PGI的可逆架构建立在辅助分支上，因此没有额外的成本。由于PGI可以自由选择适合目标任务的损失函数，它也克服了掩模建模遇到的问题。所提出的PGI机制可应用于各种规模的深度神经网络，比深度监督机制更通用，后者只适用于非常深的神经网络。</p>
+<p>在本文中，我们还基于ELAN设计了广义ELAN（GELAN），GELAN的设计同时考虑了参数数量、计算复杂性、准确性和推理速度。这种设计允许用户随意选择适合不同推理设备的计算块。我们将提出的PGI和GELAN结合起来，然后设计了一个新一代的YOLO系列目标检测系统，我们称之为YOLOv9。我们使用了MS COCO数据集进行实验，并实验结果验证了我们提出的YOLOv9在所有对比中均取得了最佳性能。</p>
+<p><img src="https://uipv4.zywvvd.com:33030/HexoFiles/vvd_pc_upload_2023/202403212310656.jpg" srcset="/img/loading.gif" lazyload alt=""></p>
+<p>我们总结本文的贡献如下：</p>
+<p>我们从可逆功能的角度对现有深度神经网络架构进行了理论分析，在这一过程中成功解释了许多过去难以解释的现象。我们还根据这一分析设计了PGI和辅助可逆分支，并取得了出色的结果。<br>
+我们设计的PGI解决了深度监督只能用于极深神经网络架构的问题，从而使新的轻量级架构能够真正应用于日常生活。<br>
+我们设计的GELAN只使用传统卷积，以实现比基于最先进技术的深度卷积设计更高的参数使用率，同时显示出轻量、快速和准确的巨大优势。<br>
+结合所提出的PGI和GELAN，YOLOv9在MS COCO数据集上的目标检测性能在各个方面大大超过了现有的实时目标检测器。</p>
+<h3 id="相关工作"><strong>相关工作</strong></h3>
+<h4 id="实时目标检测器">实时目标检测器</h4>
+<p>当前主流的实时目标检测器是YOLO系列[2, 7, 13–15, 25, 30, 31, 47–49, 61–63, 74, 75]，其中大多数模型使用CSPNet [64]或ELAN [65]及其变体作为主要计算单元。在特征集成方面，改进的PAN [37]或FPN [35]经常被用作工具，然后改进的YOLOv3头部[49]或FCOS头部[57, 58]被用作预测头部。最近一些实时目标检测器，如RT DETR [43]，其基础是DETR [4]，也已经被提出。然而，由于DETR系列目标检测器极其难以在没有相应的领域预训练模型的情况下应用于新领域，目前最广泛使用的实时目标检测器仍然是YOLO系列。本文选择了YOLOv7 [63]作为基础，因为它已在各种计算机视觉任务和各种场景中被证明是有效的，以开发提出的方法。我们使用GELAN来改进架构和训练过程，并提出的PGI。上述新颖方法使得提出的YOLOv9成为新一代顶级实时目标检测器。</p>
+<h4 id="可逆结构">可逆结构</h4>
+<p>可逆架构的操作单元[3, 16, 19]必须保持可逆转换的特性，以确保每个操作单元层的输出特征图能够保留完整的原始信息。在此之前，RevCol [3]将传统的可逆单元泛化至多个层级，从而可以扩展不同层单元所表达的语义层级。通过对各种神经网络架构的文献综述，我们发现有许多具有不同程度可逆属性的高性能架构。例如，Res2Net模块[11]以分层方式将不同的输入分区与下一个分区组合，然后将所有转换后的分区连接在一起反向传递。CBNet [34, 39]通过复合主干重新引入原始输入数据，以获得完整的原始信息，并通过各种组合方法获得不同级别的多级可逆信息。这些网络架构通常具有出色的参数利用率，但额外的复合层会导致推理速度较慢。DynamicDet [36]将CBNet [34]和高效实时目标检测器YOLOv7 [63]结合起来，以在速度、参数数量和准确性之间取得很好的平衡。本文将DynamicDet架构引入作为设计可逆分支的基础。此外，可逆信息还进一步引入到提出的PGI中。提出的新架构在推理过程中不需要额外的连接，因此能充分保留速度、参数数量和准确性的优势。</p>
+<h4 id="辅助监督">辅助监督</h4>
+<p>深度监督[28, 54, 68]是最常见的辅助监督方法，通过在中间层插入额外的预测层进行训练。特别是在基于Transformer的方法中引入多层解码器的应用最为常见。另一种常见的辅助监督方法是利用相关的元信息指导中间层生成的特征图，并使其具有目标任务所需的属性[18, 20, 24, 29, 76]。这种类型的示例包括使用分割损失或深度损失来增强目标检测器的准确性。最近，文献中有很多关于使用不同的标签分配方法生成不同的辅助监督机制以加快模型收敛速度并同时提高鲁棒性的报道[53, 67, 82]。然而，辅助监督机制通常仅适用于大型模型，因此当应用于轻量级模型时，很容易导致欠参数化现象，使性能变差。我们提出的PGI设计了一种重新编程多层语义信息的方式，这种设计使得轻量级模型也能从辅助监督机制中受益。</p>
+<h3 id="问题描述"><strong>问题描述</strong></h3>
+<p>通常，人们将深度神经网络收敛问题的困难归因于诸如梯度消失或梯度饱和等因素，这些现象在传统深度神经网络中确实存在。然而，现代深度神经网络通过设计各种规范化和激活函数已经从根本上解决了上述问题。尽管如此，深度神经网络仍然存在收敛速度慢或收敛结果差的问题。</p>
+<p>在本文中，我们进一步探讨上述问题的本质。通过深入分析信息瓶颈，我们推断出这个问题的根本原因是，最初来自非常深层网络的初始梯度在传递后很快失去了实现目标所需的许多信息。为了证实这一推断，我们使用具有初始权重的不同架构的前馈深度网络，然后在图2中将它们可视化和说明。显然，PlainNet在深层中已经丢失了进行目标检测所需的许多重要信息。至于ResNet、CSPNet和GELAN能够保留的重要信息比例，确实与训练后可以获得的准确性相关。我们进一步设计了基于可逆网络的方法来解决上述问题的根源。在本节中，我们将详细阐述我们对信息瓶颈原理和可逆函数的分析。</p>
+<h4 id="信息瓶颈原理">信息瓶颈原理</h4>
+<p>根据信息瓶颈原理，我们知道数据 X 在经过转换时可能会引起信息损失，如下所示的方程式<br>
+$$<br>
+I(X, X) \geq I(X, f \theta(X)) \geq I(X, g \phi(f \theta(X)))<br>
+$$<br>
+其中，I 表示互信息，f 和 g 是转换函数，θ 和 ϕ 分别是 f 和 g 的参数。</p>
+<p>在深度神经网络中，fθ(·) 和 gϕ(·) 分别代表深度神经网络中两个连续层的操作。从方程式 1 中，我们可以预测随着网络层的增加，原始数据更有可能丢失。然而，深度神经网络的参数是基于网络输出以及给定目标，然后通过计算损失函数生成新的梯度更新网络。可以想象，深层神经网络的输出能力较低，无法完整地保留有关预测目标的信息。这将导致在网络训练过程中使用不完整信息，导致不可靠的梯度和收敛困难。</p>
+<p>解决上述问题的一种方法是直接增加模型的大小。当我们使用大量参数构建模型时，它更有能力对数据进行更完整的转换。上述方法即使在数据前馈过程中丢失信息，仍有机会保留足够信息进行映射到目标。上述现象解释了为什么在大多数现代模型中，宽度比深度更重要。然而，上述结论并不能根本解决非常深的神经网络中不可靠梯度的问题。接下来，我们将介绍如何使用可逆函数来解决问题并进行相关分析。</p>
+<h4 id="可逆函数">可逆函数</h4>
+<p>当一个函数 r 具有反向转换函数 v 时，我们称这个函数为可逆函数，如方程式 2 所示：<br>
+$$<br>
+X=v \zeta(r \psi(X))<br>
+$$<br>
+其中，ψ 和 ζ 分别是 r 和 v 的参数。数据 X 经可逆函数转换后不会丢失信息，如方程式 3 所示：<br>
+$$<br>
+I(X, X)=I(X, r \psi(X))=I(X, v \zeta(r \psi(X)))<br>
+$$<br>
+当网络的转换函数由可逆函数组成时，可以获得更可靠的梯度来更新模型。几乎所有当今流行的深度学习方法都符合可逆性质，如方程式 4：<br>
+$$<br>
+X<sup>{l+1}=X</sup>{l}+f_{\theta}^{l+1}\left(X_{l}\right)<br>
+$$<br>
+其中 l 表示 PreAct ResNet 的第 l 层，f 是第 l 层的变换函数。PreAct ResNet 通过明确的方式将原始数据 X 重复传递给后续层。尽管这样的设计可以使具有超过一千层的深度神经网络非常好地收敛，但它破坏了我们需要深度神经网络的一个重要原因。即，对于困难问题，我们难以直接找到简单的映射函数将数据映射到目标。这也解释了为什么在层数较少时，PreAct ResNet 的表现不如 ResNet。</p>
+<p>此外，我们尝试使用允许变压器模型取得重大突破的蒙版建模。我们使用近似方法，如方程式 5，试图找到函数 r 的反向转换 v，使得转换后的特征能够保留足够的信息使用稀疏特征。方程式 5 的形式如下：<br>
+$$<br>
+X=v \varsigma(r \psi(X) \cdot M)<br>
+$$<br>
+其中 M 是一个动态二进制蒙版。常用于执行上述任务的其他方法包括扩散模型和变分自动编码器，它们都有找到逆函数的功能。然而，当我们将上述方法应用于轻量级模型时，会出现缺陷，因为轻量级模型将对大量原始数据进行下参数化。由于上述原因，将数据 X 映射到目标 Y 的重要信息 I(Y,X) 也会面临同样的问题。针对这个问题，我们将探讨采用信息瓶颈概念。信息瓶颈的公式如下：<br>
+$$<br>
+I(X, X) \geq I(Y, X) \geq I(Y, f \theta(x)) \geq \ldots \geq I(Y, \hat{Y})<br>
+$$<br>
+一般来说，I(Y,X) 在 I(X,X) 中仅占很小一部分。但它对于目标任务至关重要。因此，即使在前向传播阶段丢失的信息量不大，只要涵盖了 I(Y,X)，训练效果将受到极大影响。轻量级模型本身处于下参数化状态，因此在前向传播阶段很容易丢失大量重要信息。因此，我们对于轻量级模型的目标是如何准确地从 I(X,X) 中过滤出 I(Y,X)。至于完全保留 X 的信息，那是难以实现的。根据以上分析，我们希望提出一种新的深度神经网络训练方法，既能生成可靠的梯度更新模型，也适用于浅层和轻量级神经网络。</p>
+<h3 id="核心方法"><strong>核心方法</strong></h3>
+<p><img src="https://uipv4.zywvvd.com:33030/HexoFiles/vvd_pc_upload_2023/202403212251907.png" srcset="/img/loading.gif" lazyload alt="图3"></p>
+<h4 id="可编程的梯度信息">可编程的梯度信息</h4>
+<p>为了解决前述问题，我们提出了一个名为可编程梯度信息（PGI）的新辅助监督框架，如图 3（d）所示。PGI 主要包括三个组件，分别是主分支、辅助可逆分支和多级辅助信息。从图 3（d）中可见，PGI 的推理过程只使用主分支，因此不需要额外的推理成本。至于另外两个组件，它们用于解决或减缓深度学习方法中的几个重要问题。其中，辅助可逆分支设计用于处理由神经网络加深引起的问题。网络加深将导致信息瓶颈，这将使损失函数无法生成可靠的梯度。至于多级辅助信息，它设计用于处理深度监督造成的错误累积问题，特别适用于多个预测分支的架构和轻量级模型。接下来，我们将逐步介绍这两个组件。</p>
+<h4 id="辅助可逆分支">辅助可逆分支</h4>
+<p>在 PGI 中，我们提出了辅助可逆分支以生成可靠的梯度并更新网络参数。通过提供从数据到目标的映射信息，损失函数可以提供指导，并避免在不完整的前馈特征中找到与目标不相关的虚假相关性的可能性。我们通过引入可逆架构来保持完整信息，但是将主分支添加到可逆架构中将消耗大量推理成本。我们分析了图 3（b）的架构，发现当添加从深层到浅层的附加连接时，推理时间将增加 20%。当我们将输入数据重复添加到网络的高分辨率计算层（黄色框）时，推理时间甚至会超过两倍。</p>
+<p>由于我们的目标是使用可逆架构获取可靠的梯度，“可逆”并非推理阶段的唯一必要条件。基于这一点，我们将可逆分支视为深度监督分支的扩展，然后设计辅助可逆分支，如图 3（d）所示。至于由于信息瓶颈而可能丢失重要信息的主分支深层特征，它们将能够从辅助可逆分支接收可靠的梯度信息。这些梯度信息将推动参数学习，帮助提取正确和重要的信息，上述操作可以使主分支获得更有效的适用于目标任务的特征。此外，可逆架构在浅层网络上的表现不如一般网络，因为复杂任务需要在更深的网络中进行转换。我们提出的方法不会强制主分支保留完整原始信息，而是通过辅助监督机制生成有用的梯度进行更新。这种设计的优势在于，所提出的方法也适用于较浅的网络。</p>
+<p>最后，由于辅助可逆分支可以在推理阶段移除，因此可以保留原始网络的推理能力。我们还可以在 PGI 中选择任何可逆架构来担当辅助可逆分支的角色。</p>
+<h4 id="多级辅助信息">多级辅助信息</h4>
+<p>在本节中，我们将讨论多层次辅助信息的工作原理。深度监督架构包括多个预测分支，如图 3（c）所示。对于目标检测，可以使用不同的特征金字塔执行不同的任务，例如它们可以一起检测不同大小的物体。因此，在连接到深度监督分支之后，浅层特征将被引导学习用于小物体检测所需的特征，此时系统将将其他大小物体的位置视为背景。然而，上述做法将导致深层特征金字塔丢失预测目标对象所需的大量信息。针对这个问题，我们认为每个特征金字塔都需要接收有关所有目标对象的信息，以便后续的主分支可以保留完整信息来学习各种目标的预测。</p>
+<p>多层次辅助信息的概念是在辅助监督的特征金字塔层级和主分支之间插入一个集成网络，然后使用它来结合不同预测头返回的梯度，如图 3（d）所示。多层次辅助信息是为了汇总包含所有目标对象的梯度信息，并将其传递给主分支，然后更新参数。这时，主分支的特征金字塔层次的特征将不会被某些特定对象的信息所主导。因此，我们的方法可以缓解深度监督中的信息丢失问题。此外，任何集成网络都可以用于多层次辅助信息。因此，我们可以规划所需的语义级别以指导不同大小的网络架构的学习。</p>
+<h4 id="广义ELAN">广义ELAN</h4>
+<p><img src="https://uipv4.zywvvd.com:33030/HexoFiles/vvd_pc_upload_2023/202403212305838.png" srcset="/img/loading.gif" lazyload alt=""></p>
+<p>在这一部分中，我们描述了提出的新网络架构 - GELAN。通过结合两种神经网络架构，即带有梯度路径规划的 CSPNet 和 ELAN，我们设计了考虑轻量化、推理速度和准确性的广义高效层聚合网络（GELAN）。其整体架构如图 4 所示。我们将 ELAN 的能力进行了泛化，原本只使用卷积层堆叠的 ELAN，可以使用任何计算块的新架构。</p>
+<h3 id="实验结果">实验结果</h3>
+<p>表格1列出了我们提出的 YOLOv9 与其他从头开始训练的实时物体检测器的比较。总体而言，在现有方法中表现最好的方法分别是轻量级模型 YOLO MS-S [7]，中等模型 YOLO MS [7]，通用模型 YOLOv7 AF [63]，和大模型 YOLOv8-X [15]。与轻量级和中等模型 YOLO MS [7]相比，YOLOv9 的参数少约10%，计算量少5∼15%，但在 AP 上仍有0.4∼0.6%的提升。与 YOLOv7 AF 相比，YOLOv9-C 的参数少42%，计算量少21%，但达到相同的 AP (53%)。与 YOLOv8-X 相比，YOLOv9-X 的参数少15%，计算量少25%，在 AP 上有明显的1.7%改进。上述比较结果表明，与现有方法相比，我们提出的 YOLOv9 在各个方面都有明显的改进。</p>
+<p>另外，我们还将 ImageNet 预训练模型包括在比较中，结果显示在图5中。我们分别基于参数和计算量进行比较。在参数数量方面，表现最佳的大模型是 RT DETR [43]。从图5中可以看出，使用传统卷积的 YOLOv9 在参数利用率上甚至比使用深度卷积的 YOLO MS 更好。对于大型模型的参数利用率，它也远远超过了使用 ImageNet 预训练模型的 RT DETR。更好的是，在深度模型中，YOLOv9 显示出使用PGI的巨大优势。通过精确保留和提取将数据映射到目标所需的信息，我们的方法只需要64%的参数来保持与RT DETR-X相同的准确性。</p>
+<p>在计算量方面，从最小到最大的最佳现有模型分别为 YOLO MS [7]、 PP YOLOE [74] 和 RT DETR [43]。从图5中可以看出，YOLOv9 在计算复杂性方面远远优于从头开始训练的方法。此外，如果与基于深度卷积和基于 ImageNet 预训练模型的方法进行比较，YOLOv9 也具有很强的竞争力。</p>
+<ul>
+<li>与轻量化和中型型号YOLO MS相比：参数减少约10%，计算量减少5 ~ 15%，但AP仍提高0.4 ~ 0.6%。</li>
+<li>与YOLOv7 AF相比：YOLOv9- c参数减少42%，计算量减少21%，但AP达到相同(53%)。</li>
+<li>与YOLOv8- x相比：YOLOv9- x参数减少15%，计算量减少25%，AP显著提高1.7%。</li>
+</ul>
+<p><img src="https://uipv4.zywvvd.com:33030/HexoFiles/vvd_pc_upload_2023/202403212308140.png" srcset="/img/loading.gif" lazyload alt=""></p>
+<h3 id="可视化">可视化</h3>
+<p>这一部分将探讨信息瓶颈问题并对其进行可视化。此外，我们还将展示提出的 PGI 如何利用可靠的梯度来找到数据和目标之间的正确关系。在图 6 中，我们展示了在不同架构下使用随机初始权重作为前向传播获取到的特征图的可视化结果。我们可以看到随着层数的增加，所有架构的原始信息逐渐减少。例如，在 PlainNet 的第 50 层，很难看出物体的位置，在第 100 层所有可分辨的特征都会丢失。至于 ResNet，虽然在第 50 层仍然能看到物体的位置，但边界信息已经丢失。当深度达到第 100 层时，整个图像变得模糊。无论是 CSPNet 还是提出的 GELAN 都表现出色，它们都能保持特征以支持对物体的清晰识别，直到第 200 层。在比较中，GELAN 的结果更稳定，边界信息更清晰。 图 7 用于展示 PGI 是否能在训练过程中提供更可靠的梯度，以便用于更新的参数能够有效捕获输入数据和目标之间的关系。</p>
+<p>图 7 显示了在 PAN 偏置预热中，GELAN 和 YOLOv9（GELAN + PGI）的特征图的可视化结果。通过比较图 7(b) 和 ©，我们可以清楚地看到 PGI 准确简洁地捕捉到包含物体的区域。至于不使用 PGI 的 GELAN，我们发现在检测对象边界时存在发散，并且在某些背景区域还产生了意料之外的响应。这个实验证实了 PGI 确实能够提供更好的梯度来更新参数，并使主分支的前向传播阶段保留更多重要特征。</p>
+<h3 id="结论"><strong>结论</strong></h3>
+<p>在这篇论文中，我们提出使用 PGI 来解决信息瓶颈问题以及深度监督机制不适用于轻量级神经网络的问题。我们设计了 GELAN，一个高效且轻量级的神经网络。在目标检测方面，GELAN 在不同的计算块和深度设置下表现出强大且稳定的性能。它确实可以被广泛扩展为适用于各种推断设备的模型。针对以上两个问题，引入 PGI 使得轻量级模型和深度模型在准确性上都取得了显著改进。通过将 PGI 和 GELAN 结合设计的 YOLOv9 在 MS COCO 数据集上表现出强大的竞争力。它的优秀设计使得与 YOLOv8 相比，深度模型的参数数量减少了 49%，计算量减少了 43%，但在 MS COCO 数据集上仍然有 0.6% 的平均准确率提升。</p>
+<h3 id="参考资料">参考资料</h3>
+<ul>
+<li><a target="_blank" rel="noopener" href="https://arxiv.org/abs/2402.13616">https://arxiv.org/abs/2402.13616</a></li>
+<li><a target="_blank" rel="noopener" href="https://github.com/WongKinYiu/yolov9">https://github.com/WongKinYiu/yolov9</a></li>
+<li><a target="_blank" rel="noopener" href="https://cloud.tencent.com/developer/article/2390383">https://cloud.tencent.com/developer/article/2390383</a></li>
+<li><a target="_blank" rel="noopener" href="https://blog.csdn.net/qq_40716944/article/details/136231560">https://blog.csdn.net/qq_40716944/article/details/136231560</a></li>
+<li><a target="_blank" rel="noopener" href="https://blog.csdn.net/weixin_43334693/article/details/136383022">https://blog.csdn.net/weixin_43334693/article/details/136383022</a></li>
+</ul>
+<link rel="stylesheet" href="/css/spoiler.css" type="text/css"><script src="/js/spoiler.js" type="text/javascript" async></script>
+                
+
+
+				<br /><br />
+				<blockquote>
+					<p>文章链接：<br /> 
+					<a style="font-size: 0.85rem" target="_blank" rel="noopener" href="https://www.zywvvd.com/notes/study/deep-learning/detection/yolo/yolov9-intr/yolov9-intr/">https://www.zywvvd.com/notes/study/deep-learning/detection/yolo/yolov9-intr/yolov9-intr/</a>
+					</p>
+				</blockquote>
+
+
+              </div>
+            
+            <hr/>
+			
+			<!-- 添加打赏模块 -->
+			<div class="reward-container">
+				
+					<button id="rewardBtn" class="reward-btn">
+						 
+							❤ 打赏
+							
+					</button>
+					<p class="tea">“觉得不错的话，给点打赏吧 ୧(๑•̀⌄•́๑)૭”</p>
+					<div id="rewardImgContainer" class="reward-img-container">
+						<div class="singleImgContainer">
+							<img id="wechatImg" class="reward-img" src="https://uipv4.zywvvd.com:33030/HexoFiles/vvd_pc_upload/wechatpay.png" srcset="/img/loading.gif" lazyload alt="微信二维码">
+							<p class="wechatPay">微信支付</p>
+						</div>
+						<div class="singleImgContainer">
+							<img id="alipayImg" class="reward-img" src="https://uipv4.zywvvd.com:33030/HexoFiles/vvd_pc_upload/alipay.png" srcset="/img/loading.gif" lazyload alt="支付宝二维码">
+							<p class="aliPay">支付宝支付</p>
+						</div>
+					</div>
+				
+			</div>
+			
+            <div>
+              <div class="post-metas my-3">
+  
+    <div class="post-meta mr-3 d-flex align-items-center">
+      <i class="iconfont icon-category"></i>
+      
+
+<span class="category-chains">
+  
+  
+    
+      <span class="category-chain">
+        
+  <a href="/categories/Deep-Learning/" class="category-chain-item">Deep_Learning</a>
+  
+  
+    <span>></span>
+    
+  <a href="/categories/Deep-Learning/Detection/" class="category-chain-item">Detection</a>
+  
+  
+    <span>></span>
+    
+  <a href="/categories/Deep-Learning/Detection/YOLO/" class="category-chain-item">YOLO</a>
+  
+  
+
+  
+
+  
+
+      </span>
+    
+  
+</span>
+
+    </div>
+  
+  
+    <div class="post-meta">
+      <i class="iconfont icon-tags"></i>
+      
+        <a href="/tags/Deep-Learning/" class="print-no-link">#Deep_Learning</a>
+      
+        <a href="/tags/Detection/" class="print-no-link">#Detection</a>
+      
+        <a href="/tags/YOLO/" class="print-no-link">#YOLO</a>
+      
+    </div>
+  
+</div>
+
+
+              
+  
+
+  <div class="license-box my-3">
+    <div class="license-title">
+      <div>YOLO v9</div>
+      <div>https://www.zywvvd.com/notes/study/deep-learning/detection/yolo/yolov9-intr/yolov9-intr/</div>
+    </div>
+    <div class="license-meta">
+      
+        <div class="license-meta-item">
+          <div>作者</div>
+          <div>Yiwei Zhang</div>
+        </div>
+      
+      
+        <div class="license-meta-item license-meta-date">
+          <div>发布于</div>
+          <div>2024年3月19日</div>
+        </div>
+      
+      
+      
+        <div class="license-meta-item">
+          <div>许可协议</div>
+          <div>
+            
+              
+              
+                <a class="print-no-link" target="_blank" href="https://creativecommons.org/licenses/by/4.0/">
+                  <span class="hint--top hint--rounded" aria-label="BY - 署名">
+                    <i class="iconfont icon-by"></i>
+                  </span>
+                </a>
+              
+            
+          </div>
+        </div>
+      
+    </div>
+    <div class="license-icon iconfont"></div>
+  </div>
+
+
+
+              
+                <div class="post-prevnext my-3">
+                  <article class="post-prev col-6">
+                    
+                    
+                      <a href="/notes/environment/cuda/cuda-outof-memory/cuda-outof-memory/" title="Pytorch 内存分配与 max_split_size_mb">
+                        <i class="iconfont icon-arrowleft"></i>
+                        <span class="hidden-mobile">Pytorch 内存分配与 max_split_size_mb</span>
+                        <span class="visible-mobile">上一篇</span>
+                      </a>
+                    
+                  </article>
+                  <article class="post-next col-6">
+                    
+                    
+                      <a href="/notes/tools/codegeex/codegeex/" title="智能编程助手 CodeGeeX">
+                        <span class="hidden-mobile">智能编程助手 CodeGeeX</span>
+                        <span class="visible-mobile">下一篇</span>
+                        <i class="iconfont icon-arrowright"></i>
+                      </a>
+                    
+                  </article>
+                </div>
+              
+            </div>
+
+            
+  
+  
+    <article id="comments" lazyload>
+      
+  <div id="waline"></div>
+  <script type="text/javascript">
+    Fluid.utils.loadComments('#waline', function() {
+      Fluid.utils.createCssLink('https://lib.baomitu.com/waline/2.14.8/waline.min.css')
+      Fluid.utils.createScript('https://lib.baomitu.com/waline/2.14.8/waline.min.js', function() {
+        var options = Object.assign(
+          {"serverURL":"https://uipv4.zywvvd.com:33033/","path":"window.location.pathname","meta":["nick","mail","link"],"requiredMeta":["nick"],"lang":"zh-CN","emoji":["https://cdn.jsdelivr.net/gh/walinejs/emojis/weibo"],"dark":"html[data-user-color-scheme=\"dark\"]","wordLimit":0,"pageSize":10,"reaction":true,"locale":{"placeholder":"山高路远，常来玩吖 ~","reactionTitle":null}},
+          {
+            el: '#waline',
+            path: window.location.pathname
+          }
+        )
+        Waline.init(options);
+        Fluid.utils.waitElementVisible('#waline .vcontent', () => {
+          var imgSelector = '#waline .vcontent img:not(.vemoji)';
+          Fluid.plugins.imageCaption(imgSelector);
+          Fluid.plugins.fancyBox(imgSelector);
+        })
+      });
+    });
+  </script>
+  <noscript>Please enable JavaScript to view the comments</noscript>
+
+
+    </article>
+  
+
+
+          </article>
+        </div>
+      </div>
+    </div>
+
+    <div class="side-col d-none d-lg-block col-lg-2">
+      
+  <aside class="sidebar" style="margin-left: -1rem">
+    <div id="toc">
+  <p class="toc-header">
+    <i class="iconfont icon-list"></i>
+    <span>目录</span>
+  </p>
+  <div class="toc-body" id="toc-body"></div>
+</div>
+
+
+
+  </aside>
+
+
+    </div>
+  </div>
+</div>
+
+
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+  
+  
+
+
+
+
+
+  <script>
+  Fluid.utils.createScript('https://lib.baomitu.com/mermaid/8.14.0/mermaid.min.js', function() {
+    mermaid.initialize({"theme":"default"});
+
+    Fluid.utils.listenDOMLoaded(function() {
+      Fluid.events.registerRefreshCallback(function() {
+        if ('mermaid' in window) {
+          mermaid.init();
+        }
+      });
+    });
+  });
+</script>
+
+
+
+
+
+
+    
+
+    
+      <a id="scroll-top-button" aria-label="TOP" href="#" role="button">
+        <i class="iconfont icon-xiangshangjiantou" aria-hidden="true"></i>
+      </a>
+    
+
+    
+      <div class="modal fade" id="modalSearch" tabindex="-1" role="dialog" aria-labelledby="ModalLabel"
+     aria-hidden="true">
+  <div class="modal-dialog modal-dialog-scrollable modal-lg" role="document">
+    <div class="modal-content">
+      <div class="modal-header text-center">
+        <h4 class="modal-title w-100 font-weight-bold">搜索</h4>
+        <button type="button" id="local-search-close" class="close" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body mx-3">
+        <div class="md-form mb-5">
+          <input type="text" id="local-search-input" class="form-control validate">
+          <label data-error="x" data-success="v" for="local-search-input">关键词</label>
+        </div>
+        <div class="list-group" id="local-search-result"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+    
+
+    
+  </main>
+
+  <footer>
+    <div class="footer-inner">
+  
+    <div class="footer-content">
+       <div class="vvd_footer" style="font-size: 0.85rem;"> <a href="https://hexo.io" target="_blank" rel="nofollow noopener" color="#d7d8d9" data-umami-event="Footer-Hexo"><span class="umami--click--Footer-Hexo">Hexo</span></a> <i class="iconfont icon-love"></i> <a href="https://github.com/fluid-dev/hexo-theme-fluid" target="_blank" rel="nofollow noopener" data-umami-event="Footer-Fluid"><span class="umami--click--Footer-Fluid">Fluid</span></a> <i class="iconfont icon-love"></i> <a href="https://uipv4.zywvvd.com:33039/share/0zx3o21oIpZTZqwC/%E5%8F%88%E8%A7%81%E8%8B%8D%E5%B2%9A" target="_blank" rel="nofollow noopener" data-umami-event="Footer-Umami"><span class="umami--click--Footer-Umami">Umami</span></a> <div style="font-size: 0.85rem;"> <span id="timeDate">载入天数...</span> <span id="times">载入时分秒...</span> <script src="/vvd_js/duration.js"></script> </div> <div style="font-size: 0.85rem;"> <span> 总访问量 <span style="color: #d7d8d9;" id="PVstatic">0</span> 次&nbsp</span> <span> 总访客数 <span style="color: #d7d8d9;" id="UVstatic">0</span> 人&nbsp</span> <span> 当前在线 <span style="color: #d7d8d9;" id="ACTstatic">0</span> 人&nbsp</span> <script src="https://uipv4.zywvvd.com:33037/statistics" defer></script> </div> <div> <span> Copyright © 2020-2024. All Rights Reserved.</span> </div> <div style="font-size: 0.85rem;"> <a target="_blank" rel="noopener" href="https://developer.hitokoto.cn/" id="hitokoto_text"><span style="color: #d7d8d9;"  id="hitokoto"></span></a> <script src="https://uipv4.zywvvd.com:33044/?encode=js&select=%23hitokoto" defer></script> </div> <a href="https://icp.gov.moe/?keyword=20230615" target="_blank">萌ICP备20230615号</a>
+
+
+</div> 
+    </div>
+  
+  
+  
+  
+</div>
+
+  </footer>
+
+  <!-- Scripts -->
+  
+  <script  src="https://lib.baomitu.com/nprogress/0.2.0/nprogress.min.js" ></script>
+  <link  rel="stylesheet" href="https://lib.baomitu.com/nprogress/0.2.0/nprogress.min.css" />
+
+  <script>
+    NProgress.configure({"showSpinner":false,"trickleSpeed":100})
+    NProgress.start()
+    window.addEventListener('load', function() {
+      NProgress.done();
+    })
+  </script>
+
+
+<script  src="https://lib.baomitu.com/jquery/3.6.0/jquery.min.js" ></script>
+<script  src="https://lib.baomitu.com/twitter-bootstrap/4.6.1/js/bootstrap.min.js" ></script>
+<script  src="/js/events.js" ></script>
+<script  src="/js/plugins.js" ></script>
+
+
+
+
+
+  
+    <script  src="/js/img-lazyload.js" ></script>
+  
+
+
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/tocbot/4.18.2/tocbot.min.js', function() {
+    var toc = jQuery('#toc');
+    if (toc.length === 0 || !window.tocbot) { return; }
+    var boardCtn = jQuery('#board-ctn');
+    var boardTop = boardCtn.offset().top;
+
+    window.tocbot.init(Object.assign({
+      tocSelector     : '#toc-body',
+      contentSelector : '.markdown-body',
+      linkClass       : 'tocbot-link',
+      activeLinkClass : 'tocbot-active-link',
+      listClass       : 'tocbot-list',
+      isCollapsedClass: 'tocbot-is-collapsed',
+      collapsibleClass: 'tocbot-is-collapsible',
+      scrollSmooth    : true,
+      includeTitleTags: true,
+      headingsOffset  : -boardTop,
+    }, CONFIG.toc));
+    if (toc.find('.toc-list-item').length > 0) {
+      toc.css('visibility', 'visible');
+    }
+
+    Fluid.events.registerRefreshCallback(function() {
+      if ('tocbot' in window) {
+        tocbot.refresh();
+        var toc = jQuery('#toc');
+        if (toc.length === 0 || !tocbot) {
+          return;
+        }
+        if (toc.find('.toc-list-item').length > 0) {
+          toc.css('visibility', 'visible');
+        }
+      }
+    });
+  });
+</script>
+
+
+  <script src=https://lib.baomitu.com/clipboard.js/2.0.10/clipboard.min.js></script>
+
+  <script>Fluid.plugins.codeWidget();</script>
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/anchor-js/4.3.1/anchor.min.js', function() {
+    window.anchors.options = {
+      placement: CONFIG.anchorjs.placement,
+      visible  : CONFIG.anchorjs.visible
+    };
+    if (CONFIG.anchorjs.icon) {
+      window.anchors.options.icon = CONFIG.anchorjs.icon;
+    }
+    var el = (CONFIG.anchorjs.element || 'h1,h2,h3,h4,h5,h6').split(',');
+    var res = [];
+    for (var item of el) {
+      res.push('.markdown-body > ' + item.trim());
+    }
+    if (CONFIG.anchorjs.placement === 'left') {
+      window.anchors.options.class = 'anchorjs-link-left';
+    }
+    window.anchors.add(res.join(', '));
+
+    Fluid.events.registerRefreshCallback(function() {
+      if ('anchors' in window) {
+        anchors.removeAll();
+        var el = (CONFIG.anchorjs.element || 'h1,h2,h3,h4,h5,h6').split(',');
+        var res = [];
+        for (var item of el) {
+          res.push('.markdown-body > ' + item.trim());
+        }
+        if (CONFIG.anchorjs.placement === 'left') {
+          anchors.options.class = 'anchorjs-link-left';
+        }
+        anchors.add(res.join(', '));
+      }
+    });
+  });
+</script>
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/fancybox/3.5.7/jquery.fancybox.min.js', function() {
+    Fluid.plugins.fancyBox();
+  });
+</script>
+
+
+  <script>Fluid.plugins.imageCaption();</script>
+
+  
+      <script>
+        if (!window.MathJax) {
+          window.MathJax = {
+            tex    : {
+              inlineMath: { '[+]': [['$', '$']] }
+            },
+            options: {
+              renderActions: {
+                insertedScript: [200, () => {
+                  document.querySelectorAll('mjx-container').forEach(node => {
+                    let target = node.parentNode;
+                    if (target.nodeName.toLowerCase() === 'li') {
+                      target.parentNode.classList.add('has-jax');
+                    }
+                  });
+                }, '', false]
+              }
+            }
+          };
+        } else {
+          MathJax.startup.document.state(0);
+          MathJax.texReset();
+          MathJax.typeset();
+          MathJax.typesetPromise();
+        }
+
+        Fluid.events.registerRefreshCallback(function() {
+          if ('MathJax' in window && MathJax.startup.document && typeof MathJax.startup.document.state === 'function') {
+            MathJax.startup.document.state(0);
+            MathJax.texReset();
+            MathJax.typeset();
+            MathJax.typesetPromise();
+          }
+        });
+      </script>
+    
+
+  <script  src="https://lib.baomitu.com/mathjax/3.2.1/es5/tex-mml-chtml.js" ></script>
+
+  <script defer src="/js/leancloud.js" ></script>
+
+  <script  src="/js/local-search.js" ></script>
+
+
+
+
+  
+<script src="//cdn.jsdelivr.net/npm/aplayer/dist/APlayer.min.js"></script>
+<script src="//cdn.jsdelivr.net/gh/metowolf/MetingJS@1.2/dist/Meting.min.js"></script>
+<script src="/js/reward.js"></script>
+
+
+
+<!-- 主题的启动项，将它保持在最底部 -->
+<!-- the boot of the theme, keep it at the bottom -->
+<script  src="/js/boot.js" ></script>
+
+
+  <script type="text/javascript">
+    /*窗口监视*/
+    var originalTitle = document.title;
+    window.onblur = function(){document.title = "明眸如初"};
+    window.onfocus = function(){document.title = originalTitle};
+  </script>
+
+
+  <div id="tooltip-rightmenu" class="tooltip-rightmenu">如需原始右键菜单请按下 <strong>Ctrl+右键</strong></div>
+
+<div id="rightmenu-wrapper" style="">
+  <ul class="list-v rightmenu" id="rightmenu-content">
+	  <li class="navigation menuNavigation-Content">
+		<a class="nav icon-only fix-cursor-default" onclick="history.back()"><i class="iconfont icon-zuojiantou1"></i></a>
+		<a class="nav icon-only fix-cursor-default" onclick="history.forward()"><i class="iconfont icon-youjiantou1"></i></a>
+		<a class="nav icon-only fix-cursor-default" onclick="window.location.reload()"><i class="iconfont icon-shuaxin"></i></a>
+		<a  aria-label="TOP" href="#" role="button"><i class="iconfont icon-xiangshang"></i></a>
+	  </li>
+
+		<hr class="menuLoad-Content" style="display: block;">
+	  <li class="menuLoad-Content" style="display: block;">
+		<a class="vlts-menu fix-cursor-default" target="_self" href="javascript:;" data-toggle="modal" data-target="#modalSearch" aria-label="Search">
+		  <span>
+			  <i class="iconfont icon-sousuo1 rightmenu-icon"></i>
+			  站内搜索
+		  </span>
+		</a>
+	  </li>
+
+	  <li class="menuLoad-Content" style="display: block;">
+		<a class="vlts-menu fix-cursor-default"  href="https://www.zywvvd.com/messagebd/" data-group="link">
+		  <span>
+			  <i class="iconfont icon-yangshi_icon_tongyong_chat rightmenu-icon">  </i>
+			   留言吐槽 
+		   </span>
+		</a>
+	  </li>
+
+
+	  <li class="menuLoad-Content" style="display: block;">
+		<a class="vlts-menu fix-cursor-default" id="help" target="_blank" rel="noopener" href="https://www.foreverblog.cn/go.html" data-group="link">
+		<span>
+			  <i class="iconfont icon-a-BlackHole rightmenu-icon"></i>
+			  虫洞穿梭
+		  </span>
+		</a>
+	  </li>
+
+	<a id="scroll-top-button" aria-label="TOP" href="#" role="button" style="bottom: 20px; right: 52.6364px;">
+        <i class="iconfont icon-xiangshangjiantou" aria-hidden="true"></i>
+      </a>
+
+	<hr class="menuLoad-Content" style="display: block;">
+	
+	  <li class="menuLoad-Content" style="display: block;">
+		<a class="vlts-menu fix-cursor-default" id="destroy-airplane" target="_blank" rel="noopener"  data-group="link">
+		<span>
+			  <i class="iconfont icon-feiji rightmenu-icon"></i>
+			  破坏小飞机
+		  </span>
+		</a>
+	  </li>
+  </ul>
+</div>
+
+<script>
+	var ua = navigator.userAgent;
+	var ipad = ua.match(/(iPad).*OS\s([\d_]+)/),
+		isIphone = !ipad && ua.match(/(iPhone\sOS)\s([\d_]+)/),
+		isAndroid = ua.match(/(Android)\s+([\d.]+)/),
+		isMobile = isIphone || isAndroid;
+
+	if(!isMobile) {
+		// 为按钮添加事件处理器
+		document.getElementById('destroy-airplane').onclick = function() {
+		  console.log('飞机起飞！');
+		  // 定义要执行的JavaScript代码
+		var KICKASSVERSION='2.0';
+		var s = document.createElement('script');
+		s.type='text/javascript';
+		document.body.appendChild(s);
+		s.src='https://uipv4.zywvvd.com:33030/HexoFiles/js/games/airplane/airplane.js';
+		void(0);
+		};
+	}
+</script>
+
+
+
+
+
+<link href="/css/custom.css"type="text/css"rel="stylesheet"/>
+<script src="/vvd_js/right_menu.js" type="text/javascript"></script>
+<link href="/css/right_menu.css"type="text/css"rel="stylesheet"/>
+<script src="/vvd_js/go.js"></script>
+
+
+  <noscript>
+    <div class="noscript-warning">博客在允许 JavaScript 运行的环境下浏览效果更佳</div>
+  </noscript>
+<script src="/live2dw/lib/L2Dwidget.min.js?094cbace49a39548bed64abff5988b05"></script><script>L2Dwidget.init({"pluginRootPath":"live2dw/","pluginJsPath":"lib/","pluginModelPath":"assets/","tagMode":false,"log":false,"model":{"jsonPath":"/live2dw/assets/z16.model.json"},"display":{"position":"left","width":200,"height":400},"mobile":{"show":false},"react":{"opacity":0.9}});</script></body>
+</html>

@@ -1,0 +1,1520 @@
+
+
+<!DOCTYPE html>
+<html lang="zh-CN" data-default-color-scheme=auto>
+
+
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="baidu-site-verification" content="codeva-rLWafCJGYc" />
+  <link rel="apple-touch-icon" sizes="76x76" href="/image/avatar.png">
+  <link rel="icon" href="/image/avatar.png">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, shrink-to-fit=no">
+  <meta http-equiv="x-ua-compatible" content="ie=edge">
+  
+  <meta name="theme-color" content="#2f4154">
+  <meta name="author" content="Yiwei Zhang">
+  <meta name="keywords" content="人工智能, 深度学习, 个人博客, 机器学习">
+  
+    <meta name="description" content="语言相机由于原理设计与镜头设计偏差会产生很严重的图像畸变，本文记录鱼眼相机畸变矫正方法。">
+<meta property="og:type" content="article">
+<meta property="og:title" content="鱼眼相机畸变矫正">
+<meta property="og:url" content="https://www.zywvvd.com/notes/study/camera-imaging/fisheye-cali/fisheye-cali/index.html">
+<meta property="og:site_name" content="又见苍岚">
+<meta property="og:description" content="语言相机由于原理设计与镜头设计偏差会产生很严重的图像畸变，本文记录鱼眼相机畸变矫正方法。">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="https://uipv4.zywvvd.com:33030/HexoFiles/vvd_image_files/202410101056900.png">
+<meta property="article:published_time" content="2024-10-10T02:51:06.000Z">
+<meta property="article:modified_time" content="2024-10-10T03:40:55.600Z">
+<meta property="article:author" content="Yiwei Zhang">
+<meta property="article:tag" content="Camera">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:image" content="https://uipv4.zywvvd.com:33030/HexoFiles/vvd_image_files/202410101056900.png">
+  
+  
+  
+  <title>鱼眼相机畸变矫正 - 又见苍岚</title>
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/twitter-bootstrap/4.6.1/css/bootstrap.min.css" />
+
+
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/github-markdown-css/4.0.0/github-markdown.min.css" />
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/hint.css/2.7.0/hint.min.css" />
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/fancybox/3.5.7/jquery.fancybox.min.css" />
+
+
+
+<!-- 主题依赖的图标库，不要自行修改 -->
+<!-- Do not modify the link that theme dependent icons -->
+
+<link rel="stylesheet" href="//at.alicdn.com/t/font_1749284_hj8rtnfg7um.css">
+
+
+
+<link rel="stylesheet" href="//at.alicdn.com/t/font_1736178_lbnruvf0jn.css">
+
+
+<link  rel="stylesheet" href="/css/main.css" />
+
+
+  <link id="highlight-css" rel="stylesheet" href="/css/highlight.css" />
+  
+    <link id="highlight-css-dark" rel="stylesheet" href="/css/highlight-dark.css" />
+  
+
+
+
+  
+<link rel="stylesheet" href="/css/custom.css">
+<link rel="stylesheet" href="/css/reward.css">
+<link rel="stylesheet" href="//cdn.jsdelivr.net/npm/aplayer/dist/APlayer.min.css">
+
+
+
+  <script id="fluid-configs">
+    var Fluid = window.Fluid || {};
+    Fluid.ctx = Object.assign({}, Fluid.ctx)
+    var CONFIG = {"hostname":"www.zywvvd.com","root":"/","version":"1.9.7","typing":{"enable":true,"typeSpeed":90,"cursorChar":"_","loop":false,"scope":["home"]},"anchorjs":{"enable":true,"element":"h1,h2,h3,h4,h5,h6","placement":"left","visible":"hover","icon":""},"progressbar":{"enable":true,"height_px":3,"color":"#29d","options":{"showSpinner":false,"trickleSpeed":100}},"code_language":{"enable":true,"default":"TEXT"},"copy_btn":true,"image_caption":{"enable":true},"image_zoom":{"enable":true,"img_url_replace":["",""]},"toc":{"enable":true,"placement":"right","headingSelector":"h1,h2,h3,h4,h5,h6","collapseDepth":0},"lazyload":{"enable":true,"loading_img":"/img/loading.gif","onlypost":false,"offset_factor":2},"web_analytics":{"enable":true,"follow_dnt":true,"baidu":null,"google":null,"tencent":{"sid":null,"cid":null},"woyaola":null,"cnzz":null,"leancloud":{"app_id":"Cv0XNeBSBdAPAIuVj3PsyM3R-MdYXbMMI","app_key":"4PU1rNlGrqXWzhfW3dgq98oX","server_url":null,"path":"window.location.pathname","ignore_local":false},"gtag":null},"search_path":"/local-search.xml","include_content_in_search":true};
+
+    if (CONFIG.web_analytics.follow_dnt) {
+      var dntVal = navigator.doNotTrack || window.doNotTrack || navigator.msDoNotTrack;
+      Fluid.ctx.dnt = dntVal && (dntVal.startsWith('1') || dntVal.startsWith('yes') || dntVal.startsWith('on'));
+    }
+  </script>
+  <script  src="/js/utils.js" ></script>
+  <script  src="/js/color-schema.js" ></script>
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+    
+  
+
+
+
+  
+<meta name="generator" content="Hexo 7.2.0"><link rel="alternate" href="/atom.xml" title="又见苍岚" type="application/atom+xml">
+</head>
+
+
+<body>
+  
+<div id="Loadanimation" style="z-index:999999;">
+<div id="Loadanimation-center">
+   <div id="Loadanimation-center-absolute">
+       <div class="xccx_object" id="xccx_four"></div>
+       <div class="xccx_object" id="xccx_three"></div>
+       <div class="xccx_object" id="xccx_two"></div>
+       <div class="xccx_object" id="xccx_one"></div>
+   </div>
+</div>
+</div>
+
+<link href="/css/loading.css"type="text/css"rel="stylesheet"/>
+
+
+
+
+
+
+<div>
+	<div class='real_mask' style="
+		background-color: rgba(0,0,0,0.4);
+		width: 100%;
+		height: 100%;
+		position: fixed;
+		z-index: -777;
+	"></div>
+	<div id="banner_video_insert">
+	</div>	
+	<div id='vvd_banner_img'>
+	</div>
+</div>
+<div id="banner"></div>
+
+
+
+
+
+
+
+  <header>
+    
+
+<div class="header-inner" style="height: 80vh;">
+  <nav id="navbar" class="navbar fixed-top  navbar-expand-lg navbar-dark scrolling-navbar">
+  <div class="container">
+    <a class="navbar-brand" href="/">
+      <strong>CangLan</strong>
+    </a>
+
+    <button id="navbar-toggler-btn" class="navbar-toggler" type="button" data-toggle="collapse"
+            data-target="#navbarSupportedContent"
+            aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
+      <div class="animated-icon"><span></span><span></span><span></span></div>
+    </button>
+
+    <!-- Collapsible content -->
+    <div class="collapse navbar-collapse" id="navbarSupportedContent">
+      <ul class="navbar-nav ml-auto text-center">
+        
+          
+          
+          
+          
+            <li class="nav-item">
+		<div >
+		      <a class="nav-link" href="/" target="_self" data-umami-event="Navigation-Homepage">
+
+		        <i class="iconfont icon-home-fill"></i>
+		        <span>首页</span>
+		      </a>
+		</div>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item dropdown">
+              <a class="nav-link dropdown-toggle" target="_self" href="javascript:;" role="button"
+                 data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                <i class="iconfont icon-shuji1"></i>
+                <span>文章</span>
+              </a>
+              <div class="dropdown-menu" aria-labelledby="navbarDropdown">
+                
+                  
+                  
+                  
+		<div >
+
+                  <a class="dropdown-item" href="/archives/" target="_self" data-umami-event="Navigation-Archive">
+
+                    <i class="iconfont icon-archive-fill"></i>
+                    <span>归档</span>
+                  </a>
+		</div>
+                
+                  
+                  
+                  
+		<div >
+
+                  <a class="dropdown-item" href="/categories/" target="_self" data-umami-event="Navigation-Category">
+
+                    <i class="iconfont icon-category-fill"></i>
+                    <span>分类</span>
+                  </a>
+		</div>
+                
+                  
+                  
+                  
+		<div >
+
+                  <a class="dropdown-item" href="/tags/" target="_self" data-umami-event="Navigation-Tag">
+
+                    <i class="iconfont icon-tags-fill"></i>
+                    <span>标签</span>
+                  </a>
+		</div>
+                
+                  
+                  
+                  
+		<div >
+
+                  <a class="dropdown-item" href="/shuoshuo/" target="_self" data-umami-event="Navigation-Shuoshuo">
+
+                    <i class="iconfont icon-24gf-bubblesDots4"></i>
+                    <span>说说</span>
+                  </a>
+		</div>
+                
+              </div>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item dropdown">
+              <a class="nav-link dropdown-toggle" target="_self" href="javascript:;" role="button"
+                 data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                <i class="iconfont icon-momo"></i>
+                <span>社交</span>
+              </a>
+              <div class="dropdown-menu" aria-labelledby="navbarDropdown">
+                
+                  
+                  
+                  
+		<div >
+
+                  <a class="dropdown-item" href="/links/" target="_self" data-umami-event="Navigation-Friends">
+
+                    <i class="iconfont icon-link-fill"></i>
+                    <span>友链</span>
+                  </a>
+		</div>
+                
+                  
+                  
+                  
+		<div >
+
+                  <a class="dropdown-item" href="/messagebd/" target="_self" data-umami-event="Navigation-MessageBoard">
+
+                    <i class="iconfont icon-comment"></i>
+                    <span>留言板</span>
+                  </a>
+		</div>
+                
+                  
+                  
+                  
+		<div >
+
+                  <a class="dropdown-item" href="/atom.xml" target="_self" data-umami-event="Navigation-RSS">
+
+                    <i class="iconfont icon-dingyue"></i>
+                    <span>RSS订阅</span>
+                  </a>
+		</div>
+                
+                  
+                  
+                  
+		<div >
+
+                  <a class="dropdown-item" href="/reccomments/" target="_self" data-umami-event="Navigation-Recent-Comments">
+
+                    <i class="iconfont icon-icon-pinglunguanli-pinglunliebiao"></i>
+                    <span>近期评论</span>
+                  </a>
+		</div>
+                
+              </div>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item dropdown">
+              <a class="nav-link dropdown-toggle" target="_self" href="javascript:;" role="button"
+                 data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                <i class="iconfont icon-user-fill"></i>
+                <span>个人</span>
+              </a>
+              <div class="dropdown-menu" aria-labelledby="navbarDropdown">
+                
+                  
+                  
+                  
+		<div >
+
+                  <a class="dropdown-item" href="/about/" target="_self" data-umami-event="Navigation-AboutMe">
+
+                    <i class="iconfont icon-guanyuwomen"></i>
+                    <span>关于</span>
+                  </a>
+		</div>
+                
+                  
+                  
+                  
+		<div >
+
+                  <a class="dropdown-item" href="/playlist/" target="_self" data-umami-event="Navigation-Music">
+
+                    <i class="iconfont icon-music"></i>
+                    <span>歌单</span>
+                  </a>
+		</div>
+                
+                  
+                  
+                  
+		<div >
+
+                  <a class="dropdown-item" href="https://uipv4.zywvvd.com:33035" target="_self" data-umami-event="Navigation-Nextcloud">
+
+                    <i class="iconfont icon-xuniyingpan"></i>
+                    <span>网盘</span>
+                  </a>
+		</div>
+                
+                  
+                  
+                  
+		<div >
+
+                  <a class="dropdown-item" href="https://uipv4.zywvvd.com:38920" target="_self" data-umami-event="Navigation-Emby">
+
+                    <i class="iconfont icon-meiti"></i>
+                    <span>影院</span>
+                  </a>
+		</div>
+                
+                  
+                  
+                  
+		<div >
+
+                  <a class="dropdown-item" href="https://uipv4.zywvvd.com:33036" target="_self" data-umami-event="Navigation-OneDev">
+
+                    <i class="iconfont icon-git"></i>
+                    <span>仓库</span>
+                  </a>
+		</div>
+                
+                  
+                  
+                  
+		<div >
+
+                  <a class="dropdown-item" href="https://uipv4.zywvvd.com:33041" target="_self" data-umami-event="Navigation-Wiki">
+
+                    <i class="iconfont icon-wiki"></i>
+                    <span>百科</span>
+                  </a>
+		</div>
+                
+              </div>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item dropdown">
+              <a class="nav-link dropdown-toggle" target="_self" href="javascript:;" role="button"
+                 data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                <i class="iconfont icon-ic_fly"></i>
+                <span>导航</span>
+              </a>
+              <div class="dropdown-menu" aria-labelledby="navbarDropdown">
+                
+                  
+                  
+                  
+		<div >
+
+                  <a class="dropdown-item" href="/site-map/" target="_self" data-umami-event="Navigation-SiteMap">
+
+                    <i class="iconfont icon-lianjie"></i>
+                    <span>链接</span>
+                  </a>
+		</div>
+                
+                  
+                  
+                  
+		<div >
+
+                  <a class="dropdown-item" href="/nodeppt/hexo/snavigation/" target="_self" data-umami-event="Navigation-Search">
+
+                    <i class="iconfont icon-sousuo"></i>
+                    <span>搜索</span>
+                  </a>
+		</div>
+                
+              </div>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item dropdown">
+              <a class="nav-link dropdown-toggle" target="_self" href="javascript:;" role="button"
+                 data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                <i class="iconfont icon-wangzhan"></i>
+                <span>站点</span>
+              </a>
+              <div class="dropdown-menu" aria-labelledby="navbarDropdown">
+                
+                  
+                  
+                  
+		<div >
+
+                  <a class="dropdown-item" href="https://uipv4.zywvvd.com:33039/share/0zx3o21oIpZTZqwC/%E5%8F%88%E8%A7%81%E8%8B%8D%E5%B2%9A" target="_self" data-umami-event="Navigation-Umami">
+
+                    <i class="iconfont icon-tongji2"></i>
+                    <span>站点分析</span>
+                  </a>
+		</div>
+                
+                  
+                  
+                  
+		<div >
+
+                  <a class="dropdown-item" href="/earth_sta/" target="_self" data-umami-event="Navigation-Globe">
+
+                    <i class="iconfont icon-tongjifenxi-xiangmubiaogetongji"></i>
+                    <span>访问统计</span>
+                  </a>
+		</div>
+                
+                  
+                  
+                  
+		<div >
+
+                  <a class="dropdown-item" href="https://uipv4.zywvvd.com:33034/status/show" target="_self" data-umami-event="Navigation-Monitor">
+
+                    <i class="iconfont icon-jiankong"></i>
+                    <span>站点监控</span>
+                  </a>
+		</div>
+                
+              </div>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item dropdown">
+              <a class="nav-link dropdown-toggle" target="_self" href="javascript:;" role="button"
+                 data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                <i class="iconfont icon-chuansong"></i>
+                <span>传送</span>
+              </a>
+              <div class="dropdown-menu" aria-labelledby="navbarDropdown">
+                
+                  
+                  
+                  
+		<div >
+
+                  <a class="dropdown-item" href="https://www.foreverblog.cn/go.html" target="_self" data-umami-event="Navigation-ForeverBolg">
+
+                    <i class="iconfont icon-a-BlackHole"></i>
+                    <span>十年之约</span>
+                  </a>
+		</div>
+                
+                  
+                  
+                  
+		<div >
+
+                  <a class="dropdown-item" href="https://www.travellings.cn/go.html" target="_self" data-umami-event="Navigation-DriveTo">
+
+                    <i class="iconfont icon-train1"></i>
+                    <span>开往</span>
+                  </a>
+		</div>
+                
+                  
+                  
+                  
+		<div >
+
+                  <a class="dropdown-item" href="https://bf.zzxworld.com/" target="_self" data-umami-event="Navigation-BlogFinder">
+
+                    <i class="iconfont icon-icon-"></i>
+                    <span>BlogFinder</span>
+                  </a>
+		</div>
+                
+              </div>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item dropdown">
+              <a class="nav-link dropdown-toggle" target="_self" href="javascript:;" role="button"
+                 data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                <i class="iconfont icon-gongju"></i>
+                <span>工具</span>
+              </a>
+              <div class="dropdown-menu" aria-labelledby="navbarDropdown">
+                
+                  
+                  
+                  
+		<div >
+
+                  <a class="dropdown-item" href="/navigates/calculator" target="_self" data-umami-event="Navigation-Calculator">
+
+                    <i class="iconfont icon-jisuan"></i>
+                    <span>计算器</span>
+                  </a>
+		</div>
+                
+                  
+                  
+                  
+		<div >
+
+                  <a class="dropdown-item" href="/navigates/webgraphviz" target="_self" data-umami-event="Navigation-WebGtaphviz">
+
+                    <i class="iconfont icon-tongyong-huatugongju2"></i>
+                    <span>Graphviz</span>
+                  </a>
+		</div>
+                
+              </div>
+            </li>
+          
+        
+        
+          <li class="nav-item" id="search-btn">
+            <a class="nav-link" target="_self" href="javascript:;" data-toggle="modal" data-target="#modalSearch" aria-label="Search">
+              <i class="iconfont icon-search"></i>
+            </a>
+          </li>
+          
+        
+        
+          <li class="nav-item" id="color-toggle-btn">
+            <a class="nav-link" target="_self" href="javascript:;" aria-label="Color Toggle">
+              <i class="iconfont icon-dark" id="color-toggle-icon"></i>
+            </a>
+          </li>
+        
+      </ul>
+    </div>
+  </div>
+</nav>
+
+  
+
+<div id="banner" class="banner" parallax=true
+     style="background: url('https://uipv4.zywvvd.com:33030/HexoFiles/new/bg-trans.png') no-repeat center center; background-size: cover;">
+  <div class="full-bg-img">
+    <div class="mask flex-center" style="background-color: rgba(0, 0, 0, 0)">
+      <div class="banner-text text-center fade-in-up">
+        <div class="h2">
+          
+            <span id="subtitle">鱼眼相机畸变矫正</span>
+          
+        </div>
+
+        
+          
+  <div class="mt-3">
+    
+      <span class="post-meta mr-2">
+        <i class="iconfont icon-author" aria-hidden="true"></i>
+        Yiwei Zhang
+      </span>
+    
+    
+      <span class="post-meta">
+        <i class="iconfont icon-date-fill" aria-hidden="true"></i>
+        <time datetime="2024-10-10 10:51" pubdate>
+          2024年10月10日 上午
+        </time>
+      </span>
+    
+  </div>
+
+  <div class="mt-1">
+    
+      <span class="post-meta mr-2">
+        <i class="iconfont icon-chart"></i>
+        
+          <!-- compatible with older versions-->
+          3.5k 字
+        
+      </span>
+    
+
+    
+      <span class="post-meta mr-2">
+        <i class="iconfont icon-clock-fill"></i>
+        
+        
+        
+          <!-- compatible with older versions-->
+          30 分钟
+        
+      </span>
+    
+
+    
+    
+      
+        <span id="vvdpost_container_page_pvuv" style="display: none">
+          <i class="iconfont icon-eye" aria-hidden="true"></i>
+          <span id="vvdpost_value_page_pv">0</span> 次&nbsp&nbsp
+		  <i class="iconfont icon-users" aria-hidden="true"></i>
+		  <span id="vvdpost_value_page_uv">0</span> 人&nbsp&nbsp
+		  <i class="iconfont icon-comment" aria-hidden="true"></i>
+		  <span id="vvdpost_value_page_cn">0</span> 条
+        </span>
+
+		<script>
+			console.log(window.location.pathname)
+			var httpRequest = new XMLHttpRequest();
+			httpRequest.open('POST', 'https://uipv4.zywvvd.com:33037/poststats', true);
+			httpRequest.setRequestHeader("Content-type","application/json");
+			httpRequest.send(JSON.stringify(window.location.pathname));
+			httpRequest.onreadystatechange = function () {//请求后的回调接口，可将请求成功后要执行的程序写在其中
+				if (httpRequest.readyState == 4 && httpRequest.status == 200) {//验证请求是否发送成功
+					var json = httpRequest.responseText;//获取到服务端返回的数据
+					var obj = JSON.parse(json);
+					var pvCtn = document.querySelector('#vvdpost_container_page_pvuv');
+					if (pvCtn) {
+						var pv_ele = document.querySelector('#vvdpost_value_page_pv');
+						var uv_ele = document.querySelector('#vvdpost_value_page_uv');
+						var cn_ele = document.querySelector('#vvdpost_value_page_cn');
+
+						if (uv_ele && uv_ele) {
+							pv_ele.innerText = obj.pv;
+							uv_ele.innerText = obj.uv;
+							cn_ele.innerText = obj.cn;
+							pvCtn.style.display = 'inline';
+							}
+						}
+					}
+			};
+		</script>
+      
+    
+  </div>
+
+
+        
+      </div>
+
+      
+        <div class="scroll-down-bar">
+          <i class="iconfont icon-arrowdown"></i>
+        </div>
+      
+    </div>
+  </div>
+</div>
+
+</div>
+
+
+	<script type="text/javascript" src="/vvd_js/jquery.js"></script>
+	<script async src="https://uipv4.zywvvd.com:33039/script.js" data-website-id="dd4a05c6-dde2-4743-9c3a-a79d6bee0778"></script>
+	<div class="banner" id='banner' >
+
+		<div class="full-bg-img" >
+
+			
+				<script>
+					var ua = navigator.userAgent;
+					var ipad = ua.match(/(iPad).*OS\s([\d_]+)/),
+						isIphone = !ipad && ua.match(/(iPhone\sOS)\s([\d_]+)/),
+						isAndroid = ua.match(/(Android)\s+([\d.]+)/),
+						isMobile = isIphone || isAndroid;
+
+					function set_video_attr(id){
+						var height = document.body.clientHeight
+						var width = document.body.clientWidth
+						var video_item = document.getElementById(id);
+
+						if (height / width < 0.56){
+							video_item.setAttribute('width', '100%');
+							video_item.setAttribute('height', 'auto');
+						} else {
+							video_item.setAttribute('height', '100%');
+							video_item.setAttribute('width', 'auto');
+						}
+					}
+
+					fetch('https://uipv4.zywvvd.com:33037/wallpaper-pair')
+					  .then(response => response.json()) // 解析JSON数据
+					  .then(data => {
+						console.log('获取链接成功');
+						video_url = data[0][0]
+						pre_show_image_url = data[0][1]
+
+						banner_obj = document.getElementById("banner")
+						banner_obj.style.cssText = "background: url('" + pre_show_image_url + "') no-repeat;"
+
+						vvd_banner_obj = document.getElementById("vvd_banner_img")
+						vvd_banner_content = "<img id='banner_img_item' src='" + pre_show_image_url + "'style='position: fixed; z-index: -999'>"
+						vvd_banner_obj.innerHTML = vvd_banner_content 
+
+						if (!isMobile) {
+							video_html_res = "<video id='video_item' style='position: fixed; z-index: -888;'  muted='muted' src=" + video_url + " autoplay='autoplay' loop='loop'></video>"
+							document.getElementById("banner_video_insert").innerHTML = video_html_res;
+							set_video_attr('video_item')
+							set_video_attr('banner_img_item')
+						}
+					    
+					  })
+					  .catch((error) => {
+					    console.error('请求失败,尝试本地获取背景图像：', error);
+	    					$.getJSON('/vvd_js/video_url.json', function(data){
+
+							var video_list_length = data.length
+							var seed = Math.random()
+							index = Math.floor(seed * video_list_length)
+
+							video_url = data[index][0]
+							pre_show_image_url = data[index][1]
+
+							banner_obj = document.getElementById("banner")
+							banner_obj.style.cssText = "background: url('" + pre_show_image_url + "') no-repeat;"
+
+							vvd_banner_obj = document.getElementById("vvd_banner_img")
+							vvd_banner_content = "<img id='banner_img_item' src='" + pre_show_image_url + "'style='position: fixed; z-index: -999'>"
+							vvd_banner_obj.innerHTML = vvd_banner_content 
+
+							if (!isMobile) {
+								video_html_res = "<video id='video_item' style='position: fixed; z-index: -888;'  muted='muted' src=" + video_url + " autoplay='autoplay' loop='loop'></video>"
+								document.getElementById("banner_video_insert").innerHTML = video_html_res;
+								set_video_attr('video_item')
+								set_video_attr('banner_img_item')
+							}
+						});
+					  });
+
+
+
+
+
+
+					if (!isMobile){
+						window.onresize = function(){
+							set_video_attr('video_item')
+							set_video_attr('banner_img_item')
+							}
+						}
+				</script>
+
+			
+
+
+			
+			</div>
+		</div>
+    </div>
+
+  </header>
+
+  <main>
+    
+      
+
+
+
+<div class="container-fluid nopadding-x">
+  <div class="row nomargin-x">
+    <div class="side-col d-none d-lg-block col-lg-2">
+      
+
+    </div>
+
+    <div class="col-lg-8 nopadding-x-md">
+      <div class="container nopadding-x-md" id="board-ctn">
+        <div id="board">
+          <article class="post-content mx-auto">
+
+            <!-- <h1 id="seo-header">鱼眼相机畸变矫正</h1> -->
+
+            
+              <p id="updated-time" class="note note-info" style="">
+                
+                  
+                    <!-- compatible with older versions-->
+                    本文最后更新于：2024年10月10日 中午
+                  
+                
+              </p>
+            
+            
+              <div class="markdown-body">
+                
+                <blockquote>
+<p>语言相机由于原理设计与镜头设计偏差会产生很严重的图像畸变，本文记录鱼眼相机畸变矫正方法。</p>
+</blockquote>
+<span id="more"></span>
+<p><img src="https://uipv4.zywvvd.com:33030/HexoFiles/vvd_image_files/202410101056900.png" srcset="/img/loading.gif" lazyload alt=""></p>
+<h3 id="畸变矫正">畸变矫正</h3>
+<p>根据 <a href="/notes/study/camera-imaging/fisheye/fisheye/">鱼眼相机原理</a> 介绍，相机的畸变由 4 个参数来矫正：</p>
+<p>$$<br>
+\theta_d=\theta(1+k_1\theta<sup>2+k_2\theta</sup>4+k_3\theta<sup>6+k_4\theta</sup>8)<br>
+$$<br>
+也就是说畸变矫正的目的就是求解这 4 个参数。</p>
+<p>常用方法为使用黑白格标定板进行畸变矫正，直接上代码了。</p>
+<h4 id="Python-OpenCV-实现">Python OpenCV 实现</h4>
+<ul>
+<li>OpenCV <a target="_blank" rel="noopener" href="https://docs.opencv.org/3.0.0/d2/d14/namespacecv_1_1fisheye.html">fisheye 文档</a></li>
+</ul>
+<p>Python OpenCV 实现鱼眼相机畸变矫正，<a target="_blank" rel="noopener" href="https://uipv4.zywvvd.com:33030/HexoFiles/packages/cali-data.zip">数据包</a> 在此，解压出 <code>cali-data</code> 包，运行程序进行畸变矫正，输出 <code>camera_intrinsic.yaml</code>。</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br><span class="line">84</span><br><span class="line">85</span><br><span class="line">86</span><br><span class="line">87</span><br><span class="line">88</span><br><span class="line">89</span><br><span class="line">90</span><br><span class="line">91</span><br><span class="line">92</span><br><span class="line">93</span><br><span class="line">94</span><br><span class="line">95</span><br><span class="line">96</span><br><span class="line">97</span><br><span class="line">98</span><br><span class="line">99</span><br><span class="line">100</span><br><span class="line">101</span><br><span class="line">102</span><br><span class="line">103</span><br><span class="line">104</span><br><span class="line">105</span><br><span class="line">106</span><br><span class="line">107</span><br><span class="line">108</span><br><span class="line">109</span><br><span class="line">110</span><br><span class="line">111</span><br><span class="line">112</span><br><span class="line">113</span><br><span class="line">114</span><br><span class="line">115</span><br><span class="line">116</span><br><span class="line">117</span><br><span class="line">118</span><br><span class="line">119</span><br><span class="line">120</span><br><span class="line">121</span><br><span class="line">122</span><br><span class="line">123</span><br><span class="line">124</span><br><span class="line">125</span><br><span class="line">126</span><br><span class="line">127</span><br><span class="line">128</span><br><span class="line">129</span><br><span class="line">130</span><br><span class="line">131</span><br><span class="line">132</span><br><span class="line">133</span><br><span class="line">134</span><br><span class="line">135</span><br><span class="line">136</span><br><span class="line">137</span><br><span class="line">138</span><br><span class="line">139</span><br><span class="line">140</span><br><span class="line">141</span><br><span class="line">142</span><br><span class="line">143</span><br><span class="line">144</span><br><span class="line">145</span><br><span class="line">146</span><br><span class="line">147</span><br><span class="line">148</span><br><span class="line">149</span><br><span class="line">150</span><br><span class="line">151</span><br><span class="line">152</span><br><span class="line">153</span><br><span class="line">154</span><br><span class="line">155</span><br><span class="line">156</span><br><span class="line">157</span><br><span class="line">158</span><br><span class="line">159</span><br><span class="line">160</span><br><span class="line">161</span><br><span class="line">162</span><br><span class="line">163</span><br><span class="line">164</span><br><span class="line">165</span><br><span class="line">166</span><br><span class="line">167</span><br><span class="line">168</span><br><span class="line">169</span><br><span class="line">170</span><br><span class="line">171</span><br><span class="line">172</span><br><span class="line">173</span><br><span class="line">174</span><br><span class="line">175</span><br><span class="line">176</span><br><span class="line">177</span><br><span class="line">178</span><br><span class="line">179</span><br><span class="line">180</span><br><span class="line">181</span><br><span class="line">182</span><br><span class="line">183</span><br><span class="line">184</span><br><span class="line">185</span><br><span class="line">186</span><br><span class="line">187</span><br><span class="line">188</span><br><span class="line">189</span><br><span class="line">190</span><br><span class="line">191</span><br><span class="line">192</span><br><span class="line">193</span><br><span class="line">194</span><br><span class="line">195</span><br><span class="line">196</span><br><span class="line">197</span><br><span class="line">198</span><br><span class="line">199</span><br><span class="line">200</span><br><span class="line">201</span><br><span class="line">202</span><br><span class="line">203</span><br><span class="line">204</span><br><span class="line">205</span><br><span class="line">206</span><br><span class="line">207</span><br><span class="line">208</span><br><span class="line">209</span><br><span class="line">210</span><br><span class="line">211</span><br><span class="line">212</span><br><span class="line">213</span><br><span class="line">214</span><br><span class="line">215</span><br><span class="line">216</span><br><span class="line">217</span><br><span class="line">218</span><br><span class="line">219</span><br><span class="line">220</span><br><span class="line">221</span><br><span class="line">222</span><br><span class="line">223</span><br><span class="line">224</span><br><span class="line">225</span><br><span class="line">226</span><br><span class="line">227</span><br><span class="line">228</span><br><span class="line">229</span><br><span class="line">230</span><br><span class="line">231</span><br><span class="line">232</span><br><span class="line">233</span><br><span class="line">234</span><br><span class="line">235</span><br><span class="line">236</span><br><span class="line">237</span><br><span class="line">238</span><br><span class="line">239</span><br><span class="line">240</span><br><span class="line">241</span><br><span class="line">242</span><br><span class="line">243</span><br><span class="line">244</span><br><span class="line">245</span><br><span class="line">246</span><br><span class="line">247</span><br><span class="line">248</span><br><span class="line">249</span><br><span class="line">250</span><br><span class="line">251</span><br><span class="line">252</span><br><span class="line">253</span><br><span class="line">254</span><br><span class="line">255</span><br><span class="line">256</span><br><span class="line">257</span><br><span class="line">258</span><br><span class="line">259</span><br><span class="line">260</span><br><span class="line">261</span><br><span class="line">262</span><br><span class="line">263</span><br><span class="line">264</span><br><span class="line">265</span><br><span class="line">266</span><br><span class="line">267</span><br><span class="line">268</span><br><span class="line">269</span><br><span class="line">270</span><br><span class="line">271</span><br><span class="line">272</span><br><span class="line">273</span><br><span class="line">274</span><br><span class="line">275</span><br><span class="line">276</span><br><span class="line">277</span><br><span class="line">278</span><br><span class="line">279</span><br><span class="line">280</span><br><span class="line">281</span><br><span class="line">282</span><br><span class="line">283</span><br><span class="line">284</span><br><span class="line">285</span><br><span class="line">286</span><br><span class="line">287</span><br><span class="line">288</span><br><span class="line">289</span><br><span class="line">290</span><br><span class="line">291</span><br><span class="line">292</span><br><span class="line">293</span><br><span class="line">294</span><br><span class="line">295</span><br><span class="line">296</span><br><span class="line">297</span><br><span class="line">298</span><br><span class="line">299</span><br><span class="line">300</span><br><span class="line">301</span><br><span class="line">302</span><br><span class="line">303</span><br><span class="line">304</span><br><span class="line">305</span><br><span class="line">306</span><br><span class="line">307</span><br><span class="line">308</span><br><span class="line">309</span><br><span class="line">310</span><br><span class="line">311</span><br><span class="line">312</span><br><span class="line">313</span><br><span class="line">314</span><br><span class="line">315</span><br><span class="line">316</span><br><span class="line">317</span><br><span class="line">318</span><br><span class="line">319</span><br><span class="line">320</span><br><span class="line">321</span><br><span class="line">322</span><br><span class="line">323</span><br><span class="line">324</span><br><span class="line">325</span><br><span class="line">326</span><br><span class="line">327</span><br><span class="line">328</span><br><span class="line">329</span><br><span class="line">330</span><br><span class="line">331</span><br><span class="line">332</span><br><span class="line">333</span><br><span class="line">334</span><br><span class="line">335</span><br><span class="line">336</span><br><span class="line">337</span><br><span class="line">338</span><br><span class="line">339</span><br><span class="line">340</span><br><span class="line">341</span><br><span class="line">342</span><br><span class="line">343</span><br><span class="line">344</span><br><span class="line">345</span><br><span class="line">346</span><br><span class="line">347</span><br><span class="line">348</span><br><span class="line">349</span><br><span class="line">350</span><br><span class="line">351</span><br><span class="line">352</span><br><span class="line">353</span><br><span class="line">354</span><br><span class="line">355</span><br><span class="line">356</span><br><span class="line">357</span><br><span class="line">358</span><br><span class="line">359</span><br><span class="line">360</span><br><span class="line">361</span><br><span class="line">362</span><br><span class="line">363</span><br><span class="line">364</span><br><span class="line">365</span><br><span class="line">366</span><br><span class="line">367</span><br><span class="line">368</span><br><span class="line">369</span><br><span class="line">370</span><br><span class="line">371</span><br><span class="line">372</span><br><span class="line">373</span><br><span class="line">374</span><br><span class="line">375</span><br><span class="line">376</span><br><span class="line">377</span><br><span class="line">378</span><br><span class="line">379</span><br><span class="line">380</span><br><span class="line">381</span><br><span class="line">382</span><br><span class="line">383</span><br><span class="line">384</span><br><span class="line">385</span><br><span class="line">386</span><br><span class="line">387</span><br><span class="line">388</span><br><span class="line">389</span><br><span class="line">390</span><br><span class="line">391</span><br><span class="line">392</span><br><span class="line">393</span><br><span class="line">394</span><br><span class="line">395</span><br><span class="line">396</span><br><span class="line">397</span><br><span class="line">398</span><br><span class="line">399</span><br><span class="line">400</span><br><span class="line">401</span><br><span class="line">402</span><br><span class="line">403</span><br><span class="line">404</span><br><span class="line">405</span><br><span class="line">406</span><br><span class="line">407</span><br><span class="line">408</span><br><span class="line">409</span><br><span class="line">410</span><br><span class="line">411</span><br><span class="line">412</span><br><span class="line">413</span><br><span class="line">414</span><br><span class="line">415</span><br><span class="line">416</span><br><span class="line">417</span><br><span class="line">418</span><br><span class="line">419</span><br><span class="line">420</span><br><span class="line">421</span><br><span class="line">422</span><br><span class="line">423</span><br><span class="line">424</span><br><span class="line">425</span><br></pre></td><td class="code"><pre><code class="hljs python"><span class="hljs-keyword">import</span> argparse<br><span class="hljs-keyword">import</span> cv2<br><span class="hljs-keyword">import</span> numpy <span class="hljs-keyword">as</span> np<br><span class="hljs-keyword">import</span> os<br><span class="hljs-keyword">import</span> vvdutils <span class="hljs-keyword">as</span> vv<br><br><br>W,H=<span class="hljs-literal">None</span>,<span class="hljs-literal">None</span><br>aa = <span class="hljs-string">&quot;python intrinsicCalib.py -input image -path /home/pengmy/Downloads/fishimg/20240815 -image &quot;</span><br>parser = argparse.ArgumentParser(description=<span class="hljs-string">&quot;Camera Intrinsic Calibration&quot;</span>)<br>parser.add_argument(<span class="hljs-string">&#x27;-input&#x27;</span>, <span class="hljs-string">&#x27;--INPUT_TYPE&#x27;</span>, default=<span class="hljs-string">&#x27;image&#x27;</span>, <span class="hljs-built_in">type</span>=<span class="hljs-built_in">str</span>, <span class="hljs-built_in">help</span>=<span class="hljs-string">&#x27;Input Source: camera/video/image&#x27;</span>)<br>parser.add_argument(<span class="hljs-string">&#x27;-output&#x27;</span>, <span class="hljs-string">&#x27;--OUTPUT&#x27;</span>, default=<span class="hljs-string">&#x27;camera_intrinsic.yaml&#x27;</span>, <span class="hljs-built_in">type</span>=<span class="hljs-built_in">str</span>, <span class="hljs-built_in">help</span>=<span class="hljs-string">&#x27;output file path (eg.: ../config/camera_intrinsic.yaml&#x27;</span>)<br>parser.add_argument(<span class="hljs-string">&#x27;-type&#x27;</span>, <span class="hljs-string">&#x27;--CAMERA_TYPE&#x27;</span>, default=<span class="hljs-string">&#x27;fisheye&#x27;</span>, <span class="hljs-built_in">type</span>=<span class="hljs-built_in">str</span>, <span class="hljs-built_in">help</span>=<span class="hljs-string">&#x27;Camera Type: fisheye/normal&#x27;</span>)<br>parser.add_argument(<span class="hljs-string">&#x27;-id&#x27;</span>, <span class="hljs-string">&#x27;--CAMERA_ID&#x27;</span>, default=<span class="hljs-number">1</span>, <span class="hljs-built_in">type</span>=<span class="hljs-built_in">int</span>, <span class="hljs-built_in">help</span>=<span class="hljs-string">&#x27;Camera ID&#x27;</span>)<br>parser.add_argument(<span class="hljs-string">&#x27;-path&#x27;</span>, <span class="hljs-string">&#x27;--INPUT_PATH&#x27;</span>, default=<span class="hljs-string">&#x27;cali-data&#x27;</span>, <span class="hljs-built_in">type</span>=<span class="hljs-built_in">str</span>, <span class="hljs-built_in">help</span>=<span class="hljs-string">&#x27;Input Video/Image Path&#x27;</span>)<br>parser.add_argument(<span class="hljs-string">&#x27;-video&#x27;</span>, <span class="hljs-string">&#x27;--VIDEO_FILE&#x27;</span>, default=<span class="hljs-string">&#x27;video.mp4&#x27;</span>, <span class="hljs-built_in">type</span>=<span class="hljs-built_in">str</span>, <span class="hljs-built_in">help</span>=<span class="hljs-string">&#x27;Input Video File Name (eg.: video.mp4)&#x27;</span>)<br>parser.add_argument(<span class="hljs-string">&#x27;-image&#x27;</span>, <span class="hljs-string">&#x27;--IMAGE_FILE&#x27;</span>, default=<span class="hljs-string">&#x27;img_raw&#x27;</span>, <span class="hljs-built_in">type</span>=<span class="hljs-built_in">str</span>, <span class="hljs-built_in">help</span>=<span class="hljs-string">&#x27;Input Image File Name Prefix (eg.: img_raw)&#x27;</span>)<br>parser.add_argument(<span class="hljs-string">&#x27;-mode&#x27;</span>, <span class="hljs-string">&#x27;--SELECT_MODE&#x27;</span>, default=<span class="hljs-string">&#x27;auto&#x27;</span>, <span class="hljs-built_in">type</span>=<span class="hljs-built_in">str</span>, <span class="hljs-built_in">help</span>=<span class="hljs-string">&#x27;Image Select Mode: auto/manual&#x27;</span>)<br>parser.add_argument(<span class="hljs-string">&#x27;-fw&#x27;</span>,<span class="hljs-string">&#x27;--FRAME_WIDTH&#x27;</span>, default=<span class="hljs-number">1920</span>, <span class="hljs-built_in">type</span>=<span class="hljs-built_in">int</span>, <span class="hljs-built_in">help</span>=<span class="hljs-string">&#x27;Camera Frame Width&#x27;</span>)<br>parser.add_argument(<span class="hljs-string">&#x27;-fh&#x27;</span>,<span class="hljs-string">&#x27;--FRAME_HEIGHT&#x27;</span>, default=<span class="hljs-number">1920</span>, <span class="hljs-built_in">type</span>=<span class="hljs-built_in">int</span>, <span class="hljs-built_in">help</span>=<span class="hljs-string">&#x27;Camera Frame Height&#x27;</span>)<br>parser.add_argument(<span class="hljs-string">&#x27;-bw&#x27;</span>,<span class="hljs-string">&#x27;--BORAD_WIDTH&#x27;</span>, default=<span class="hljs-number">11</span>, <span class="hljs-built_in">type</span>=<span class="hljs-built_in">int</span>, <span class="hljs-built_in">help</span>=<span class="hljs-string">&#x27;Chess Board Width (corners number)&#x27;</span>)<br>parser.add_argument(<span class="hljs-string">&#x27;-bh&#x27;</span>,<span class="hljs-string">&#x27;--BORAD_HEIGHT&#x27;</span>, default=<span class="hljs-number">8</span>, <span class="hljs-built_in">type</span>=<span class="hljs-built_in">int</span>, <span class="hljs-built_in">help</span>=<span class="hljs-string">&#x27;Chess Board Height (corners number)&#x27;</span>)<br>parser.add_argument(<span class="hljs-string">&#x27;-size&#x27;</span>,<span class="hljs-string">&#x27;--SQUARE_SIZE&#x27;</span>, default=<span class="hljs-number">25</span>  , <span class="hljs-built_in">type</span>=<span class="hljs-built_in">int</span>, <span class="hljs-built_in">help</span>=<span class="hljs-string">&#x27;Chess Board Square Size (mm)&#x27;</span>)<br>parser.add_argument(<span class="hljs-string">&#x27;-num&#x27;</span>,<span class="hljs-string">&#x27;--CALIB_NUMBER&#x27;</span>, default=<span class="hljs-number">2</span>, <span class="hljs-built_in">type</span>=<span class="hljs-built_in">int</span>, <span class="hljs-built_in">help</span>=<span class="hljs-string">&#x27;Least Required Calibration Frame Number&#x27;</span>)<br>parser.add_argument(<span class="hljs-string">&#x27;-delay&#x27;</span>,<span class="hljs-string">&#x27;--FRAME_DELAY&#x27;</span>, default=<span class="hljs-number">12</span>, <span class="hljs-built_in">type</span>=<span class="hljs-built_in">int</span>, <span class="hljs-built_in">help</span>=<span class="hljs-string">&#x27;Capture Image Time Interval (frame number)&#x27;</span>)<br>parser.add_argument(<span class="hljs-string">&#x27;-subpix&#x27;</span>,<span class="hljs-string">&#x27;--SUBPIX_REGION&#x27;</span>, default=<span class="hljs-number">5</span>, <span class="hljs-built_in">type</span>=<span class="hljs-built_in">int</span>, <span class="hljs-built_in">help</span>=<span class="hljs-string">&#x27;Corners Subpix Optimization Region&#x27;</span>)<br>parser.add_argument(<span class="hljs-string">&#x27;-fps&#x27;</span>,<span class="hljs-string">&#x27;--CAMERA_FPS&#x27;</span>, default=<span class="hljs-number">20</span>, <span class="hljs-built_in">type</span>=<span class="hljs-built_in">int</span>, <span class="hljs-built_in">help</span>=<span class="hljs-string">&#x27;Camera Frame per Second(FPS)&#x27;</span>)<br>parser.add_argument(<span class="hljs-string">&#x27;-fs&#x27;</span>, <span class="hljs-string">&#x27;--FOCAL_SCALE&#x27;</span>, default=<span class="hljs-number">1</span>, <span class="hljs-built_in">type</span>=<span class="hljs-built_in">float</span>, <span class="hljs-built_in">help</span>=<span class="hljs-string">&#x27;Camera Undistort Focal Scale&#x27;</span>)<br>parser.add_argument(<span class="hljs-string">&#x27;-ss&#x27;</span>, <span class="hljs-string">&#x27;--SIZE_SCALE&#x27;</span>, default=<span class="hljs-number">1</span>, <span class="hljs-built_in">type</span>=<span class="hljs-built_in">float</span>, <span class="hljs-built_in">help</span>=<span class="hljs-string">&#x27;Camera Undistort Size Scale&#x27;</span>)<br>parser.add_argument(<span class="hljs-string">&#x27;-store&#x27;</span>,<span class="hljs-string">&#x27;--STORE_FLAG&#x27;</span>, default=<span class="hljs-literal">False</span>, <span class="hljs-built_in">type</span>=<span class="hljs-built_in">bool</span>, <span class="hljs-built_in">help</span>=<span class="hljs-string">&#x27;Store Captured Images (Ture/False)&#x27;</span>)<br>parser.add_argument(<span class="hljs-string">&#x27;-store_path&#x27;</span>, <span class="hljs-string">&#x27;--STORE_PATH&#x27;</span>, default=<span class="hljs-string">&#x27;./data/&#x27;</span>, <span class="hljs-built_in">type</span>=<span class="hljs-built_in">str</span>, <span class="hljs-built_in">help</span>=<span class="hljs-string">&#x27;Path to Store Captured Images&#x27;</span>)<br>parser.add_argument(<span class="hljs-string">&#x27;-crop&#x27;</span>,<span class="hljs-string">&#x27;--CROP_FLAG&#x27;</span>, default=<span class="hljs-literal">False</span>, <span class="hljs-built_in">type</span>=<span class="hljs-built_in">bool</span>, <span class="hljs-built_in">help</span>=<span class="hljs-string">&#x27;Crop Input Video/Image to (fw,fh) (Ture/False)&#x27;</span>)<br>parser.add_argument(<span class="hljs-string">&#x27;-resize&#x27;</span>,<span class="hljs-string">&#x27;--RESIZE_FLAG&#x27;</span>, default=<span class="hljs-literal">False</span>, <span class="hljs-built_in">type</span>=<span class="hljs-built_in">bool</span>, <span class="hljs-built_in">help</span>=<span class="hljs-string">&#x27;Resize Input Video/Image to (fw,fh) (Ture/False)&#x27;</span>)<br>args = parser.parse_args() <br><br><span class="hljs-keyword">class</span> <span class="hljs-title class_">CalibData</span>:<br>    <span class="hljs-keyword">def</span> <span class="hljs-title function_">__init__</span>(<span class="hljs-params">self</span>):<br>        self.<span class="hljs-built_in">type</span> = <span class="hljs-literal">None</span><br>        self.camera_mat = <span class="hljs-literal">None</span><br>        self.dist_coeff = <span class="hljs-literal">None</span><br>        self.iamge_size = <span class="hljs-literal">None</span><br>        self.rvecs = <span class="hljs-literal">None</span><br>        self.tvecs = <span class="hljs-literal">None</span><br>        self.map1 = <span class="hljs-literal">None</span><br>        self.map2 = <span class="hljs-literal">None</span><br>        self.reproj_err = <span class="hljs-literal">None</span><br>        self.ok = <span class="hljs-literal">False</span><br><br><span class="hljs-keyword">class</span> <span class="hljs-title class_">Fisheye</span>:<br>    <span class="hljs-keyword">def</span> <span class="hljs-title function_">__init__</span>(<span class="hljs-params">self</span>):<br>        self.data = CalibData()<br>        self.inited = <span class="hljs-literal">False</span><br>        self.BOARD = np.array([ [(j * args.SQUARE_SIZE, i * args.SQUARE_SIZE, <span class="hljs-number">0.</span>)]<br>                               <span class="hljs-keyword">for</span> i <span class="hljs-keyword">in</span> <span class="hljs-built_in">range</span>(args.BORAD_HEIGHT) <br>                               <span class="hljs-keyword">for</span> j <span class="hljs-keyword">in</span> <span class="hljs-built_in">range</span>(args.BORAD_WIDTH) ],dtype=np.float32)<br>        <br>    <span class="hljs-keyword">def</span> <span class="hljs-title function_">update</span>(<span class="hljs-params">self, corners, frame_size</span>):<br>        board = [self.BOARD] * <span class="hljs-built_in">len</span>(corners)<br>        <span class="hljs-keyword">if</span> <span class="hljs-keyword">not</span> self.inited:<br>            self._update_init(board, corners, frame_size)<br>            self.inited = <span class="hljs-literal">True</span><br>        <span class="hljs-keyword">else</span>:<br>            self._update_refine(board, corners, frame_size)<br>        self._calc_reproj_err(corners)<br>        self._get_undistort_maps()<br>    <br>    <span class="hljs-keyword">def</span> <span class="hljs-title function_">_update_init</span>(<span class="hljs-params">self, board, corners, frame_size</span>):<br>        data = self.data<br>        data.<span class="hljs-built_in">type</span> = <span class="hljs-string">&quot;FISHEYE&quot;</span><br>        data.camera_mat = np.eye(<span class="hljs-number">3</span>, <span class="hljs-number">3</span>)<br>        data.dist_coeff = np.zeros((<span class="hljs-number">4</span>, <span class="hljs-number">1</span>))<br>        data.ok, data.camera_mat, data.dist_coeff, data.rvecs, data.tvecs = cv2.fisheye.calibrate(<br>            board, corners, frame_size, data.camera_mat, data.dist_coeff,<br>            flags=cv2.fisheye.CALIB_FIX_SKEW|cv2.fisheye.CALIB_RECOMPUTE_EXTRINSIC,<br>            criteria=(cv2.TERM_CRITERIA_EPS + cv2.TERM_CRITERIA_COUNT, <span class="hljs-number">30</span>, <span class="hljs-number">1e-6</span>)) <br>        data.ok = data.ok <span class="hljs-keyword">and</span> cv2.checkRange(data.camera_mat) <span class="hljs-keyword">and</span> cv2.checkRange(data.dist_coeff)<br><br>    <span class="hljs-keyword">def</span> <span class="hljs-title function_">_update_refine</span>(<span class="hljs-params">self, board, corners, frame_size</span>):<br>        data = self.data<br>        data.ok, data.camera_mat, data.dist_coeff, data.rvecs, data.tvecs = cv2.fisheye.calibrate(<br>            board, corners, frame_size, data.camera_mat, data.dist_coeff,<br>            flags=cv2.fisheye.CALIB_FIX_SKEW|cv2.fisheye.CALIB_RECOMPUTE_EXTRINSIC|cv2.CALIB_USE_INTRINSIC_GUESS,<br>            criteria=(cv2.TERM_CRITERIA_EPS + cv2.TERM_CRITERIA_COUNT, <span class="hljs-number">10</span>, <span class="hljs-number">1e-6</span>))<br>        data.ok = data.ok <span class="hljs-keyword">and</span> cv2.checkRange(data.camera_mat) <span class="hljs-keyword">and</span> cv2.checkRange(data.dist_coeff)<br><br>    <span class="hljs-keyword">def</span> <span class="hljs-title function_">_calc_reproj_err</span>(<span class="hljs-params">self, corners</span>):<br>        <span class="hljs-keyword">if</span> <span class="hljs-keyword">not</span> self.inited: <span class="hljs-keyword">return</span><br>        data = self.data<br>        data.reproj_err = []<br>        <span class="hljs-keyword">for</span> i <span class="hljs-keyword">in</span> <span class="hljs-built_in">range</span>(<span class="hljs-built_in">len</span>(corners)):<br>            <span class="hljs-built_in">print</span>(i, data.rvecs[i])<br>            corners_reproj, _ = cv2.fisheye.projectPoints(self.BOARD, data.rvecs[i], data.tvecs[i], data.camera_mat, data.dist_coeff)<br>            err = cv2.norm(corners_reproj, corners[i], cv2.NORM_L2) / <span class="hljs-built_in">len</span>(corners_reproj)<br>            data.reproj_err.append(err)<br>            <br>    <span class="hljs-keyword">def</span> <span class="hljs-title function_">_get_camera_mat_dst</span>(<span class="hljs-params">self, camera_mat</span>):<br>        camera_mat_dst = camera_mat.copy()<br>        camera_mat_dst[<span class="hljs-number">0</span>][<span class="hljs-number">0</span>] *= args.FOCAL_SCALE<br>        camera_mat_dst[<span class="hljs-number">1</span>][<span class="hljs-number">1</span>] *= args.FOCAL_SCALE<br>        camera_mat_dst[<span class="hljs-number">0</span>][<span class="hljs-number">2</span>] = args.FRAME_WIDTH / <span class="hljs-number">2</span> * args.SIZE_SCALE<br>        camera_mat_dst[<span class="hljs-number">1</span>][<span class="hljs-number">2</span>] = args.FRAME_HEIGHT / <span class="hljs-number">2</span> * args.SIZE_SCALE<br>        <span class="hljs-keyword">return</span> camera_mat_dst<br>    <br>    <span class="hljs-keyword">def</span> <span class="hljs-title function_">_get_undistort_maps</span>(<span class="hljs-params">self</span>):<br>        data = self.data<br>        camera_mat_dst = self._get_camera_mat_dst(data.camera_mat)<br>        data.map1, data.map2 = cv2.fisheye.initUndistortRectifyMap(<br>                                 data.camera_mat, data.dist_coeff, np.eye(<span class="hljs-number">3</span>, <span class="hljs-number">3</span>), camera_mat_dst, <br>                                 (<span class="hljs-built_in">int</span>(args.FRAME_WIDTH * args.SIZE_SCALE), <span class="hljs-built_in">int</span>(args.FRAME_HEIGHT * args.SIZE_SCALE)), cv2.CV_16SC2)<br><br><span class="hljs-keyword">class</span> <span class="hljs-title class_">Normal</span>:<br>    <span class="hljs-keyword">def</span> <span class="hljs-title function_">__init__</span>(<span class="hljs-params">self</span>):<br>        self.data = CalibData()<br>        self.inited = <span class="hljs-literal">False</span><br>        self.BOARD = np.array([ [(j * args.SQUARE_SIZE, i * args.SQUARE_SIZE, <span class="hljs-number">0.</span>)]<br>                               <span class="hljs-keyword">for</span> i <span class="hljs-keyword">in</span> <span class="hljs-built_in">range</span>(args.BORAD_HEIGHT) <br>                               <span class="hljs-keyword">for</span> j <span class="hljs-keyword">in</span> <span class="hljs-built_in">range</span>(args.BORAD_WIDTH) ],dtype=np.float32)<br>        <br>    <span class="hljs-keyword">def</span> <span class="hljs-title function_">update</span>(<span class="hljs-params">self, corners, frame_size</span>):<br>        board = [self.BOARD] * <span class="hljs-built_in">len</span>(corners)<br>        <span class="hljs-keyword">if</span> <span class="hljs-keyword">not</span> self.inited:<br>            self._update_init(board, corners, frame_size)<br>            self.inited = <span class="hljs-literal">True</span><br>        <span class="hljs-keyword">else</span>:<br>            self._update_refine(board, corners, frame_size)<br>        self._calc_reproj_err(corners)<br>        self._get_undistort_maps()<br>        <br>    <span class="hljs-keyword">def</span> <span class="hljs-title function_">_update_init</span>(<span class="hljs-params">self, board, corners, frame_size</span>):<br>        data = self.data<br>        data.<span class="hljs-built_in">type</span> = <span class="hljs-string">&quot;NORMAL&quot;</span><br>        data.camera_mat = np.eye(<span class="hljs-number">3</span>, <span class="hljs-number">3</span>)<br>        data.dist_coeff = np.zeros((<span class="hljs-number">5</span>, <span class="hljs-number">1</span>))<br>        data.ok, data.camera_mat, data.dist_coeff, data.rvecs, data.tvecs = cv2.calibrateCamera(<br>            board, corners, frame_size, data.camera_mat, data.dist_coeff, <br>            criteria=(cv2.TERM_CRITERIA_EPS + cv2.TERM_CRITERIA_COUNT, <span class="hljs-number">30</span>, <span class="hljs-number">1e-6</span>))<br>        data.ok = data.ok <span class="hljs-keyword">and</span> cv2.checkRange(data.camera_mat) <span class="hljs-keyword">and</span> cv2.checkRange(data.dist_coeff)<br>        <br>    <span class="hljs-keyword">def</span> <span class="hljs-title function_">_update_refine</span>(<span class="hljs-params">self, board, corners, frame_size</span>):<br>        data = self.data<br>        data.ok, data.camera_mat, data.dist_coeff, data.rvecs, data.tvecs = cv2.calibrateCamera(<br>            board, corners, frame_size, data.camera_mat, data.dist_coeff,  <br>            flags = cv2.CALIB_USE_INTRINSIC_GUESS,<br>            criteria=(cv2.TERM_CRITERIA_EPS + cv2.TERM_CRITERIA_COUNT, <span class="hljs-number">10</span>, <span class="hljs-number">1e-6</span>))<br>        data.ok = data.ok <span class="hljs-keyword">and</span> cv2.checkRange(data.camera_mat) <span class="hljs-keyword">and</span> cv2.checkRange(data.dist_coeff)<br>        <br>    <span class="hljs-keyword">def</span> <span class="hljs-title function_">_calc_reproj_err</span>(<span class="hljs-params">self, corners</span>):<br>        <span class="hljs-keyword">if</span> <span class="hljs-keyword">not</span> self.inited: <span class="hljs-keyword">return</span><br>        data = self.data<br>        data.reproj_err = []<br>        <span class="hljs-keyword">for</span> i <span class="hljs-keyword">in</span> <span class="hljs-built_in">range</span>(<span class="hljs-built_in">len</span>(corners)):<br>            corners_reproj, _ = cv2.projectPoints(self.BOARD, data.rvecs[i], data.tvecs[i], data.camera_mat, data.dist_coeff)<br>            err = cv2.norm(corners_reproj, corners[i], cv2.NORM_L2) / <span class="hljs-built_in">len</span>(corners_reproj)<br>            data.reproj_err.append(err)<br>            <br>    <span class="hljs-keyword">def</span> <span class="hljs-title function_">_get_camera_mat_dst</span>(<span class="hljs-params">self, camera_mat</span>):<br>        camera_mat_dst = camera_mat.copy()<br>        camera_mat_dst[<span class="hljs-number">0</span>][<span class="hljs-number">0</span>] *= args.FOCAL_SCALE<br>        camera_mat_dst[<span class="hljs-number">1</span>][<span class="hljs-number">1</span>] *= args.FOCAL_SCALE<br>        camera_mat_dst[<span class="hljs-number">0</span>][<span class="hljs-number">2</span>] = args.FRAME_WIDTH / <span class="hljs-number">2</span> * args.SIZE_SCALE<br>        camera_mat_dst[<span class="hljs-number">1</span>][<span class="hljs-number">2</span>] = args.FRAME_HEIGHT / <span class="hljs-number">2</span> * args.SIZE_SCALE<br>        <span class="hljs-keyword">return</span> camera_mat_dst<br>    <br>    <span class="hljs-keyword">def</span> <span class="hljs-title function_">_get_undistort_maps</span>(<span class="hljs-params">self</span>):<br>        data = self.data<br>        camera_mat_dst = self._get_camera_mat_dst(data.camera_mat)<br>        data.map1, data.map2 = cv2.initUndistortRectifyMap(<br>                                 data.camera_mat, data.dist_coeff, np.eye(<span class="hljs-number">3</span>, <span class="hljs-number">3</span>), camera_mat_dst, <br>                                 (<span class="hljs-built_in">int</span>(args.FRAME_WIDTH * args.SIZE_SCALE), <span class="hljs-built_in">int</span>(args.FRAME_HEIGHT * args.SIZE_SCALE)), cv2.CV_16SC2)<br><br><span class="hljs-keyword">class</span> <span class="hljs-title class_">InCalibrator</span>:<br>    <span class="hljs-keyword">def</span> <span class="hljs-title function_">__init__</span>(<span class="hljs-params">self, camera</span>):<br>        <span class="hljs-keyword">if</span> camera == <span class="hljs-string">&#x27;fisheye&#x27;</span>:<br>            self.camera = Fisheye()<br>        <span class="hljs-keyword">elif</span> camera == <span class="hljs-string">&#x27;normal&#x27;</span>:<br>            self.camera = Normal()<br>        <span class="hljs-keyword">else</span>:<br>            <span class="hljs-keyword">raise</span> Exception(<span class="hljs-string">&quot;camera should be fisheye/normal&quot;</span>)<br>        self.corners = []<br><br><span class="hljs-meta">    @staticmethod</span><br>    <span class="hljs-keyword">def</span> <span class="hljs-title function_">get_args</span>():<br>        <span class="hljs-keyword">return</span> args<br><br>    <span class="hljs-keyword">def</span> <span class="hljs-title function_">get_corners</span>(<span class="hljs-params">self, img</span>):<br>        ok, corners = cv2.findChessboardCorners(img, (args.BORAD_WIDTH, args.BORAD_HEIGHT),<br>                      flags = cv2.CALIB_CB_ADAPTIVE_THRESH|cv2.CALIB_CB_NORMALIZE_IMAGE|cv2.CALIB_CB_FAST_CHECK)<br>        <span class="hljs-keyword">if</span> ok: <br>            gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)<br>            corners = cv2.cornerSubPix(gray, corners, (args.SUBPIX_REGION, args.SUBPIX_REGION), (-<span class="hljs-number">1</span>, -<span class="hljs-number">1</span>),<br>                                       (cv2.TERM_CRITERIA_EPS + cv2.TERM_CRITERIA_MAX_ITER, <span class="hljs-number">30</span>, <span class="hljs-number">0.01</span>))<br>        <span class="hljs-keyword">return</span> ok, corners<br>    <br>    <span class="hljs-keyword">def</span> <span class="hljs-title function_">draw_corners</span>(<span class="hljs-params">self, img</span>):<br>        ok, corners = self.get_corners(img)<br>        cv2.drawChessboardCorners(img, (args.BORAD_WIDTH, args.BORAD_HEIGHT), corners, ok)<br>        <span class="hljs-keyword">return</span> img<br>    <br>    <span class="hljs-keyword">def</span> <span class="hljs-title function_">undistort</span>(<span class="hljs-params">self, img</span>):<br>        data = self.camera.data<br>        <span class="hljs-keyword">return</span> cv2.remap(img, data.map1, data.map2, cv2.INTER_LINEAR)<br>    <br>    <span class="hljs-keyword">def</span> <span class="hljs-title function_">calibrate</span>(<span class="hljs-params">self, img</span>):<br>        <span class="hljs-keyword">if</span> <span class="hljs-built_in">len</span>(self.corners) &gt;= args.CALIB_NUMBER:<br>            self.camera.update(self.corners, img.shape[<span class="hljs-number">1</span>::-<span class="hljs-number">1</span>])<br>        <span class="hljs-keyword">return</span> self.camera.data<br>    <br>    <span class="hljs-keyword">def</span> <span class="hljs-title function_">__call__</span>(<span class="hljs-params">self, raw_frame</span>):<br>        ok, corners = self.get_corners(raw_frame)<br>        result = self.camera.data<br>        <span class="hljs-keyword">if</span> ok:<br>            self.corners.append(corners)<br>            result = self.calibrate(raw_frame)<br>        <span class="hljs-keyword">return</span> result<br><br><span class="hljs-keyword">def</span> <span class="hljs-title function_">centerCrop</span>(<span class="hljs-params">img,width,height</span>):<br>    <span class="hljs-keyword">if</span> img.shape[<span class="hljs-number">1</span>] &lt; width <span class="hljs-keyword">or</span> img.shape[<span class="hljs-number">0</span>] &lt; height:<br>        <span class="hljs-keyword">raise</span> Exception(<span class="hljs-string">&quot;CROP size should be smaller than original size&quot;</span>)<br>    img = img[<span class="hljs-built_in">round</span>((img.shape[<span class="hljs-number">0</span>]-height)/<span class="hljs-number">2</span>) : <span class="hljs-built_in">round</span>((img.shape[<span class="hljs-number">0</span>]-height)/<span class="hljs-number">2</span>)+height,<br>              <span class="hljs-built_in">round</span>((img.shape[<span class="hljs-number">1</span>]-width)/<span class="hljs-number">2</span>) : <span class="hljs-built_in">round</span>((img.shape[<span class="hljs-number">1</span>]-width)/<span class="hljs-number">2</span>)+width ]  <br>    <span class="hljs-keyword">return</span> img<br><br><br><span class="hljs-keyword">class</span> <span class="hljs-title class_">CalibMode</span>():<br>    <span class="hljs-keyword">def</span> <span class="hljs-title function_">__init__</span>(<span class="hljs-params">self, calibrator, input_type, mode</span>):<br>        self.calibrator = calibrator<br>        self.input_type = input_type<br>        self.mode = mode<br>    <br>    <span class="hljs-keyword">def</span> <span class="hljs-title function_">imgPreprocess</span>(<span class="hljs-params">self, img</span>):<br>        <span class="hljs-keyword">if</span> args.CROP_FLAG:<br>            img = centerCrop(img, args.FRAME_WIDTH, args.FRAME_HEIGHT)<br>        <span class="hljs-keyword">elif</span> args.RESIZE_FLAG:<br>            img = cv2.resize(img, (args.FRAME_WIDTH, args.FRAME_HEIGHT))<br>        <span class="hljs-keyword">return</span> img<br>    <br>    <span class="hljs-keyword">def</span> <span class="hljs-title function_">setCamera</span>(<span class="hljs-params">self, cap</span>):<br>        cap.<span class="hljs-built_in">set</span>(cv2.CAP_PROP_FOURCC, cv2.VideoWriter.fourcc(<span class="hljs-string">&#x27;M&#x27;</span>,<span class="hljs-string">&#x27;J&#x27;</span>,<span class="hljs-string">&#x27;P&#x27;</span>,<span class="hljs-string">&#x27;G&#x27;</span>))<br>        cap.<span class="hljs-built_in">set</span>(cv2.CAP_PROP_FRAME_WIDTH, args.FRAME_WIDTH)<br>        cap.<span class="hljs-built_in">set</span>(cv2.CAP_PROP_FRAME_HEIGHT, args.FRAME_HEIGHT)<br>        cap.<span class="hljs-built_in">set</span>(cv2.CAP_PROP_FPS, args.CAMERA_FPS)<br>        <span class="hljs-keyword">return</span> cap<br><br>    <span class="hljs-keyword">def</span> <span class="hljs-title function_">runCalib</span>(<span class="hljs-params">self, raw_frame, display_raw=<span class="hljs-literal">True</span>, display_undist=<span class="hljs-literal">False</span></span>):<br>        calibrator = self.calibrator<br>        raw_frame = self.imgPreprocess(raw_frame)<br>        result = calibrator(raw_frame)<br>        raw_frame = calibrator.draw_corners(raw_frame)<br>        <span class="hljs-keyword">if</span> display_raw:<br>            cv2.namedWindow(<span class="hljs-string">&quot;raw_frame&quot;</span>, flags = cv2.WINDOW_NORMAL | cv2.WINDOW_KEEPRATIO)<br>            cv2.imshow(<span class="hljs-string">&quot;raw_frame&quot;</span>, raw_frame)<br>        <span class="hljs-keyword">if</span> <span class="hljs-built_in">len</span>(calibrator.corners) &gt; args.CALIB_NUMBER <span class="hljs-keyword">and</span> display_undist: <br>            undist_frame = calibrator.undistort(raw_frame)<br>            cv2.namedWindow(<span class="hljs-string">&quot;undist_frame&quot;</span>, flags = cv2.WINDOW_NORMAL | cv2.WINDOW_KEEPRATIO)<br>            cv2.imshow(<span class="hljs-string">&quot;undist_frame&quot;</span>, undist_frame)   <br>        cv2.waitKey(<span class="hljs-number">500</span>)<br>        <span class="hljs-keyword">return</span> result<br>    <br>    <span class="hljs-keyword">def</span> <span class="hljs-title function_">imageAutoMode</span>(<span class="hljs-params">self</span>):<br>        <span class="hljs-keyword">global</span> W,H<br>        filenames = vv.glob_images(args.INPUT_PATH)<br>        <span class="hljs-keyword">for</span> filename <span class="hljs-keyword">in</span> filenames:<br>            <span class="hljs-built_in">print</span>(filename)<br>            raw_frame = cv2.imread(filename)<br>            H,W,_ =raw_frame.shape <br>            result = self.runCalib(raw_frame)<br>            key = cv2.waitKey(<span class="hljs-number">1</span>)<br>            <span class="hljs-keyword">if</span> key == <span class="hljs-number">27</span>: <span class="hljs-keyword">break</span><br>        cv2.destroyAllWindows() <br>        <span class="hljs-keyword">return</span> result<br>    <br>    <span class="hljs-keyword">def</span> <span class="hljs-title function_">imageManualMode</span>(<span class="hljs-params">self</span>):<br>        filenames = vv.glob_images(args.INPUT_PATH)<br>        <span class="hljs-keyword">for</span> filename <span class="hljs-keyword">in</span> filenames:<br>            <span class="hljs-built_in">print</span>(filename)<br>            raw_frame = cv2.imread(filename)<br>            raw_frame = self.imgPreprocess(raw_frame)<br>            img = raw_frame.copy()<br>            img = self.calibrator.draw_corners(img)<br>            display = <span class="hljs-string">&quot;raw_frame: press SPACE to SELECT, other key to SKIP, press ESC to QUIT&quot;</span><br>            cv2.namedWindow(display, flags = cv2.WINDOW_NORMAL | cv2.WINDOW_KEEPRATIO)<br>            cv2.imshow(display, img)<br>            key = cv2.waitKey(<span class="hljs-number">0</span>)<br>            <span class="hljs-keyword">if</span> key == <span class="hljs-number">32</span>:<br>                result = self.runCalib(raw_frame, display_raw = <span class="hljs-literal">False</span>)<br>            <span class="hljs-keyword">if</span> key == <span class="hljs-number">27</span>: <span class="hljs-keyword">break</span><br>        cv2.destroyAllWindows() <br>        <span class="hljs-keyword">return</span> result<br>    <br>    <span class="hljs-keyword">def</span> <span class="hljs-title function_">videoAutoMode</span>(<span class="hljs-params">self</span>):<br>        cap = cv2.VideoCapture(args.INPUT_PATH + args.VIDEO_FILE)<br>        <span class="hljs-keyword">if</span> <span class="hljs-keyword">not</span> cap.isOpened(): <br>            <span class="hljs-keyword">raise</span> Exception(<span class="hljs-string">&quot;from &#123;&#125; read video failed&quot;</span>.<span class="hljs-built_in">format</span>(args.INPUT_PATH + args.VIDEO_FILE))<br>        frame_id = <span class="hljs-number">0</span><br>        <span class="hljs-keyword">while</span> <span class="hljs-literal">True</span>:<br>            ok, raw_frame = cap.read()<br>            raw_frame = self.imgPreprocess(raw_frame)<br>            <span class="hljs-keyword">if</span> frame_id % args.FRAME_DELAY == <span class="hljs-number">0</span>:<br>                <span class="hljs-keyword">if</span> args.STORE_FLAG:<br>                    cv2.imwrite(args.STORE_PATH + <span class="hljs-string">&#x27;img_raw&#123;&#125;.jpg&#x27;</span>.<span class="hljs-built_in">format</span>(<span class="hljs-built_in">len</span>(self.calibrator.corners)), raw_frame)<br>                result = self.runCalib(raw_frame) <br>                <span class="hljs-built_in">print</span>(<span class="hljs-built_in">len</span>(self.calibrator.corners))<br>            frame_id += <span class="hljs-number">1</span> <br>            key = cv2.waitKey(<span class="hljs-number">1</span>)<br>            <span class="hljs-keyword">if</span> key == <span class="hljs-number">27</span>: <span class="hljs-keyword">break</span><br>        cap.release()<br>        cv2.destroyAllWindows() <br>        <span class="hljs-keyword">return</span> result<br>    <br>    <span class="hljs-keyword">def</span> <span class="hljs-title function_">videoManualMode</span>(<span class="hljs-params">self</span>):<br>        cap = cv2.VideoCapture(args.INPUT_PATH + args.VIDEO_FILE)<br>        <span class="hljs-keyword">if</span> <span class="hljs-keyword">not</span> cap.isOpened(): <br>            <span class="hljs-keyword">raise</span> Exception(<span class="hljs-string">&quot;from &#123;&#125; read video failed&quot;</span>.<span class="hljs-built_in">format</span>(args.INPUT_PATH + args.VIDEO_FILE))<br>        <span class="hljs-keyword">while</span> <span class="hljs-literal">True</span>:<br>            key = cv2.waitKey(<span class="hljs-number">1</span>)<br>            ok, raw_frame = cap.read()<br>            raw_frame = self.imgPreprocess(raw_frame)<br>            display = <span class="hljs-string">&quot;raw_frame: press SPACE to capture image&quot;</span><br>            cv2.namedWindow(display, flags = cv2.WINDOW_NORMAL | cv2.WINDOW_KEEPRATIO)<br>            cv2.imshow(display, raw_frame)<br>            <span class="hljs-keyword">if</span> key == <span class="hljs-number">32</span>:<br>                <span class="hljs-keyword">if</span> args.STORE_FLAG:<br>                    cv2.imwrite(args.STORE_PATH + <span class="hljs-string">&#x27;img_raw&#123;&#125;.jpg&#x27;</span>.<span class="hljs-built_in">format</span>(<span class="hljs-built_in">len</span>(self.calibrator.corners)), raw_frame)<br>                result = self.runCalib(raw_frame) <br>                <span class="hljs-built_in">print</span>(<span class="hljs-built_in">len</span>(self.calibrator.corners))<br>            <span class="hljs-keyword">if</span> key == <span class="hljs-number">27</span>: <span class="hljs-keyword">break</span><br>        cap.release()<br>        cv2.destroyAllWindows() <br>        <span class="hljs-keyword">return</span> result<br>    <br>    <span class="hljs-keyword">def</span> <span class="hljs-title function_">cameraAutoMode</span>(<span class="hljs-params">self</span>):<br>        cap = cv2.VideoCapture(args.CAMERA_ID)<br>        <span class="hljs-keyword">if</span> <span class="hljs-keyword">not</span> cap.isOpened(): <br>            <span class="hljs-keyword">raise</span> Exception(<span class="hljs-string">&quot;from &#123;&#125; read video failed&quot;</span>.<span class="hljs-built_in">format</span>(args.CAMERA_ID))<br>        cap = self.setCamera(cap)<br>        frame_id = <span class="hljs-number">0</span><br>        start_flag = <span class="hljs-literal">False</span><br>        <span class="hljs-keyword">while</span> <span class="hljs-literal">True</span>:<br>            key = cv2.waitKey(<span class="hljs-number">1</span>)<br>            ok, raw_frame = cap.read()<br>            raw_frame = self.imgPreprocess(raw_frame)<br>            <span class="hljs-keyword">if</span> key == <span class="hljs-number">32</span>: start_flag = <span class="hljs-literal">True</span><br>            <span class="hljs-keyword">if</span> key == <span class="hljs-number">27</span>: <span class="hljs-keyword">break</span><br>            <span class="hljs-keyword">if</span> <span class="hljs-keyword">not</span> start_flag:<br>                cv2.putText(raw_frame, <span class="hljs-string">&#x27;press SPACE to start!&#x27;</span>, (args.FRAME_WIDTH//<span class="hljs-number">4</span>,args.FRAME_HEIGHT//<span class="hljs-number">2</span>), <br>                             cv2.FONT_HERSHEY_COMPLEX, <span class="hljs-number">1.5</span>, (<span class="hljs-number">0</span>,<span class="hljs-number">0</span>,<span class="hljs-number">255</span>), <span class="hljs-number">2</span>)<br>                cv2.imshow(<span class="hljs-string">&quot;raw_frame&quot;</span>, raw_frame)<br>                <span class="hljs-keyword">continue</span><br>            <span class="hljs-keyword">if</span> frame_id % args.FRAME_DELAY == <span class="hljs-number">0</span>:<br>                <span class="hljs-keyword">if</span> args.STORE_FLAG:<br>                    cv2.imwrite(args.STORE_PATH + <span class="hljs-string">&#x27;img_raw&#123;&#125;.jpg&#x27;</span>.<span class="hljs-built_in">format</span>(<span class="hljs-built_in">len</span>(self.calibrator.corners)), raw_frame)<br>                result = self.runCalib(raw_frame) <br>                <span class="hljs-built_in">print</span>(<span class="hljs-built_in">len</span>(self.calibrator.corners))<br>            frame_id += <span class="hljs-number">1</span> <br>        cap.release()<br>        cv2.destroyAllWindows() <br>        <span class="hljs-keyword">return</span> result<br>    <br>    <span class="hljs-keyword">def</span> <span class="hljs-title function_">cameraManualMode</span>(<span class="hljs-params">self</span>):<br>        cap = cv2.VideoCapture(args.CAMERA_ID)<br>        <span class="hljs-keyword">if</span> <span class="hljs-keyword">not</span> cap.isOpened(): <br>            <span class="hljs-keyword">raise</span> Exception(<span class="hljs-string">&quot;from &#123;&#125; read video failed&quot;</span>.<span class="hljs-built_in">format</span>(args.CAMERA_ID))<br>        cap = self.setCamera(cap)<br>        <span class="hljs-keyword">while</span> <span class="hljs-literal">True</span>:<br>            key = cv2.waitKey(<span class="hljs-number">1</span>)<br>            ok, raw_frame = cap.read()<br>            raw_frame = self.imgPreprocess(raw_frame)<br>            display = <span class="hljs-string">&quot;raw_frame: press SPACE to capture image&quot;</span><br>            cv2.namedWindow(display, flags = cv2.WINDOW_NORMAL | cv2.WINDOW_KEEPRATIO)<br>            cv2.imshow(display, raw_frame)<br>            <span class="hljs-keyword">if</span> key == <span class="hljs-number">32</span>:<br>                <span class="hljs-keyword">if</span> args.STORE_FLAG:<br>                    cv2.imwrite(args.STORE_PATH + <span class="hljs-string">&#x27;img_raw&#123;&#125;.jpg&#x27;</span>.<span class="hljs-built_in">format</span>(<span class="hljs-built_in">len</span>(self.calibrator.corners)), raw_frame)<br>                result = self.runCalib(raw_frame) <br>                <span class="hljs-built_in">print</span>(<span class="hljs-built_in">len</span>(self.calibrator.corners))<br>            <span class="hljs-keyword">if</span> key == <span class="hljs-number">27</span>: <span class="hljs-keyword">break</span><br>        cap.release()<br>        cv2.destroyAllWindows() <br>        <span class="hljs-keyword">return</span> result<br><br>    <span class="hljs-keyword">def</span> <span class="hljs-title function_">__call__</span>(<span class="hljs-params">self</span>):<br>        input_type = self.input_type<br>        mode = self.mode<br>        <span class="hljs-keyword">if</span> input_type == <span class="hljs-string">&#x27;image&#x27;</span> <span class="hljs-keyword">and</span> mode == <span class="hljs-string">&#x27;auto&#x27;</span>:<br>            result = self.imageAutoMode()<br>        <span class="hljs-keyword">if</span> input_type == <span class="hljs-string">&#x27;image&#x27;</span> <span class="hljs-keyword">and</span> mode == <span class="hljs-string">&#x27;manual&#x27;</span>:<br>            result = self.imageManualMode()<br>        <span class="hljs-keyword">if</span> input_type == <span class="hljs-string">&#x27;video&#x27;</span> <span class="hljs-keyword">and</span> mode == <span class="hljs-string">&#x27;auto&#x27;</span>:<br>            result = self.videoAutoMode()<br>        <span class="hljs-keyword">if</span> input_type == <span class="hljs-string">&#x27;video&#x27;</span> <span class="hljs-keyword">and</span> mode == <span class="hljs-string">&#x27;manual&#x27;</span>:<br>            result = self.videoManualMode()<br>        <span class="hljs-keyword">if</span> input_type == <span class="hljs-string">&#x27;camera&#x27;</span> <span class="hljs-keyword">and</span> mode == <span class="hljs-string">&#x27;auto&#x27;</span>:<br>            result = self.cameraAutoMode()<br>        <span class="hljs-keyword">if</span> input_type == <span class="hljs-string">&#x27;camera&#x27;</span> <span class="hljs-keyword">and</span> mode == <span class="hljs-string">&#x27;manual&#x27;</span>:<br>            result = self.cameraManualMode()<br>        <span class="hljs-keyword">return</span> result<br><br><br><span class="hljs-keyword">def</span> <span class="hljs-title function_">main</span>():<br>    calibrator = InCalibrator(args.CAMERA_TYPE)<br>    calib = CalibMode(calibrator, args.INPUT_TYPE, args.SELECT_MODE)<br>    result = calib()<br>                  <br>    <span class="hljs-keyword">if</span> <span class="hljs-built_in">len</span>(calibrator.corners) == <span class="hljs-number">0</span>: <br>        <span class="hljs-keyword">raise</span> Exception(<span class="hljs-string">&quot;Calibration failed. Chessboard not found, check the parameters&quot;</span>)  <br>    <span class="hljs-keyword">if</span> <span class="hljs-built_in">len</span>(calibrator.corners) &lt; args.CALIB_NUMBER:<br>        <span class="hljs-keyword">raise</span> Exception(<span class="hljs-string">&quot;Warning: Calibration images are not enough. At least &#123;&#125; valid images are needed.&quot;</span>.<span class="hljs-built_in">format</span>(args.CALIB_NUMBER))            <br><br>    <span class="hljs-built_in">print</span>(<span class="hljs-string">&quot;Calibration Complete&quot;</span>)<br>    <span class="hljs-built_in">print</span>(<span class="hljs-string">&quot;Camera Matrix is : &#123;&#125;&quot;</span>.<span class="hljs-built_in">format</span>(result.camera_mat.tolist())) <br>    <span class="hljs-built_in">print</span>(<span class="hljs-string">&quot;Distortion Coefficient is : &#123;&#125;&quot;</span>.<span class="hljs-built_in">format</span>(result.dist_coeff.tolist()))<br>    <span class="hljs-built_in">print</span>(<span class="hljs-string">&quot;Reprojection Error is : &#123;&#125;&quot;</span>.<span class="hljs-built_in">format</span>(np.mean(result.reproj_err)))  <br>     <br>    fs = cv2.FileStorage(args.OUTPUT, cv2.FILE_STORAGE_WRITE)<br>    fs.write(<span class="hljs-string">&quot;camera_type&quot;</span>, result.<span class="hljs-built_in">type</span>)<br>    fs.write(<span class="hljs-string">&quot;resolution&quot;</span>, np.int32([W, H]))<br>    fs.write(<span class="hljs-string">&quot;camera_matrix&quot;</span>, result.camera_mat)<br>    fs.write(<span class="hljs-string">&quot;dist_coeffs&quot;</span>, result.dist_coeff)<br>    <br>    fs.release()<br>    <span class="hljs-built_in">print</span>(<span class="hljs-string">&quot;successfully saved camera data&quot;</span>)<br>        <br><span class="hljs-keyword">if</span> __name__ == <span class="hljs-string">&#x27;__main__&#x27;</span>:  <br>    main()<br> <br></code></pre></td></tr></table></figure>
+<p>得到结果：</p>
+<figure class="highlight yaml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br></pre></td><td class="code"><pre><code class="hljs yaml"><span class="hljs-string">%YAML:1.0</span><br><span class="hljs-meta">---</span><br><span class="hljs-attr">camera_type:</span> <span class="hljs-string">FISHEYE</span><br><span class="hljs-attr">resolution:</span> <span class="hljs-type">!!opencv</span><span class="hljs-string">-matrix</span><br>   <span class="hljs-attr">rows:</span> <span class="hljs-number">2</span><br>   <span class="hljs-attr">cols:</span> <span class="hljs-number">1</span><br>   <span class="hljs-attr">dt:</span> <span class="hljs-string">i</span><br>   <span class="hljs-attr">data:</span> [ <span class="hljs-number">1920</span>, <span class="hljs-number">1920</span> ]<br><span class="hljs-attr">camera_matrix:</span> <span class="hljs-type">!!opencv</span><span class="hljs-string">-matrix</span><br>   <span class="hljs-attr">rows:</span> <span class="hljs-number">3</span><br>   <span class="hljs-attr">cols:</span> <span class="hljs-number">3</span><br>   <span class="hljs-attr">dt:</span> <span class="hljs-string">d</span><br>   <span class="hljs-attr">data:</span> [ <span class="hljs-number">5.9826029947332961e+02</span>, <span class="hljs-number">0</span><span class="hljs-string">.</span>, <span class="hljs-number">9.7458710952364436e+02</span>, <span class="hljs-number">0</span><span class="hljs-string">.</span>,<br>       <span class="hljs-number">5.9821699706089635e+02</span>, <span class="hljs-number">9.8914666516520685e+02</span>, <span class="hljs-number">0</span><span class="hljs-string">.</span>, <span class="hljs-number">0</span><span class="hljs-string">.</span>, <span class="hljs-number">1</span><span class="hljs-string">.</span> ]<br><span class="hljs-attr">dist_coeffs:</span> <span class="hljs-type">!!opencv</span><span class="hljs-string">-matrix</span><br>   <span class="hljs-attr">rows:</span> <span class="hljs-number">4</span><br>   <span class="hljs-attr">cols:</span> <span class="hljs-number">1</span><br>   <span class="hljs-attr">dt:</span> <span class="hljs-string">d</span><br>   <span class="hljs-attr">data:</span> [ <span class="hljs-number">-1.5122068185237885e-02</span>, <span class="hljs-number">-9.9689073074224347e-04</span>,<br>       <span class="hljs-number">-8.0759992774765647e-04</span>, <span class="hljs-number">-1.7926126695203321e-04</span> ]<br></code></pre></td></tr></table></figure>
+<p>根据结果进行畸变矫正：</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br><span class="line">84</span><br><span class="line">85</span><br><span class="line">86</span><br><span class="line">87</span><br><span class="line">88</span><br><span class="line">89</span><br><span class="line">90</span><br><span class="line">91</span><br><span class="line">92</span><br><span class="line">93</span><br><span class="line">94</span><br><span class="line">95</span><br><span class="line">96</span><br><span class="line">97</span><br><span class="line">98</span><br><span class="line">99</span><br><span class="line">100</span><br><span class="line">101</span><br><span class="line">102</span><br><span class="line">103</span><br><span class="line">104</span><br><span class="line">105</span><br><span class="line">106</span><br><span class="line">107</span><br><span class="line">108</span><br><span class="line">109</span><br><span class="line">110</span><br><span class="line">111</span><br><span class="line">112</span><br><span class="line">113</span><br><span class="line">114</span><br><span class="line">115</span><br><span class="line">116</span><br><span class="line">117</span><br><span class="line">118</span><br><span class="line">119</span><br><span class="line">120</span><br><span class="line">121</span><br><span class="line">122</span><br><span class="line">123</span><br><span class="line">124</span><br><span class="line">125</span><br><span class="line">126</span><br><span class="line">127</span><br><span class="line">128</span><br><span class="line">129</span><br><span class="line">130</span><br><span class="line">131</span><br><span class="line">132</span><br><span class="line">133</span><br><span class="line">134</span><br><span class="line">135</span><br><span class="line">136</span><br><span class="line">137</span><br><span class="line">138</span><br><span class="line">139</span><br><span class="line">140</span><br><span class="line">141</span><br><span class="line">142</span><br><span class="line">143</span><br><span class="line">144</span><br><span class="line">145</span><br><span class="line">146</span><br><span class="line">147</span><br><span class="line">148</span><br><span class="line">149</span><br><span class="line">150</span><br><span class="line">151</span><br><span class="line">152</span><br><span class="line">153</span><br><span class="line">154</span><br><span class="line">155</span><br><span class="line">156</span><br><span class="line">157</span><br><span class="line">158</span><br><span class="line">159</span><br><span class="line">160</span><br><span class="line">161</span><br><span class="line">162</span><br><span class="line">163</span><br><span class="line">164</span><br><span class="line">165</span><br><span class="line">166</span><br><span class="line">167</span><br><span class="line">168</span><br><span class="line">169</span><br><span class="line">170</span><br><span class="line">171</span><br><span class="line">172</span><br><span class="line">173</span><br><span class="line">174</span><br><span class="line">175</span><br><span class="line">176</span><br><span class="line">177</span><br><span class="line">178</span><br><span class="line">179</span><br><span class="line">180</span><br><span class="line">181</span><br><span class="line">182</span><br><span class="line">183</span><br><span class="line">184</span><br><span class="line">185</span><br><span class="line">186</span><br><span class="line">187</span><br><span class="line">188</span><br><span class="line">189</span><br><span class="line">190</span><br><span class="line">191</span><br><span class="line">192</span><br></pre></td><td class="code"><pre><code class="hljs python"><span class="hljs-keyword">import</span> numpy <span class="hljs-keyword">as</span> np<br><span class="hljs-keyword">import</span> cv2<br><span class="hljs-keyword">import</span> os<br><span class="hljs-keyword">import</span> vvdutils <span class="hljs-keyword">as</span> vv<br><br><span class="hljs-keyword">class</span> <span class="hljs-title class_">FisheyeCameraModel</span>(<span class="hljs-title class_ inherited__">object</span>):<br>    <span class="hljs-string">&quot;&quot;&quot;</span><br><span class="hljs-string">    Fisheye camera model, for undistorting, projecting and flipping camera frames.</span><br><span class="hljs-string">    &quot;&quot;&quot;</span><br><br>    <span class="hljs-keyword">def</span> <span class="hljs-title function_">__init__</span>(<span class="hljs-params">self, camera_param_file, camera_name</span>):<br>        <span class="hljs-keyword">if</span> <span class="hljs-keyword">not</span> os.path.isfile(camera_param_file):<br>            <span class="hljs-keyword">raise</span> ValueError(<span class="hljs-string">&quot;Cannot find camera param file&quot;</span>)<br><br>        <span class="hljs-comment"># if camera_name not in settings.camera_names:</span><br>        <span class="hljs-comment">#     raise ValueError(&quot;Unknown camera name: &#123;&#125;&quot;.format(camera_name))</span><br><br>        self.camera_file = camera_param_file<br>        self.camera_name = camera_name<br>        self.scale_xy = (<span class="hljs-number">1.0</span>, <span class="hljs-number">1.0</span>)<br>        self.shift_xy = (<span class="hljs-number">0</span>, <span class="hljs-number">0</span>)<br>        self.undistort_maps = <span class="hljs-literal">None</span><br>        self.project_matrix = <span class="hljs-literal">None</span><br>        self.project_shape = (<span class="hljs-number">3200</span>, <span class="hljs-number">3200</span>)  <span class="hljs-comment"># settings.project_shapes[self.camera_name]</span><br>        self.load_camera_params()<br><br>    <span class="hljs-keyword">def</span> <span class="hljs-title function_">load_camera_params</span>(<span class="hljs-params">self</span>):<br>        fs = cv2.FileStorage(self.camera_file, cv2.FILE_STORAGE_READ)<br>        self.camera_matrix = fs.getNode(<span class="hljs-string">&quot;camera_matrix&quot;</span>).mat()<br>        self.dist_coeffs = fs.getNode(<span class="hljs-string">&quot;dist_coeffs&quot;</span>).mat()<br>        self.resolution = fs.getNode(<span class="hljs-string">&quot;resolution&quot;</span>).mat().flatten()<br>        self.camera_type = fs.getNode(<span class="hljs-string">&quot;camera_type&quot;</span>).string()<br><br>        <span class="hljs-keyword">if</span> fs.getNode(<span class="hljs-string">&quot;scale_xy&quot;</span>).mat() <span class="hljs-keyword">is</span> <span class="hljs-keyword">not</span> <span class="hljs-literal">None</span>:<br>            self.scale_xy = fs.getNode(<span class="hljs-string">&quot;scale_xy&quot;</span>).mat().flatten()<br><br>        <span class="hljs-keyword">if</span> fs.getNode(<span class="hljs-string">&quot;shift_xy&quot;</span>).mat() <span class="hljs-keyword">is</span> <span class="hljs-keyword">not</span> <span class="hljs-literal">None</span>:<br>            self.shift_xy = fs.getNode(<span class="hljs-string">&quot;shift_xy&quot;</span>).mat().flatten()<br><br>        <span class="hljs-keyword">if</span> fs.getNode(<span class="hljs-string">&quot;project_matrix&quot;</span>).mat() <span class="hljs-keyword">is</span> <span class="hljs-keyword">not</span> <span class="hljs-literal">None</span>:<br>            self.project_matrix = fs.getNode(<span class="hljs-string">&quot;project_matrix&quot;</span>).mat()<br><br>        fs.release()<br>        self.update_undistort_maps()<br><br>    <span class="hljs-keyword">def</span> <span class="hljs-title function_">update_undistort_maps</span>(<span class="hljs-params">self</span>):<br>        new_matrix = self.camera_matrix.copy()<br>        new_matrix[<span class="hljs-number">0</span>, <span class="hljs-number">0</span>] *= self.scale_xy[<span class="hljs-number">0</span>]<br>        new_matrix[<span class="hljs-number">1</span>, <span class="hljs-number">1</span>] *= self.scale_xy[<span class="hljs-number">1</span>]<br>        new_matrix[<span class="hljs-number">0</span>, <span class="hljs-number">2</span>] += self.shift_xy[<span class="hljs-number">0</span>]<br>        new_matrix[<span class="hljs-number">1</span>, <span class="hljs-number">2</span>] += self.shift_xy[<span class="hljs-number">1</span>]<br>        width, height = self.resolution<br><br>        self.undistort_maps = cv2.fisheye.initUndistortRectifyMap(<br>            self.camera_matrix,<br>            self.dist_coeffs,<br>            np.eye(<span class="hljs-number">3</span>),<br>            new_matrix,<br>            (width, height),<br>            cv2.CV_16SC2<br>        )<br>        <span class="hljs-keyword">return</span> self<br><br>    <span class="hljs-keyword">def</span> <span class="hljs-title function_">set_scale_and_shift</span>(<span class="hljs-params">self, scale_xy=(<span class="hljs-params"><span class="hljs-number">1.0</span>, <span class="hljs-number">1.0</span></span>), shift_xy=(<span class="hljs-params"><span class="hljs-number">0</span>, <span class="hljs-number">0</span></span>)</span>):<br>        self.scale_xy = scale_xy<br>        self.shift_xy = shift_xy<br>        self.update_undistort_maps()<br>        <span class="hljs-keyword">return</span> self<br><br>    <span class="hljs-keyword">def</span> <span class="hljs-title function_">undistort</span>(<span class="hljs-params">self, image</span>):<br>        result = cv2.remap(image, *self.undistort_maps, interpolation=cv2.INTER_LINEAR,<br>                           borderMode=cv2.BORDER_CONSTANT)<br>        <span class="hljs-keyword">return</span> result<br><br>    <span class="hljs-keyword">def</span> <span class="hljs-title function_">project</span>(<span class="hljs-params">self, image</span>):<br>        <span class="hljs-keyword">if</span> self.project_matrix <span class="hljs-keyword">is</span> <span class="hljs-literal">None</span>:<br>            <span class="hljs-keyword">return</span> image.copy()<br>        result = cv2.warpPerspective(image, self.project_matrix, self.project_shape)<br>        <span class="hljs-keyword">return</span> result<br><br>    <span class="hljs-keyword">def</span> <span class="hljs-title function_">flip</span>(<span class="hljs-params">self, image</span>):<br>        <span class="hljs-keyword">if</span> self.camera_name == <span class="hljs-string">&quot;front&quot;</span>:<br>            <span class="hljs-keyword">return</span> image.copy()<br><br>        <span class="hljs-keyword">elif</span> self.camera_name == <span class="hljs-string">&quot;back&quot;</span>:<br>            <span class="hljs-keyword">return</span> image.copy()[::-<span class="hljs-number">1</span>, ::-<span class="hljs-number">1</span>, :]<br><br>        <span class="hljs-keyword">elif</span> self.camera_name == <span class="hljs-string">&quot;left&quot;</span>:<br>            <span class="hljs-keyword">return</span> cv2.transpose(image)[::-<span class="hljs-number">1</span>]<br><br>        <span class="hljs-keyword">else</span>:<br>            <span class="hljs-keyword">return</span> np.flip(cv2.transpose(image), <span class="hljs-number">1</span>)<br><br>    <span class="hljs-keyword">def</span> <span class="hljs-title function_">save_data</span>(<span class="hljs-params">self</span>):<br>        fs = cv2.FileStorage(self.camera_file, cv2.FILE_STORAGE_WRITE)<br>        fs.write(<span class="hljs-string">&quot;camera_matrix&quot;</span>, self.camera_matrix)<br>        fs.write(<span class="hljs-string">&quot;dist_coeffs&quot;</span>, self.dist_coeffs)<br>        fs.write(<span class="hljs-string">&quot;resolution&quot;</span>, self.resolution)<br>        fs.write(<span class="hljs-string">&quot;project_matrix&quot;</span>, self.project_matrix)<br>        fs.write(<span class="hljs-string">&quot;scale_xy&quot;</span>, np.float32(self.scale_xy))<br>        fs.write(<span class="hljs-string">&quot;shift_xy&quot;</span>, np.float32(self.shift_xy))<br>        fs.release()<br><br><br> <br><br><span class="hljs-keyword">class</span> <span class="hljs-title class_">NormalCameraModel</span>(<span class="hljs-title class_ inherited__">object</span>):<br>    <span class="hljs-string">&quot;&quot;&quot;</span><br><span class="hljs-string">    normal camera model, for undistorting, projecting </span><br><span class="hljs-string">    &quot;&quot;&quot;</span><br><br>    <span class="hljs-keyword">def</span> <span class="hljs-title function_">__init__</span>(<span class="hljs-params">self, camera_param_file, camera_name</span>):<br>        <span class="hljs-keyword">if</span> <span class="hljs-keyword">not</span> os.path.isfile(camera_param_file):<br>            <span class="hljs-keyword">raise</span> ValueError(<span class="hljs-string">&quot;找不到相机参数文件&quot;</span>)<br><br>        self.camera_file = camera_param_file<br>        self.camera_name = camera_name<br>        self.undistort_map = <span class="hljs-literal">None</span><br>        self.scale_xy = (<span class="hljs-number">1.0</span>, <span class="hljs-number">1.0</span>)<br>        self.shift_xy = (<span class="hljs-number">0</span>, <span class="hljs-number">0</span>)<br>        self.load_camera_params()<br><br>    <span class="hljs-keyword">def</span> <span class="hljs-title function_">load_camera_params</span>(<span class="hljs-params">self</span>):<br>        fs = cv2.FileStorage(self.camera_file, cv2.FILE_STORAGE_READ)<br>        self.camera_matrix = fs.getNode(<span class="hljs-string">&quot;camera_matrix&quot;</span>).mat()<br>        self.dist_coeffs = fs.getNode(<span class="hljs-string">&quot;dist_coeffs&quot;</span>).mat()<br>        self.resolution = fs.getNode(<span class="hljs-string">&quot;resolution&quot;</span>).mat().flatten()<br>        <span class="hljs-keyword">if</span> fs.getNode(<span class="hljs-string">&quot;scale_xy&quot;</span>).mat() <span class="hljs-keyword">is</span> <span class="hljs-keyword">not</span> <span class="hljs-literal">None</span>:<br>            self.scale_xy = fs.getNode(<span class="hljs-string">&quot;scale_xy&quot;</span>).mat().flatten()<br><br>        <span class="hljs-keyword">if</span> fs.getNode(<span class="hljs-string">&quot;shift_xy&quot;</span>).mat() <span class="hljs-keyword">is</span> <span class="hljs-keyword">not</span> <span class="hljs-literal">None</span>:<br>            self.shift_xy = fs.getNode(<span class="hljs-string">&quot;shift_xy&quot;</span>).mat().flatten()<br><br>        <span class="hljs-keyword">if</span> fs.getNode(<span class="hljs-string">&quot;project_matrix&quot;</span>).mat() <span class="hljs-keyword">is</span> <span class="hljs-keyword">not</span> <span class="hljs-literal">None</span>:<br>            self.project_matrix = fs.getNode(<span class="hljs-string">&quot;project_matrix&quot;</span>).mat()<br><br>        fs.release()<br>        self.update_undistort_map()<br>    <br>    <span class="hljs-keyword">def</span> <span class="hljs-title function_">set_scale_and_shift</span>(<span class="hljs-params">self, scale_xy=(<span class="hljs-params"><span class="hljs-number">1.0</span>, <span class="hljs-number">1.0</span></span>), shift_xy=(<span class="hljs-params"><span class="hljs-number">0</span>, <span class="hljs-number">0</span></span>)</span>):<br>        self.scale_xy = scale_xy<br>        self.shift_xy = shift_xy<br>        self.update_undistort_map()<br>        <span class="hljs-keyword">return</span> self<br><br>    <span class="hljs-keyword">def</span> <span class="hljs-title function_">update_undistort_map</span>(<span class="hljs-params">self</span>):<br>        new_matrix = self.camera_matrix.copy()<br>        new_matrix[<span class="hljs-number">0</span>, <span class="hljs-number">0</span>] *= self.scale_xy[<span class="hljs-number">0</span>]<br>        new_matrix[<span class="hljs-number">1</span>, <span class="hljs-number">1</span>] *= self.scale_xy[<span class="hljs-number">1</span>]<br>        new_matrix[<span class="hljs-number">0</span>, <span class="hljs-number">2</span>] += self.shift_xy[<span class="hljs-number">0</span>]<br>        new_matrix[<span class="hljs-number">1</span>, <span class="hljs-number">2</span>] += self.shift_xy[<span class="hljs-number">1</span>]<br>        width, height = self.resolution<br><br>        width, height = self.resolution<br>        self.undistort_map = cv2.initUndistortRectifyMap(<br>            self.camera_matrix,<br>            self.dist_coeffs,<br>            np.eye(<span class="hljs-number">3</span>, <span class="hljs-number">3</span>),<br>            new_matrix,<br>            (width, height),<br>            cv2.CV_16SC2<br>        )<br><br>    <span class="hljs-keyword">def</span> <span class="hljs-title function_">undistort</span>(<span class="hljs-params">self, image</span>):<br>        result = cv2.remap(image, *self.undistort_map, interpolation=cv2.INTER_LINEAR,<br>                           borderMode=cv2.BORDER_CONSTANT)<br>        <span class="hljs-keyword">return</span> result<br><br>    <span class="hljs-keyword">def</span> <span class="hljs-title function_">save_data</span>(<span class="hljs-params">self</span>):<br>        fs = cv2.FileStorage(self.camera_file, cv2.FILE_STORAGE_WRITE)<br>        fs.write(<span class="hljs-string">&quot;camera_matrix&quot;</span>, self.camera_matrix)<br>        fs.write(<span class="hljs-string">&quot;dist_coeffs&quot;</span>, self.dist_coeffs)<br>        fs.write(<span class="hljs-string">&quot;resolution&quot;</span>, self.resolution)<br>        fs.release()<br><br><br><span class="hljs-comment"># 示例用法</span><br>camera_model = FisheyeCameraModel(<span class="hljs-string">&quot;camera_intrinsic.yaml&quot;</span>, <span class="hljs-string">&quot;camera_0&quot;</span>)<br><span class="hljs-comment"># 设置新的缩放和偏移</span><br>camera_model.set_scale_and_shift(scale_xy=(<span class="hljs-number">0.7</span>, <span class="hljs-number">0.7</span>), shift_xy=(<span class="hljs-number">0</span>, <span class="hljs-number">0</span>))<br>camera_model.update_undistort_maps()<br><br>image_path_list = vv.glob_images(<span class="hljs-string">&#x27;cali-data&#x27;</span>)<br><span class="hljs-keyword">for</span> image_path <span class="hljs-keyword">in</span> image_path_list:    <br>    distorted_image= cv2.imread(image_path)<br>    undistorted_image = camera_model.undistort(distorted_image)<br>    save_path = vv.OS_join(<span class="hljs-string">&#x27;result&#x27;</span>, vv.OS_basename(image_path))<br>    vv.cv_bgr_imwrite(undistorted_image, save_path)<br>    vv.PIS(undistorted_image)<br><br><span class="hljs-comment"># camera_model.save_data()</span><br><span class="hljs-keyword">pass</span><br></code></pre></td></tr></table></figure>
+<p>示例结果：</p>
+<ul>
+<li>原始图像：</li>
+</ul>
+<p><img src="https://uipv4.zywvvd.com:33030/HexoFiles/vvd_image_files/202410101140908.png" srcset="/img/loading.gif" lazyload alt=""></p>
+<ul>
+<li>结果图像：</li>
+</ul>
+<p><img src="https://uipv4.zywvvd.com:33030/HexoFiles/vvd_image_files/202410101114425.png" srcset="/img/loading.gif" lazyload alt=""></p>
+<h3 id="经纬度矫正">经纬度矫正</h3>
+<p>经纬度映射法是一种传统的鱼眼校正方法，就是先将鱼眼图像映射在一个球面上。这样做不无道理，因为鱼眼镜头成像的时候，光线就是从一个球面经过折射，投射在成像平面上的（虽然事实并没有那么简单，但大体可以看作这样），如下图所示。而现在就是将成像过程反过来做。</p>
+<p><img src="https://uipv4.zywvvd.com:33030/HexoFiles/vvd_image_files/202410101122238.png" srcset="/img/loading.gif" lazyload alt=""></p>
+<p>通过一系列坐标变换，将空间坐标转换为经纬度坐标，再根据经纬度坐标直接投射到二维平面上，完成校正。</p>
+<p>但这样的效果并不理想，畸变仍然十分严重。举个例子，格陵兰岛的面积不大，但它所跨的纬度很大，所以如果直接以经纬度为坐标投射在二维平面的话，它的面积会远远超过澳大利亚的面积。</p>
+<p>首先，经度对畸变其实没什么影响，直接映射即可，如下图。我们需要处理的是纬度的问题。</p>
+<p><img src="https://uipv4.zywvvd.com:33030/HexoFiles/vvd_image_files/202410101122142.png" srcset="/img/loading.gif" lazyload alt=""></p>
+<p>将球面上的点经过一定的偏折，再映射到图像平面上。下图中（注意，此图是从上向下看的，图中的坐标轴与字母表示跟上图是不对应的，从这里开始是纬度，是经度），是一个常数，它表示线段AC（点A就是要映射的点）与出射光线的夹角，最大为3/4Π，论文以及本文代码中，将其设定为Π/2。实际上，如果光线不发生偏折，其映射结果是最精确的，但这需要一个无穷大的平面。偏折的意义在于将映射结果限定在一定范围内。</p>
+<p><img src="https://uipv4.zywvvd.com:33030/HexoFiles/vvd_image_files/202410101123806.png" srcset="/img/loading.gif" lazyload alt=""></p>
+<h4 id="Defisheye">Defisheye</h4>
+<p><a target="_blank" rel="noopener" href="https://github.com/duducosmos/defisheye">Defisheye</a> 是一个可以进行经纬度矫正的 Python 开源仓库。</p>
+<p><strong>安装</strong></p>
+<p>下载仓库代码：</p>
+<figure class="highlight vim"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs vim"><span class="hljs-keyword">python</span> setup.<span class="hljs-keyword">py</span> install<br></code></pre></td></tr></table></figure>
+<p>或者：</p>
+<figure class="highlight cmake"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs cmake">pip <span class="hljs-keyword">install</span> defisheye<br></code></pre></td></tr></table></figure>
+<p><strong>用法</strong></p>
+<figure class="highlight ebnf"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs ebnf"><span class="hljs-attribute">defisheyeapp</span><br></code></pre></td></tr></table></figure>
+<p><img src="https://uipv4.zywvvd.com:33030/HexoFiles/vvd_image_files/202410101128009.png" srcset="/img/loading.gif" lazyload alt=""></p>
+<p><strong>Python</strong> <strong>Code</strong></p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br></pre></td><td class="code"><pre><code class="hljs python"><span class="hljs-keyword">from</span> defisheye <span class="hljs-keyword">import</span> Defisheye<br><br>dtype = <span class="hljs-string">&#x27;linear&#x27;</span><br><span class="hljs-built_in">format</span> = <span class="hljs-string">&#x27;fullframe&#x27;</span><br>fov = <span class="hljs-number">180</span><br>pfov = <span class="hljs-number">120</span><br><br>img = <span class="hljs-string">&quot;./images/example3.jpg&quot;</span><br>img_out = <span class="hljs-string">f&quot;./images/out/example3_<span class="hljs-subst">&#123;dtype&#125;</span>_<span class="hljs-subst">&#123;<span class="hljs-built_in">format</span>&#125;</span>_<span class="hljs-subst">&#123;pfov&#125;</span>_<span class="hljs-subst">&#123;fov&#125;</span>.jpg&quot;</span><br><br>obj = Defisheye(img, dtype=dtype, <span class="hljs-built_in">format</span>=<span class="hljs-built_in">format</span>, fov=fov, pfov=pfov)<br><br><span class="hljs-comment"># To save image locally </span><br>obj.convert(outfile=img_out)<br><br><span class="hljs-comment"># To use the converted image in memory</span><br><br>new_image = obj.convert()<br></code></pre></td></tr></table></figure>
+<p><strong>结果示例</strong></p>
+<ul>
+<li>原始图像</li>
+</ul>
+<p><img src="https://uipv4.zywvvd.com:33030/HexoFiles/vvd_image_files/202410101129653.png" srcset="/img/loading.gif" lazyload alt=""></p>
+<p>pfov = 120</p>
+<p><strong>Equal area Circular</strong></p>
+<p><img src="https://uipv4.zywvvd.com:33030/HexoFiles/vvd_image_files/202410101129238.png" srcset="/img/loading.gif" lazyload alt=""></p>
+<p>更多内容可以直接去仓库查看。</p>
+<h3 id="参考资料">参考资料</h3>
+<ul>
+<li>
+<p><a target="_blank" rel="noopener" href="https://blog.csdn.net/sunnyrainflower/article/details/133522608">https://blog.csdn.net/sunnyrainflower/article/details/133522608</a></p>
+</li>
+<li>
+<p><a target="_blank" rel="noopener" href="https://docs.opencv.org/3.0.0/d2/d14/namespacecv_1_1fisheye.html">https://docs.opencv.org/3.0.0/d2/d14/namespacecv_1_1fisheye.html</a></p>
+</li>
+<li>
+<p><a target="_blank" rel="noopener" href="https://github.com/Leooncode/surround-view-system-introduction">https://github.com/Leooncode/surround-view-system-introduction</a></p>
+</li>
+<li>
+<p><a target="_blank" rel="noopener" href="https://github.com/duducosmos/defisheye">https://github.com/duducosmos/defisheye</a></p>
+</li>
+<li>
+<p><a target="_blank" rel="noopener" href="https://blog.csdn.net/Megurine_Luka_/article/details/110696972">https://blog.csdn.net/Megurine_Luka_/article/details/110696972</a></p>
+</li>
+</ul>
+<link rel="stylesheet" href="/css/spoiler.css" type="text/css"><script src="/js/spoiler.js" type="text/javascript" async></script>
+                
+
+
+				<br /><br />
+				<blockquote>
+					<p>文章链接：<br /> 
+					<a style="font-size: 0.85rem" target="_blank" rel="noopener" href="https://www.zywvvd.com/notes/study/camera-imaging/fisheye-cali/fisheye-cali/">https://www.zywvvd.com/notes/study/camera-imaging/fisheye-cali/fisheye-cali/</a>
+					</p>
+				</blockquote>
+
+
+              </div>
+            
+            <hr/>
+			
+			<!-- 添加打赏模块 -->
+			<div class="reward-container">
+				
+					<button id="rewardBtn" class="reward-btn">
+						 
+							❤ 打赏
+							
+					</button>
+					<p class="tea">“觉得不错的话，给点打赏吧 ୧(๑•̀⌄•́๑)૭”</p>
+					<div id="rewardImgContainer" class="reward-img-container">
+						<div class="singleImgContainer">
+							<img id="wechatImg" class="reward-img" src="https://uipv4.zywvvd.com:33030/HexoFiles/vvd_pc_upload/wechatpay.png" srcset="/img/loading.gif" lazyload alt="微信二维码">
+							<p class="wechatPay">微信支付</p>
+						</div>
+						<div class="singleImgContainer">
+							<img id="alipayImg" class="reward-img" src="https://uipv4.zywvvd.com:33030/HexoFiles/vvd_pc_upload/alipay.png" srcset="/img/loading.gif" lazyload alt="支付宝二维码">
+							<p class="aliPay">支付宝支付</p>
+						</div>
+					</div>
+				
+			</div>
+			
+            <div>
+              <div class="post-metas my-3">
+  
+    <div class="post-meta mr-3 d-flex align-items-center">
+      <i class="iconfont icon-category"></i>
+      
+
+<span class="category-chains">
+  
+  
+    
+      <span class="category-chain">
+        
+  <a href="/categories/Camera/" class="category-chain-item">Camera</a>
+  
+  
+
+      </span>
+    
+  
+</span>
+
+    </div>
+  
+  
+    <div class="post-meta">
+      <i class="iconfont icon-tags"></i>
+      
+        <a href="/tags/Camera/" class="print-no-link">#Camera</a>
+      
+    </div>
+  
+</div>
+
+
+              
+  
+
+  <div class="license-box my-3">
+    <div class="license-title">
+      <div>鱼眼相机畸变矫正</div>
+      <div>https://www.zywvvd.com/notes/study/camera-imaging/fisheye-cali/fisheye-cali/</div>
+    </div>
+    <div class="license-meta">
+      
+        <div class="license-meta-item">
+          <div>作者</div>
+          <div>Yiwei Zhang</div>
+        </div>
+      
+      
+        <div class="license-meta-item license-meta-date">
+          <div>发布于</div>
+          <div>2024年10月10日</div>
+        </div>
+      
+      
+      
+        <div class="license-meta-item">
+          <div>许可协议</div>
+          <div>
+            
+              
+              
+                <a class="print-no-link" target="_blank" href="https://creativecommons.org/licenses/by/4.0/">
+                  <span class="hint--top hint--rounded" aria-label="BY - 署名">
+                    <i class="iconfont icon-by"></i>
+                  </span>
+                </a>
+              
+            
+          </div>
+        </div>
+      
+    </div>
+    <div class="license-icon iconfont"></div>
+  </div>
+
+
+
+              
+                <div class="post-prevnext my-3">
+                  <article class="post-prev col-6">
+                    
+                    
+                      <a href="/notes/3d/registration/icp/" title="三维点云配准 -- ICP 算法">
+                        <i class="iconfont icon-arrowleft"></i>
+                        <span class="hidden-mobile">三维点云配准 -- ICP 算法</span>
+                        <span class="visible-mobile">上一篇</span>
+                      </a>
+                    
+                  </article>
+                  <article class="post-next col-6">
+                    
+                    
+                      <a href="/notes/study/camera-imaging/fisheye/fisheye/" title="鱼眼相机原理">
+                        <span class="hidden-mobile">鱼眼相机原理</span>
+                        <span class="visible-mobile">下一篇</span>
+                        <i class="iconfont icon-arrowright"></i>
+                      </a>
+                    
+                  </article>
+                </div>
+              
+            </div>
+
+            
+  
+  
+    <article id="comments" lazyload>
+      
+  <div id="waline"></div>
+  <script type="text/javascript">
+    Fluid.utils.loadComments('#waline', function() {
+      Fluid.utils.createCssLink('https://lib.baomitu.com/waline/2.14.8/waline.min.css')
+      Fluid.utils.createScript('https://lib.baomitu.com/waline/2.14.8/waline.min.js', function() {
+        var options = Object.assign(
+          {"serverURL":"https://uipv4.zywvvd.com:33033/","path":"window.location.pathname","meta":["nick","mail","link"],"requiredMeta":["nick"],"lang":"zh-CN","emoji":["https://cdn.jsdelivr.net/gh/walinejs/emojis/weibo"],"dark":"html[data-user-color-scheme=\"dark\"]","wordLimit":0,"pageSize":10,"reaction":true,"locale":{"placeholder":"山高路远，常来玩吖 ~","reactionTitle":null}},
+          {
+            el: '#waline',
+            path: window.location.pathname
+          }
+        )
+        Waline.init(options);
+        Fluid.utils.waitElementVisible('#waline .vcontent', () => {
+          var imgSelector = '#waline .vcontent img:not(.vemoji)';
+          Fluid.plugins.imageCaption(imgSelector);
+          Fluid.plugins.fancyBox(imgSelector);
+        })
+      });
+    });
+  </script>
+  <noscript>Please enable JavaScript to view the comments</noscript>
+
+
+    </article>
+  
+
+
+          </article>
+        </div>
+      </div>
+    </div>
+
+    <div class="side-col d-none d-lg-block col-lg-2">
+      
+  <aside class="sidebar" style="margin-left: -1rem">
+    <div id="toc">
+  <p class="toc-header">
+    <i class="iconfont icon-list"></i>
+    <span>目录</span>
+  </p>
+  <div class="toc-body" id="toc-body"></div>
+</div>
+
+
+
+  </aside>
+
+
+    </div>
+  </div>
+</div>
+
+
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+  
+  
+
+
+
+
+
+  <script>
+  Fluid.utils.createScript('https://lib.baomitu.com/mermaid/8.14.0/mermaid.min.js', function() {
+    mermaid.initialize({"theme":"default"});
+
+    Fluid.utils.listenDOMLoaded(function() {
+      Fluid.events.registerRefreshCallback(function() {
+        if ('mermaid' in window) {
+          mermaid.init();
+        }
+      });
+    });
+  });
+</script>
+
+
+
+
+
+
+    
+
+    
+      <a id="scroll-top-button" aria-label="TOP" href="#" role="button">
+        <i class="iconfont icon-xiangshangjiantou" aria-hidden="true"></i>
+      </a>
+    
+
+    
+      <div class="modal fade" id="modalSearch" tabindex="-1" role="dialog" aria-labelledby="ModalLabel"
+     aria-hidden="true">
+  <div class="modal-dialog modal-dialog-scrollable modal-lg" role="document">
+    <div class="modal-content">
+      <div class="modal-header text-center">
+        <h4 class="modal-title w-100 font-weight-bold">搜索</h4>
+        <button type="button" id="local-search-close" class="close" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body mx-3">
+        <div class="md-form mb-5">
+          <input type="text" id="local-search-input" class="form-control validate">
+          <label data-error="x" data-success="v" for="local-search-input">关键词</label>
+        </div>
+        <div class="list-group" id="local-search-result"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+    
+
+    
+  </main>
+
+  <footer>
+    <div class="footer-inner">
+  
+    <div class="footer-content">
+       <div class="vvd_footer" style="font-size: 0.85rem;"> <a href="https://hexo.io" target="_blank" rel="nofollow noopener" color="#d7d8d9" data-umami-event="Footer-Hexo"><span class="umami--click--Footer-Hexo">Hexo</span></a> <i class="iconfont icon-love"></i> <a href="https://github.com/fluid-dev/hexo-theme-fluid" target="_blank" rel="nofollow noopener" data-umami-event="Footer-Fluid"><span class="umami--click--Footer-Fluid">Fluid</span></a> <i class="iconfont icon-love"></i> <a href="https://uipv4.zywvvd.com:33039/share/0zx3o21oIpZTZqwC/%E5%8F%88%E8%A7%81%E8%8B%8D%E5%B2%9A" target="_blank" rel="nofollow noopener" data-umami-event="Footer-Umami"><span class="umami--click--Footer-Umami">Umami</span></a> <div style="font-size: 0.85rem;"> <span id="timeDate">载入天数...</span> <span id="times">载入时分秒...</span> <script src="/vvd_js/duration.js"></script> </div> <div style="font-size: 0.85rem;"> <span> 总访问量 <span style="color: #d7d8d9;" id="PVstatic">0</span> 次&nbsp</span> <span> 总访客数 <span style="color: #d7d8d9;" id="UVstatic">0</span> 人&nbsp</span> <span> 当前在线 <span style="color: #d7d8d9;" id="ACTstatic">0</span> 人&nbsp</span> <script src="https://uipv4.zywvvd.com:33037/statistics" defer></script> </div> <div> <span> Copyright © 2020-2024. All Rights Reserved.</span> </div> <div style="font-size: 0.85rem;"> <a target="_blank" rel="noopener" href="https://developer.hitokoto.cn/" id="hitokoto_text"><span style="color: #d7d8d9;"  id="hitokoto"></span></a> <script src="https://uipv4.zywvvd.com:33044/?encode=js&select=%23hitokoto" defer></script> </div> <a href="https://icp.gov.moe/?keyword=20230615" target="_blank">萌ICP备20230615号</a>
+
+
+</div> 
+    </div>
+  
+  
+  
+  
+</div>
+
+  </footer>
+
+  <!-- Scripts -->
+  
+  <script  src="https://lib.baomitu.com/nprogress/0.2.0/nprogress.min.js" ></script>
+  <link  rel="stylesheet" href="https://lib.baomitu.com/nprogress/0.2.0/nprogress.min.css" />
+
+  <script>
+    NProgress.configure({"showSpinner":false,"trickleSpeed":100})
+    NProgress.start()
+    window.addEventListener('load', function() {
+      NProgress.done();
+    })
+  </script>
+
+
+<script  src="https://lib.baomitu.com/jquery/3.6.0/jquery.min.js" ></script>
+<script  src="https://lib.baomitu.com/twitter-bootstrap/4.6.1/js/bootstrap.min.js" ></script>
+<script  src="/js/events.js" ></script>
+<script  src="/js/plugins.js" ></script>
+
+
+
+
+
+  
+    <script  src="/js/img-lazyload.js" ></script>
+  
+
+
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/tocbot/4.18.2/tocbot.min.js', function() {
+    var toc = jQuery('#toc');
+    if (toc.length === 0 || !window.tocbot) { return; }
+    var boardCtn = jQuery('#board-ctn');
+    var boardTop = boardCtn.offset().top;
+
+    window.tocbot.init(Object.assign({
+      tocSelector     : '#toc-body',
+      contentSelector : '.markdown-body',
+      linkClass       : 'tocbot-link',
+      activeLinkClass : 'tocbot-active-link',
+      listClass       : 'tocbot-list',
+      isCollapsedClass: 'tocbot-is-collapsed',
+      collapsibleClass: 'tocbot-is-collapsible',
+      scrollSmooth    : true,
+      includeTitleTags: true,
+      headingsOffset  : -boardTop,
+    }, CONFIG.toc));
+    if (toc.find('.toc-list-item').length > 0) {
+      toc.css('visibility', 'visible');
+    }
+
+    Fluid.events.registerRefreshCallback(function() {
+      if ('tocbot' in window) {
+        tocbot.refresh();
+        var toc = jQuery('#toc');
+        if (toc.length === 0 || !tocbot) {
+          return;
+        }
+        if (toc.find('.toc-list-item').length > 0) {
+          toc.css('visibility', 'visible');
+        }
+      }
+    });
+  });
+</script>
+
+
+  <script src=https://lib.baomitu.com/clipboard.js/2.0.10/clipboard.min.js></script>
+
+  <script>Fluid.plugins.codeWidget();</script>
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/anchor-js/4.3.1/anchor.min.js', function() {
+    window.anchors.options = {
+      placement: CONFIG.anchorjs.placement,
+      visible  : CONFIG.anchorjs.visible
+    };
+    if (CONFIG.anchorjs.icon) {
+      window.anchors.options.icon = CONFIG.anchorjs.icon;
+    }
+    var el = (CONFIG.anchorjs.element || 'h1,h2,h3,h4,h5,h6').split(',');
+    var res = [];
+    for (var item of el) {
+      res.push('.markdown-body > ' + item.trim());
+    }
+    if (CONFIG.anchorjs.placement === 'left') {
+      window.anchors.options.class = 'anchorjs-link-left';
+    }
+    window.anchors.add(res.join(', '));
+
+    Fluid.events.registerRefreshCallback(function() {
+      if ('anchors' in window) {
+        anchors.removeAll();
+        var el = (CONFIG.anchorjs.element || 'h1,h2,h3,h4,h5,h6').split(',');
+        var res = [];
+        for (var item of el) {
+          res.push('.markdown-body > ' + item.trim());
+        }
+        if (CONFIG.anchorjs.placement === 'left') {
+          anchors.options.class = 'anchorjs-link-left';
+        }
+        anchors.add(res.join(', '));
+      }
+    });
+  });
+</script>
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/fancybox/3.5.7/jquery.fancybox.min.js', function() {
+    Fluid.plugins.fancyBox();
+  });
+</script>
+
+
+  <script>Fluid.plugins.imageCaption();</script>
+
+  
+      <script>
+        if (!window.MathJax) {
+          window.MathJax = {
+            tex    : {
+              inlineMath: { '[+]': [['$', '$']] }
+            },
+            options: {
+              renderActions: {
+                insertedScript: [200, () => {
+                  document.querySelectorAll('mjx-container').forEach(node => {
+                    let target = node.parentNode;
+                    if (target.nodeName.toLowerCase() === 'li') {
+                      target.parentNode.classList.add('has-jax');
+                    }
+                  });
+                }, '', false]
+              }
+            }
+          };
+        } else {
+          MathJax.startup.document.state(0);
+          MathJax.texReset();
+          MathJax.typeset();
+          MathJax.typesetPromise();
+        }
+
+        Fluid.events.registerRefreshCallback(function() {
+          if ('MathJax' in window && MathJax.startup.document && typeof MathJax.startup.document.state === 'function') {
+            MathJax.startup.document.state(0);
+            MathJax.texReset();
+            MathJax.typeset();
+            MathJax.typesetPromise();
+          }
+        });
+      </script>
+    
+
+  <script  src="https://lib.baomitu.com/mathjax/3.2.1/es5/tex-mml-chtml.js" ></script>
+
+  <script defer src="/js/leancloud.js" ></script>
+
+  <script  src="/js/local-search.js" ></script>
+
+
+
+
+  
+<script src="//cdn.jsdelivr.net/npm/aplayer/dist/APlayer.min.js"></script>
+<script src="//cdn.jsdelivr.net/gh/metowolf/MetingJS@1.2/dist/Meting.min.js"></script>
+<script src="/js/reward.js"></script>
+
+
+
+<!-- 主题的启动项，将它保持在最底部 -->
+<!-- the boot of the theme, keep it at the bottom -->
+<script  src="/js/boot.js" ></script>
+
+
+  <script type="text/javascript">
+    /*窗口监视*/
+    var originalTitle = document.title;
+    window.onblur = function(){document.title = "明眸如初"};
+    window.onfocus = function(){document.title = originalTitle};
+  </script>
+
+
+  <div id="tooltip-rightmenu" class="tooltip-rightmenu">如需原始右键菜单请按下 <strong>Ctrl+右键</strong></div>
+
+<div id="rightmenu-wrapper" style="">
+  <ul class="list-v rightmenu" id="rightmenu-content">
+	  <li class="navigation menuNavigation-Content">
+		<a class="nav icon-only fix-cursor-default" onclick="history.back()"><i class="iconfont icon-zuojiantou1"></i></a>
+		<a class="nav icon-only fix-cursor-default" onclick="history.forward()"><i class="iconfont icon-youjiantou1"></i></a>
+		<a class="nav icon-only fix-cursor-default" onclick="window.location.reload()"><i class="iconfont icon-shuaxin"></i></a>
+		<a  aria-label="TOP" href="#" role="button"><i class="iconfont icon-xiangshang"></i></a>
+	  </li>
+
+		<hr class="menuLoad-Content" style="display: block;">
+	  <li class="menuLoad-Content" style="display: block;">
+		<a class="vlts-menu fix-cursor-default" target="_self" href="javascript:;" data-toggle="modal" data-target="#modalSearch" aria-label="Search">
+		  <span>
+			  <i class="iconfont icon-sousuo1 rightmenu-icon"></i>
+			  站内搜索
+		  </span>
+		</a>
+	  </li>
+
+	  <li class="menuLoad-Content" style="display: block;">
+		<a class="vlts-menu fix-cursor-default"  href="https://www.zywvvd.com/messagebd/" data-group="link">
+		  <span>
+			  <i class="iconfont icon-yangshi_icon_tongyong_chat rightmenu-icon">  </i>
+			   留言吐槽 
+		   </span>
+		</a>
+	  </li>
+
+
+	  <li class="menuLoad-Content" style="display: block;">
+		<a class="vlts-menu fix-cursor-default" id="help" target="_blank" rel="noopener" href="https://www.foreverblog.cn/go.html" data-group="link">
+		<span>
+			  <i class="iconfont icon-a-BlackHole rightmenu-icon"></i>
+			  虫洞穿梭
+		  </span>
+		</a>
+	  </li>
+
+	<a id="scroll-top-button" aria-label="TOP" href="#" role="button" style="bottom: 20px; right: 52.6364px;">
+        <i class="iconfont icon-xiangshangjiantou" aria-hidden="true"></i>
+      </a>
+
+	<hr class="menuLoad-Content" style="display: block;">
+	
+	  <li class="menuLoad-Content" style="display: block;">
+		<a class="vlts-menu fix-cursor-default" id="destroy-airplane" target="_blank" rel="noopener"  data-group="link">
+		<span>
+			  <i class="iconfont icon-feiji rightmenu-icon"></i>
+			  破坏小飞机
+		  </span>
+		</a>
+	  </li>
+  </ul>
+</div>
+
+<script>
+	var ua = navigator.userAgent;
+	var ipad = ua.match(/(iPad).*OS\s([\d_]+)/),
+		isIphone = !ipad && ua.match(/(iPhone\sOS)\s([\d_]+)/),
+		isAndroid = ua.match(/(Android)\s+([\d.]+)/),
+		isMobile = isIphone || isAndroid;
+
+	if(!isMobile) {
+		// 为按钮添加事件处理器
+		document.getElementById('destroy-airplane').onclick = function() {
+		  console.log('飞机起飞！');
+		  // 定义要执行的JavaScript代码
+		var KICKASSVERSION='2.0';
+		var s = document.createElement('script');
+		s.type='text/javascript';
+		document.body.appendChild(s);
+		s.src='https://uipv4.zywvvd.com:33030/HexoFiles/js/games/airplane/airplane.js';
+		void(0);
+		};
+	}
+</script>
+
+
+
+
+
+<link href="/css/custom.css"type="text/css"rel="stylesheet"/>
+<script src="/vvd_js/right_menu.js" type="text/javascript"></script>
+<link href="/css/right_menu.css"type="text/css"rel="stylesheet"/>
+<script src="/vvd_js/go.js"></script>
+
+
+  <noscript>
+    <div class="noscript-warning">博客在允许 JavaScript 运行的环境下浏览效果更佳</div>
+  </noscript>
+<script src="/live2dw/lib/L2Dwidget.min.js?094cbace49a39548bed64abff5988b05"></script><script>L2Dwidget.init({"pluginRootPath":"live2dw/","pluginJsPath":"lib/","pluginModelPath":"assets/","tagMode":false,"log":false,"model":{"jsonPath":"/live2dw/assets/z16.model.json"},"display":{"position":"left","width":200,"height":400},"mobile":{"show":false},"react":{"opacity":0.9}});</script></body>
+</html>

@@ -1,0 +1,1598 @@
+
+
+<!DOCTYPE html>
+<html lang="zh-CN" data-default-color-scheme=auto>
+
+
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="baidu-site-verification" content="codeva-rLWafCJGYc" />
+  <link rel="apple-touch-icon" sizes="76x76" href="/image/avatar.png">
+  <link rel="icon" href="/image/avatar.png">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, shrink-to-fit=no">
+  <meta http-equiv="x-ua-compatible" content="ie=edge">
+  
+  <meta name="theme-color" content="#2f4154">
+  <meta name="author" content="Yiwei Zhang">
+  <meta name="keywords" content="人工智能, 深度学习, 个人博客, 机器学习">
+  
+    <meta name="description" content="语义分割是自动驾驶汽车理解周围场景的关键技术, 更高分割精度和更快的速度一直是分割领域不断追寻的目标，本文介绍 2021 年的分割网络 DDRNet。">
+<meta property="og:type" content="article">
+<meta property="og:title" content="实时语义分割 DDRNet">
+<meta property="og:url" content="https://www.zywvvd.com/notes/study/deep-learning/segmentation/ddrnet/ddrnet/index.html">
+<meta property="og:site_name" content="又见苍岚">
+<meta property="og:description" content="语义分割是自动驾驶汽车理解周围场景的关键技术, 更高分割精度和更快的速度一直是分割领域不断追寻的目标，本文介绍 2021 年的分割网络 DDRNet。">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="https://uipv4.zywvvd.com:33030/HexoFiles/vvd_image_files/202405280945152.png">
+<meta property="og:image" content="https://uipv4.zywvvd.com:33030/HexoFiles/vvd_image_files/202405280946883.png">
+<meta property="og:image" content="https://uipv4.zywvvd.com:33030/HexoFiles/vvd_image_files/202405280947481.png">
+<meta property="og:image" content="https://uipv4.zywvvd.com:33030/HexoFiles/vvd_image_files/202405280948303.png">
+<meta property="og:image" content="https://uipv4.zywvvd.com:33030/HexoFiles/vvd_image_files/202405280949657.png">
+<meta property="article:published_time" content="2024-05-28T01:30:19.000Z">
+<meta property="article:modified_time" content="2024-05-28T02:05:04.910Z">
+<meta property="article:author" content="Yiwei Zhang">
+<meta property="article:tag" content="Deep_Learning">
+<meta property="article:tag" content="Segmentation">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:image" content="https://uipv4.zywvvd.com:33030/HexoFiles/vvd_image_files/202405280945152.png">
+  
+  
+  
+  <title>实时语义分割 DDRNet - 又见苍岚</title>
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/twitter-bootstrap/4.6.1/css/bootstrap.min.css" />
+
+
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/github-markdown-css/4.0.0/github-markdown.min.css" />
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/hint.css/2.7.0/hint.min.css" />
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/fancybox/3.5.7/jquery.fancybox.min.css" />
+
+
+
+<!-- 主题依赖的图标库，不要自行修改 -->
+<!-- Do not modify the link that theme dependent icons -->
+
+<link rel="stylesheet" href="//at.alicdn.com/t/font_1749284_hj8rtnfg7um.css">
+
+
+
+<link rel="stylesheet" href="//at.alicdn.com/t/font_1736178_lbnruvf0jn.css">
+
+
+<link  rel="stylesheet" href="/css/main.css" />
+
+
+  <link id="highlight-css" rel="stylesheet" href="/css/highlight.css" />
+  
+    <link id="highlight-css-dark" rel="stylesheet" href="/css/highlight-dark.css" />
+  
+
+
+
+  
+<link rel="stylesheet" href="/css/custom.css">
+<link rel="stylesheet" href="/css/reward.css">
+<link rel="stylesheet" href="//cdn.jsdelivr.net/npm/aplayer/dist/APlayer.min.css">
+
+
+
+  <script id="fluid-configs">
+    var Fluid = window.Fluid || {};
+    Fluid.ctx = Object.assign({}, Fluid.ctx)
+    var CONFIG = {"hostname":"www.zywvvd.com","root":"/","version":"1.9.7","typing":{"enable":true,"typeSpeed":90,"cursorChar":"_","loop":false,"scope":["home"]},"anchorjs":{"enable":true,"element":"h1,h2,h3,h4,h5,h6","placement":"left","visible":"hover","icon":""},"progressbar":{"enable":true,"height_px":3,"color":"#29d","options":{"showSpinner":false,"trickleSpeed":100}},"code_language":{"enable":true,"default":"TEXT"},"copy_btn":true,"image_caption":{"enable":true},"image_zoom":{"enable":true,"img_url_replace":["",""]},"toc":{"enable":true,"placement":"right","headingSelector":"h1,h2,h3,h4,h5,h6","collapseDepth":0},"lazyload":{"enable":true,"loading_img":"/img/loading.gif","onlypost":false,"offset_factor":2},"web_analytics":{"enable":true,"follow_dnt":true,"baidu":null,"google":null,"tencent":{"sid":null,"cid":null},"woyaola":null,"cnzz":null,"leancloud":{"app_id":"Cv0XNeBSBdAPAIuVj3PsyM3R-MdYXbMMI","app_key":"4PU1rNlGrqXWzhfW3dgq98oX","server_url":null,"path":"window.location.pathname","ignore_local":false},"gtag":null},"search_path":"/local-search.xml","include_content_in_search":true};
+
+    if (CONFIG.web_analytics.follow_dnt) {
+      var dntVal = navigator.doNotTrack || window.doNotTrack || navigator.msDoNotTrack;
+      Fluid.ctx.dnt = dntVal && (dntVal.startsWith('1') || dntVal.startsWith('yes') || dntVal.startsWith('on'));
+    }
+  </script>
+  <script  src="/js/utils.js" ></script>
+  <script  src="/js/color-schema.js" ></script>
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+    
+  
+
+
+
+  
+<meta name="generator" content="Hexo 7.2.0"><link rel="alternate" href="/atom.xml" title="又见苍岚" type="application/atom+xml">
+</head>
+
+
+<body>
+  
+<div id="Loadanimation" style="z-index:999999;">
+<div id="Loadanimation-center">
+   <div id="Loadanimation-center-absolute">
+       <div class="xccx_object" id="xccx_four"></div>
+       <div class="xccx_object" id="xccx_three"></div>
+       <div class="xccx_object" id="xccx_two"></div>
+       <div class="xccx_object" id="xccx_one"></div>
+   </div>
+</div>
+</div>
+
+<link href="/css/loading.css"type="text/css"rel="stylesheet"/>
+
+
+
+
+
+
+<div>
+	<div class='real_mask' style="
+		background-color: rgba(0,0,0,0.4);
+		width: 100%;
+		height: 100%;
+		position: fixed;
+		z-index: -777;
+	"></div>
+	<div id="banner_video_insert">
+	</div>	
+	<div id='vvd_banner_img'>
+	</div>
+</div>
+<div id="banner"></div>
+
+
+
+
+
+
+
+  <header>
+    
+
+<div class="header-inner" style="height: 80vh;">
+  <nav id="navbar" class="navbar fixed-top  navbar-expand-lg navbar-dark scrolling-navbar">
+  <div class="container">
+    <a class="navbar-brand" href="/">
+      <strong>CangLan</strong>
+    </a>
+
+    <button id="navbar-toggler-btn" class="navbar-toggler" type="button" data-toggle="collapse"
+            data-target="#navbarSupportedContent"
+            aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
+      <div class="animated-icon"><span></span><span></span><span></span></div>
+    </button>
+
+    <!-- Collapsible content -->
+    <div class="collapse navbar-collapse" id="navbarSupportedContent">
+      <ul class="navbar-nav ml-auto text-center">
+        
+          
+          
+          
+          
+            <li class="nav-item">
+		<div >
+		      <a class="nav-link" href="/" target="_self" data-umami-event="Navigation-Homepage">
+
+		        <i class="iconfont icon-home-fill"></i>
+		        <span>首页</span>
+		      </a>
+		</div>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item dropdown">
+              <a class="nav-link dropdown-toggle" target="_self" href="javascript:;" role="button"
+                 data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                <i class="iconfont icon-shuji1"></i>
+                <span>文章</span>
+              </a>
+              <div class="dropdown-menu" aria-labelledby="navbarDropdown">
+                
+                  
+                  
+                  
+		<div >
+
+                  <a class="dropdown-item" href="/archives/" target="_self" data-umami-event="Navigation-Archive">
+
+                    <i class="iconfont icon-archive-fill"></i>
+                    <span>归档</span>
+                  </a>
+		</div>
+                
+                  
+                  
+                  
+		<div >
+
+                  <a class="dropdown-item" href="/categories/" target="_self" data-umami-event="Navigation-Category">
+
+                    <i class="iconfont icon-category-fill"></i>
+                    <span>分类</span>
+                  </a>
+		</div>
+                
+                  
+                  
+                  
+		<div >
+
+                  <a class="dropdown-item" href="/tags/" target="_self" data-umami-event="Navigation-Tag">
+
+                    <i class="iconfont icon-tags-fill"></i>
+                    <span>标签</span>
+                  </a>
+		</div>
+                
+                  
+                  
+                  
+		<div >
+
+                  <a class="dropdown-item" href="/shuoshuo/" target="_self" data-umami-event="Navigation-Shuoshuo">
+
+                    <i class="iconfont icon-24gf-bubblesDots4"></i>
+                    <span>说说</span>
+                  </a>
+		</div>
+                
+              </div>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item dropdown">
+              <a class="nav-link dropdown-toggle" target="_self" href="javascript:;" role="button"
+                 data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                <i class="iconfont icon-momo"></i>
+                <span>社交</span>
+              </a>
+              <div class="dropdown-menu" aria-labelledby="navbarDropdown">
+                
+                  
+                  
+                  
+		<div >
+
+                  <a class="dropdown-item" href="/links/" target="_self" data-umami-event="Navigation-Friends">
+
+                    <i class="iconfont icon-link-fill"></i>
+                    <span>友链</span>
+                  </a>
+		</div>
+                
+                  
+                  
+                  
+		<div >
+
+                  <a class="dropdown-item" href="/messagebd/" target="_self" data-umami-event="Navigation-MessageBoard">
+
+                    <i class="iconfont icon-comment"></i>
+                    <span>留言板</span>
+                  </a>
+		</div>
+                
+                  
+                  
+                  
+		<div >
+
+                  <a class="dropdown-item" href="/atom.xml" target="_self" data-umami-event="Navigation-RSS">
+
+                    <i class="iconfont icon-dingyue"></i>
+                    <span>RSS订阅</span>
+                  </a>
+		</div>
+                
+                  
+                  
+                  
+		<div >
+
+                  <a class="dropdown-item" href="/reccomments/" target="_self" data-umami-event="Navigation-Recent-Comments">
+
+                    <i class="iconfont icon-icon-pinglunguanli-pinglunliebiao"></i>
+                    <span>近期评论</span>
+                  </a>
+		</div>
+                
+              </div>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item dropdown">
+              <a class="nav-link dropdown-toggle" target="_self" href="javascript:;" role="button"
+                 data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                <i class="iconfont icon-user-fill"></i>
+                <span>个人</span>
+              </a>
+              <div class="dropdown-menu" aria-labelledby="navbarDropdown">
+                
+                  
+                  
+                  
+		<div >
+
+                  <a class="dropdown-item" href="/about/" target="_self" data-umami-event="Navigation-AboutMe">
+
+                    <i class="iconfont icon-guanyuwomen"></i>
+                    <span>关于</span>
+                  </a>
+		</div>
+                
+                  
+                  
+                  
+		<div >
+
+                  <a class="dropdown-item" href="/playlist/" target="_self" data-umami-event="Navigation-Music">
+
+                    <i class="iconfont icon-music"></i>
+                    <span>歌单</span>
+                  </a>
+		</div>
+                
+                  
+                  
+                  
+		<div >
+
+                  <a class="dropdown-item" href="https://uipv4.zywvvd.com:33035" target="_self" data-umami-event="Navigation-Nextcloud">
+
+                    <i class="iconfont icon-xuniyingpan"></i>
+                    <span>网盘</span>
+                  </a>
+		</div>
+                
+                  
+                  
+                  
+		<div >
+
+                  <a class="dropdown-item" href="https://uipv4.zywvvd.com:38920" target="_self" data-umami-event="Navigation-Emby">
+
+                    <i class="iconfont icon-meiti"></i>
+                    <span>影院</span>
+                  </a>
+		</div>
+                
+                  
+                  
+                  
+		<div >
+
+                  <a class="dropdown-item" href="https://uipv4.zywvvd.com:33036" target="_self" data-umami-event="Navigation-OneDev">
+
+                    <i class="iconfont icon-git"></i>
+                    <span>仓库</span>
+                  </a>
+		</div>
+                
+                  
+                  
+                  
+		<div >
+
+                  <a class="dropdown-item" href="https://uipv4.zywvvd.com:33041" target="_self" data-umami-event="Navigation-Wiki">
+
+                    <i class="iconfont icon-wiki"></i>
+                    <span>百科</span>
+                  </a>
+		</div>
+                
+              </div>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item dropdown">
+              <a class="nav-link dropdown-toggle" target="_self" href="javascript:;" role="button"
+                 data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                <i class="iconfont icon-ic_fly"></i>
+                <span>导航</span>
+              </a>
+              <div class="dropdown-menu" aria-labelledby="navbarDropdown">
+                
+                  
+                  
+                  
+		<div >
+
+                  <a class="dropdown-item" href="/site-map/" target="_self" data-umami-event="Navigation-SiteMap">
+
+                    <i class="iconfont icon-lianjie"></i>
+                    <span>链接</span>
+                  </a>
+		</div>
+                
+                  
+                  
+                  
+		<div >
+
+                  <a class="dropdown-item" href="/nodeppt/hexo/snavigation/" target="_self" data-umami-event="Navigation-Search">
+
+                    <i class="iconfont icon-sousuo"></i>
+                    <span>搜索</span>
+                  </a>
+		</div>
+                
+              </div>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item dropdown">
+              <a class="nav-link dropdown-toggle" target="_self" href="javascript:;" role="button"
+                 data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                <i class="iconfont icon-wangzhan"></i>
+                <span>站点</span>
+              </a>
+              <div class="dropdown-menu" aria-labelledby="navbarDropdown">
+                
+                  
+                  
+                  
+		<div >
+
+                  <a class="dropdown-item" href="https://uipv4.zywvvd.com:33039/share/0zx3o21oIpZTZqwC/%E5%8F%88%E8%A7%81%E8%8B%8D%E5%B2%9A" target="_self" data-umami-event="Navigation-Umami">
+
+                    <i class="iconfont icon-tongji2"></i>
+                    <span>站点分析</span>
+                  </a>
+		</div>
+                
+                  
+                  
+                  
+		<div >
+
+                  <a class="dropdown-item" href="/earth_sta/" target="_self" data-umami-event="Navigation-Globe">
+
+                    <i class="iconfont icon-tongjifenxi-xiangmubiaogetongji"></i>
+                    <span>访问统计</span>
+                  </a>
+		</div>
+                
+                  
+                  
+                  
+		<div >
+
+                  <a class="dropdown-item" href="https://uipv4.zywvvd.com:33034/status/show" target="_self" data-umami-event="Navigation-Monitor">
+
+                    <i class="iconfont icon-jiankong"></i>
+                    <span>站点监控</span>
+                  </a>
+		</div>
+                
+              </div>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item dropdown">
+              <a class="nav-link dropdown-toggle" target="_self" href="javascript:;" role="button"
+                 data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                <i class="iconfont icon-chuansong"></i>
+                <span>传送</span>
+              </a>
+              <div class="dropdown-menu" aria-labelledby="navbarDropdown">
+                
+                  
+                  
+                  
+		<div >
+
+                  <a class="dropdown-item" href="https://www.foreverblog.cn/go.html" target="_self" data-umami-event="Navigation-ForeverBolg">
+
+                    <i class="iconfont icon-a-BlackHole"></i>
+                    <span>十年之约</span>
+                  </a>
+		</div>
+                
+                  
+                  
+                  
+		<div >
+
+                  <a class="dropdown-item" href="https://www.travellings.cn/go.html" target="_self" data-umami-event="Navigation-DriveTo">
+
+                    <i class="iconfont icon-train1"></i>
+                    <span>开往</span>
+                  </a>
+		</div>
+                
+                  
+                  
+                  
+		<div >
+
+                  <a class="dropdown-item" href="https://bf.zzxworld.com/" target="_self" data-umami-event="Navigation-BlogFinder">
+
+                    <i class="iconfont icon-icon-"></i>
+                    <span>BlogFinder</span>
+                  </a>
+		</div>
+                
+              </div>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item dropdown">
+              <a class="nav-link dropdown-toggle" target="_self" href="javascript:;" role="button"
+                 data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                <i class="iconfont icon-gongju"></i>
+                <span>工具</span>
+              </a>
+              <div class="dropdown-menu" aria-labelledby="navbarDropdown">
+                
+                  
+                  
+                  
+		<div >
+
+                  <a class="dropdown-item" href="/navigates/calculator" target="_self" data-umami-event="Navigation-Calculator">
+
+                    <i class="iconfont icon-jisuan"></i>
+                    <span>计算器</span>
+                  </a>
+		</div>
+                
+                  
+                  
+                  
+		<div >
+
+                  <a class="dropdown-item" href="/navigates/webgraphviz" target="_self" data-umami-event="Navigation-WebGtaphviz">
+
+                    <i class="iconfont icon-tongyong-huatugongju2"></i>
+                    <span>Graphviz</span>
+                  </a>
+		</div>
+                
+              </div>
+            </li>
+          
+        
+        
+          <li class="nav-item" id="search-btn">
+            <a class="nav-link" target="_self" href="javascript:;" data-toggle="modal" data-target="#modalSearch" aria-label="Search">
+              <i class="iconfont icon-search"></i>
+            </a>
+          </li>
+          
+        
+        
+          <li class="nav-item" id="color-toggle-btn">
+            <a class="nav-link" target="_self" href="javascript:;" aria-label="Color Toggle">
+              <i class="iconfont icon-dark" id="color-toggle-icon"></i>
+            </a>
+          </li>
+        
+      </ul>
+    </div>
+  </div>
+</nav>
+
+  
+
+<div id="banner" class="banner" parallax=true
+     style="background: url('https://uipv4.zywvvd.com:33030/HexoFiles/new/bg-trans.png') no-repeat center center; background-size: cover;">
+  <div class="full-bg-img">
+    <div class="mask flex-center" style="background-color: rgba(0, 0, 0, 0)">
+      <div class="banner-text text-center fade-in-up">
+        <div class="h2">
+          
+            <span id="subtitle">实时语义分割 DDRNet</span>
+          
+        </div>
+
+        
+          
+  <div class="mt-3">
+    
+      <span class="post-meta mr-2">
+        <i class="iconfont icon-author" aria-hidden="true"></i>
+        Yiwei Zhang
+      </span>
+    
+    
+      <span class="post-meta">
+        <i class="iconfont icon-date-fill" aria-hidden="true"></i>
+        <time datetime="2024-05-28 09:30" pubdate>
+          2024年5月28日 上午
+        </time>
+      </span>
+    
+  </div>
+
+  <div class="mt-1">
+    
+      <span class="post-meta mr-2">
+        <i class="iconfont icon-chart"></i>
+        
+          <!-- compatible with older versions-->
+          4.6k 字
+        
+      </span>
+    
+
+    
+      <span class="post-meta mr-2">
+        <i class="iconfont icon-clock-fill"></i>
+        
+        
+        
+          <!-- compatible with older versions-->
+          39 分钟
+        
+      </span>
+    
+
+    
+    
+      
+        <span id="vvdpost_container_page_pvuv" style="display: none">
+          <i class="iconfont icon-eye" aria-hidden="true"></i>
+          <span id="vvdpost_value_page_pv">0</span> 次&nbsp&nbsp
+		  <i class="iconfont icon-users" aria-hidden="true"></i>
+		  <span id="vvdpost_value_page_uv">0</span> 人&nbsp&nbsp
+		  <i class="iconfont icon-comment" aria-hidden="true"></i>
+		  <span id="vvdpost_value_page_cn">0</span> 条
+        </span>
+
+		<script>
+			console.log(window.location.pathname)
+			var httpRequest = new XMLHttpRequest();
+			httpRequest.open('POST', 'https://uipv4.zywvvd.com:33037/poststats', true);
+			httpRequest.setRequestHeader("Content-type","application/json");
+			httpRequest.send(JSON.stringify(window.location.pathname));
+			httpRequest.onreadystatechange = function () {//请求后的回调接口，可将请求成功后要执行的程序写在其中
+				if (httpRequest.readyState == 4 && httpRequest.status == 200) {//验证请求是否发送成功
+					var json = httpRequest.responseText;//获取到服务端返回的数据
+					var obj = JSON.parse(json);
+					var pvCtn = document.querySelector('#vvdpost_container_page_pvuv');
+					if (pvCtn) {
+						var pv_ele = document.querySelector('#vvdpost_value_page_pv');
+						var uv_ele = document.querySelector('#vvdpost_value_page_uv');
+						var cn_ele = document.querySelector('#vvdpost_value_page_cn');
+
+						if (uv_ele && uv_ele) {
+							pv_ele.innerText = obj.pv;
+							uv_ele.innerText = obj.uv;
+							cn_ele.innerText = obj.cn;
+							pvCtn.style.display = 'inline';
+							}
+						}
+					}
+			};
+		</script>
+      
+    
+  </div>
+
+
+        
+      </div>
+
+      
+        <div class="scroll-down-bar">
+          <i class="iconfont icon-arrowdown"></i>
+        </div>
+      
+    </div>
+  </div>
+</div>
+
+</div>
+
+
+	<script type="text/javascript" src="/vvd_js/jquery.js"></script>
+	<script async src="https://uipv4.zywvvd.com:33039/script.js" data-website-id="dd4a05c6-dde2-4743-9c3a-a79d6bee0778"></script>
+	<div class="banner" id='banner' >
+
+		<div class="full-bg-img" >
+
+			
+				<script>
+					var ua = navigator.userAgent;
+					var ipad = ua.match(/(iPad).*OS\s([\d_]+)/),
+						isIphone = !ipad && ua.match(/(iPhone\sOS)\s([\d_]+)/),
+						isAndroid = ua.match(/(Android)\s+([\d.]+)/),
+						isMobile = isIphone || isAndroid;
+
+					function set_video_attr(id){
+						var height = document.body.clientHeight
+						var width = document.body.clientWidth
+						var video_item = document.getElementById(id);
+
+						if (height / width < 0.56){
+							video_item.setAttribute('width', '100%');
+							video_item.setAttribute('height', 'auto');
+						} else {
+							video_item.setAttribute('height', '100%');
+							video_item.setAttribute('width', 'auto');
+						}
+					}
+
+					fetch('https://uipv4.zywvvd.com:33037/wallpaper-pair')
+					  .then(response => response.json()) // 解析JSON数据
+					  .then(data => {
+						console.log('获取链接成功');
+						video_url = data[0][0]
+						pre_show_image_url = data[0][1]
+
+						banner_obj = document.getElementById("banner")
+						banner_obj.style.cssText = "background: url('" + pre_show_image_url + "') no-repeat;"
+
+						vvd_banner_obj = document.getElementById("vvd_banner_img")
+						vvd_banner_content = "<img id='banner_img_item' src='" + pre_show_image_url + "'style='position: fixed; z-index: -999'>"
+						vvd_banner_obj.innerHTML = vvd_banner_content 
+
+						if (!isMobile) {
+							video_html_res = "<video id='video_item' style='position: fixed; z-index: -888;'  muted='muted' src=" + video_url + " autoplay='autoplay' loop='loop'></video>"
+							document.getElementById("banner_video_insert").innerHTML = video_html_res;
+							set_video_attr('video_item')
+							set_video_attr('banner_img_item')
+						}
+					    
+					  })
+					  .catch((error) => {
+					    console.error('请求失败,尝试本地获取背景图像：', error);
+	    					$.getJSON('/vvd_js/video_url.json', function(data){
+
+							var video_list_length = data.length
+							var seed = Math.random()
+							index = Math.floor(seed * video_list_length)
+
+							video_url = data[index][0]
+							pre_show_image_url = data[index][1]
+
+							banner_obj = document.getElementById("banner")
+							banner_obj.style.cssText = "background: url('" + pre_show_image_url + "') no-repeat;"
+
+							vvd_banner_obj = document.getElementById("vvd_banner_img")
+							vvd_banner_content = "<img id='banner_img_item' src='" + pre_show_image_url + "'style='position: fixed; z-index: -999'>"
+							vvd_banner_obj.innerHTML = vvd_banner_content 
+
+							if (!isMobile) {
+								video_html_res = "<video id='video_item' style='position: fixed; z-index: -888;'  muted='muted' src=" + video_url + " autoplay='autoplay' loop='loop'></video>"
+								document.getElementById("banner_video_insert").innerHTML = video_html_res;
+								set_video_attr('video_item')
+								set_video_attr('banner_img_item')
+							}
+						});
+					  });
+
+
+
+
+
+
+					if (!isMobile){
+						window.onresize = function(){
+							set_video_attr('video_item')
+							set_video_attr('banner_img_item')
+							}
+						}
+				</script>
+
+			
+
+
+			
+			</div>
+		</div>
+    </div>
+
+  </header>
+
+  <main>
+    
+      
+
+
+
+<div class="container-fluid nopadding-x">
+  <div class="row nomargin-x">
+    <div class="side-col d-none d-lg-block col-lg-2">
+      
+
+    </div>
+
+    <div class="col-lg-8 nopadding-x-md">
+      <div class="container nopadding-x-md" id="board-ctn">
+        <div id="board">
+          <article class="post-content mx-auto">
+
+            <!-- <h1 id="seo-header">实时语义分割 DDRNet</h1> -->
+
+            
+              <p id="updated-time" class="note note-info" style="">
+                
+                  
+                    <!-- compatible with older versions-->
+                    本文最后更新于：2024年5月28日 上午
+                  
+                
+              </p>
+            
+            
+              <div class="markdown-body">
+                
+                <blockquote>
+<p>语义分割是自动驾驶汽车理解周围场景的关键技术, 更高分割精度和更快的速度一直是分割领域不断追寻的目标，本文介绍 2021 年的分割网络 DDRNet。</p>
+</blockquote>
+<span id="more"></span>
+<p>原始论文：<a target="_blank" rel="noopener" href="https://arxiv.org/abs/2101.06085">https://arxiv.org/abs/2101.06085</a></p>
+<h3 id="摘要">摘要</h3>
+<p>语义分割是自动驾驶汽车理解周围场景的关键技术。现代模型的吸引力表现通常是以繁重的计算和漫长的推理时间为代价的，这对于自动驾驶来说是无法忍受的。使用轻量级架构（编码器-解码器或双通道）或对低分辨率图像进行推理，最近的方法实现了非常快速的场景解析，甚至在单个1080Ti GPU上以超过100fps的速度运行。然而，这些实时方法与基于dilation backbones的模型在性能上仍有很大差距。为了解决这个问题，我们提出了一系列专门为实时语义分割设计的高效主干。提出的深度双分辨率网络（DDRNets）由两个深度分支组成，在这两个分支之间执行多次双边融合。此外，我们还设计了一个新的上下文信息抽取器，名为深度聚合金字塔池模块（DAPPM），用于扩大有效的接受域，并基于低分辨率特征映射融合多尺度上下文。我们的方法在城市景观和CamVid数据集上实现了精度和速度之间的最新权衡。特别是，在单个2080Ti GPU上，DDRNet-23-slim在Cityscapes测试集上以102 FPS的速度产生77.4%的mIoU，在CamVid测试集上以230 FPS的速度产生74.7%的mIoU。随着测试增强的广泛应用，我们的方法优于大多数最先进的模型，并且需要更少的计算量。代码和经过训练的模型可以在网上找到。</p>
+<h3 id="简介">简介</h3>
+<p>语义分割是一项基本任务，其中输入图像的每个像素都应分配给相应的标签[1]–[3]。它在许多实际应用中起着至关重要的作用，例如医学图像分割、自动驾驶车辆导航和机器人[4]，[5]。随着深度学习技术的兴起，卷积神经网络被应用于图像分割，其性能大大优于基于手工特征的传统方法。</p>
+<h4 id="语义分割在深度学习上的方案">语义分割在深度学习上的方案</h4>
+<p>自从提出完全卷积网络（FCN）[6]来处理语义分割问题以来，人们提出了一系列新的网络。<br>
+DeepLab[7]消除了ResNet中的一些下采样，以保持高分辨率，并利用具有大膨胀的卷积[8]来扩大感受野。从那时起，带有上下文提取模块的基于扩展卷积的主干网 已成为广泛用于各种方法的标准布局，包括DeepLabV2[9]、DeepLabV3[10]、PSPNet[11]和DenseASPP[12]。</p>
+<h4 id="自动驾驶上-速度存在问题">自动驾驶上 速度存在问题</h4>
+<p>由于语义分割是一种密集的预测任务，神经网络需要输出大感受野的高分辨率特征图来产生令人满意的结果，这在计算上非常昂贵。对于自动驾驶的场景解析来说，这个问题尤为关键，因为自动驾驶需要在非常大的图像上执行，以覆盖更大的视野。因此，上述方法在推理阶段非常耗时，无法直接部署到实际的自动驾驶车辆上。他们甚至不能在一秒钟内处理一幅图像，因为他们利用多尺度测试来提高精度。</p>
+<h4 id="改进的方向">改进的方向</h4>
+<p>随着移动设备部署需求的不断增长，实时分割算法[13]–[17]正受到越来越多的关注。</p>
+<p>DFANet[18]采用深度多尺度特征聚合和轻量级深度可分离卷积，以100 FPS的速度实现71.3%的测试mIoU。<br>
+与编码器-解码器范式不同，作者在[19]中提出了一种由空间路径和上下文路径组成的新型双边网络。特别地，空间路径利用三个相对较宽的3×3卷积层来捕获空间细节，上下文路径是一个紧凑的预训练主干，用于提取上下文信息。这种双边方法（包括[20]）比当时的编码器结构实现了更高的推理速度。</p>
+<h4 id="具体的论文工程">具体的论文工程</h4>
+<p>近年来，一些有竞争力的实时道路场景语义分割方法被提出。这些方法可分为两类：</p>
+<p>一种是利用GPU高效的主干，尤其是ResNet-18[21]–[23]。<br>
+另一个开发了从零开始训练的复杂轻型编码器，其中一个BiSeNetV2[24]在实时性能方面达到了新的峰值，在城市景观上以156 FPS的速度实现了72.6%的测试mIoU。</p>
+<p>然而，除了[23]使用额外的训练数据外，这些最近的研究没有显示出获得更高质量结果的潜力。由于精心设计的体系结构和优化的超参数，其中一些系统缺乏可扩展性。此外，考虑到更强大的骨干力量的繁荣，ResNet-18几乎没有什么优势。</p>
+<h4 id="本文的方案">本文的方案</h4>
+<p><img src="https://uipv4.zywvvd.com:33030/HexoFiles/vvd_image_files/202405280945152.png" srcset="/img/loading.gif" lazyload alt=""></p>
+<p>在本文中，我们提出了具有深度高分辨率表示的双分辨率网络，用于高分辨率图像，尤其是道路行驶图像的实时语义分割。</p>
+<p>我们的DDRNets从一个主干开始，然后分成两个具有不同分辨率的平行深分支。一个分支生成相对高分辨率的特征图，另一个通过多次下采样操作提取丰富的语义信息。多个双边连接在两个分支之间架桥，以实现有效的信息融合。</p>
+<p>此外，我们还提出了一个名为DAPPM的新模块，该模块输入低分辨率特征映射，提取多尺度上下文信息，并以级联方式合并它们。在语义分割数据集上进行训练之前，双分辨率网络在ImageNet上按照常见的范例进行训练。</p>
+<p>根据在三个流行基准（即Cityscapes、CamVid和COCOStuff）上的大量实验结果，DDRNets在分割精度和推理速度之间取得了极好的平衡。与其他实时算法相比，我们的方法在CityScape和CamVid上都达到了最先进的精度，没有注意机制和额外的铃声或口哨。通过标准测试增强，DDRNet可以与最先进的模型相媲美，并且需要的计算资源要少得多。我们还报告了统计相关的性能，并进行了消融实验，以分析架构改进和标准训练技巧的效果。</p>
+<h4 id="主要贡献总结">主要贡献总结</h4>
+<p>提出了一系列具有深度双分辨率分支和多个双边融合的新型双边网络，用于作为有效主干的实时语义分割。<br>
+设计了一个新颖的模块，通过将特征聚合与金字塔池相结合来获取丰富的上下文信息。在低分辨率特征图上执行时，推理时间几乎没有增加。<br>
+我们的方法在精度和速度之间实现了一种新的最先进的折衷：2080Ti、Cityscapes测试集102 FPS时77.4%的mIoU和CamVid测试集230 FPS时74.7%的mIoU。据我们所知，我们是第一个在城市景观上仅使用精细注释的近实时（22 FPS）实现80.4%mIoU的公司。</p>
+<h3 id="相关工作">相关工作</h3>
+<p>·基于 膨胀卷积 的方法在许多具有挑战性的场景下提高了语义分割的性能。<br>
+·开创性的工作探索了轻量级架构的更多可能性，比如 编码器和双通道。<br>
+·上下文信息 被证明对场景解析任务非常重要。<br>
+在本部分中，我们将相关工作分为三类，即高性能语义分割、实时语义分割和上下文提取模块。</p>
+<h4 id="高性能语义分割由于缺乏空间细节">高性能语义分割由于缺乏空间细节</h4>
+<p>【<strong>问题</strong>】通用编码器最后一层的输出不能直接用于预测分割掩码。如果只去除分类主干的下采样，有效感受野将太小，无法学习高级语义信息。<br>
+【<strong>方案</strong>】一种可接受的策略是利用扩展卷积来建立像素之间的远程连接，同时移除最后两个下采样层[10]，[11]，如图2（a）所示。然而，由于高分辨率特征映射维数的指数增长和扩展卷积实现的不充分优化，它也对实时推理提出了新的挑战。<br>
+事实上，大多数最先进的模型都是建立在扩张主干上的，因此在很大程度上不适合自动驾驶的场景解析。一些作品试图探索标准扩张主干的替代物。<br>
+【具体的】DeepLabv3plus[25] 的作者提出了一种简单的解码器，可以将上采样特征映射与低级别特征映射相融合。它减轻了对直接从扩展卷积生成的高分辨率特征图的要求。尽管编码器的输出步幅设置为16，但DeepLabv3plus可以获得具有竞争力的结果。<br>
+HRNet[26]强调了深度高分辨率表示，反映了比扩张主干更高的效率。<br>
+我们发现，HRNet的计算效率和推理速度之所以更高，是因为它的高分辨率信息流要薄得多。以HRNetV2-W48为例，1/4分辨率和1/8分辨率特征的维数分别为48和96，远小于带膨胀卷积的预训练ResNet[27]。尽管HRNet的高分辨率分支要薄得多，但通过并行的低分辨率分支和重复的多尺度融合，它们可以大大增强。<br>
+我们的工作从深度、精细、高分辨率的表示开始，并提出了更紧凑的体系结构。它们保持高分辨率表示，并通过两个简洁的主干同时提取高层上下文信息。</p>
+<h4 id="实时语义分割">实时语义分割</h4>
+<p>几乎所有的实时语义分割模型都采用两种基本方法：编码器-解码器方法和双路径方法。本文还讨论了在这两种方法中起重要作用的轻量级编码器。</p>
+<h5 id="1-编码器-解码器体系结构">1. 编码器-解码器体系结构</h5>
+<p>与基于扩展卷积的模型相比，编码器-解码器体系结构直观地减少了计算和推理时间。编码器通常是一个深度网络，通过重复的空间缩减来提取上下文信息，解码器通过插值或转置卷积[28]来恢复分辨率，以完成密集预测，如图2（b）所示。<br>
+特别是，编码器可以是在ImageNet上预先训练过的轻量级主干网，也可以是像ERFNet[5]和ESPNet[16]这样从头训练过的高效变体。SwiftNet[21]捍卫了ImageNet上预训练编码器的优势，并利用轻型横向连接来辅助上采样。[29]中的作者提出了一种多空间融合和类边界监督的策略。FANet[22]通过快速注意模块和整个网络的额外下采样，在速度和准确性之间实现了良好的折衷。SFNet[23]提供了一个流对齐模块（FAM），用于对齐相邻层的特征图，以实现更好的融合。</p>
+<h5 id="2-双通道结构">2. 双通道结构</h5>
+<p>编码器-解码器结构减少了计算工作量，但由于重复下采样过程中丢失了一些信息，无法通过不采样完全恢复，从而影响了语义分割的准确性。为了缓解这个问题[19]，提出了双路径架构，如图2（c）所示。除了一条提取语义信息的路径外，另一条高分辨率的浅层路径提供了丰富的空间细节作为补充。<br>
+为了进一步提高准确性，BiSeNetV2[24]使用全局平均池进行上下文嵌入，并提出了基于注意的特征融合。BISENTV1和V2中的两条路径最初是分开的，而Fast SCNN[20]中的两个分支共享学习到下采样模块。CABiNet[30]采用Fast SCNN的总体架构，但使用MobileNetV3[31]作为上下文分支。<br>
+除了现有的两种路径方法外，DDRNets的深细高分辨率分支实现了多种特征融合和足够的ImageNet预训练，同时保证了推理效率。我们的方法可以很容易地进行缩放，以达到更高的精度（城市景观的mIoU超过80%）。</p>
+<h5 id="3-轻量级编码器">3. 轻量级编码器</h5>
+<p>有许多计算效率高的主干可以用作编码器，例如MobileNet[32]、ShuffleNet[33]和Xception的小型版本[34]。<br>
+MobileNet将标准卷积替换为深度可分离卷积，以减少参数和计算量。MobileNetV2[35]中的反向剩余块缓解了深度可分离卷积的强正则化效应。<br>
+ShuffleNet利用分组卷积的紧凑性，提出了一种通道洗牌操作，以促进不同组之间的信息融合。<br>
+然而，这些网络包含许多纵深可分离的卷积，这些卷积不能用现有的GPU架构有效地实现。因此，尽管ResNet-18[27]的FLOPs约为MobileNet V2 1.0×（的六倍），但在单个1080Ti GPU上，前者的推理速度高于后者[21]。然而，现有的轻量级主干可能不适合语义分割，因为它们通常对图像分类进行了过度调整。</p>
+<h5 id="4-上下文提取模块">4. 上下文提取模块</h5>
+<p>语义分割的另一个关键是如何获取更丰富的上下文信息。<br>
+·Atrus Spatial Pyramid Pooling（ASPP）[9]由具有不同速率的平行Atrus卷积层组成，可以处理多尺度上下文信息。<br>
+·PSPNet中的金字塔池模块（PPM）[11]通过在卷积层之前实现金字塔池，在计算效率上比ASPP更高。<br>
+·与卷积核的局部性质不同，自我注意机制擅长捕捉全局依赖。通过这种方式，双注意网络（DANet）[36]利用位置注意和通道注意来进一步改进特征表示。对象上下文网络（OCNet）[37]利用自我注意机制探索对象上下文，对象上下文被定义为属于同一对象类别的一组像素。<br>
+·CCNet[38]的作者提出了criss-cross attention，以提高内存使用和计算的效率。<br>
+然而，这些上下文提取模块是为高分辨率特征映射设计和执行的，对于轻量级模型来说太耗时了。<br>
+以低分辨率特征图为输入，我们增强了PPM模块，使其具有更大的尺度和更深入的特征聚合。当附加到低分辨率分支的末尾时，该模块的性能优于OCNet中的PPM和Base-OC模块。</p>
+<h3 id="算法">算法</h3>
+<p>在本节中，将描述整个管道，它由两个主要组件组成：深度双分辨率网络和深度聚合金字塔池模块。</p>
+<h4 id="深度双分辨率网络">深度双分辨率网络</h4>
+<p>【添加高分辨率分支】<br>
+为了方便起见，我们可以在广泛使用的分类主干网（如resnet）上添加一个额外的高分辨率分支。为了在分辨率和推理速度之间取得平衡，我们让高分辨率分支创建分辨率为输入图像分辨率1/8的特征映射。因此，高分辨率分支被附加到conv3阶段的末尾。请注意，高分辨率分支不包含任何下采样操作，并且与低分辨率分支有一对一的对应关系，以形成深度高分辨率表示。<br>
+【多个双边特征融合】<br>
+然后在不同阶段进行多个双边特征融合，以充分融合空间信息和语义信息。<br>
+【DDRNet的细节】<br>
+DDRNet-23-slim和DDRNet-39的详细架构如表一所示。<br>
+用于IMAGENET的DDRNET-23-SLIM和DDRNET-39的体系结构。<br>
+“CONV4×r” 表示CONV4重复r次。对于DDRNET-23-SLIM，r=1；对于DDRNET-39，r=2</p>
+<p><img src="https://uipv4.zywvvd.com:33030/HexoFiles/vvd_image_files/202405280946883.png" srcset="/img/loading.gif" lazyload alt=""></p>
+<p>我们修改了原始ResNet的输入干，用两个连续的3×3卷积层替换了一个7×7卷积层。剩余的基本块用于构造主干和随后的两个分支。为了扩展输出维度，在每个分支的末尾添加一个瓶颈块。<br>
+双边融合包括将高分辨率分支融合到低分辨率分支（高到低融合）和将低分辨率分支融合到高分辨率分支（低到高融合）。·对于从高到低的融合，在逐点求和之前，通过3×3卷积序列（步长为2）对高分辨率特征图进行降采样。·对于低分辨率到高分辨率，低分辨率特征地图首先通过1×1卷积进行压缩，然后通过双线性插值进行上采样。图3显示了如何实现双边融合。第i个高分辨率特征映射XHi和低分辨率特征映射XLi可以写成：</p>
+
+$$
+\begin{cases}X_{Hi}=R(F_{H}(X_{H(i-1)})+T_{L-H}(F_{L}(X_{L(i-1)})))\\X_{Li}=R(F_{L}(X_{L(i-1)})+T_{H-L}(F_{H}(X_{H(i-1)})))\end{cases}
+$$
+
+<p><img src="https://uipv4.zywvvd.com:33030/HexoFiles/vvd_image_files/202405280947481.png" srcset="/img/loading.gif" lazyload alt=""></p>
+<h4 id="深度聚合金字塔池模块">深度聚合金字塔池模块</h4>
+<p>DAPPM， Deep Aggregation Pyramid Pooling Module</p>
+<p><img src="https://uipv4.zywvvd.com:33030/HexoFiles/vvd_image_files/202405280948303.png" srcset="/img/loading.gif" lazyload alt=""></p>
+<p>在这里，我们提出了一个新的模块来进一步从低分辨率特征地图中提取上下文信息。图5(上图)显示了DAPPM的内部结构。以1/64图像分辨率的特征映射为输入，采用指数步长的大池核生成1/128、1/256、1/512图像分辨率的特征映射。还利用了由全局平均池生成的输入特征图和图像级信息。我们认为，用单个3×3或1×1卷积来混合所有多尺度上下文信息是不够的。受Res2Net[39]的启发，我们首先对特征图进行上采样，然后使用更多的3×3卷积，以分层残差的方式融合不同尺度的上下文信息。考虑到输入x，每个scale $y_i$可以写成：</p>
+
+$$
+y_i=\begin{cases}C_{1\times1}(x),&i=1;\\C_{3\times3}(U(C_{1\times1}(P_{2^i+1,2^{i-1}}(x)))+y_{i-1}),&1<i<n;\\C_{3\times3}(U(C_{1\times1}(P_{global}(x)))+y_{i-1}),&i=n.\end{cases}
+$$
+
+<p>其中C1×1表示1×1卷积，C3×3表示3×3卷积，U表示上采样操作，Pj，k表示池层，其中内核大小为j，步长为k，Pglobal表示全局平均池。最后，使用1×1卷积对所有特征映射进行连接和压缩。此外，还增加了1×1投影快捷方式，便于优化。与SwiftNet[21]中的SPP类似，DAPPM是用序列BN-ReLU-Conv实现的。<br>
+在DAPPM中，由较大的池核提取的上下文与更深的信息流集成，通过将不同深度与不同大小的池核集成，形成多尺度性质。表二显示，DAPPM能够提供比PPM更丰富的上下文。虽然DAPPM包含更多卷积层和更复杂的融合策略，但由于输入分辨率仅为图像分辨率的1/64，因此几乎不影响推理速度。例如，对于1024×1024图像，特征贴图的最大分辨率为16×16。</p>
+<h4 id="语义分割的总体架构">语义分割的总体架构</h4>
+<p>我们的方法概述如图4所示。为了适应语义分割任务，对双分辨率网络进行了一些修改。首先，将低分辨率分支RBB中的3×3卷积步长设置为2，以进一步降低采样。然后，将DAPPM添加到低分辨率分支的输出中，该分支从1/64图像分辨率的高级特征映射中提取丰富的上下文信息。此外，最后的高到低融合被双线性插值和求和融合实现的低到高融合所取代。最后，我们设计了一个由3×3卷积层和1×1卷积层组成的简单分割头。通过改变3×3卷积层的输出尺寸，可以调整分割头的计算量。我们将DDRNet-23-slim设置为64，DDRNet-23设置为128，DDRNet39设置为256。请注意，除了分割头和DAPPM模块外，所有模块都已在ImageNet上接受过预训练。</p>
+<p><img src="https://uipv4.zywvvd.com:33030/HexoFiles/vvd_image_files/202405280949657.png" srcset="/img/loading.gif" lazyload alt=""></p>
+<blockquote>
+<p>关于语义切分的DDRNets概述。“RB”表示连续剩余基本模块。“RBB”表示单个残差瓶颈块。“DAPPM”表示深度聚合金字塔池模块。“Seg. Head”表示分段头。黑色实线表示进行数据处理（包括上采样和下采样）的信息路径，黑色虚线表示未进行数据处理的信息路径。“sum”表示逐点求和。虚线框表示在推理阶段丢弃的组件。</p>
+</blockquote>
+<h4 id="深度监督">深度监督</h4>
+<p>训练阶段的额外监督可以简化深度卷积神经网络（DCNN）的优化。在PSPNet中，添加了一个辅助损耗来监控ResNet-101的res4 22块的输出，并根据实验结果将相应的权重设置为0.4[11]。BiSeNetV2[24]提出了一种强化训练策略，在语义分支的每个阶段结束时添加额外的分段头。然而，它需要大量的实验来找到平衡每个损失的最佳权重，并导致训练内存的不可忽略的增加。为了获得更好的结果，SFNet[23]采用了一种类似的策略，名为级联深度监督学习。在本文中，我们仅采用简单的额外监管，以便与大多数方法进行公平比较。我们添加了如图4所示的辅助损失，并在PSPNet之后将重量设置为0.4。辅助分割头在测试阶段被丢弃。最终损失是交叉熵损失的加权和，可以表示为：<br>
+$$<br>
+L_f=L_n+\alpha L_a<br>
+$$<br>
+式中，$L_f$、$L_n$、$L_a$ 分别表示最终损失、正常损失、辅助损失，α表示辅助损失的重量，在本文中为0.4。</p>
+<h3 id="实验">实验</h3>
+<h4 id="Datasets">Datasets</h4>
+<p>Cityscapes[40]是关注城市街道场景解析的著名数据集之一。它包含2975张用于训练的精细注释图像、500张用于验证的图像和1525张用于测试的图像。在训练期间，我们不会使用额外的20000张粗糙标记的图像。共有19个类可用于语义分段任务。图像的分辨率为2048×1024，这对实时语义分割是一个挑战。<br>
+CamVid[41]由701个密集注释的帧组成，每帧的分辨率为960×720。它包括367张训练图片、101张验证图片和233张测试图片。我们将训练集和验证集合并起来进行训练，并在之前的工作[18]、[19]、[21]之后使用11个类在测试集上评估我们的模型。<br>
+COCOStuff[42]提供了10K复杂图像，包含182个类别的密集注释，包括91个thing和91个stuff类。请注意，其中11个thing类没有任何分段注释。我们按照[42]中的划分（9K用于训练，1K用于测试）进行公平比较。</p>
+<h4 id="Train-Setting">Train Setting</h4>
+<p>在对语义分割任务进行微调之前，双分辨率网络在ImageNet[43]上进行训练，遵循与之前工作相同的数据增强策略[27]，[44]。所有模型在四个2080Ti GPU上以224×224的输入分辨率、256的批量大小和100个轮进行训练。初始学习速率设置为0.1，并在第30、60和90轮时降低10倍。我们使用SGD训练所有网络，权重衰减为0.0001，Nesterov动量为0.9。ImageNet验证集上的Top-1 errors如表III所示。<br>
+尽管DDRNet的效率并不优于许多在ImageNet上精心设计的高级轻量级主干网，但考虑到速度权衡，它仍然在语义分割基准上实现了最新结果。Cityscapes、CamVid和COCOStuff的训练设置介绍如下。</p>
+<p>1） 城市景观：在[49]之后，我们使用SGD优化器，初始学习率为0.01，动量为0.9，权重衰减为0.0005。我们采用幂为0.9的策略学习策略来降低学习率，并实现了包括随机裁剪图像、0.5到2.0范围内的随机缩放和随机水平翻转在内的数据增强方法。在[18]、[29]、[23]之后，图像被随机裁剪成1024×1024，用于训练。所有模型都经过484次（约120K次迭代）、12个批量和4个2080Ti GPU上的syncBN训练。对于在测试服务器上评估的模型，我们在训练期间同时从train和val集提供图像。为了与[24]和[23]进行公平比较，还使用了在线硬示例挖掘（OHEM）[50]。<br>
+2） CamVid：我们将初始学习率设置为0.001，并对所有模型进行968个时代的训练。图像被随机裁剪成960×720，用于以下训练[18]。所有模型都在一个GPU上进行训练，其他训练细节与城市景观相同。在训练前使用城市景观时，我们对200轮的模型进行了微调。<br>
+3） COCOStuff：初始学习率为0.001，总训练次数为110次。在数据增强之前，我们将图像的短边调整为640。作物大小为640×640，与BiSENTEV2相同[24]。其他训练细节与城市景观相同，重量衰减为0.0001。在推断阶段，我们将图像分辨率固定为640×640。</p>
+<h4 id="推理速度和准确性的测量">推理速度和准确性的测量</h4>
+<p>推理速度在单个GTX 2080Ti GPU上测量，方法是将批量大小设置为1，使用CUDA 10.0、CUDNN 7.6和PyTorch 1.3。与MSFNet和SwiftNet类似，我们在卷积层之后排除了批量规范化层，因为它们可以在推理过程中集成到卷积中。我们使用[51]建立的协议进行公平比较（城市景观的图像大小为2048×1024，CamVid为960×720，COCOStuff为640×640）。根据ResNet[27]，我们报告了四个试验的最佳结果、平均结果和标准偏差，但cityscapes测试集除外，该测试集的准确性由官方服务器提供。</p>
+<h4 id="速度和准确性比较">速度和准确性比较</h4>
+<p>1） 城市景观：从表IV和图1可以看出，我们的方法在实时性和高精度之间实现了一种新的最先进的权衡。特别是，DDRNet-23-slim（我们最小的型号）在测试集上以每秒102帧的速度实现77.4%的mIoU。它的推理速度与DFANet A和MSFNet相当，比DFANet A和MSFNet快6.1%mIoU，推理速度大约是MSFNet的2.5倍。此外，它比最小的SFNet运行速度快40%，在测试集上实现了2.9%的mIoU增益。值得注意的是，我们的方法也优于基于架构搜索的实时语义分割方法，例如推理速度相似的CAS[47]和GAS[48]。对于更广泛的模型，在表IV中公布的实时方法中，DDRNet23实现了整体最佳精度，以37 FPS的速度达到79.4%的mIoU。DDRNet-23的性能比SFNet（ResNet-18）提高了0.5%，运行速度是它的两倍。<br>
+我们继续深入使用DDRNets，在Cityscapes测试服务器上以每秒22帧的速度实现80.4%的mIoU，只使用精细注释的数据。如果受益于Mapillary[52]数据集上的预训练和TensorRT加速[23]，我们的方法可以为道路场景的实时语义分割建立一个skyscraping基线。在Cityscapes val数据集上，DDRNet-23-slim优于表IV中所有已发布的结果，具有36.3 GFLOPs和570万个参数。DDRNet-23实现了79.5%百万用户的新的总体最佳结果。图6显示了DDRNet-23-slim和DDRNet23在不同场景下的可视化结果。<br>
+2） CamVid：如表V所示，DDRNet-23-slim在没有城市景观预训练的情况下，以230 FPS的速度在CamVid测试集上实现74.7%的mIoU。它获得了第二高的精度，比所有其他方法运行得更快。特别是，DDRNet-23的性能优于之前最先进的方法MSFNet。DDRNet-23的性能也比BISENTV2-L和SFNet（ResNet18）有很大提高，运行速度大约是它们的两倍。鉴于CamVid的训练像素远小于城市景观，我们认为DDRNets的出色性能部分归功于充分的ImageNet预训练。此外，我们的Cityscapes预训练模型以实时速度实现了最先进的精确度。特别是，Cityscapes预先训练的DDRNet-23以94 FPS的速度实现了80.6%的mIoU，比BiSeNetV2-L更强、更快。相应的可视化结果如图7所示。<br>
+3） COCOStuff：我们也在COCOStuff上验证了我们的方法，因为COCOStuff的类别丰富，是一个更具挑战性的实时语义分割数据集。低分辨率分支中RBB的步长设置为1，因为图像分辨率小于其他两个数据集。重塑图像和预测遮罩的时间不计算在内。表六表明，在非常具有挑战性的场景下，我们的方法在很大程度上优于BiSeNetV2。我们的DDRNet-23在运行速度是PSPNet50的20倍的情况下，达到了与PSPNet50类似的精度。</p>
+<h4 id="与最新技术的比较">与最新技术的比较</h4>
+<p>结果在这一部分中，我们通过在Cityscapes测试集上与最先进的模型进行比较，进一步证明了DDRNet的语义分割能力。这种方法通常采用多尺度和水平翻转推理，以获得更好的结果，而不考虑时间成本。为了与它们进行公平比较，我们还采用了多个量表，包括0.50×、0.75×、1×、1.25×、1.5×、1.75×、2×在测试过程中左右翻转。如表七所示，标准测试增强将DDRNet-39的准确度从80.4%提高到81.9%。我们的DDRNet-39的性能优于许多强大的模型，这些模型与CCNet、DANet和OCNet等自我关注模块集成。值得注意的是，我们的方法只需要计算11%的DANet。DDRNet-39还领先于SFNet（基于ResNet-101主干网），后者是一种最先进的实时语义分割方法，只需要34%的计算量。DDRNet-39 1.5×其尺寸更接近表VII中的其他型号，实现了非常有竞争力的性能（82.4%百万用户）</p>
+<h4 id="与HRNet的比较">与HRNet的比较</h4>
+<p>DDRNet和HRNet的主要区别在于并行分支的数量。此外，我们在低分辨率分支的末尾添加了多尺度上下文提取模块。表VIII中的实验结果表明，DDRNet在推理时间和训练记忆使用方面都优于HRNet。我们从正式实施中得到了两个小型人力资源网的val结果。训练记忆在单个2080Ti上测量，批次大小为2，裁剪大小为1024×512，不包括辅助分割头。。</p>
+<h4 id="城市景观的消融实验">城市景观的消融实验</h4>
+<p>1） Standard Bells and Whistles：我们分析了一些基本训练技巧的效果，这些技巧也被最近的先进方法SFNet所采用[23]。如表九所示，通过深度监督、OHEM和更大作物规模的训练，精确度从76.1提高到77.8。<br>
+2） DAPPM：我们将DAPPM与基于金字塔池的方法（PPM）、基于自我注意的模块（Base OC）和res2net模块进行比较。表X中的结果表明，该模块将场景解析的性能从74.1%mIoU提高到77.8%mIoU，而推理速度几乎不受影响。与PPM和RES2相比，DAPPM还实现了1%的mIoU增益，而另一种最先进的方法BaseOC在低分辨率特征映射方面的性能相对较差。<br>
+3） 双分辨率网络：为了更快的实验，我们从头开始训练所有双边网络，初始学习率为0.05，裁剪大小为1024×512，总共600个时代，并且不使用OHEM。如表席所示，使用较细的细节分支结果，1.3%的精度降低，运行速度比基线快得多。将细节分支添加到网络的中间层有助于实现深度高分辨率表示，并且由于避免了使用更高分辨率的计算，因此也提高了推理速度。瓶颈扩展了特征维度，为DAPPM和最终分割头生成更丰富的特征。双边融合以较小的时间代价进一步提高了分割精度。最后，我们的双分辨率网络比基线占用更少的计算资源和时间，同时获得更好的性能。</p>
+<h3 id="原始论文">原始论文</h3>
+<iframe src='https://uipv4.zywvvd.com:33030/HexoFiles/js/vvd_js/pdfjs/web/viewer.html?file=https://uipv4.zywvvd.com:33030/HexoFiles/pdf/ddrnet.pdf' style='width:100%;height:700px'></iframe>
+<h3 id="参考资料">参考资料</h3>
+<ul>
+<li><a target="_blank" rel="noopener" href="https://blog.csdn.net/magic_ll/article/details/123199261">https://blog.csdn.net/magic_ll/article/details/123199261</a></li>
+</ul>
+<link rel="stylesheet" href="/css/spoiler.css" type="text/css"><script src="/js/spoiler.js" type="text/javascript" async></script>
+                
+
+
+				<br /><br />
+				<blockquote>
+					<p>文章链接：<br /> 
+					<a style="font-size: 0.85rem" target="_blank" rel="noopener" href="https://www.zywvvd.com/notes/study/deep-learning/segmentation/ddrnet/ddrnet/">https://www.zywvvd.com/notes/study/deep-learning/segmentation/ddrnet/ddrnet/</a>
+					</p>
+				</blockquote>
+
+
+              </div>
+            
+            <hr/>
+			
+			<!-- 添加打赏模块 -->
+			<div class="reward-container">
+				
+					<button id="rewardBtn" class="reward-btn">
+						 
+							❤ 打赏
+							
+					</button>
+					<p class="tea">“觉得不错的话，给点打赏吧 ୧(๑•̀⌄•́๑)૭”</p>
+					<div id="rewardImgContainer" class="reward-img-container">
+						<div class="singleImgContainer">
+							<img id="wechatImg" class="reward-img" src="https://uipv4.zywvvd.com:33030/HexoFiles/vvd_pc_upload/wechatpay.png" srcset="/img/loading.gif" lazyload alt="微信二维码">
+							<p class="wechatPay">微信支付</p>
+						</div>
+						<div class="singleImgContainer">
+							<img id="alipayImg" class="reward-img" src="https://uipv4.zywvvd.com:33030/HexoFiles/vvd_pc_upload/alipay.png" srcset="/img/loading.gif" lazyload alt="支付宝二维码">
+							<p class="aliPay">支付宝支付</p>
+						</div>
+					</div>
+				
+			</div>
+			
+            <div>
+              <div class="post-metas my-3">
+  
+    <div class="post-meta mr-3 d-flex align-items-center">
+      <i class="iconfont icon-category"></i>
+      
+
+<span class="category-chains">
+  
+  
+    
+      <span class="category-chain">
+        
+  <a href="/categories/Deep-Learning/" class="category-chain-item">Deep_Learning</a>
+  
+  
+    <span>></span>
+    
+  <a href="/categories/Deep-Learning/Segmentation/" class="category-chain-item">Segmentation</a>
+  
+  
+
+  
+
+      </span>
+    
+  
+</span>
+
+    </div>
+  
+  
+    <div class="post-meta">
+      <i class="iconfont icon-tags"></i>
+      
+        <a href="/tags/Deep-Learning/" class="print-no-link">#Deep_Learning</a>
+      
+        <a href="/tags/Segmentation/" class="print-no-link">#Segmentation</a>
+      
+    </div>
+  
+</div>
+
+
+              
+  
+
+  <div class="license-box my-3">
+    <div class="license-title">
+      <div>实时语义分割 DDRNet</div>
+      <div>https://www.zywvvd.com/notes/study/deep-learning/segmentation/ddrnet/ddrnet/</div>
+    </div>
+    <div class="license-meta">
+      
+        <div class="license-meta-item">
+          <div>作者</div>
+          <div>Yiwei Zhang</div>
+        </div>
+      
+      
+        <div class="license-meta-item license-meta-date">
+          <div>发布于</div>
+          <div>2024年5月28日</div>
+        </div>
+      
+      
+      
+        <div class="license-meta-item">
+          <div>许可协议</div>
+          <div>
+            
+              
+              
+                <a class="print-no-link" target="_blank" href="https://creativecommons.org/licenses/by/4.0/">
+                  <span class="hint--top hint--rounded" aria-label="BY - 署名">
+                    <i class="iconfont icon-by"></i>
+                  </span>
+                </a>
+              
+            
+          </div>
+        </div>
+      
+    </div>
+    <div class="license-icon iconfont"></div>
+  </div>
+
+
+
+              
+                <div class="post-prevnext my-3">
+                  <article class="post-prev col-6">
+                    
+                    
+                      <a href="/notes/tools/git/git-save-http-pswd/git-save-http-pswd/" title="Git 记住 Http/Https 用户名/密码">
+                        <i class="iconfont icon-arrowleft"></i>
+                        <span class="hidden-mobile">Git 记住 Http/Https 用户名/密码</span>
+                        <span class="visible-mobile">上一篇</span>
+                      </a>
+                    
+                  </article>
+                  <article class="post-next col-6">
+                    
+                    
+                      <a href="/notes/devices/gps/how-gps-works/how-gps-works/" title="GPS 工作原理">
+                        <span class="hidden-mobile">GPS 工作原理</span>
+                        <span class="visible-mobile">下一篇</span>
+                        <i class="iconfont icon-arrowright"></i>
+                      </a>
+                    
+                  </article>
+                </div>
+              
+            </div>
+
+            
+  
+  
+    <article id="comments" lazyload>
+      
+  <div id="waline"></div>
+  <script type="text/javascript">
+    Fluid.utils.loadComments('#waline', function() {
+      Fluid.utils.createCssLink('https://lib.baomitu.com/waline/2.14.8/waline.min.css')
+      Fluid.utils.createScript('https://lib.baomitu.com/waline/2.14.8/waline.min.js', function() {
+        var options = Object.assign(
+          {"serverURL":"https://uipv4.zywvvd.com:33033/","path":"window.location.pathname","meta":["nick","mail","link"],"requiredMeta":["nick"],"lang":"zh-CN","emoji":["https://cdn.jsdelivr.net/gh/walinejs/emojis/weibo"],"dark":"html[data-user-color-scheme=\"dark\"]","wordLimit":0,"pageSize":10,"reaction":true,"locale":{"placeholder":"山高路远，常来玩吖 ~","reactionTitle":null}},
+          {
+            el: '#waline',
+            path: window.location.pathname
+          }
+        )
+        Waline.init(options);
+        Fluid.utils.waitElementVisible('#waline .vcontent', () => {
+          var imgSelector = '#waline .vcontent img:not(.vemoji)';
+          Fluid.plugins.imageCaption(imgSelector);
+          Fluid.plugins.fancyBox(imgSelector);
+        })
+      });
+    });
+  </script>
+  <noscript>Please enable JavaScript to view the comments</noscript>
+
+
+    </article>
+  
+
+
+          </article>
+        </div>
+      </div>
+    </div>
+
+    <div class="side-col d-none d-lg-block col-lg-2">
+      
+  <aside class="sidebar" style="margin-left: -1rem">
+    <div id="toc">
+  <p class="toc-header">
+    <i class="iconfont icon-list"></i>
+    <span>目录</span>
+  </p>
+  <div class="toc-body" id="toc-body"></div>
+</div>
+
+
+
+  </aside>
+
+
+    </div>
+  </div>
+</div>
+
+
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+  
+  
+
+
+
+
+
+  <script>
+  Fluid.utils.createScript('https://lib.baomitu.com/mermaid/8.14.0/mermaid.min.js', function() {
+    mermaid.initialize({"theme":"default"});
+
+    Fluid.utils.listenDOMLoaded(function() {
+      Fluid.events.registerRefreshCallback(function() {
+        if ('mermaid' in window) {
+          mermaid.init();
+        }
+      });
+    });
+  });
+</script>
+
+
+
+
+
+
+    
+
+    
+      <a id="scroll-top-button" aria-label="TOP" href="#" role="button">
+        <i class="iconfont icon-xiangshangjiantou" aria-hidden="true"></i>
+      </a>
+    
+
+    
+      <div class="modal fade" id="modalSearch" tabindex="-1" role="dialog" aria-labelledby="ModalLabel"
+     aria-hidden="true">
+  <div class="modal-dialog modal-dialog-scrollable modal-lg" role="document">
+    <div class="modal-content">
+      <div class="modal-header text-center">
+        <h4 class="modal-title w-100 font-weight-bold">搜索</h4>
+        <button type="button" id="local-search-close" class="close" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body mx-3">
+        <div class="md-form mb-5">
+          <input type="text" id="local-search-input" class="form-control validate">
+          <label data-error="x" data-success="v" for="local-search-input">关键词</label>
+        </div>
+        <div class="list-group" id="local-search-result"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+    
+
+    
+  </main>
+
+  <footer>
+    <div class="footer-inner">
+  
+    <div class="footer-content">
+       <div class="vvd_footer" style="font-size: 0.85rem;"> <a href="https://hexo.io" target="_blank" rel="nofollow noopener" color="#d7d8d9" data-umami-event="Footer-Hexo"><span class="umami--click--Footer-Hexo">Hexo</span></a> <i class="iconfont icon-love"></i> <a href="https://github.com/fluid-dev/hexo-theme-fluid" target="_blank" rel="nofollow noopener" data-umami-event="Footer-Fluid"><span class="umami--click--Footer-Fluid">Fluid</span></a> <i class="iconfont icon-love"></i> <a href="https://uipv4.zywvvd.com:33039/share/0zx3o21oIpZTZqwC/%E5%8F%88%E8%A7%81%E8%8B%8D%E5%B2%9A" target="_blank" rel="nofollow noopener" data-umami-event="Footer-Umami"><span class="umami--click--Footer-Umami">Umami</span></a> <div style="font-size: 0.85rem;"> <span id="timeDate">载入天数...</span> <span id="times">载入时分秒...</span> <script src="/vvd_js/duration.js"></script> </div> <div style="font-size: 0.85rem;"> <span> 总访问量 <span style="color: #d7d8d9;" id="PVstatic">0</span> 次&nbsp</span> <span> 总访客数 <span style="color: #d7d8d9;" id="UVstatic">0</span> 人&nbsp</span> <span> 当前在线 <span style="color: #d7d8d9;" id="ACTstatic">0</span> 人&nbsp</span> <script src="https://uipv4.zywvvd.com:33037/statistics" defer></script> </div> <div> <span> Copyright © 2020-2024. All Rights Reserved.</span> </div> <div style="font-size: 0.85rem;"> <a target="_blank" rel="noopener" href="https://developer.hitokoto.cn/" id="hitokoto_text"><span style="color: #d7d8d9;"  id="hitokoto"></span></a> <script src="https://uipv4.zywvvd.com:33044/?encode=js&select=%23hitokoto" defer></script> </div> <a href="https://icp.gov.moe/?keyword=20230615" target="_blank">萌ICP备20230615号</a>
+
+
+</div> 
+    </div>
+  
+  
+  
+  
+</div>
+
+  </footer>
+
+  <!-- Scripts -->
+  
+  <script  src="https://lib.baomitu.com/nprogress/0.2.0/nprogress.min.js" ></script>
+  <link  rel="stylesheet" href="https://lib.baomitu.com/nprogress/0.2.0/nprogress.min.css" />
+
+  <script>
+    NProgress.configure({"showSpinner":false,"trickleSpeed":100})
+    NProgress.start()
+    window.addEventListener('load', function() {
+      NProgress.done();
+    })
+  </script>
+
+
+<script  src="https://lib.baomitu.com/jquery/3.6.0/jquery.min.js" ></script>
+<script  src="https://lib.baomitu.com/twitter-bootstrap/4.6.1/js/bootstrap.min.js" ></script>
+<script  src="/js/events.js" ></script>
+<script  src="/js/plugins.js" ></script>
+
+
+
+
+
+  
+    <script  src="/js/img-lazyload.js" ></script>
+  
+
+
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/tocbot/4.18.2/tocbot.min.js', function() {
+    var toc = jQuery('#toc');
+    if (toc.length === 0 || !window.tocbot) { return; }
+    var boardCtn = jQuery('#board-ctn');
+    var boardTop = boardCtn.offset().top;
+
+    window.tocbot.init(Object.assign({
+      tocSelector     : '#toc-body',
+      contentSelector : '.markdown-body',
+      linkClass       : 'tocbot-link',
+      activeLinkClass : 'tocbot-active-link',
+      listClass       : 'tocbot-list',
+      isCollapsedClass: 'tocbot-is-collapsed',
+      collapsibleClass: 'tocbot-is-collapsible',
+      scrollSmooth    : true,
+      includeTitleTags: true,
+      headingsOffset  : -boardTop,
+    }, CONFIG.toc));
+    if (toc.find('.toc-list-item').length > 0) {
+      toc.css('visibility', 'visible');
+    }
+
+    Fluid.events.registerRefreshCallback(function() {
+      if ('tocbot' in window) {
+        tocbot.refresh();
+        var toc = jQuery('#toc');
+        if (toc.length === 0 || !tocbot) {
+          return;
+        }
+        if (toc.find('.toc-list-item').length > 0) {
+          toc.css('visibility', 'visible');
+        }
+      }
+    });
+  });
+</script>
+
+
+  <script src=https://lib.baomitu.com/clipboard.js/2.0.10/clipboard.min.js></script>
+
+  <script>Fluid.plugins.codeWidget();</script>
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/anchor-js/4.3.1/anchor.min.js', function() {
+    window.anchors.options = {
+      placement: CONFIG.anchorjs.placement,
+      visible  : CONFIG.anchorjs.visible
+    };
+    if (CONFIG.anchorjs.icon) {
+      window.anchors.options.icon = CONFIG.anchorjs.icon;
+    }
+    var el = (CONFIG.anchorjs.element || 'h1,h2,h3,h4,h5,h6').split(',');
+    var res = [];
+    for (var item of el) {
+      res.push('.markdown-body > ' + item.trim());
+    }
+    if (CONFIG.anchorjs.placement === 'left') {
+      window.anchors.options.class = 'anchorjs-link-left';
+    }
+    window.anchors.add(res.join(', '));
+
+    Fluid.events.registerRefreshCallback(function() {
+      if ('anchors' in window) {
+        anchors.removeAll();
+        var el = (CONFIG.anchorjs.element || 'h1,h2,h3,h4,h5,h6').split(',');
+        var res = [];
+        for (var item of el) {
+          res.push('.markdown-body > ' + item.trim());
+        }
+        if (CONFIG.anchorjs.placement === 'left') {
+          anchors.options.class = 'anchorjs-link-left';
+        }
+        anchors.add(res.join(', '));
+      }
+    });
+  });
+</script>
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/fancybox/3.5.7/jquery.fancybox.min.js', function() {
+    Fluid.plugins.fancyBox();
+  });
+</script>
+
+
+  <script>Fluid.plugins.imageCaption();</script>
+
+  
+      <script>
+        if (!window.MathJax) {
+          window.MathJax = {
+            tex    : {
+              inlineMath: { '[+]': [['$', '$']] }
+            },
+            options: {
+              renderActions: {
+                insertedScript: [200, () => {
+                  document.querySelectorAll('mjx-container').forEach(node => {
+                    let target = node.parentNode;
+                    if (target.nodeName.toLowerCase() === 'li') {
+                      target.parentNode.classList.add('has-jax');
+                    }
+                  });
+                }, '', false]
+              }
+            }
+          };
+        } else {
+          MathJax.startup.document.state(0);
+          MathJax.texReset();
+          MathJax.typeset();
+          MathJax.typesetPromise();
+        }
+
+        Fluid.events.registerRefreshCallback(function() {
+          if ('MathJax' in window && MathJax.startup.document && typeof MathJax.startup.document.state === 'function') {
+            MathJax.startup.document.state(0);
+            MathJax.texReset();
+            MathJax.typeset();
+            MathJax.typesetPromise();
+          }
+        });
+      </script>
+    
+
+  <script  src="https://lib.baomitu.com/mathjax/3.2.1/es5/tex-mml-chtml.js" ></script>
+
+  <script defer src="/js/leancloud.js" ></script>
+
+  <script  src="/js/local-search.js" ></script>
+
+
+
+
+  
+<script src="//cdn.jsdelivr.net/npm/aplayer/dist/APlayer.min.js"></script>
+<script src="//cdn.jsdelivr.net/gh/metowolf/MetingJS@1.2/dist/Meting.min.js"></script>
+<script src="/js/reward.js"></script>
+
+
+
+<!-- 主题的启动项，将它保持在最底部 -->
+<!-- the boot of the theme, keep it at the bottom -->
+<script  src="/js/boot.js" ></script>
+
+
+  <script type="text/javascript">
+    /*窗口监视*/
+    var originalTitle = document.title;
+    window.onblur = function(){document.title = "明眸如初"};
+    window.onfocus = function(){document.title = originalTitle};
+  </script>
+
+
+  <div id="tooltip-rightmenu" class="tooltip-rightmenu">如需原始右键菜单请按下 <strong>Ctrl+右键</strong></div>
+
+<div id="rightmenu-wrapper" style="">
+  <ul class="list-v rightmenu" id="rightmenu-content">
+	  <li class="navigation menuNavigation-Content">
+		<a class="nav icon-only fix-cursor-default" onclick="history.back()"><i class="iconfont icon-zuojiantou1"></i></a>
+		<a class="nav icon-only fix-cursor-default" onclick="history.forward()"><i class="iconfont icon-youjiantou1"></i></a>
+		<a class="nav icon-only fix-cursor-default" onclick="window.location.reload()"><i class="iconfont icon-shuaxin"></i></a>
+		<a  aria-label="TOP" href="#" role="button"><i class="iconfont icon-xiangshang"></i></a>
+	  </li>
+
+		<hr class="menuLoad-Content" style="display: block;">
+	  <li class="menuLoad-Content" style="display: block;">
+		<a class="vlts-menu fix-cursor-default" target="_self" href="javascript:;" data-toggle="modal" data-target="#modalSearch" aria-label="Search">
+		  <span>
+			  <i class="iconfont icon-sousuo1 rightmenu-icon"></i>
+			  站内搜索
+		  </span>
+		</a>
+	  </li>
+
+	  <li class="menuLoad-Content" style="display: block;">
+		<a class="vlts-menu fix-cursor-default"  href="https://www.zywvvd.com/messagebd/" data-group="link">
+		  <span>
+			  <i class="iconfont icon-yangshi_icon_tongyong_chat rightmenu-icon">  </i>
+			   留言吐槽 
+		   </span>
+		</a>
+	  </li>
+
+
+	  <li class="menuLoad-Content" style="display: block;">
+		<a class="vlts-menu fix-cursor-default" id="help" target="_blank" rel="noopener" href="https://www.foreverblog.cn/go.html" data-group="link">
+		<span>
+			  <i class="iconfont icon-a-BlackHole rightmenu-icon"></i>
+			  虫洞穿梭
+		  </span>
+		</a>
+	  </li>
+
+	<a id="scroll-top-button" aria-label="TOP" href="#" role="button" style="bottom: 20px; right: 52.6364px;">
+        <i class="iconfont icon-xiangshangjiantou" aria-hidden="true"></i>
+      </a>
+
+	<hr class="menuLoad-Content" style="display: block;">
+	
+	  <li class="menuLoad-Content" style="display: block;">
+		<a class="vlts-menu fix-cursor-default" id="destroy-airplane" target="_blank" rel="noopener"  data-group="link">
+		<span>
+			  <i class="iconfont icon-feiji rightmenu-icon"></i>
+			  破坏小飞机
+		  </span>
+		</a>
+	  </li>
+  </ul>
+</div>
+
+<script>
+	var ua = navigator.userAgent;
+	var ipad = ua.match(/(iPad).*OS\s([\d_]+)/),
+		isIphone = !ipad && ua.match(/(iPhone\sOS)\s([\d_]+)/),
+		isAndroid = ua.match(/(Android)\s+([\d.]+)/),
+		isMobile = isIphone || isAndroid;
+
+	if(!isMobile) {
+		// 为按钮添加事件处理器
+		document.getElementById('destroy-airplane').onclick = function() {
+		  console.log('飞机起飞！');
+		  // 定义要执行的JavaScript代码
+		var KICKASSVERSION='2.0';
+		var s = document.createElement('script');
+		s.type='text/javascript';
+		document.body.appendChild(s);
+		s.src='https://uipv4.zywvvd.com:33030/HexoFiles/js/games/airplane/airplane.js';
+		void(0);
+		};
+	}
+</script>
+
+
+
+
+
+<link href="/css/custom.css"type="text/css"rel="stylesheet"/>
+<script src="/vvd_js/right_menu.js" type="text/javascript"></script>
+<link href="/css/right_menu.css"type="text/css"rel="stylesheet"/>
+<script src="/vvd_js/go.js"></script>
+
+
+  <noscript>
+    <div class="noscript-warning">博客在允许 JavaScript 运行的环境下浏览效果更佳</div>
+  </noscript>
+<script src="/live2dw/lib/L2Dwidget.min.js?094cbace49a39548bed64abff5988b05"></script><script>L2Dwidget.init({"pluginRootPath":"live2dw/","pluginJsPath":"lib/","pluginModelPath":"assets/","tagMode":false,"log":false,"model":{"jsonPath":"/live2dw/assets/z16.model.json"},"display":{"position":"left","width":200,"height":400},"mobile":{"show":false},"react":{"opacity":0.9}});</script></body>
+</html>
