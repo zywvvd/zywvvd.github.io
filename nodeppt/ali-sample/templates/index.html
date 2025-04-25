@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>图片粘贴上传示例</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 20px auto;
+            padding: 20px;
+        }
+        #dropzone {
+            border: 2px dashed #ccc;
+            border-radius: 10px;
+            padding: 40px;
+            text-align: center;
+            color: #666;
+            margin: 20px 0;
+        }
+        #result {
+            margin-top: 20px;
+            white-space: pre-wrap;
+        }
+    </style>
+</head>
+<body>
+    <h2>图片粘贴上传演示</h2>
+    
+    <div id="dropzone">
+        在此页面任意位置粘贴图片（Ctrl+V 或右键粘贴）
+    </div>
+
+    <div id="result"></div>
+
+    <script>
+        // 监听粘贴事件
+        document.addEventListener('paste', async (e) => {
+            const items = e.clipboardData.items;
+            
+            for (let item of items) {
+                if (item.type.startsWith('image')) {
+                    const blob = item.getAsFile();
+                    await uploadImage(blob);
+                }
+            }
+        });
+
+        // 上传图片到后端
+        async function uploadImage(blob) {
+            const formData = new FormData();
+            formData.append('image', blob, 'pasted-image.png');
+
+            try {
+                const response = await fetch('/upload', {
+                    method: 'POST',
+                    body: formData
+                });
+                
+                const result = await response.json();
+                document.getElementById('result').textContent = 
+                    `上传成功！后端接收信息：\n${JSON.stringify(result, null, 2)}`;
+                
+            } catch (error) {
+                console.error('上传失败:', error);
+                document.getElementById('result').textContent = '上传失败，请检查控制台';
+            }
+        }
+    </script>
+</body>
+</html>
