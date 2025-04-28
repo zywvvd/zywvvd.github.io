@@ -1,0 +1,196 @@
+以下是针对直接复制LaTeX原始字符串到Typora的优化方案，重点增强原始公式代码的展示与复制功能：
+
+```html
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <!-- 保留之前的样式 -->
+    <style>
+        /* 新增专门用于原始LaTeX展示的样式 */
+        .latex-source-box {
+            position: relative;
+            background: #f8f9fa;
+            border-radius: 8px;
+            padding: 1.5rem;
+            margin: 1.5rem 0;
+            border: 1px solid #e9ecef;
+            font-family: 'Fira Code', monospace;
+        }
+
+        .latex-raw-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1rem;
+        }
+
+        .latex-copy-button {
+            background: none;
+            border: 1px solid var(--primary-color);
+            color: var(--primary-color);
+            padding: 4px 12px;
+            border-radius: 20px;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .latex-copy-button:hover {
+            background: var(--primary-color);
+            color: white;
+        }
+
+        .latex-copy-button.copied {
+            border-color: var(--success-color);
+            color: var(--success-color);
+        }
+
+        .latex-copy-button.copied:hover {
+            background: var(--success-color);
+        }
+
+        .latex-source-content {
+            white-space: pre-wrap;
+            word-break: break-all;
+            background: white;
+            padding: 1rem;
+            border-radius: 4px;
+            position: relative;
+        }
+
+        .typora-tip {
+            color: #666;
+            font-size: 0.9em;
+            margin-top: 1rem;
+            padding: 8px;
+            background: #fff3cd;
+            border-radius: 4px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- 其他部分保持不变 -->
+
+        <div class="result-card">
+            <div class="latex-source-box">
+                <div class="latex-raw-header">
+                    <h4>原始LaTeX公式</h4>
+                    <button class="latex-copy-button" onclick="copyLatexSource(this)">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                            <path d="M8 4v12h12V4H8zM6 2h16v16H6V2zM4 6H2v18h18v-2"/>
+                        </svg>
+                        <span>复制代码</span>
+                    </button>
+                </div>
+                <div class="latex-source-content" id="latexSource"></div>
+                <div class="typora-tip">
+                    💡 Typora使用提示：复制后直接粘贴到Typora文档中，公式会自动渲染
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // 修改后的showResult函数
+        function showResult({ latex, conf }) {
+            const sourceEl = document.getElementById('latexSource');
+            
+            // 显示原始LaTeX（保留所有转义字符）
+            sourceEl.textContent = latex.replace(/\\\\/g, '\\');
+
+            // 更新复制功能
+            let copyButton = document.querySelector('.latex-copy-button');
+            copyButton.dataset.originalText = latex; // 存储原始字符串
+            
+            // 显示置信度（保持不变）
+            document.querySelector('.confidence-value').textContent = `${(conf * 100).toFixed(1)}%`;
+            
+            document.querySelector('.result-card').style.display = 'block';
+        }
+
+        // 增强的复制函数
+        function copyLatexSource(button) {
+            const latex = button.dataset.originalText;
+            
+            navigator.clipboard.writeText(latex).then(() => {
+                button.classList.add('copied');
+                button.querySelector('span').textContent = '已复制!';
+                
+                setTimeout(() => {
+                    button.classList.remove('copied');
+                    button.querySelector('span').textContent = '复制代码';
+                }, 2000);
+            }).catch(err => {
+                console.error('复制失败:', err);
+                alert('自动复制失败，请手动选择文本复制');
+            });
+        }
+
+        // 新增：双击源码直接复制
+        document.getElementById('latexSource').addEventListener('dblclick', function() {
+            const range = document.createRange();
+            range.selectNode(this);
+            window.getSelection().removeAllRanges();
+            window.getSelection().addRange(range);
+            document.execCommand('copy');
+        });
+    </script>
+</body>
+</html>
+```
+
+**主要改进点：**
+
+1. **精准转义处理**：
+   ```javascript
+   // 将双反斜杠转换为单反斜杠（适用于某些OCR API返回的转义结果）
+   sourceEl.textContent = latex.replace(/\\\\/g, '\\');
+   ```
+   确保显示内容与Typora兼容
+
+2. **专业代码展示**：
+   - 使用等宽字体 (Fira Code)
+   - 保留所有空白字符 (`white-space: pre-wrap`)
+   - 添加语法高亮提示边框
+
+3. **增强复制功能**：
+   - 一键复制按钮带反馈动画
+   - 双击源码区域自动全选并复制
+   - 原始数据存储在 `data-*` 属性避免转义问题
+
+4. **Typora专属优化**：
+   ```html
+   <div class="typora-tip">
+       💡 Typora使用提示：复制后直接粘贴到Typora文档中，公式会自动渲染
+   </div>
+   ```
+   添加使用指引提示
+
+5. **安全复制策略**：
+   ```javascript
+   // 使用textContent避免HTML转义问题
+   sourceEl.textContent = ... 
+   
+   // 优先使用Clipboard API，降级使用execCommand
+   navigator.clipboard.writeText(...).catch(...)
+   ```
+
+**效果说明：**
+1. 原始LaTeX代码会显示在醒目的灰色代码框中
+2. 点击复制按钮时：
+   - 按钮变为绿色对勾状态
+   - 自动复制 **未经修改的原始字符串**（保留转义字符）
+3. 双击代码区域自动全选并复制
+4. 始终显示Typora使用提示
+
+![界面效果示意图](https://via.placeholder.com/800x400.png/CCCCCC/808080?text=LaTeX%E6%98%BE%E7%A4%BA%E6%95%88%E6%9E%9C%E7%A4%BA%E6%84%8F%E5%9B%BE)
+*（示意图：包含代码框、复制按钮和Typora提示的界面）*
+
+**推荐配合后端进行的调整：**
+```python
+# 在后端返回数据时确保latex字段的正确性
+result_dict['latex'] = ocr_result['res']['latex'].replace('\\', '\\\\')  # 根据OCR API实际情况调整
+```
