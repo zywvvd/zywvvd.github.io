@@ -31,7 +31,7 @@
 <meta property="og:image" content="https://uipv4.zywvvd.com:33030/HexoFiles/vvd_image_files/202406261809395.png">
 <meta property="og:image" content="https://uipv4.zywvvd.com:33030/HexoFiles/vvd_image_files/202406261810876.png">
 <meta property="article:published_time" content="2024-06-26T09:01:39.000Z">
-<meta property="article:modified_time" content="2025-04-30T06:50:13.449Z">
+<meta property="article:modified_time" content="2025-05-13T10:53:18.247Z">
 <meta property="article:author" content="Yiwei Zhang">
 <meta property="article:tag" content="Camera">
 <meta name="twitter:card" content="summary_large_image">
@@ -680,7 +680,7 @@ document.addEventListener("readystatechange", function() {
         <i class="iconfont icon-chart"></i>
         
           <!-- compatible with older versions-->
-          2k 字
+          2.5k 字
         
       </span>
     
@@ -692,7 +692,7 @@ document.addEventListener("readystatechange", function() {
         
         
           <!-- compatible with older versions-->
-          17 分钟
+          22 分钟
         
       </span>
     
@@ -895,7 +895,7 @@ document.addEventListener("readystatechange", function() {
                 
                   
                     <!-- compatible with older versions-->
-                    本文最后更新于：2025年4月30日 下午
+                    本文最后更新于：2025年5月13日 晚上
                   
                 
               </p>
@@ -1037,9 +1037,53 @@ $$
 <p><em>SOLVEPNP_UPLP</em> (未实现)         <a target="_blank" rel="noopener" href="https://upcommons.upc.edu/bitstream/handle/2117/22931/1404-Exhaustive-linearization-for-robust-camera-pose-and-focal-length-estimation.pdf;sequence=1">Exhaustive Linearization for Robust Camera Pose and Focal Length Estimation</a>  实际调用 SOLVEPNP_EPNP</p>
 </li>
 </ul>
+<h4 id="rotation-vectors">rotation vectors</h4>
+<p>姿态解析方法返回的旋转向量，事实上是<strong>轴角</strong>的形式描述该旋转。</p>
+<p>旋转向量是一个三维向量，它通过以下方式描述旋转：</p>
+<ol>
+<li><strong>旋转轴</strong>：旋转向量的方向表示旋转轴的方向。旋转轴是经过原点的直线，物体绕这条直线旋转。</li>
+<li><strong>旋转角度</strong>：旋转向量的模长（长度）表示旋转的角度（以弧度为单位）。旋转角度的大小与旋转向量的长度成正比。</li>
+</ol>
+<p><strong>旋转向量与旋转矩阵的转换</strong></p>
+<p>旋转向量可以通过罗德里格斯公式（Rodrigues’ formula）转换为旋转矩阵。旋转矩阵是一个3x3的正交矩阵，它直接表示三维空间中的旋转。</p>
+<p>在OpenCV中，可以使用以下函数进行转换：</p>
+<ul>
+<li><code>Rodrigues(rotation_vector, rotation_matrix)</code>：将旋转向量转换为旋转矩阵。</li>
+<li><code>Rodrigues(rotation_matrix, rotation_vector)</code>：将旋转矩阵转换为旋转向量。</li>
+</ul>
 <h4 id="solveP3P">solveP3P()</h4>
 <p>solveP3P() 的输入是 3 组 3d-2d 对应点，定义如下：</p>
 <figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><code class="hljs cpp"><span class="hljs-comment">// P3P has up to 4 solutions, and the solutions are sorted by reprojection errors(lowest to highest).</span><br><span class="hljs-function"><span class="hljs-type">int</span> <span class="hljs-title">solveP3P</span> <span class="hljs-params">(</span></span><br><span class="hljs-params"><span class="hljs-function">    InputArray     objectPoints,     <span class="hljs-comment">// object points, 3x3 1-channel or 1x3/3x1 3-channel. vector&lt;Point3f&gt; can be also passed</span></span></span><br><span class="hljs-params"><span class="hljs-function">    InputArray      imagePoints,     <span class="hljs-comment">// corresponding image points, 3x2 1-channel or 1x3/3x1 2-channel. vector&lt;Point2f&gt; can be also passed</span></span></span><br><span class="hljs-params"><span class="hljs-function">    InputArray     cameraMatrix,     <span class="hljs-comment">// camera intrinsic matrix</span></span></span><br><span class="hljs-params"><span class="hljs-function">    InputArray       distCoeffs,     <span class="hljs-comment">// distortion coefficients.If NULL/empty, the zero distortion coefficients are assumed.</span></span></span><br><span class="hljs-params"><span class="hljs-function">    OutputArrayOfArrays   rvecs,     <span class="hljs-comment">// rotation vectors</span></span></span><br><span class="hljs-params"><span class="hljs-function">    OutputArrayOfArrays   tvecs,     <span class="hljs-comment">// translation vectors</span></span></span><br><span class="hljs-params"><span class="hljs-function">    <span class="hljs-type">int</span>                   flags      <span class="hljs-comment">// solving method</span></span></span><br><span class="hljs-params"><span class="hljs-function">)</span></span>; 　　<br></code></pre></td></tr></table></figure>
+<h4 id="关键结果说明">关键结果说明</h4>
+<p>‌**旋转向量 (<code>rvec</code>)**‌</p>
+<ul>
+<li>‌<strong>物理意义</strong>‌：<br>
+表示将物体坐标系（如标定板坐标系）中的点转换到相机坐标系时所需的旋转变换。<br>
+具体来说，<code>rvec</code> 描述了物体坐标系相对于相机坐标系的旋转姿态。</li>
+<li>‌<strong>数学形式</strong>‌：
+<ul>
+<li>旋转向量是轴角表示法（Axis-Angle）的紧凑形式（3×1 向量），可通过 Rodrigues 公式转换为旋转矩阵：<br>
+$𝑅=cv2.Rodrigues(𝑟𝑣𝑒𝑐)$</li>
+<li>矩阵 $𝑅$ 的物理意义为：将物体坐标系下的坐标旋转到相机坐标系下。</li>
+</ul>
+</li>
+</ul>
+<p>**平移向量 (<code>tvec</code>)**‌</p>
+<ul>
+<li>
+<p>‌<strong>物理意义</strong>‌：<br>
+表示物体坐标系原点在相机坐标系下的位置偏移量。</p>
+<blockquote>
+<p>例如，若标定板坐标系的中心在世界坐标系下为原点，则 <code>tvec</code> 是该原点在相机坐标系中的坐标值。</p>
+</blockquote>
+</li>
+<li>
+<p>‌<strong>数学形式</strong>‌：</p>
+<ul>
+<li>平移向量是一个 3×1 的向量，单位为毫米（mm）或米（m），需与标定板 3D 点坐标单位一致。</li>
+</ul>
+</li>
+</ul>
 <h4 id="solvePnP-和-solvePnPGeneric">solvePnP() 和 solvePnPGeneric()</h4>
 <p>solvePnP() 实际上调用的是 solvePnPGeneric()，内部实现如下：</p>
 <figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br></pre></td><td class="code"><pre><code class="hljs c++"><span class="hljs-function"><span class="hljs-type">bool</span> <span class="hljs-title">solvePnP</span><span class="hljs-params">(InputArray opoints, InputArray ipoints, InputArray cameraMatrix, InputArray distCoeffs, OutputArray rvec, OutputArray tvec, <span class="hljs-type">bool</span> useExtrinsicGuess, <span class="hljs-type">int</span> flags)</span></span><br><span class="hljs-function"></span>&#123;<br>    <span class="hljs-built_in">CV_INSTRUMENT_REGION</span>();<br> <br>    vector&lt;Mat&gt; rvecs, tvecs;<br>    <span class="hljs-type">int</span> solutions = <span class="hljs-built_in">solvePnPGeneric</span>(opoints, ipoints, cameraMatrix, distCoeffs, rvecs, tvecs, useExtrinsicGuess, (SolvePnPMethod)flags, rvec, tvec);<br> <br>    <span class="hljs-keyword">if</span> (solutions &gt; <span class="hljs-number">0</span>)<br>    &#123;<br>        <span class="hljs-type">int</span> rdepth = rvec.<span class="hljs-built_in">empty</span>() ? CV_64F : rvec.<span class="hljs-built_in">depth</span>();<br>        <span class="hljs-type">int</span> tdepth = tvec.<span class="hljs-built_in">empty</span>() ? CV_64F : tvec.<span class="hljs-built_in">depth</span>();<br>        rvecs[<span class="hljs-number">0</span>].<span class="hljs-built_in">convertTo</span>(rvec, rdepth);<br>        tvecs[<span class="hljs-number">0</span>].<span class="hljs-built_in">convertTo</span>(tvec, tdepth);<br>    &#125;<br> <br>    <span class="hljs-keyword">return</span> solutions &gt; <span class="hljs-number">0</span>;<br>&#125;<br></code></pre></td></tr></table></figure>
