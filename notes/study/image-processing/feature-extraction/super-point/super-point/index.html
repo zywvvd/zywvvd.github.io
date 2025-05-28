@@ -43,7 +43,7 @@
 <meta property="og:image" content="https://uipv4.zywvvd.com:33030/HexoFiles/vvd_image_files/202505272356317.png">
 <meta property="og:image" content="https://uipv4.zywvvd.com:33030/HexoFiles/gif/superpoint.webm">
 <meta property="article:published_time" content="2025-05-27T08:43:27.000Z">
-<meta property="article:modified_time" content="2025-05-27T16:24:38.028Z">
+<meta property="article:modified_time" content="2025-05-28T06:18:54.039Z">
 <meta property="article:author" content="Yiwei Zhang">
 <meta property="article:tag" content="Image_Processing">
 <meta property="article:tag" content="Feature_Extraction">
@@ -908,7 +908,7 @@ document.addEventListener("readystatechange", function() {
                 
                   
                     <!-- compatible with older versions-->
-                    本文最后更新于：2025年5月28日 凌晨
+                    本文最后更新于：2025年5月28日 下午
                   
                 
               </p>
@@ -977,32 +977,41 @@ document.addEventListener("readystatechange", function() {
 <li>输出维度：$1<em>C</em>1*K$。</li>
 </ul>
 <h4 id="4-loss-function"><strong>4. loss function</strong></h4>
-<p>$$<br>
-\begin{aligned}\mathcal{L}\left(\mathcal{X},\mathcal{X}<sup>{\prime},\mathcal{D},\mathcal{D}</sup>{\prime};Y,Y<sup>{\prime},S\right)&amp;=\mathcal{L}_p\left(\mathcal{X},Y\right)+\mathcal{L}_p\left(\mathcal{X}</sup>{\prime},Y<sup>{\prime}\right)+\lambda\mathcal{L}_d\left(\mathcal{D},\mathcal{D}</sup>{\prime},S\right)\end{aligned}<br>
-$$</p>
-<p>可见损失函数由两项组成，其中一项为特征点检测 loss Lp ，另外一项是描述子的 loss Ld 。对于检测项 loss，此时采用了交叉熵损失函数:<br>
-$$<br>
-\mathcal{L}<em>p(\mathcal{X},Y)=\frac{1}{H_cW_c}\sum</em>{\overset{h=1}{w=1}}^{H_c,W_c}l_p\left(\mathbf{x}<em>{hw};y</em>{hw}\right)<br>
-$$<br>
-其中：<br>
-$$<br>
-l_{p}\left(\mathbf{x}<em>{h w} ; y\right)=-\log \left(\frac{\exp \left(\mathbf{x}</em>{h w y}\right)}{\sum_{k=1}^{65} \exp \left(\mathbf{x}<em>{h w k}\right)}\right)<br>
-$$<br>
-此时类似于一个分类任务， $\log$ 运算内部就是 cell 中元素为特征点的概率（即<code>softmax</code>之后的值），即样本 $\mathbf{x}</em>{hw}$</p>
+
+$$
+\begin{aligned}\mathcal{L}\left(\mathcal{X},\mathcal{X}^{\prime},\mathcal{D},\mathcal{D}^{\prime};Y,Y^{\prime},S\right)&=\mathcal{L}_p\left(\mathcal{X},Y\right)+\mathcal{L}_p\left(\mathcal{X}^{\prime},Y^{\prime}\right)+\lambda\mathcal{L}_d\left(\mathcal{D},\mathcal{D}^{\prime},S\right)\end{aligned}
+$$
+
+
+<p>可见损失函数由两项组成，其中一项为特征点检测 loss Lp ，另外一项是描述子的 loss Ld 。对于检测项 loss，此时采用了交叉熵损失函数:</p>
+
+$$
+\mathcal{L}_p(\mathcal{X},Y)=\frac{1}{H_cW_c}\sum_{\overset{h=1}{w=1}}^{H_c,W_c}l_p\left(\mathbf{x}_{hw};y_{hw}\right)
+$$
+其中：
+$$
+l_{p}\left(\mathbf{x}_{h w} ; y\right)=-\log \left(\frac{\exp \left(\mathbf{x}_{h w y}\right)}{\sum_{k=1}^{65} \exp \left(\mathbf{x}_{h w k}\right)}\right)
+$$
+
+<p>此时类似于一个分类任务， $\log$ 运算内部就是 cell 中元素为特征点的概率（即<code>softmax</code>之后的值），即样本 $\mathbf{x}_{hw}$ </p>
 <p>属于特征的概率。这是一个2D location classifier，每个 $8x8$ 的范围内只能有一个特征点，即图像中最多有 $H \times W / 64$  个 SuperPoint 特征点。</p>
-<p>描述子的损失函数:<br>
-$$<br>
-\mathcal{L}<em>{d}\left(\mathcal{D}, \mathcal{D}^{\prime}, S\right)=\frac{1}{\left(H</em>{c} W_{c}\right)^{2}} \sum_{h=1 \atop w=1}^{H_{c}, W_{c}} \sum_{h^{\prime}=1 \atop w<sup>{\prime}=1}</sup>{H_{c}, W_{c}} l_{d}\left(\mathbf{d}<em>{h w}, \mathbf{d}</em>{h^{\prime} w<sup>{\prime}}</sup>{\prime} ; s_{h w h^{\prime} w^{\prime}}\right)<br>
-$$<br>
-其中 $l_d$ 为<code>Hinge-loss</code>（合页损失函数，用于SVM，如支持向量的软间隔，可以保证最后解的稀疏性）；<br>
+<p>描述子的损失函数:</p>
+
+$$
+\mathcal{L}_{d}\left(\mathcal{D}, \mathcal{D}^{\prime}, S\right)=\frac{1}{\left(H_{c} W_{c}\right)^{2}} \sum_{h=1 \atop w=1}^{H_{c}, W_{c}} \sum_{h^{\prime}=1 \atop w^{\prime}=1}^{H_{c}, W_{c}} l_{d}\left(\mathbf{d}_{h w}, \mathbf{d}_{h^{\prime} w^{\prime}}^{\prime} ; s_{h w h^{\prime} w^{\prime}}\right)
+$$
+
+<p>其中 $l_d$ 为<code>Hinge-loss</code>（合页损失函数，用于SVM，如支持向量的软间隔，可以保证最后解的稀疏性）；<br>
 $$<br>
 l_{d}\left(\mathbf{d}, \mathbf{d}^{\prime} ; s\right)=\lambda_{d} * s * \max \left(0, m_{p}-\mathbf{d}^{T} \mathbf{d}^{\prime}\right)+(1-s) * \max \left(0, \mathbf{d}^{T} \mathbf{d}^{\prime}-m_{n}\right)<br>
 $$<br>
-指示函数为 $s_{h w h^{\prime} w^{\prime}}$ , S 表示所有正确匹配对集合:<br>
-$$<br>
-s_{h w h^{\prime} w^{\prime}}=\left{\begin{array}{ll}{1,} &amp; {\text { if }\left|\widehat{\mathcal{H} \mathbf{p}<em>{h w}}-\mathbf{p}</em>{h^{\prime} w^{\prime}}\right| \leq 8} \ {0,} &amp; {\text { otherwise }}\end{array}\right.<br>
-$$<br>
-上式中的 $\mathbf{p}$ 是cell的中心点坐标， $\mathcal{H} \mathbf{p} $ 与 $mathbf{p}^{\prime}$ 的距离小于 8 个 pixel 的认为是正确的匹配，这其实对应于cell上的的1个pixel。</p>
+指示函数为 $s_{h w h^{\prime} w^{\prime}}$ , S 表示所有正确匹配对集合:</p>
+
+$$
+s_{h w h^{\prime} w^{\prime}}=\left\{\begin{array}{ll}{1,} & {\text { if }\left\|\widehat{\mathcal{H} \mathbf{p}_{h w}}-\mathbf{p}_{h^{\prime} w^{\prime}}\right\| \leq 8} \\ {0,} & {\text { otherwise }}\end{array}\right.
+$$
+
+<p>上式中的 $\mathbf{p}$ 是cell的中心点坐标， $\mathcal{H} \mathbf{p} $ 与 $mathbf{p}^{\prime}$ 的距离小于 8 个 pixel 的认为是正确的匹配，这其实对应于cell上的的1个pixel。</p>
 <p>让我们仔细看一下这个损失函数，这其实是一个<code>Double margin Siamese loss</code>。当正例描述子余弦相似度 $\mathbf{d}<sup>T\mathbf{d}</sup>{\prime} $ 大于 $m_p$ 时，此时不需要惩罚；但如果该相似度较小时，此时就要惩罚了；负样本时我们的目标是让 $\mathbf{d}<sup>T\mathbf{d}</sup>{\prime}$ 变小，但网络性能不佳时可能这个值很大(大于上式中的 $m_n$ )，此时要惩罚这种现象，网络权重经过调整后使得该 loss 降低，对应的描述子相似度降低；</p>
 <p><img src="https://uipv4.zywvvd.com:33030/HexoFiles/vvd_image_files/202505272337726.png" srcset="/img/loading.gif" lazyload alt=""></p>
 <h3 id="网络训练"><strong>网络训练</strong></h3>
@@ -1023,10 +1032,13 @@ $$<br>
 作者使用的数据集是<code>MS-COCO</code>，为了使网络的泛化能力更强，本文不仅使用原始了原始图片，而且对每张图片进行随机的旋转和缩放形成新的图片，新的图片也被用来进行识别。这一步其实就类似于训练里常用的数据增强。经过一系列的单应变换之后特征点的复检率以及普适性得以增强。值得注意的是，在实际训练时，这里采用了迭代使用单应变换的方式，例如使用优化后的特征点检测器重新进行单应变换进行训练，然后又可以得到更新后的检测器，如此迭代优化，这就是所谓的self-supervisd。</p>
 <p><img src="https://uipv4.zywvvd.com:33030/HexoFiles/vvd_image_files/202505272345154.png" srcset="/img/loading.gif" lazyload alt=""></p>
 <p><img src="https://uipv4.zywvvd.com:33030/HexoFiles/vvd_image_files/202505272353739.jpg" srcset="/img/loading.gif" lazyload alt=""></p>
-<p>最后的关键点检测器，即 $\hat{F}\left(I ; f_{\theta}\right) $，可以表示为再所有随机单应变换/反变换的聚合：<br>
-$$<br>
-\hat{F}\left(I ; f_{\theta}\right)=\frac{1}{N_{h}} \sum_{i=1}^{N_{h}} \mathcal{H}<em>{i}^{-1} f</em>{\theta}\left(\mathcal{H}_{i}(I)\right)<br>
-$$</p>
+<p>最后的关键点检测器，即 $\hat{F}\left(I ; f_{\theta}\right) $，可以表示为再所有随机单应变换/反变换的聚合：</p>
+
+$$
+\hat{F}\left(I ; f_{\theta}\right)=\frac{1}{N_{h}} \sum_{i=1}^{N_{h}} \mathcal{H}_{i}^{-1} f_{\theta}\left(\mathcal{H}_{i}(I)\right)
+$$
+
+
 <p><img src="https://uipv4.zywvvd.com:33030/HexoFiles/vvd_image_files/202505272355632.png" srcset="/img/loading.gif" lazyload alt=""></p>
 <h4 id="构建残差，迭代优化描述子以及检测器"><strong>构建残差，迭代优化描述子以及检测器</strong></h4>
 <p>利用上面网络得到的关键点位置以及描述子表示构建残差，利用<code>ADAM</code>进行优化。</p>
