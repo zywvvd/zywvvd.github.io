@@ -132,6 +132,25 @@
 <meta name="generator" content="Hexo 7.2.0"><link rel="alternate" href="/atom.xml" title="又见苍岚" type="application/atom+xml">
 </head>
 
+<script>
+// 页面加载完成后隐藏加载动画
+document.addEventListener("readystatechange", function() {
+    const loader = document.getElementById('Loadanimation');
+    if (loader) {
+        // 停留1秒后开始淡出
+        setTimeout(function() {
+            loader.style.transition = 'opacity 1.2s';
+            loader.style.opacity = '0';
+            // 淡出完成后隐藏
+            setTimeout(() => {
+                loader.style.display = 'none';
+            }, 1000); // 等待淡出动画完成
+        }, 700); // 停留0.8秒
+    }
+});
+</script>
+
+
 
 <body>
   
@@ -390,7 +409,7 @@
                   
 		<div >
 
-                  <a class="dropdown-item" href="https://uipv4.zywvvd.com:38920" target="_self" data-umami-event="Navigation-Emby">
+                  <a class="dropdown-item" href="https://uipv4.zywvvd.com:33043" target="_self" data-umami-event="Navigation-Emby">
 
                     <i class="iconfont icon-meiti"></i>
                     <span>影院</span>
@@ -708,32 +727,47 @@
 		  <span id="vvdpost_value_page_cn">0</span> 条
         </span>
 
-		<script>
-			console.log(window.location.pathname)
-			var httpRequest = new XMLHttpRequest();
-			httpRequest.open('POST', 'https://uipv4.zywvvd.com:33037/poststats', true);
-			httpRequest.setRequestHeader("Content-type","application/json");
-			httpRequest.send(JSON.stringify(window.location.pathname));
-			httpRequest.onreadystatechange = function () {//请求后的回调接口，可将请求成功后要执行的程序写在其中
-				if (httpRequest.readyState == 4 && httpRequest.status == 200) {//验证请求是否发送成功
-					var json = httpRequest.responseText;//获取到服务端返回的数据
-					var obj = JSON.parse(json);
-					var pvCtn = document.querySelector('#vvdpost_container_page_pvuv');
-					if (pvCtn) {
-						var pv_ele = document.querySelector('#vvdpost_value_page_pv');
-						var uv_ele = document.querySelector('#vvdpost_value_page_uv');
-						var cn_ele = document.querySelector('#vvdpost_value_page_cn');
+    <script>
+    document.addEventListener("DOMContentLoaded", function() {
+	      console.log("PVUV_" + window.location.pathname);
 
-						if (uv_ele && uv_ele) {
-							pv_ele.innerText = obj.pv;
-							uv_ele.innerText = obj.uv;
-							cn_ele.innerText = obj.cn;
-							pvCtn.style.display = 'inline';
-							}
-						}
-					}
-			};
-		</script>
+	      // 使用 fetch API 发送 POST 请求
+	      fetch('https://uipv4.zywvvd.com:33037/poststats', { 
+		  method: 'POST',
+		  headers: {
+		      'Content-Type': 'application/json'
+		  },
+		  body: JSON.stringify(window.location.pathname) // 将路径名作为对象发送，以便在服务器端更容易处理
+	      })
+	      .then(response => {
+		  // 检查响应状态
+		  if (!response.ok) {
+		      throw new Error('Network response was not ok ' + response.statusText);
+		  }
+		  return response.json(); // 解析 JSON 响应
+	      })
+	      .then(data => {
+		  // 处理解析后的数据
+		  console.log(data.pv);
+		  var pvCtn = document.querySelector('#vvdpost_container_page_pvuv');
+		  if (pvCtn) {
+		      var pvEle = document.querySelector('#vvdpost_value_page_pv');
+		      var uvEle = document.querySelector('#vvdpost_value_page_uv');
+		      var cnEle = document.querySelector('#vvdpost_value_page_cn');
+		      if (pvEle && uvEle) {
+		          pvEle.innerText = data.pv;
+		          uvEle.innerText = data.uv;
+		          cnEle.innerText = data.cn;
+		          pvCtn.style.display = 'inline';
+		      }
+		  }
+	      })
+	      .catch(error => {
+		  // 处理请求错误
+		  console.error('There has been a problem with your fetch operation:', error);
+	      });
+      });
+  </script>
       
     
   </div>

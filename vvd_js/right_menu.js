@@ -1,5 +1,5 @@
 
-	var right_cilck_num = 0;
+	var right_click_num = 0;
 	window.oncontextmenu = function(e){
 		// 检查是否按下了Ctrl键
 		if (e.ctrlKey) {
@@ -11,10 +11,10 @@
 		menu.style.display = "block"; //将自定义的“右键菜单”显示出来
 		menu.style.left = e.clientX + "px";  //设置位置，跟随鼠标
 		menu.style.top = e.clientY+"px"; 
-		right_cilck_num = right_cilck_num+ 1;
+		right_click_num = right_click_num+ 1;
 		  const referrer = document.referrer;
   console.log(referrer);
-		if(right_cilck_num %7== 1){
+		if(right_click_num %7== 1){
 		      const tooltip = document.getElementById('tooltip-rightmenu');
 		      tooltip.classList.add('show-tooltip');
 
@@ -30,9 +30,5 @@
 	}
 	
 
-
-	$(function(){
-	   $("#Loadanimation").fadeOut(500);
-	});
 
 

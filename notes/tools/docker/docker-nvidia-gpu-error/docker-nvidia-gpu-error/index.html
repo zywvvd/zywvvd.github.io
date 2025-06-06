@@ -25,7 +25,7 @@
 <meta property="og:description" content="docker 安装后默认无法使用 GPU，本文记录解决方案。">
 <meta property="og:locale" content="zh_CN">
 <meta property="article:published_time" content="2025-04-08T14:17:48.000Z">
-<meta property="article:modified_time" content="2025-04-09T06:40:29.300Z">
+<meta property="article:modified_time" content="2025-06-06T09:33:43.213Z">
 <meta property="article:author" content="Yiwei Zhang">
 <meta property="article:tag" content="Tools">
 <meta property="article:tag" content="Docker">
@@ -107,6 +107,25 @@
   
 <meta name="generator" content="Hexo 7.2.0"><link rel="alternate" href="/atom.xml" title="又见苍岚" type="application/atom+xml">
 </head>
+
+<script>
+// 页面加载完成后隐藏加载动画
+document.addEventListener("readystatechange", function() {
+    const loader = document.getElementById('Loadanimation');
+    if (loader) {
+        // 停留1秒后开始淡出
+        setTimeout(function() {
+            loader.style.transition = 'opacity 1.2s';
+            loader.style.opacity = '0';
+            // 淡出完成后隐藏
+            setTimeout(() => {
+                loader.style.display = 'none';
+            }, 1000); // 等待淡出动画完成
+        }, 700); // 停留0.8秒
+    }
+});
+</script>
+
 
 
 <body>
@@ -366,7 +385,7 @@
                   
 		<div >
 
-                  <a class="dropdown-item" href="https://uipv4.zywvvd.com:38920" target="_self" data-umami-event="Navigation-Emby">
+                  <a class="dropdown-item" href="https://uipv4.zywvvd.com:33043" target="_self" data-umami-event="Navigation-Emby">
 
                     <i class="iconfont icon-meiti"></i>
                     <span>影院</span>
@@ -655,7 +674,7 @@
         <i class="iconfont icon-chart"></i>
         
           <!-- compatible with older versions-->
-          301 字
+          378 字
         
       </span>
     
@@ -667,7 +686,7 @@
         
         
           <!-- compatible with older versions-->
-          3 分钟
+          4 分钟
         
       </span>
     
@@ -684,32 +703,47 @@
 		  <span id="vvdpost_value_page_cn">0</span> 条
         </span>
 
-		<script>
-			console.log(window.location.pathname)
-			var httpRequest = new XMLHttpRequest();
-			httpRequest.open('POST', 'https://uipv4.zywvvd.com:33037/poststats', true);
-			httpRequest.setRequestHeader("Content-type","application/json");
-			httpRequest.send(JSON.stringify(window.location.pathname));
-			httpRequest.onreadystatechange = function () {//请求后的回调接口，可将请求成功后要执行的程序写在其中
-				if (httpRequest.readyState == 4 && httpRequest.status == 200) {//验证请求是否发送成功
-					var json = httpRequest.responseText;//获取到服务端返回的数据
-					var obj = JSON.parse(json);
-					var pvCtn = document.querySelector('#vvdpost_container_page_pvuv');
-					if (pvCtn) {
-						var pv_ele = document.querySelector('#vvdpost_value_page_pv');
-						var uv_ele = document.querySelector('#vvdpost_value_page_uv');
-						var cn_ele = document.querySelector('#vvdpost_value_page_cn');
+    <script>
+    document.addEventListener("DOMContentLoaded", function() {
+	      console.log("PVUV_" + window.location.pathname);
 
-						if (uv_ele && uv_ele) {
-							pv_ele.innerText = obj.pv;
-							uv_ele.innerText = obj.uv;
-							cn_ele.innerText = obj.cn;
-							pvCtn.style.display = 'inline';
-							}
-						}
-					}
-			};
-		</script>
+	      // 使用 fetch API 发送 POST 请求
+	      fetch('https://uipv4.zywvvd.com:33037/poststats', { 
+		  method: 'POST',
+		  headers: {
+		      'Content-Type': 'application/json'
+		  },
+		  body: JSON.stringify(window.location.pathname) // 将路径名作为对象发送，以便在服务器端更容易处理
+	      })
+	      .then(response => {
+		  // 检查响应状态
+		  if (!response.ok) {
+		      throw new Error('Network response was not ok ' + response.statusText);
+		  }
+		  return response.json(); // 解析 JSON 响应
+	      })
+	      .then(data => {
+		  // 处理解析后的数据
+		  console.log(data.pv);
+		  var pvCtn = document.querySelector('#vvdpost_container_page_pvuv');
+		  if (pvCtn) {
+		      var pvEle = document.querySelector('#vvdpost_value_page_pv');
+		      var uvEle = document.querySelector('#vvdpost_value_page_uv');
+		      var cnEle = document.querySelector('#vvdpost_value_page_cn');
+		      if (pvEle && uvEle) {
+		          pvEle.innerText = data.pv;
+		          uvEle.innerText = data.uv;
+		          cnEle.innerText = data.cn;
+		          pvCtn.style.display = 'inline';
+		      }
+		  }
+	      })
+	      .catch(error => {
+		  // 处理请求错误
+		  console.error('There has been a problem with your fetch operation:', error);
+	      });
+      });
+  </script>
       
     
   </div>
@@ -855,7 +889,7 @@
                 
                   
                     <!-- compatible with older versions-->
-                    本文最后更新于：2025年4月9日 下午
+                    本文最后更新于：2025年6月6日 下午
                   
                 
               </p>
@@ -867,7 +901,7 @@
 <p>docker 安装后默认无法使用 GPU，本文记录解决方案。</p>
 </blockquote>
 <span id="more"></span>
-<h3 id="错误描述">错误描述</h3>
+<h3 id="错误描述-1">错误描述 1</h3>
 <p>在使用Docker时，尝试配置NVIDIA GPU驱动支持时遇到了以下错误：</p>
 <figure class="highlight subunit"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs subunit"><span class="hljs-keyword">Error </span>response from daemon: could not select device driver &quot;nvidia&quot; with capabilities: [[gpu]]<br></code></pre></td></tr></table></figure>
 <h3 id="安装过程与解决方案">安装过程与解决方案</h3>
@@ -900,6 +934,17 @@
 <figure class="highlight ebnf"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs ebnf"><span class="hljs-attribute">sudo systemctl restart docker</span><br></code></pre></td></tr></table></figure>
 </li>
 </ol>
+<h3 id="错误描述-2">错误描述 2</h3>
+<p>在安装了 nvidia-container-toolkit 后启动 nvidia docker 还可能报错：</p>
+<figure class="highlight pgsql"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs pgsql">Docker Error - <span class="hljs-type">Unknown</span> <span class="hljs-keyword">or</span> Invalid Runtime <span class="hljs-type">Name</span>: Nvidia<br></code></pre></td></tr></table></figure>
+<p>修改文件  <code>/etc/docker/daemon.json</code> :</p>
+<figure class="highlight json"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><code class="hljs json"><span class="hljs-punctuation">&#123;</span><br>    <span class="hljs-attr">&quot;runtimes&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-punctuation">&#123;</span><br>        <span class="hljs-attr">&quot;nvidia&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-punctuation">&#123;</span><br>            <span class="hljs-attr">&quot;path&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;nvidia-container-runtime&quot;</span><span class="hljs-punctuation">,</span><br>            <span class="hljs-attr">&quot;runtimeArgs&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-punctuation">[</span><span class="hljs-punctuation">]</span><br>        <span class="hljs-punctuation">&#125;</span><br>    <span class="hljs-punctuation">&#125;</span><br><span class="hljs-punctuation">&#125;</span><br></code></pre></td></tr></table></figure>
+<p>之后更新 docker 配置并重启 docker:</p>
+<figure class="highlight nsis"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><code class="hljs nsis">sudo <span class="hljs-params">system</span>ctl daemon-reload<br>sudo <span class="hljs-params">system</span>ctl restart docker<br></code></pre></td></tr></table></figure>
+<h3 id="参考资料">参考资料</h3>
+<ul>
+<li><a target="_blank" rel="noopener" href="https://github.com/NVIDIA-ISAAC-ROS/isaac_ros_visual_slam/issues/132">https://github.com/NVIDIA-ISAAC-ROS/isaac_ros_visual_slam/issues/132</a></li>
+</ul>
 <link rel="stylesheet" href="/css/spoiler.css" type="text/css"><script src="/js/spoiler.js" type="text/javascript" async></script>
                 
 
