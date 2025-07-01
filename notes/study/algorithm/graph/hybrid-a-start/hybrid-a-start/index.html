@@ -1,0 +1,1807 @@
+
+
+<!DOCTYPE html>
+<html lang="zh-CN" data-default-color-scheme=auto>
+
+
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="baidu-site-verification" content="codeva-rLWafCJGYc" />
+  <link rel="apple-touch-icon" sizes="76x76" href="/image/avatar.png">
+  <link rel="icon" href="/image/avatar.png">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, shrink-to-fit=no">
+  <meta http-equiv="x-ua-compatible" content="ie=edge">
+  
+  <meta name="theme-color" content="#2f4154">
+  <meta name="author" content="Yiwei Zhang">
+  <meta name="keywords" content="人工智能, 深度学习, 个人博客, 机器学习">
+  
+    <meta name="description" content="2010年，斯坦福首次提出一种满足车辆运动学的算法(Hybrid A*), 并在(DARPA)的城市挑战赛中得以运用，本文记录相关内容。">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Hybrid A-star 路径规划">
+<meta property="og:url" content="https://www.zywvvd.com/notes/study/algorithm/graph/hybrid-a-start/hybrid-a-start/index.html">
+<meta property="og:site_name" content="又见苍岚">
+<meta property="og:description" content="2010年，斯坦福首次提出一种满足车辆运动学的算法(Hybrid A*), 并在(DARPA)的城市挑战赛中得以运用，本文记录相关内容。">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="https://uipv4.zywvvd.com:33030/HexoFiles/vvd_image_files/202507011316131.png">
+<meta property="article:published_time" content="2025-06-30T09:39:51.000Z">
+<meta property="article:modified_time" content="2025-07-01T07:21:16.798Z">
+<meta property="article:author" content="Yiwei Zhang">
+<meta property="article:tag" content="Algorithm">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:image" content="https://uipv4.zywvvd.com:33030/HexoFiles/vvd_image_files/202507011316131.png">
+  
+  
+  
+  <title>Hybrid A-star 路径规划 - 又见苍岚</title>
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/twitter-bootstrap/4.6.1/css/bootstrap.min.css" />
+
+
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/github-markdown-css/4.0.0/github-markdown.min.css" />
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/hint.css/2.7.0/hint.min.css" />
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/fancybox/3.5.7/jquery.fancybox.min.css" />
+
+
+
+<!-- 主题依赖的图标库，不要自行修改 -->
+<!-- Do not modify the link that theme dependent icons -->
+
+<link rel="stylesheet" href="//at.alicdn.com/t/font_1749284_hj8rtnfg7um.css">
+
+
+
+<link rel="stylesheet" href="//at.alicdn.com/t/font_1736178_lbnruvf0jn.css">
+
+
+<link  rel="stylesheet" href="/css/main.css" />
+
+
+  <link id="highlight-css" rel="stylesheet" href="/css/highlight.css" />
+  
+    <link id="highlight-css-dark" rel="stylesheet" href="/css/highlight-dark.css" />
+  
+
+
+
+  
+<link rel="stylesheet" href="/css/custom.css">
+<link rel="stylesheet" href="/css/reward.css">
+<link rel="stylesheet" href="//cdn.jsdelivr.net/npm/aplayer/dist/APlayer.min.css">
+
+
+
+  <script id="fluid-configs">
+    var Fluid = window.Fluid || {};
+    Fluid.ctx = Object.assign({}, Fluid.ctx)
+    var CONFIG = {"hostname":"www.zywvvd.com","root":"/","version":"1.9.7","typing":{"enable":true,"typeSpeed":90,"cursorChar":"_","loop":false,"scope":["home"]},"anchorjs":{"enable":true,"element":"h1,h2,h3,h4,h5,h6","placement":"left","visible":"hover","icon":""},"progressbar":{"enable":true,"height_px":3,"color":"#29d","options":{"showSpinner":false,"trickleSpeed":100}},"code_language":{"enable":true,"default":"TEXT"},"copy_btn":true,"image_caption":{"enable":true},"image_zoom":{"enable":true,"img_url_replace":["",""]},"toc":{"enable":true,"placement":"right","headingSelector":"h1,h2,h3,h4,h5,h6","collapseDepth":0},"lazyload":{"enable":true,"loading_img":"/img/loading.gif","onlypost":false,"offset_factor":2},"web_analytics":{"enable":true,"follow_dnt":true,"baidu":null,"google":null,"tencent":{"sid":null,"cid":null},"woyaola":null,"cnzz":null,"leancloud":{"app_id":"Cv0XNeBSBdAPAIuVj3PsyM3R-MdYXbMMI","app_key":"4PU1rNlGrqXWzhfW3dgq98oX","server_url":null,"path":"window.location.pathname","ignore_local":false},"gtag":null},"search_path":"/local-search.xml","include_content_in_search":true};
+
+    if (CONFIG.web_analytics.follow_dnt) {
+      var dntVal = navigator.doNotTrack || window.doNotTrack || navigator.msDoNotTrack;
+      Fluid.ctx.dnt = dntVal && (dntVal.startsWith('1') || dntVal.startsWith('yes') || dntVal.startsWith('on'));
+    }
+  </script>
+  <script  src="/js/utils.js" ></script>
+  <script  src="/js/color-schema.js" ></script>
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+    
+  
+
+
+
+  
+<meta name="generator" content="Hexo 7.2.0"><link rel="alternate" href="/atom.xml" title="又见苍岚" type="application/atom+xml">
+</head>
+
+<script>
+// 页面加载完成后隐藏加载动画
+document.addEventListener("readystatechange", function() {
+    const loader = document.getElementById('Loadanimation');
+    if (loader) {
+        // 停留1秒后开始淡出
+        setTimeout(function() {
+            loader.style.transition = 'opacity 1.2s';
+            loader.style.opacity = '0';
+            // 淡出完成后隐藏
+            setTimeout(() => {
+                loader.style.display = 'none';
+            }, 1000); // 等待淡出动画完成
+        }, 700); // 停留0.8秒
+    }
+});
+</script>
+
+
+
+<body>
+  
+<div id="Loadanimation" style="z-index:999999;">
+<div id="Loadanimation-center">
+   <div id="Loadanimation-center-absolute">
+       <div class="xccx_object" id="xccx_four"></div>
+       <div class="xccx_object" id="xccx_three"></div>
+       <div class="xccx_object" id="xccx_two"></div>
+       <div class="xccx_object" id="xccx_one"></div>
+   </div>
+</div>
+</div>
+
+<link href="/css/loading.css"type="text/css"rel="stylesheet"/>
+
+
+
+
+
+
+<div>
+	<div class='real_mask' style="
+		background-color: rgba(0,0,0,0.4);
+		width: 100%;
+		height: 100%;
+		position: fixed;
+		z-index: -777;
+	"></div>
+	<div id="banner_video_insert">
+	</div>	
+	<div id='vvd_banner_img'>
+	</div>
+</div>
+<div id="banner"></div>
+
+
+
+
+
+
+
+  <header>
+    
+
+<div class="header-inner" style="height: 80vh;">
+  <nav id="navbar" class="navbar fixed-top  navbar-expand-lg navbar-dark scrolling-navbar">
+  <div class="container">
+    <a class="navbar-brand" href="/">
+      <strong>CangLan</strong>
+    </a>
+
+    <button id="navbar-toggler-btn" class="navbar-toggler" type="button" data-toggle="collapse"
+            data-target="#navbarSupportedContent"
+            aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
+      <div class="animated-icon"><span></span><span></span><span></span></div>
+    </button>
+
+    <!-- Collapsible content -->
+    <div class="collapse navbar-collapse" id="navbarSupportedContent">
+      <ul class="navbar-nav ml-auto text-center">
+        
+          
+          
+          
+          
+            <li class="nav-item">
+		<div >
+		      <a class="nav-link" href="/" target="_self" data-umami-event="Navigation-Homepage">
+
+		        <i class="iconfont icon-home-fill"></i>
+		        <span>首页</span>
+		      </a>
+		</div>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item dropdown">
+              <a class="nav-link dropdown-toggle" target="_self" href="javascript:;" role="button"
+                 data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                <i class="iconfont icon-shuji1"></i>
+                <span>文章</span>
+              </a>
+              <div class="dropdown-menu" aria-labelledby="navbarDropdown">
+                
+                  
+                  
+                  
+		<div >
+
+                  <a class="dropdown-item" href="/archives/" target="_self" data-umami-event="Navigation-Archive">
+
+                    <i class="iconfont icon-archive-fill"></i>
+                    <span>归档</span>
+                  </a>
+		</div>
+                
+                  
+                  
+                  
+		<div >
+
+                  <a class="dropdown-item" href="/categories/" target="_self" data-umami-event="Navigation-Category">
+
+                    <i class="iconfont icon-category-fill"></i>
+                    <span>分类</span>
+                  </a>
+		</div>
+                
+                  
+                  
+                  
+		<div >
+
+                  <a class="dropdown-item" href="/tags/" target="_self" data-umami-event="Navigation-Tag">
+
+                    <i class="iconfont icon-tags-fill"></i>
+                    <span>标签</span>
+                  </a>
+		</div>
+                
+                  
+                  
+                  
+		<div >
+
+                  <a class="dropdown-item" href="/shuoshuo/" target="_self" data-umami-event="Navigation-Shuoshuo">
+
+                    <i class="iconfont icon-24gf-bubblesDots4"></i>
+                    <span>说说</span>
+                  </a>
+		</div>
+                
+              </div>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item dropdown">
+              <a class="nav-link dropdown-toggle" target="_self" href="javascript:;" role="button"
+                 data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                <i class="iconfont icon-momo"></i>
+                <span>社交</span>
+              </a>
+              <div class="dropdown-menu" aria-labelledby="navbarDropdown">
+                
+                  
+                  
+                  
+		<div >
+
+                  <a class="dropdown-item" href="/links/" target="_self" data-umami-event="Navigation-Friends">
+
+                    <i class="iconfont icon-link-fill"></i>
+                    <span>友链</span>
+                  </a>
+		</div>
+                
+                  
+                  
+                  
+		<div >
+
+                  <a class="dropdown-item" href="/messagebd/" target="_self" data-umami-event="Navigation-MessageBoard">
+
+                    <i class="iconfont icon-comment"></i>
+                    <span>留言板</span>
+                  </a>
+		</div>
+                
+                  
+                  
+                  
+		<div >
+
+                  <a class="dropdown-item" href="/atom.xml" target="_self" data-umami-event="Navigation-RSS">
+
+                    <i class="iconfont icon-dingyue"></i>
+                    <span>RSS订阅</span>
+                  </a>
+		</div>
+                
+                  
+                  
+                  
+		<div >
+
+                  <a class="dropdown-item" href="/reccomments/" target="_self" data-umami-event="Navigation-Recent-Comments">
+
+                    <i class="iconfont icon-icon-pinglunguanli-pinglunliebiao"></i>
+                    <span>近期评论</span>
+                  </a>
+		</div>
+                
+              </div>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item dropdown">
+              <a class="nav-link dropdown-toggle" target="_self" href="javascript:;" role="button"
+                 data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                <i class="iconfont icon-user-fill"></i>
+                <span>个人</span>
+              </a>
+              <div class="dropdown-menu" aria-labelledby="navbarDropdown">
+                
+                  
+                  
+                  
+		<div >
+
+                  <a class="dropdown-item" href="/about/" target="_self" data-umami-event="Navigation-AboutMe">
+
+                    <i class="iconfont icon-guanyuwomen"></i>
+                    <span>关于</span>
+                  </a>
+		</div>
+                
+                  
+                  
+                  
+		<div >
+
+                  <a class="dropdown-item" href="/playlist/" target="_self" data-umami-event="Navigation-Music">
+
+                    <i class="iconfont icon-music"></i>
+                    <span>歌单</span>
+                  </a>
+		</div>
+                
+                  
+                  
+                  
+		<div >
+
+                  <a class="dropdown-item" href="https://uipv4.zywvvd.com:33035" target="_self" data-umami-event="Navigation-Nextcloud">
+
+                    <i class="iconfont icon-xuniyingpan"></i>
+                    <span>网盘</span>
+                  </a>
+		</div>
+                
+                  
+                  
+                  
+		<div >
+
+                  <a class="dropdown-item" href="https://uipv4.zywvvd.com:33036" target="_self" data-umami-event="Navigation-OneDev">
+
+                    <i class="iconfont icon-git"></i>
+                    <span>仓库</span>
+                  </a>
+		</div>
+                
+                  
+                  
+                  
+		<div >
+
+                  <a class="dropdown-item" href="https://uipv4.zywvvd.com:33041" target="_self" data-umami-event="Navigation-Wiki">
+
+                    <i class="iconfont icon-wiki"></i>
+                    <span>百科</span>
+                  </a>
+		</div>
+                
+              </div>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item dropdown">
+              <a class="nav-link dropdown-toggle" target="_self" href="javascript:;" role="button"
+                 data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                <i class="iconfont icon-ic_fly"></i>
+                <span>导航</span>
+              </a>
+              <div class="dropdown-menu" aria-labelledby="navbarDropdown">
+                
+                  
+                  
+                  
+		<div >
+
+                  <a class="dropdown-item" href="/site-map/" target="_self" data-umami-event="Navigation-SiteMap">
+
+                    <i class="iconfont icon-lianjie"></i>
+                    <span>链接</span>
+                  </a>
+		</div>
+                
+                  
+                  
+                  
+		<div >
+
+                  <a class="dropdown-item" href="/nodeppt/hexo/snavigation/" target="_self" data-umami-event="Navigation-Search">
+
+                    <i class="iconfont icon-sousuo"></i>
+                    <span>搜索</span>
+                  </a>
+		</div>
+                
+              </div>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item dropdown">
+              <a class="nav-link dropdown-toggle" target="_self" href="javascript:;" role="button"
+                 data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                <i class="iconfont icon-wangzhan"></i>
+                <span>站点</span>
+              </a>
+              <div class="dropdown-menu" aria-labelledby="navbarDropdown">
+                
+                  
+                  
+                  
+		<div >
+
+                  <a class="dropdown-item" href="https://uipv4.zywvvd.com:33039/share/0zx3o21oIpZTZqwC/%E5%8F%88%E8%A7%81%E8%8B%8D%E5%B2%9A" target="_self" data-umami-event="Navigation-Umami">
+
+                    <i class="iconfont icon-tongji2"></i>
+                    <span>站点分析</span>
+                  </a>
+		</div>
+                
+                  
+                  
+                  
+		<div >
+
+                  <a class="dropdown-item" href="/earth_sta/" target="_self" data-umami-event="Navigation-Globe">
+
+                    <i class="iconfont icon-tongjifenxi-xiangmubiaogetongji"></i>
+                    <span>访问统计</span>
+                  </a>
+		</div>
+                
+                  
+                  
+                  
+		<div >
+
+                  <a class="dropdown-item" href="https://uipv4.zywvvd.com:33034/status/show" target="_self" data-umami-event="Navigation-Monitor">
+
+                    <i class="iconfont icon-jiankong"></i>
+                    <span>站点监控</span>
+                  </a>
+		</div>
+                
+              </div>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item dropdown">
+              <a class="nav-link dropdown-toggle" target="_self" href="javascript:;" role="button"
+                 data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                <i class="iconfont icon-chuansong"></i>
+                <span>传送</span>
+              </a>
+              <div class="dropdown-menu" aria-labelledby="navbarDropdown">
+                
+                  
+                  
+                  
+		<div >
+
+                  <a class="dropdown-item" href="https://www.foreverblog.cn/go.html" target="_self" data-umami-event="Navigation-ForeverBolg">
+
+                    <i class="iconfont icon-a-BlackHole"></i>
+                    <span>十年之约</span>
+                  </a>
+		</div>
+                
+                  
+                  
+                  
+		<div >
+
+                  <a class="dropdown-item" href="https://www.travellings.cn/go.html" target="_self" data-umami-event="Navigation-DriveTo">
+
+                    <i class="iconfont icon-train1"></i>
+                    <span>开往</span>
+                  </a>
+		</div>
+                
+                  
+                  
+                  
+		<div >
+
+                  <a class="dropdown-item" href="https://bf.zzxworld.com/" target="_self" data-umami-event="Navigation-BlogFinder">
+
+                    <i class="iconfont icon-icon-"></i>
+                    <span>BlogFinder</span>
+                  </a>
+		</div>
+                
+              </div>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item dropdown">
+              <a class="nav-link dropdown-toggle" target="_self" href="javascript:;" role="button"
+                 data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                <i class="iconfont icon-gongju"></i>
+                <span>工具</span>
+              </a>
+              <div class="dropdown-menu" aria-labelledby="navbarDropdown">
+                
+                  
+                  
+                  
+		<div >
+
+                  <a class="dropdown-item" href="/navigates/calculator" target="_self" data-umami-event="Navigation-Calculator">
+
+                    <i class="iconfont icon-jisuan"></i>
+                    <span>计算器</span>
+                  </a>
+		</div>
+                
+                  
+                  
+                  
+		<div >
+
+                  <a class="dropdown-item" href="/navigates/webgraphviz" target="_self" data-umami-event="Navigation-WebGtaphviz">
+
+                    <i class="iconfont icon-tongyong-huatugongju2"></i>
+                    <span>Graphviz</span>
+                  </a>
+		</div>
+                
+                  
+                  
+                  
+		<div >
+
+                  <a class="dropdown-item" href="/navigates/formular_reco" target="_self" data-umami-event="Navigation-Formular-Reco">
+
+                    <i class="iconfont icon-a-checkformula"></i>
+                    <span>公式识别</span>
+                  </a>
+		</div>
+                
+              </div>
+            </li>
+          
+        
+        
+          <li class="nav-item" id="search-btn">
+            <a class="nav-link" target="_self" href="javascript:;" data-toggle="modal" data-target="#modalSearch" aria-label="Search">
+              <i class="iconfont icon-search"></i>
+            </a>
+          </li>
+          
+        
+        
+          <li class="nav-item" id="color-toggle-btn">
+            <a class="nav-link" target="_self" href="javascript:;" aria-label="Color Toggle">
+              <i class="iconfont icon-dark" id="color-toggle-icon"></i>
+            </a>
+          </li>
+        
+      </ul>
+    </div>
+  </div>
+</nav>
+
+  
+
+<div id="banner" class="banner" parallax=true
+     style="background: url('https://uipv4.zywvvd.com:33030/HexoFiles/new/bg-trans.png') no-repeat center center; background-size: cover;">
+  <div class="full-bg-img">
+    <div class="mask flex-center" style="background-color: rgba(0, 0, 0, 0)">
+      <div class="banner-text text-center fade-in-up">
+        <div class="h2">
+          
+            <span id="subtitle">Hybrid A-star 路径规划</span>
+          
+        </div>
+
+        
+          
+  <div class="mt-3">
+    
+      <span class="post-meta mr-2">
+        <i class="iconfont icon-author" aria-hidden="true"></i>
+        Yiwei Zhang
+      </span>
+    
+    
+      <span class="post-meta">
+        <i class="iconfont icon-date-fill" aria-hidden="true"></i>
+        <time datetime="2025-06-30 17:39" pubdate>
+          2025年6月30日 下午
+        </time>
+      </span>
+    
+  </div>
+
+  <div class="mt-1">
+    
+      <span class="post-meta mr-2">
+        <i class="iconfont icon-chart"></i>
+        
+          <!-- compatible with older versions-->
+          3.7k 字
+        
+      </span>
+    
+
+    
+      <span class="post-meta mr-2">
+        <i class="iconfont icon-clock-fill"></i>
+        
+        
+        
+          <!-- compatible with older versions-->
+          31 分钟
+        
+      </span>
+    
+
+    
+    
+      
+        <span id="vvdpost_container_page_pvuv" style="display: none">
+          <i class="iconfont icon-eye" aria-hidden="true"></i>
+          <span id="vvdpost_value_page_pv">0</span> 次&nbsp&nbsp
+		  <i class="iconfont icon-users" aria-hidden="true"></i>
+		  <span id="vvdpost_value_page_uv">0</span> 人&nbsp&nbsp
+		  <i class="iconfont icon-comment" aria-hidden="true"></i>
+		  <span id="vvdpost_value_page_cn">0</span> 条
+        </span>
+
+    <script>
+    document.addEventListener("DOMContentLoaded", function() {
+	      console.log("PVUV_" + window.location.pathname);
+
+	      // 使用 fetch API 发送 POST 请求
+	      fetch('https://uipv4.zywvvd.com:33037/poststats', { 
+		  method: 'POST',
+		  headers: {
+		      'Content-Type': 'application/json'
+		  },
+		  body: JSON.stringify(window.location.pathname) // 将路径名作为对象发送，以便在服务器端更容易处理
+	      })
+	      .then(response => {
+		  // 检查响应状态
+		  if (!response.ok) {
+		      throw new Error('Network response was not ok ' + response.statusText);
+		  }
+		  return response.json(); // 解析 JSON 响应
+	      })
+	      .then(data => {
+		  // 处理解析后的数据
+		  console.log(data.pv);
+		  var pvCtn = document.querySelector('#vvdpost_container_page_pvuv');
+		  if (pvCtn) {
+		      var pvEle = document.querySelector('#vvdpost_value_page_pv');
+		      var uvEle = document.querySelector('#vvdpost_value_page_uv');
+		      var cnEle = document.querySelector('#vvdpost_value_page_cn');
+		      if (pvEle && uvEle) {
+		          pvEle.innerText = data.pv;
+		          uvEle.innerText = data.uv;
+		          cnEle.innerText = data.cn;
+		          pvCtn.style.display = 'inline';
+		      }
+		  }
+	      })
+	      .catch(error => {
+		  // 处理请求错误
+		  console.error('There has been a problem with your fetch operation:', error);
+	      });
+      });
+  </script>
+      
+    
+  </div>
+
+
+        
+      </div>
+
+      
+        <div class="scroll-down-bar">
+          <i class="iconfont icon-arrowdown"></i>
+        </div>
+      
+    </div>
+  </div>
+</div>
+
+</div>
+
+
+	<script type="text/javascript" src="/vvd_js/jquery.js"></script>
+	<script async src="https://uipv4.zywvvd.com:33039/script.js" data-website-id="dd4a05c6-dde2-4743-9c3a-a79d6bee0778"></script>
+	<div class="banner" id='banner' >
+
+		<div class="full-bg-img" >
+
+			
+				<script>
+					var ua = navigator.userAgent;
+					var ipad = ua.match(/(iPad).*OS\s([\d_]+)/),
+						isIphone = !ipad && ua.match(/(iPhone\sOS)\s([\d_]+)/),
+						isAndroid = ua.match(/(Android)\s+([\d.]+)/),
+						isMobile = isIphone || isAndroid;
+
+					function set_video_attr(id){
+						var height = document.body.clientHeight
+						var width = document.body.clientWidth
+						var video_item = document.getElementById(id);
+
+						if (height / width < 0.56){
+							video_item.setAttribute('width', '100%');
+							video_item.setAttribute('height', 'auto');
+						} else {
+							video_item.setAttribute('height', '100%');
+							video_item.setAttribute('width', 'auto');
+						}
+					}
+
+					fetch('https://uipv4.zywvvd.com:33037/wallpaper-pair')
+					  .then(response => response.json()) // 解析JSON数据
+					  .then(data => {
+						console.log('获取链接成功');
+						video_url = data[0][0]
+						pre_show_image_url = data[0][1]
+
+						banner_obj = document.getElementById("banner")
+						banner_obj.style.cssText = "background: url('" + pre_show_image_url + "') no-repeat;"
+
+						vvd_banner_obj = document.getElementById("vvd_banner_img")
+						vvd_banner_content = "<img id='banner_img_item' src='" + pre_show_image_url + "'style='position: fixed; z-index: -999'>"
+						vvd_banner_obj.innerHTML = vvd_banner_content 
+
+						if (!isMobile) {
+							video_html_res = "<video id='video_item' style='position: fixed; z-index: -888;'  muted='muted' src=" + video_url + " autoplay='autoplay' loop='loop'></video>"
+							document.getElementById("banner_video_insert").innerHTML = video_html_res;
+							set_video_attr('video_item')
+							set_video_attr('banner_img_item')
+						}
+					    
+					  })
+					  .catch((error) => {
+					    console.error('请求失败,尝试本地获取背景图像：', error);
+	    					$.getJSON('/vvd_js/video_url.json', function(data){
+
+							var video_list_length = data.length
+							var seed = Math.random()
+							index = Math.floor(seed * video_list_length)
+
+							video_url = data[index][0]
+							pre_show_image_url = data[index][1]
+
+							banner_obj = document.getElementById("banner")
+							banner_obj.style.cssText = "background: url('" + pre_show_image_url + "') no-repeat;"
+
+							vvd_banner_obj = document.getElementById("vvd_banner_img")
+							vvd_banner_content = "<img id='banner_img_item' src='" + pre_show_image_url + "'style='position: fixed; z-index: -999'>"
+							vvd_banner_obj.innerHTML = vvd_banner_content 
+
+							if (!isMobile) {
+								video_html_res = "<video id='video_item' style='position: fixed; z-index: -888;'  muted='muted' src=" + video_url + " autoplay='autoplay' loop='loop'></video>"
+								document.getElementById("banner_video_insert").innerHTML = video_html_res;
+								set_video_attr('video_item')
+								set_video_attr('banner_img_item')
+							}
+						});
+					  });
+
+
+
+
+
+
+					if (!isMobile){
+						window.onresize = function(){
+							set_video_attr('video_item')
+							set_video_attr('banner_img_item')
+							}
+						}
+				</script>
+
+			
+
+
+			
+			</div>
+		</div>
+    </div>
+
+  </header>
+
+  <main>
+    
+      
+
+
+
+<div class="container-fluid nopadding-x">
+  <div class="row nomargin-x">
+    <div class="side-col d-none d-lg-block col-lg-2">
+      
+
+    </div>
+
+    <div class="col-lg-8 nopadding-x-md">
+      <div class="container nopadding-x-md" id="board-ctn">
+        <div id="board">
+          <article class="post-content mx-auto">
+
+            <!-- <h1 id="seo-header">Hybrid A-star 路径规划</h1> -->
+
+            
+              <p id="updated-time" class="note note-info" style="">
+                
+                  
+                    <!-- compatible with older versions-->
+                    本文最后更新于：2025年7月1日 下午
+                  
+                
+              </p>
+            
+            
+              <div class="markdown-body">
+                
+                <blockquote>
+<p>2010年，斯坦福首次提出一种满足车辆运动学的算法(<code>Hybrid A*</code>), 并在(DARPA)的城市挑战赛中得以运用，本文记录相关内容。</p>
+</blockquote>
+<span id="more"></span>
+<p><img src="https://uipv4.zywvvd.com:33030/HexoFiles/vvd_image_files/202507011316131.png" srcset="/img/loading.gif" lazyload alt=""></p>
+<h3 id="简介">简介</h3>
+<p><code>Hybrid A*</code> 算法解决的问题是：假设无人车有充分的感知和定位能力，则其能够在线重新规划，生成障碍物地图，并且能够在未知环境中行驶。</p>
+<p>算法在连续坐标系下进行启发式搜索（改进了<code>A*</code> 算法）</p>
+<ul>
+<li>
+<p><code>Hybrid A*</code>算法的启发式包括两种: <code>non-holonomic without-obstacles</code>和 <code>holonomic with obstacles</code>。</p>
+<p>前者考虑了车辆的运动约束，但不考虑障碍物，一般使用RS曲线，Dubins曲线；后者将车辆当成网格地图上面的点，但考虑了障碍物。</p>
+</li>
+</ul>
+<p>第二阶段用数值非线性优化的方法（即共轭梯度下降法）对生成路径的“质量”进行提升，使其至少是局部最优的。</p>
+<h4 id="其他算法中常见问题">其他算法中常见问题</h4>
+<p>开发实际无人驾驶的路径规划器存在的问题：</p>
+<ol>
+<li>机器人的控制空间、轨迹空间都是连续的，而现存算法基本都是适用于离散情况的，所以生成的路径是不光滑的。</li>
+<li>不满足机器人的非完整性约束</li>
+</ol>
+<h4 id="和A-的区别">和<code>A*</code>的区别</h4>
+<table>
+<thead>
+<tr>
+<th></th>
+<th>Hybrid A*</th>
+<th>A*</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>维数</strong></td>
+<td>$(x,y,\theta,R)$</td>
+<td>$(x,y)$</td>
+</tr>
+<tr>
+<td><strong>H(n)</strong></td>
+<td>Max(Rends_Shepp, A*)</td>
+<td>Manhattan/Euclidean</td>
+</tr>
+<tr>
+<td><strong>节点</strong></td>
+<td>车辆的运动学模型为节点（2）</td>
+<td>二维平面坐标点（1）</td>
+</tr>
+<tr>
+<td><strong>节点与节点连接处</strong></td>
+<td>交点可以不是栅格中心（4）</td>
+<td>交点是栅格中心（3）</td>
+</tr>
+<tr>
+<td>约束</td>
+<td>考虑物体的实际运动方向</td>
+<td>所有的相邻节点都可以顺利转移</td>
+</tr>
+<tr>
+<td>路径</td>
+<td>连续</td>
+<td>线段连接</td>
+</tr>
+<tr>
+<td>缺点</td>
+<td>不具有完备性</td>
+<td>不满足车辆运动学特性</td>
+</tr>
+</tbody>
+</table>
+<p><img src="https://uipv4.zywvvd.com:33030/HexoFiles/vvd_image_files/202507011309834.jpg" srcset="/img/loading.gif" lazyload alt=""></p>
+<h4 id="驾驶行为规划系统">驾驶行为规划系统</h4>
+<p><img src="https://uipv4.zywvvd.com:33030/HexoFiles/vvd_image_files/202507011332147.png" srcset="/img/loading.gif" lazyload alt=""></p>
+<p>更高层的规划系统可以用有限状态机表示，这是一个非常简单的抽象反应系统，它之所以非常简单是因为它只对特定的外界输入产生数量有限的响应，在有限状态机中，我们只能构造有限数量的状态，外界的输入只能让状态机在有限的状态中从一个状态跳到另一个状态。</p>
+<p>分析一下这个状态机：</p>
+<table>
+<thead>
+<tr>
+<th>状态</th>
+<th>描述</th>
+<th></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>LOCATE_VEHICLE</td>
+<td>这是Junior的初始状态，即在无人车出发之前确定其在地图中的位置。</td>
+<td></td>
+</tr>
+<tr>
+<td>FORWARD_DRIVE</td>
+<td>这个超级状态实际上包含了直行，车道保持和障碍物规避，当不是在停车场（即无道路开放区域）时，这是状态机首选的状态。</td>
+<td></td>
+</tr>
+<tr>
+<td>STOP_SIGN_WAIT</td>
+<td>当无人车在停车标志处等待时，进入此状态。（停车标志是美国十字路口的常见标志）</td>
+<td></td>
+</tr>
+<tr>
+<td>CROSS_INTERSECTION</td>
+<td>在这个状态下无人车处理十字路口通过这一场景，无人车会等待直到确认能够安全通过。</td>
+<td></td>
+</tr>
+<tr>
+<td>UTURN_DRIVE</td>
+<td>在U型掉头时调用的状态</td>
+<td></td>
+</tr>
+<tr>
+<td>UTURN_STOP</td>
+<td>在U型掉头前的停车状态</td>
+<td></td>
+</tr>
+<tr>
+<td>CROSS_DIVIDER</td>
+<td>跨过黄线行驶</td>
+<td></td>
+</tr>
+<tr>
+<td>PARKING_NAVIGATE</td>
+<td>停车场内的普通驾驶模式</td>
+<td></td>
+</tr>
+<tr>
+<td>TRAFFIC_JAM和ESCAPE</td>
+<td>处理交通阻塞时的两个状态</td>
+<td></td>
+</tr>
+<tr>
+<td>BAD_RNDF</td>
+<td>如果当前道路和预先做的路网图不同的时候，即进入该状态，在这个状态下，无人车会采用混合A*算法完成车辆的路径规划。</td>
+<td></td>
+</tr>
+<tr>
+<td>MISSION_COMPLETE</td>
+<td>当挑战赛（DARPA）结束，无人车进入该状态，即整个状态机的结束状态。</td>
+<td></td>
+</tr>
+</tbody>
+</table>
+<p>在无人车正常行驶中这个状态机几乎处在普通驾驶模式（即FORWARD_DRIVE和PARKING_NAVIGATE这两个状态），系统通过stuckness detectors（胶着检测器）来确定是否从普通驾驶状态转移至底层的其他状态，在完成了相应的动作以后行为模块又会回到原来的普通驾驶模式。</p>
+<p>这样的状态机能够让无人车处理一下复杂情况：</p>
+<ul>
+<li>
+<p>当当前车道阻塞的时候，车辆会考虑驶入对面车道（即CROSS_DIVIDER）, 如果对面车道也被阻塞了，则会启动U形转弯（UTURN_STOP/UTURN_DRIVE），此时内部RNDF（Route Network Definition File，即全局路网图）也会相应修改，并执行dynamic programming以重新生成RNDF值函数。</p>
+</li>
+<li>
+<p>对于十字路口的交通阻塞问题，在等待时间结束以后，会调用混合<code>A*</code>算法找出最近出口制动车辆离开阻塞区域。</p>
+</li>
+<li>
+<p>在单向通道阻塞的时候，如果规划失败也会调用混合<code>A*</code>算法规划至下一个GPS路点。</p>
+</li>
+<li>
+<p>某些路点在循环多次以后仍然无法到达，那么跳过这个路点（这是为了防止车辆为了抵达规划中某个路点而进入死循环）</p>
+</li>
+<li>
+<p>如果无人车长时间没有取得任何的进展（指比赛的进展），车辆将会调用混合<code>A*</code>规划出通往附近的GPS航点的路径，这个规划是无视交通规则的。</p>
+</li>
+</ul>
+<p>虽然Junior的策略有些是针对DRAPA挑战赛设计的（即为了尽可能赢得比赛），但是其设计的理念仍然具有参考价值。在实际的无人驾驶应用中，需要实现的状态机将更为复杂。</p>
+<h3 id="算法流程">算法流程</h3>
+<p><img src="https://uipv4.zywvvd.com:33030/HexoFiles/vvd_image_files/202507011317230.png" srcset="/img/loading.gif" lazyload alt=""></p>
+<blockquote>
+<p><strong>注</strong>：在实现 <code>Hybrid A*</code>的过程中，要维持好 <code>A*</code> 搜索树(和RRT类似)。当我们成功使用 Reeds-Shepp 曲线时，我们需要从节点反向从树枝到树根保留路径(在反向保留路径时，不仅仅是路径点，而是一个运动模式——一段一段保存)，然后在加上Reeds-Shepp曲线。一共两个部分，共同构成了 <code>Hybrid A*</code>的路径。</p>
+</blockquote>
+<h3 id="1-启发式搜索-损失函数设计">1. 启发式搜索+损失函数设计</h3>
+<p>第一个阶段其实是对传统的 <code>A*</code> 算法进行改进，与之不同的是，<code>hybrid A*</code> 是在连续坐标系下进行启发式搜索，并且能够保证生成的轨迹满足车辆非完整性约束，但算法运行过程中该路径并不一定是全局最优的，尽管如此，这条路径是在全局最优解的“附近”（这里的全局最优解指的是由传统 <code>A*</code> 算法生成的）。</p>
+<h4 id="搜索中所用的两种启发函数">搜索中所用的两种启发函数</h4>
+<p>在传统的<code>A*</code> 算法中，由于启发函数的选取不同，运行算法后节点扩张（expansion）的效率也就不同（目的是希望算法在遍历最少的节点的情况下找到最优路径）。传统的 <code>A*</code> 算法的启发函数一般是2D欧几里得距离，而 <code>hybrid A*</code> 算法构造了两个启发函数。</p>
+<ol>
+<li><strong>第一个启发函数是 Constrained heuristics</strong> ，只考虑车辆的非完整性约束而不考虑障碍物（优点是相比直接用欧几里得距离损失要好一个数量级）。该启发函数忽略了环境中的障碍物等信息，只考虑车辆的运动学特性，从终止点 $(𝑥_𝑔,𝑦_𝑔,𝜃_𝑔)=(0,0,0)$开始，计算从该点到其他点的最短路径。具体的返回值就是：</li>
+</ol>
+<figure class="highlight arcade"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs arcade"><span class="hljs-built_in">max</span>&#123;non-holonomic-no-obstacles-cost, <span class="hljs-number">2</span>D Euclidean <span class="hljs-built_in">Distance</span>&#125;<br></code></pre></td></tr></table></figure>
+<ol start="2">
+<li><strong>第二个启发函数是</strong>第一个的对偶，称为<strong>Unconstrained heuristics</strong>，只考虑障碍物信息而不考虑车辆的非完整性约束条件（优点是引入该启发函数后能够发现2D空间中所有的U形障碍物和死胡同dead end）。随后使用2D动态规划的方法（其实就是传统的2D <code>A*</code> 算法）计算每个节点到终点的最短路径。</li>
+</ol>
+<p>算法使用的损失函数就是两种启发函数的最大值。</p>
+<p>下图很好地解释了两种启发函数：</p>
+<ul>
+<li>图 a,c 是第一种启发函数下生成的路径，可以看出是连续的；</li>
+<li>图 b,d 则是在第二种启发函数下生成的离散路径（与传统<code>A*</code> 算法得到的结果是类似的）。</li>
+</ul>
+<p><img src="https://uipv4.zywvvd.com:33030/HexoFiles/vvd_image_files/202507011351683.png" srcset="/img/loading.gif" lazyload alt=""></p>
+<h4 id="车辆的微分-运动学约束"><strong>车辆的微分/运动学约束</strong></h4>
+<p><strong>非完整性约束</strong></p>
+<p>车辆基本的构型空间：$𝑞=(𝑥,𝑦,𝜃)∈𝑅^2×𝑆^1$</p>
+<p>车辆的速度： $(\dot{𝑥},\dot{𝑦})$</p>
+<p>但在实际行驶中，车辆不能直接向左向右平移，也就是说垂直于车辆heading方向的速度为0.</p>
+<p>将下图中的$𝑣_⊥$分解到 $𝑋,𝑌$ 坐标下可以得到：</p>
+
+$$
+\begin{aligned}v_\perp\sin\theta&=\dot x\\v_\perp\cos\theta&=\dot y\end{aligned}
+$$
+
+<p>两者联立可以得到：<br>
+$$<br>
+\frac{\dot{x}}{\sin\theta}=\frac{\dot{y}}{\cos\theta}<br>
+$$<br>
+得到车辆的非完整性约束条件为：<br>
+$$<br>
+\dot{x}\cos\theta-\dot{y}\sin\theta=0<br>
+$$<br>
+<img src="https://uipv4.zywvvd.com:33030/HexoFiles/vvd_image_files/202507011358182.png" srcset="/img/loading.gif" lazyload alt=""></p>
+<h4 id="路径节点扩张">路径节点扩张</h4>
+<p>论文中称节点扩张的过程为 Analytic Expansions.</p>
+<p>状态的表示为：$x=(𝑥,𝑦,𝜃)$，其中 $(𝑥,𝑦)$ 是节点的位置，而 $𝜃$ 是节点的朝向（heading），在前文所述的搜索过程中，使用到的是离散的控制动作（control actions, or steering），因此之前每个网格中的连续状态点是不可达的。</p>
+<p>为了进一步改进搜索速度和提高准确度，这就可以利用<a href="/notes/study/algorithm/graph/reeds-shepp/reeds-shepp/">Reed-Shepp曲线</a>。<code>A*</code> 的搜索过程都是用直线相连接，而 <code>hybrid A*</code> 则是在与网格精度一致的前提下（对应某一小段时间）使用三种控制动作：<code>最大左转</code>，<code>最大右转</code>，<code>不转向</code> ，来生成路径，因此该路径是一些受车辆转弯半径约束的圆弧和直线。</p>
+<p><img src="https://uipv4.zywvvd.com:33030/HexoFiles/vvd_image_files/202507011404328.png" srcset="/img/loading.gif" lazyload alt=""></p>
+<p>以上过程会生成一些子节点，在此基础上，假设不考虑环境（对应第一个启发函数），算法会通过计算从起点到终点的最优Reed-Shepp曲线的方式，再生成一个额外的子节点；之后算法基于现有的障碍物地图对该路径进行碰撞检测，无碰撞路径对应的点会加到扩张树中。</p>
+<p>可以看出与直线相比，Reed-Shepp曲线的计算量是很大的。所以论文中作者使用简单的selection rule，在每N个节点中选取一个计算Reed-Shepp曲线（这里的N随启发函数递减而减少，即越发靠近终点时，N越小）。下面这两张图也很好的解释了扩张过程。</p>
+<p><img src="https://uipv4.zywvvd.com:33030/HexoFiles/vvd_image_files/202507011406321.png" srcset="/img/loading.gif" lazyload alt=""></p>
+<p><img src="https://uipv4.zywvvd.com:33030/HexoFiles/vvd_image_files/202507011406583.png" srcset="/img/loading.gif" lazyload alt=""></p>
+<h4 id="路径损失函数的设计">路径损失函数的设计</h4>
+<p>损失函数的设计困难在于所生成路径的要求太多：首先路径长度或损失应该是接近最优的；路径必须是光滑的；生成的路径必须与障碍物保持一定的距离（传统的人工势场法的缺点是在狭窄路段构造了高势场，使得机器人或车辆无法通过）</p>
+<p><strong>解决方法</strong>：构造 <code>Voronoi 势场函数</code>（具体公式是下列三项连乘），voronoi 场的值随着导航中所有可行空间的大小成比例缩放。</p>
+
+$$
+P_{vor}=w_{vor}\sum_{i=1}^N\left(\frac{\alpha}{\alpha+d_{obs}(x,y)}\right)\left(\frac{d_{vor}(x,y)}{d_{obs}+d_{vor}(x,y)}\right)\left(\frac{(d_{obs}(x,y)-d_{vor}^\vee)^2}{(d_{vor}^\vee)^2}\right)
+$$
+
+<p>其中：</p>
+<ul>
+<li>
+<p>$d_{obs}$ 表示路径节点到最近的障碍物的距离</p>
+</li>
+<li>
+<p>$d_{vor}^\vee$ 表示障碍物影响 Voronoi 的最大距离</p>
+</li>
+<li>
+<p>$\alpha &gt; 0$ 控制衰减率</p>
+</li>
+<li>
+<p>$\omega _{vor}$ 表示 Voronoi 权重，表示对路径的影响</p>
+</li>
+</ul>
+<p>voronoi 场有如下的一些特点：</p>
+<ol>
+<li>$𝑑_𝑂≥𝑑_𝑂^{𝑚𝑎𝑥}$时，场的值为0</li>
+<li>该场函数 $𝜌_𝑉(𝑥,𝑦)$ 的区间时 [0, 1]，且连续，$𝑑_𝑂,𝑑_𝑉$不能同时为0。</li>
+<li>在障碍物附近 Voronoi 场的值达到最大值</li>
+<li>Voronoi 场的值在 GVD 的边上达到最小值</li>
+</ol>
+<p>下图很好地阐释了voronoi场的效果，使用voronoi场之后车辆也能很好地通过狭窄路段。</p>
+<p><img src="https://uipv4.zywvvd.com:33030/HexoFiles/vvd_image_files/202507011423359.png" srcset="/img/loading.gif" lazyload alt=""></p>
+<h3 id="2-对路径进行后处理">2. 对路径进行后处理</h3>
+<h4 id="目的">目的</h4>
+<p>在上一步子节点扩张的过程中，路径会有一些额外的不必要控制动作（即steering），所以算法的第二个部分就是对生成点曲线进行平滑处理。</p>
+<h4 id="目标函数的组成">目标函数的组成</h4>
+<p>目标函数由以下四部分组成。</p>
+<ul>
+<li><strong>障碍物项</strong> $𝑃_{𝑜𝑏𝑠}$：惩罚与障碍物的碰撞。公式中 $x_𝑖$是路径节点的坐标，$o_𝑖$是最近障碍物的坐标，$𝑑_{𝑜𝑏𝑠}^𝑉$是最大障碍物的距离（类似阈值）。选择二次函数作为惩罚项的目的是放大障碍物与节点越来越靠近的效果。从公式可以看出，节点靠近障碍物的时候，第一项 $|x_𝑖−o_𝑖|−𝑑_{𝑜𝑏𝑠}^𝑉 $的值会减小，因此该差值的二次方变大。</li>
+</ul>
+
+$$
+P_{obs}=w_{obs}\sum_{i=1}^{N}\sigma_{obs}(|\mathbf{x}_{i}-\mathbf{o}_{i}|-d_{obs}^{\vee})
+$$
+
+
+<ul>
+<li><strong>曲率项</strong> $𝑃_{𝑐𝑢𝑟}$： 该项相当于对路径的每个节点的瞬时曲率设置一个上限，这里 $\Delta x_i=x_i-x_{i-1},:\Delta\phi_i=\cos^{-1}\frac{\mathbf{x}<em>i\cdot\mathbf{x}</em>{i+1}}{|\mathbf{x}<em>{i+1}||\mathbf{x}</em>{i+1}|}$ ，并且 $\frac{\Delta\phi_i}{|\Delta x_i|}&gt;\kappa_{max}$ ，惩罚函数是二次函数，即 $𝜎_{𝑐𝑢𝑟}$。</li>
+</ul>
+
+$$
+P_{cur}=w_{cur}\sum_{i=1}^{N-1}\sigma_{cur}\left(\frac{\Delta\phi_i}{|\Delta\text{x}_i|}-\kappa_{max}\right)
+$$
+
+
+<ul>
+<li><strong>光滑度项smoothness</strong>： $𝑃_{𝑠𝑚𝑜}$ 光滑度项计算每个节点之间位移向量的差值的平方。这一项将损失值赋给非均匀分布和方向变化的节点，以保证路径的平滑性。</li>
+</ul>
+
+$$
+P_{smo}=w_{smo}\sum_{i=1}^{N-1}(\Delta\mathbf{x}_{i+1}-\Delta\mathbf{x}_i)^2
+$$
+
+
+<ul>
+<li><strong>Voronoi Term</strong> $𝑃_{𝑣𝑜𝑟}$</li>
+</ul>
+<p>$$<br>
+P_{vor}=\omega_\rho\sum_{i=1}^N\rho_V(x_i,y_i)<br>
+$$</p>
+<p>这一项基于之前定义的voronoi场函数，使路径远离障碍物</p>
+<p><strong>优化阶段分为两个阶段</strong>：</p>
+<p>a. 对路径的顶点坐标进行非线性优化规划问题的建模（也就是上文的损失函数定义）</p>
+<p>b. 采用 <a href="/notes/study/machine-learning/conjugate-gradient-algorithm/conjugate-alg/conjugate-alg/">共轭梯度方法</a> 进行非参数化插值（non-parametrc interpolation）</p>
+<h3 id="hybrid-A-算法伪代码及实现流程"><code>hybrid A*</code> 算法伪代码及实现流程</h3>
+<p><strong>算法伪代码</strong>：</p>
+<p>与<code>A*</code>算法类似，算法也是维护两个列表，一个open list, 一个是closed list。</p>
+<p>算法的结束条件是：open list为空或者已经搜索到终点。</p>
+<p>Line 21: 算法不一定会准确搜索到终点，因此引入RoundState函数，在判断当前节点是否到达终点之前对此进行估算。</p>
+<p>如果没有达到终点，算法会通过执行动作空间中的所有动作对路径节点进行扩张。如果生成的节点不在C中（也就是没有被算法遍历过），则计算 cost-so-far；如果生成的节点不在O中（已被遍历过）或者所得到的 cost-so-far 小于当前节点已有的 cost，这时用当前得到的较小的 cost 更新 cost-so-far</p>
+<p><img src="https://uipv4.zywvvd.com:33030/HexoFiles/vvd_image_files/202507011443715.png" srcset="/img/loading.gif" lazyload alt=""></p>
+<h3 id="源码实现">源码实现</h3>
+<ul>
+<li>
+<p><a target="_blank" rel="noopener" href="https://github.com/wanghuohuo0716/hybrid_A_star">matlab</a></p>
+<p><img src="https://uipv4.zywvvd.com:33030/HexoFiles/gif/Parking.gif" srcset="/img/loading.gif" lazyload alt=""></p>
+</li>
+</ul>
+<h3 id="原始论文">原始论文</h3>
+<ul>
+<li>《Practical Search Techniques in Path Planning for Autonomous Driving》</li>
+</ul>
+<iframe src='https://uipv4.zywvvd.com:33030/HexoFiles/js/vvd_js/pdfjs/web/viewer.html?file=https://uipv4.zywvvd.com:33030/HexoFiles/pdf/hybrid-a-star.pdf' style='width:100%;height:900px'></iframe>
+<ul>
+<li>《Path Planning in Unstructured Environments: A Real-time Hybrid A* Implementation for Fast and Deterministic Path Generation for the KTH Research Concept Vehicle》</li>
+</ul>
+<iframe src='https://uipv4.zywvvd.com:33030/HexoFiles/js/vvd_js/pdfjs/web/viewer.html?file=https://uipv4.zywvvd.com:33030/HexoFiles/pdf/FULLTEXT01.pdf' style='width:100%;height:900px'></iframe>
+<h3 id="参考资料">参考资料</h3>
+<ul>
+<li>
+<p><a target="_blank" rel="noopener" href="https://zhkmxx9302013.github.io/post/c0e17f81.html">https://zhkmxx9302013.github.io/post/c0e17f81.html</a></p>
+</li>
+<li>
+<p><a target="_blank" rel="noopener" href="https://blog.csdn.net/qq_31815513/article/details/88709640">https://blog.csdn.net/qq_31815513/article/details/88709640</a></p>
+</li>
+<li>
+<p><a target="_blank" rel="noopener" href="https://zhuanlan.zhihu.com/p/161660932">https://zhuanlan.zhihu.com/p/161660932</a></p>
+</li>
+<li>
+<p><a target="_blank" rel="noopener" href="https://blog.csdn.net/Forwarding3/article/details/125804796">https://blog.csdn.net/Forwarding3/article/details/125804796</a></p>
+</li>
+<li>
+<p><a target="_blank" rel="noopener" href="https://zhuanlan.zhihu.com/p/40776683">https://zhuanlan.zhihu.com/p/40776683</a></p>
+</li>
+<li>
+<p><a target="_blank" rel="noopener" href="https://github.com/karlkurzer/path_planner">https://github.com/karlkurzer/path_planner</a></p>
+</li>
+<li>
+<p><a target="_blank" rel="noopener" href="https://blog.csdn.net/AdamShan/article/details/80633099">https://blog.csdn.net/AdamShan/article/details/80633099</a></p>
+</li>
+<li>
+<p><a target="_blank" rel="noopener" href="https://github.com/teddyluo/hybrid-a-star-annotation">https://github.com/teddyluo/hybrid-a-star-annotation</a></p>
+</li>
+<li>
+<p><a target="_blank" rel="noopener" href="https://kth.diva-portal.org/smash/get/diva2:1057261/FULLTEXT01.pdf">https://kth.diva-portal.org/smash/get/diva2:1057261/FULLTEXT01.pdf</a></p>
+</li>
+</ul>
+<link rel="stylesheet" href="/css/spoiler.css" type="text/css"><script src="/js/spoiler.js" type="text/javascript" async></script>
+                
+
+
+				<br /><br />
+				<blockquote>
+					<p>文章链接：<br /> 
+					<a style="font-size: 0.85rem" target="_blank" rel="noopener" href="https://www.zywvvd.com/notes/study/algorithm/graph/hybrid-a-start/hybrid-a-start/">https://www.zywvvd.com/notes/study/algorithm/graph/hybrid-a-start/hybrid-a-start/</a>
+					</p>
+				</blockquote>
+
+
+              </div>
+            
+            <hr/>
+			
+			<!-- 添加打赏模块 -->
+			<div class="reward-container">
+				
+					<button id="rewardBtn" class="reward-btn">
+						 
+							❤ 打赏
+							
+					</button>
+					<p class="tea">“觉得不错的话，给点打赏吧 ୧(๑•̀⌄•́๑)૭”</p>
+					<div id="rewardImgContainer" class="reward-img-container">
+						<div class="singleImgContainer">
+							<img id="wechatImg" class="reward-img" src="https://uipv4.zywvvd.com:33030/HexoFiles/vvd_pc_upload/wechatpay.png" srcset="/img/loading.gif" lazyload alt="微信二维码">
+							<p class="wechatPay">微信支付</p>
+						</div>
+						<div class="singleImgContainer">
+							<img id="alipayImg" class="reward-img" src="https://uipv4.zywvvd.com:33030/HexoFiles/vvd_pc_upload/alipay.png" srcset="/img/loading.gif" lazyload alt="支付宝二维码">
+							<p class="aliPay">支付宝支付</p>
+						</div>
+					</div>
+				
+			</div>
+			
+            <div>
+              <div class="post-metas my-3">
+  
+    <div class="post-meta mr-3 d-flex align-items-center">
+      <i class="iconfont icon-category"></i>
+      
+
+<span class="category-chains">
+  
+  
+    
+      <span class="category-chain">
+        
+  <a href="/categories/Algorithm/" class="category-chain-item">Algorithm</a>
+  
+  
+
+      </span>
+    
+  
+</span>
+
+    </div>
+  
+  
+    <div class="post-meta">
+      <i class="iconfont icon-tags"></i>
+      
+        <a href="/tags/Algorithm/" class="print-no-link">#Algorithm</a>
+      
+    </div>
+  
+</div>
+
+
+              
+  
+
+  <div class="license-box my-3">
+    <div class="license-title">
+      <div>Hybrid A-star 路径规划</div>
+      <div>https://www.zywvvd.com/notes/study/algorithm/graph/hybrid-a-start/hybrid-a-start/</div>
+    </div>
+    <div class="license-meta">
+      
+        <div class="license-meta-item">
+          <div>作者</div>
+          <div>Yiwei Zhang</div>
+        </div>
+      
+      
+        <div class="license-meta-item license-meta-date">
+          <div>发布于</div>
+          <div>2025年6月30日</div>
+        </div>
+      
+      
+      
+        <div class="license-meta-item">
+          <div>许可协议</div>
+          <div>
+            
+              
+              
+                <a class="print-no-link" target="_blank" href="https://creativecommons.org/licenses/by/4.0/">
+                  <span class="hint--top hint--rounded" aria-label="BY - 署名">
+                    <i class="iconfont icon-by"></i>
+                  </span>
+                </a>
+              
+            
+          </div>
+        </div>
+      
+    </div>
+    <div class="license-icon iconfont"></div>
+  </div>
+
+
+
+              
+                <div class="post-prevnext my-3">
+                  <article class="post-prev col-6">
+                    
+                    
+                  </article>
+                  <article class="post-next col-6">
+                    
+                    
+                      <a href="/notes/study/algorithm/graph/reeds-shepp/reeds-shepp/" title="Reeds-Shepp 曲线">
+                        <span class="hidden-mobile">Reeds-Shepp 曲线</span>
+                        <span class="visible-mobile">下一篇</span>
+                        <i class="iconfont icon-arrowright"></i>
+                      </a>
+                    
+                  </article>
+                </div>
+              
+            </div>
+
+            
+  
+  
+    <article id="comments" lazyload>
+      
+  <div id="waline"></div>
+  <script type="text/javascript">
+    Fluid.utils.loadComments('#waline', function() {
+      Fluid.utils.createCssLink('https://lib.baomitu.com/waline/2.14.8/waline.min.css')
+      Fluid.utils.createScript('https://lib.baomitu.com/waline/2.14.8/waline.min.js', function() {
+        var options = Object.assign(
+          {"serverURL":"https://uipv4.zywvvd.com:33033/","path":"window.location.pathname","meta":["nick","mail","link"],"requiredMeta":["nick"],"lang":"zh-CN","emoji":["https://cdn.jsdelivr.net/gh/walinejs/emojis/weibo"],"dark":"html[data-user-color-scheme=\"dark\"]","wordLimit":0,"pageSize":10,"reaction":true,"locale":{"placeholder":"山高路远，常来玩吖 ~","reactionTitle":null}},
+          {
+            el: '#waline',
+            path: window.location.pathname
+          }
+        )
+        Waline.init(options);
+        Fluid.utils.waitElementVisible('#waline .vcontent', () => {
+          var imgSelector = '#waline .vcontent img:not(.vemoji)';
+          Fluid.plugins.imageCaption(imgSelector);
+          Fluid.plugins.fancyBox(imgSelector);
+        })
+      });
+    });
+  </script>
+  <noscript>Please enable JavaScript to view the comments</noscript>
+
+
+    </article>
+  
+
+
+          </article>
+        </div>
+      </div>
+    </div>
+
+    <div class="side-col d-none d-lg-block col-lg-2">
+      
+  <aside class="sidebar" style="margin-left: -1rem">
+    <div id="toc">
+  <p class="toc-header">
+    <i class="iconfont icon-list"></i>
+    <span>目录</span>
+  </p>
+  <div class="toc-body" id="toc-body"></div>
+</div>
+
+
+
+  </aside>
+
+
+    </div>
+  </div>
+</div>
+
+
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+  
+  
+
+
+
+
+
+  <script>
+  Fluid.utils.createScript('https://lib.baomitu.com/mermaid/8.14.0/mermaid.min.js', function() {
+    mermaid.initialize({"theme":"default"});
+
+    Fluid.utils.listenDOMLoaded(function() {
+      Fluid.events.registerRefreshCallback(function() {
+        if ('mermaid' in window) {
+          mermaid.init();
+        }
+      });
+    });
+  });
+</script>
+
+
+
+
+
+
+    
+
+    
+      <a id="scroll-top-button" aria-label="TOP" href="#" role="button">
+        <i class="iconfont icon-xiangshangjiantou" aria-hidden="true"></i>
+      </a>
+    
+
+    
+      <div class="modal fade" id="modalSearch" tabindex="-1" role="dialog" aria-labelledby="ModalLabel"
+     aria-hidden="true">
+  <div class="modal-dialog modal-dialog-scrollable modal-lg" role="document">
+    <div class="modal-content">
+      <div class="modal-header text-center">
+        <h4 class="modal-title w-100 font-weight-bold">搜索</h4>
+        <button type="button" id="local-search-close" class="close" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body mx-3">
+        <div class="md-form mb-5">
+          <input type="text" id="local-search-input" class="form-control validate">
+          <label data-error="x" data-success="v" for="local-search-input">关键词</label>
+        </div>
+        <div class="list-group" id="local-search-result"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+    
+
+    
+  </main>
+
+  <footer>
+    <div class="footer-inner">
+  
+    <div class="footer-content">
+       <div class="vvd_footer" style="font-size: 0.85rem;"> <a href="https://hexo.io" target="_blank" rel="nofollow noopener" color="#d7d8d9" data-umami-event="Footer-Hexo"><span class="umami--click--Footer-Hexo">Hexo</span></a> <i class="iconfont icon-love"></i> <a href="https://github.com/fluid-dev/hexo-theme-fluid" target="_blank" rel="nofollow noopener" data-umami-event="Footer-Fluid"><span class="umami--click--Footer-Fluid">Fluid</span></a> <i class="iconfont icon-love"></i> <a href="https://uipv4.zywvvd.com:33039/share/0zx3o21oIpZTZqwC/%E5%8F%88%E8%A7%81%E8%8B%8D%E5%B2%9A" target="_blank" rel="nofollow noopener" data-umami-event="Footer-Umami"><span class="umami--click--Footer-Umami">Umami</span></a> <div style="font-size: 0.85rem;"> <span id="timeDate">载入天数...</span> <span id="times">载入时分秒...</span> <script src="/vvd_js/duration.js"></script> </div> <div style="font-size: 0.85rem;"> <span> 总访问量 <span style="color: #d7d8d9;" id="PVstatic">0</span> 次&nbsp</span> <span> 总访客数 <span style="color: #d7d8d9;" id="UVstatic">0</span> 人&nbsp</span> <span> 当前在线 <span style="color: #d7d8d9;" id="ACTstatic">0</span> 人&nbsp</span> <script src="https://uipv4.zywvvd.com:33037/statistics" defer></script> </div> <div> <span> Copyright © 2020-2025. All Rights Reserved.</span> </div> <div style="font-size: 0.88rem;"> <a target="_blank" rel="noopener" href="https://developer.hitokoto.cn/" id="hitokoto_text"><span style="color: #d7d8d9;"  id="hitokoto"></span></a> <script src="https://uipv4.zywvvd.com:33044/?encode=js&select=%23hitokoto" defer></script> </div> <a href="https://icp.gov.moe/?keyword=20230615" target="_blank">萌ICP备20230615号</a>
+
+
+</div> 
+    </div>
+  
+  
+  
+  
+</div>
+
+  </footer>
+
+  <!-- Scripts -->
+  
+  <script  src="https://lib.baomitu.com/nprogress/0.2.0/nprogress.min.js" ></script>
+  <link  rel="stylesheet" href="https://lib.baomitu.com/nprogress/0.2.0/nprogress.min.css" />
+
+  <script>
+    NProgress.configure({"showSpinner":false,"trickleSpeed":100})
+    NProgress.start()
+    window.addEventListener('load', function() {
+      NProgress.done();
+    })
+  </script>
+
+
+<script  src="https://lib.baomitu.com/jquery/3.6.0/jquery.min.js" ></script>
+<script  src="https://lib.baomitu.com/twitter-bootstrap/4.6.1/js/bootstrap.min.js" ></script>
+<script  src="/js/events.js" ></script>
+<script  src="/js/plugins.js" ></script>
+
+
+
+
+
+  
+    <script  src="/js/img-lazyload.js" ></script>
+  
+
+
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/tocbot/4.18.2/tocbot.min.js', function() {
+    var toc = jQuery('#toc');
+    if (toc.length === 0 || !window.tocbot) { return; }
+    var boardCtn = jQuery('#board-ctn');
+    var boardTop = boardCtn.offset().top;
+
+    window.tocbot.init(Object.assign({
+      tocSelector     : '#toc-body',
+      contentSelector : '.markdown-body',
+      linkClass       : 'tocbot-link',
+      activeLinkClass : 'tocbot-active-link',
+      listClass       : 'tocbot-list',
+      isCollapsedClass: 'tocbot-is-collapsed',
+      collapsibleClass: 'tocbot-is-collapsible',
+      scrollSmooth    : true,
+      includeTitleTags: true,
+      headingsOffset  : -boardTop,
+    }, CONFIG.toc));
+    if (toc.find('.toc-list-item').length > 0) {
+      toc.css('visibility', 'visible');
+    }
+
+    Fluid.events.registerRefreshCallback(function() {
+      if ('tocbot' in window) {
+        tocbot.refresh();
+        var toc = jQuery('#toc');
+        if (toc.length === 0 || !tocbot) {
+          return;
+        }
+        if (toc.find('.toc-list-item').length > 0) {
+          toc.css('visibility', 'visible');
+        }
+      }
+    });
+  });
+</script>
+
+
+  <script src=https://lib.baomitu.com/clipboard.js/2.0.10/clipboard.min.js></script>
+
+  <script>Fluid.plugins.codeWidget();</script>
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/anchor-js/4.3.1/anchor.min.js', function() {
+    window.anchors.options = {
+      placement: CONFIG.anchorjs.placement,
+      visible  : CONFIG.anchorjs.visible
+    };
+    if (CONFIG.anchorjs.icon) {
+      window.anchors.options.icon = CONFIG.anchorjs.icon;
+    }
+    var el = (CONFIG.anchorjs.element || 'h1,h2,h3,h4,h5,h6').split(',');
+    var res = [];
+    for (var item of el) {
+      res.push('.markdown-body > ' + item.trim());
+    }
+    if (CONFIG.anchorjs.placement === 'left') {
+      window.anchors.options.class = 'anchorjs-link-left';
+    }
+    window.anchors.add(res.join(', '));
+
+    Fluid.events.registerRefreshCallback(function() {
+      if ('anchors' in window) {
+        anchors.removeAll();
+        var el = (CONFIG.anchorjs.element || 'h1,h2,h3,h4,h5,h6').split(',');
+        var res = [];
+        for (var item of el) {
+          res.push('.markdown-body > ' + item.trim());
+        }
+        if (CONFIG.anchorjs.placement === 'left') {
+          anchors.options.class = 'anchorjs-link-left';
+        }
+        anchors.add(res.join(', '));
+      }
+    });
+  });
+</script>
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/fancybox/3.5.7/jquery.fancybox.min.js', function() {
+    Fluid.plugins.fancyBox();
+  });
+</script>
+
+
+  <script>Fluid.plugins.imageCaption();</script>
+
+  
+      <script>
+        if (!window.MathJax) {
+          window.MathJax = {
+            tex    : {
+              inlineMath: { '[+]': [['$', '$']] }
+            },
+            options: {
+              renderActions: {
+                insertedScript: [200, () => {
+                  document.querySelectorAll('mjx-container').forEach(node => {
+                    let target = node.parentNode;
+                    if (target.nodeName.toLowerCase() === 'li') {
+                      target.parentNode.classList.add('has-jax');
+                    }
+                  });
+                }, '', false]
+              }
+            }
+          };
+        } else {
+          MathJax.startup.document.state(0);
+          MathJax.texReset();
+          MathJax.typeset();
+          MathJax.typesetPromise();
+        }
+
+        Fluid.events.registerRefreshCallback(function() {
+          if ('MathJax' in window && MathJax.startup.document && typeof MathJax.startup.document.state === 'function') {
+            MathJax.startup.document.state(0);
+            MathJax.texReset();
+            MathJax.typeset();
+            MathJax.typesetPromise();
+          }
+        });
+      </script>
+    
+
+  <script  src="https://lib.baomitu.com/mathjax/3.2.1/es5/tex-mml-chtml.js" ></script>
+
+  <script defer src="/js/leancloud.js" ></script>
+
+  <script  src="/js/local-search.js" ></script>
+
+
+
+
+  
+<script src="//cdn.jsdelivr.net/npm/aplayer/dist/APlayer.min.js"></script>
+<script src="//cdn.jsdelivr.net/gh/metowolf/MetingJS@1.2/dist/Meting.min.js"></script>
+<script src="/js/reward.js"></script>
+
+
+
+<!-- 主题的启动项，将它保持在最底部 -->
+<!-- the boot of the theme, keep it at the bottom -->
+<script  src="/js/boot.js" ></script>
+
+
+  <script type="text/javascript">
+    /*窗口监视*/
+    var originalTitle = document.title;
+    window.onblur = function(){document.title = "明眸如初"};
+    window.onfocus = function(){document.title = originalTitle};
+  </script>
+
+
+  <div id="tooltip-rightmenu" class="tooltip-rightmenu">如需原始右键菜单请按下 <strong>Ctrl+右键</strong></div>
+
+<div id="rightmenu-wrapper" style="">
+  <ul class="list-v rightmenu" id="rightmenu-content">
+	  <li class="navigation menuNavigation-Content">
+		<a class="nav icon-only fix-cursor-default" onclick="history.back()"><i class="iconfont icon-zuojiantou1"></i></a>
+		<a class="nav icon-only fix-cursor-default" onclick="history.forward()"><i class="iconfont icon-youjiantou1"></i></a>
+		<a class="nav icon-only fix-cursor-default" onclick="window.location.reload()"><i class="iconfont icon-shuaxin"></i></a>
+		<a  aria-label="TOP" href="#" role="button"><i class="iconfont icon-xiangshang"></i></a>
+	  </li>
+
+		<hr class="menuLoad-Content" style="display: block;">
+	  <li class="menuLoad-Content" style="display: block;">
+		<a class="vlts-menu fix-cursor-default" target="_self" href="javascript:;" data-toggle="modal" data-target="#modalSearch" aria-label="Search">
+		  <span>
+			  <i class="iconfont icon-sousuo1 rightmenu-icon"></i>
+			  站内搜索
+		  </span>
+		</a>
+	  </li>
+
+	  <li class="menuLoad-Content" style="display: block;">
+		<a class="vlts-menu fix-cursor-default"  href="https://www.zywvvd.com/messagebd/" data-group="link">
+		  <span>
+			  <i class="iconfont icon-yangshi_icon_tongyong_chat rightmenu-icon">  </i>
+			   留言吐槽 
+		   </span>
+		</a>
+	  </li>
+
+
+	  <li class="menuLoad-Content" style="display: block;">
+		<a class="vlts-menu fix-cursor-default" id="help" target="_blank" rel="noopener" href="https://www.foreverblog.cn/go.html" data-group="link">
+		<span>
+			  <i class="iconfont icon-a-BlackHole rightmenu-icon"></i>
+			  虫洞穿梭
+		  </span>
+		</a>
+	  </li>
+
+	<a id="scroll-top-button" aria-label="TOP" href="#" role="button" style="bottom: 20px; right: 52.6364px;">
+        <i class="iconfont icon-xiangshangjiantou" aria-hidden="true"></i>
+      </a>
+
+	<hr class="menuLoad-Content" style="display: block;">
+	
+	  <li class="menuLoad-Content" style="display: block;">
+		<a class="vlts-menu fix-cursor-default" id="destroy-airplane" target="_blank" rel="noopener"  data-group="link">
+		<span>
+			  <i class="iconfont icon-feiji rightmenu-icon"></i>
+			  破坏小飞机
+		  </span>
+		</a>
+	  </li>
+  </ul>
+</div>
+
+<script>
+	var ua = navigator.userAgent;
+	var ipad = ua.match(/(iPad).*OS\s([\d_]+)/),
+		isIphone = !ipad && ua.match(/(iPhone\sOS)\s([\d_]+)/),
+		isAndroid = ua.match(/(Android)\s+([\d.]+)/),
+		isMobile = isIphone || isAndroid;
+
+	if(!isMobile) {
+		// 为按钮添加事件处理器
+		document.getElementById('destroy-airplane').onclick = function() {
+		  console.log('飞机起飞！');
+		  // 定义要执行的JavaScript代码
+		var KICKASSVERSION='2.0';
+		var s = document.createElement('script');
+		s.type='text/javascript';
+		document.body.appendChild(s);
+		s.src='https://uipv4.zywvvd.com:33030/HexoFiles/js/games/airplane/airplane.js';
+		void(0);
+		};
+	}
+</script>
+
+
+
+
+
+<link href="/css/custom.css"type="text/css"rel="stylesheet"/>
+<script src="/vvd_js/right_menu.js" type="text/javascript"></script>
+<link href="/css/right_menu.css"type="text/css"rel="stylesheet"/>
+<script src="/vvd_js/go.js"></script>
+
+
+  <noscript>
+    <div class="noscript-warning">博客在允许 JavaScript 运行的环境下浏览效果更佳</div>
+  </noscript>
+<script src="/live2dw/lib/L2Dwidget.min.js?094cbace49a39548bed64abff5988b05"></script><script>L2Dwidget.init({"pluginRootPath":"live2dw/","pluginJsPath":"lib/","pluginModelPath":"assets/","tagMode":false,"log":false,"model":{"jsonPath":"/live2dw/assets/z16.model.json"},"display":{"position":"left","width":200,"height":400},"mobile":{"show":false},"react":{"opacity":0.9}});</script></body>
+</html>
