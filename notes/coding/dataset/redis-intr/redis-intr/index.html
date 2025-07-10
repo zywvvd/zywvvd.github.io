@@ -1,0 +1,1986 @@
+
+
+<!DOCTYPE html>
+<html lang="zh-CN" data-default-color-scheme=auto>
+
+
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="baidu-site-verification" content="codeva-rLWafCJGYc" />
+  <link rel="apple-touch-icon" sizes="76x76" href="/image/avatar.png">
+  <link rel="icon" href="/image/avatar.png">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, shrink-to-fit=no">
+  <meta http-equiv="x-ua-compatible" content="ie=edge">
+  
+  <meta name="theme-color" content="#2f4154">
+  <meta name="author" content="Yiwei Zhang">
+  <meta name="keywords" content="人工智能, 深度学习, 个人博客, 机器学习">
+  
+    <meta name="description" content="Redis 是一个开源的、基于内存的数据结构存储系统，常用作数据库、缓存和消息代理。本文记录相关内容。">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Redis 数据库介绍">
+<meta property="og:url" content="https://www.zywvvd.com/notes/coding/dataset/redis-intr/redis-intr/index.html">
+<meta property="og:site_name" content="又见苍岚">
+<meta property="og:description" content="Redis 是一个开源的、基于内存的数据结构存储系统，常用作数据库、缓存和消息代理。本文记录相关内容。">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="https://uipv4.zywvvd.com:33030/HexoFiles/vvd_image_files/202507101438206.png">
+<meta property="og:image" content="https://uipv4.zywvvd.com:33030/HexoFiles/vvd_image_files/202507101449490.png">
+<meta property="og:image" content="https://uipv4.zywvvd.com:33030/HexoFiles/vvd_image_files/202507101451748.png">
+<meta property="og:image" content="https://uipv4.zywvvd.com:33030/HexoFiles/vvd_image_files/202507101451869.png">
+<meta property="og:image" content="https://uipv4.zywvvd.com:33030/HexoFiles/vvd_image_files/202507101452850.png">
+<meta property="og:image" content="https://uipv4.zywvvd.com:33030/HexoFiles/vvd_image_files/202507101453749.png">
+<meta property="og:image" content="https://uipv4.zywvvd.com:33030/HexoFiles/vvd_image_files/202507101457871.png">
+<meta property="article:published_time" content="2025-07-10T06:25:39.000Z">
+<meta property="article:modified_time" content="2025-07-10T07:08:56.231Z">
+<meta property="article:author" content="Yiwei Zhang">
+<meta property="article:tag" content="Coding">
+<meta property="article:tag" content="Database">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:image" content="https://uipv4.zywvvd.com:33030/HexoFiles/vvd_image_files/202507101438206.png">
+  
+  
+  
+  <title>Redis 数据库介绍 - 又见苍岚</title>
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/twitter-bootstrap/4.6.1/css/bootstrap.min.css" />
+
+
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/github-markdown-css/4.0.0/github-markdown.min.css" />
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/hint.css/2.7.0/hint.min.css" />
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/fancybox/3.5.7/jquery.fancybox.min.css" />
+
+
+
+<!-- 主题依赖的图标库，不要自行修改 -->
+<!-- Do not modify the link that theme dependent icons -->
+
+<link rel="stylesheet" href="//at.alicdn.com/t/font_1749284_hj8rtnfg7um.css">
+
+
+
+<link rel="stylesheet" href="//at.alicdn.com/t/font_1736178_lbnruvf0jn.css">
+
+
+<link  rel="stylesheet" href="/css/main.css" />
+
+
+  <link id="highlight-css" rel="stylesheet" href="/css/highlight.css" />
+  
+    <link id="highlight-css-dark" rel="stylesheet" href="/css/highlight-dark.css" />
+  
+
+
+
+  
+<link rel="stylesheet" href="/css/custom.css">
+<link rel="stylesheet" href="/css/reward.css">
+<link rel="stylesheet" href="//cdn.jsdelivr.net/npm/aplayer/dist/APlayer.min.css">
+
+
+
+  <script id="fluid-configs">
+    var Fluid = window.Fluid || {};
+    Fluid.ctx = Object.assign({}, Fluid.ctx)
+    var CONFIG = {"hostname":"www.zywvvd.com","root":"/","version":"1.9.7","typing":{"enable":true,"typeSpeed":90,"cursorChar":"_","loop":false,"scope":["home"]},"anchorjs":{"enable":true,"element":"h1,h2,h3,h4,h5,h6","placement":"left","visible":"hover","icon":""},"progressbar":{"enable":true,"height_px":3,"color":"#29d","options":{"showSpinner":false,"trickleSpeed":100}},"code_language":{"enable":true,"default":"TEXT"},"copy_btn":true,"image_caption":{"enable":true},"image_zoom":{"enable":true,"img_url_replace":["",""]},"toc":{"enable":true,"placement":"right","headingSelector":"h1,h2,h3,h4,h5,h6","collapseDepth":0},"lazyload":{"enable":true,"loading_img":"/img/loading.gif","onlypost":false,"offset_factor":2},"web_analytics":{"enable":true,"follow_dnt":true,"baidu":null,"google":null,"tencent":{"sid":null,"cid":null},"woyaola":null,"cnzz":null,"leancloud":{"app_id":"Cv0XNeBSBdAPAIuVj3PsyM3R-MdYXbMMI","app_key":"4PU1rNlGrqXWzhfW3dgq98oX","server_url":null,"path":"window.location.pathname","ignore_local":false},"gtag":null},"search_path":"/local-search.xml","include_content_in_search":true};
+
+    if (CONFIG.web_analytics.follow_dnt) {
+      var dntVal = navigator.doNotTrack || window.doNotTrack || navigator.msDoNotTrack;
+      Fluid.ctx.dnt = dntVal && (dntVal.startsWith('1') || dntVal.startsWith('yes') || dntVal.startsWith('on'));
+    }
+  </script>
+  <script  src="/js/utils.js" ></script>
+  <script  src="/js/color-schema.js" ></script>
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+    
+  
+
+
+
+  
+<meta name="generator" content="Hexo 7.2.0"><link rel="alternate" href="/atom.xml" title="又见苍岚" type="application/atom+xml">
+</head>
+
+<script>
+// 页面加载完成后隐藏加载动画
+document.addEventListener("readystatechange", function() {
+    const loader = document.getElementById('Loadanimation');
+    if (loader) {
+        // 停留1秒后开始淡出
+        setTimeout(function() {
+            loader.style.transition = 'opacity 1.2s';
+            loader.style.opacity = '0';
+            // 淡出完成后隐藏
+            setTimeout(() => {
+                loader.style.display = 'none';
+            }, 1000); // 等待淡出动画完成
+        }, 700); // 停留0.8秒
+    }
+});
+</script>
+
+
+
+<body>
+  
+<div id="Loadanimation" style="z-index:999999;">
+<div id="Loadanimation-center">
+   <div id="Loadanimation-center-absolute">
+       <div class="xccx_object" id="xccx_four"></div>
+       <div class="xccx_object" id="xccx_three"></div>
+       <div class="xccx_object" id="xccx_two"></div>
+       <div class="xccx_object" id="xccx_one"></div>
+   </div>
+</div>
+</div>
+
+<link href="/css/loading.css"type="text/css"rel="stylesheet"/>
+
+
+
+
+
+
+<div>
+	<div class='real_mask' style="
+		background-color: rgba(0,0,0,0.4);
+		width: 100%;
+		height: 100%;
+		position: fixed;
+		z-index: -777;
+	"></div>
+	<div id="banner_video_insert">
+	</div>	
+	<div id='vvd_banner_img'>
+	</div>
+</div>
+<div id="banner"></div>
+
+
+
+
+
+
+
+  <header>
+    
+
+<div class="header-inner" style="height: 80vh;">
+  <nav id="navbar" class="navbar fixed-top  navbar-expand-lg navbar-dark scrolling-navbar">
+  <div class="container">
+    <a class="navbar-brand" href="/">
+      <strong>CangLan</strong>
+    </a>
+
+    <button id="navbar-toggler-btn" class="navbar-toggler" type="button" data-toggle="collapse"
+            data-target="#navbarSupportedContent"
+            aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
+      <div class="animated-icon"><span></span><span></span><span></span></div>
+    </button>
+
+    <!-- Collapsible content -->
+    <div class="collapse navbar-collapse" id="navbarSupportedContent">
+      <ul class="navbar-nav ml-auto text-center">
+        
+          
+          
+          
+          
+            <li class="nav-item">
+		<div >
+		      <a class="nav-link" href="/" target="_self" data-umami-event="Navigation-Homepage">
+
+		        <i class="iconfont icon-home-fill"></i>
+		        <span>首页</span>
+		      </a>
+		</div>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item dropdown">
+              <a class="nav-link dropdown-toggle" target="_self" href="javascript:;" role="button"
+                 data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                <i class="iconfont icon-shuji1"></i>
+                <span>文章</span>
+              </a>
+              <div class="dropdown-menu" aria-labelledby="navbarDropdown">
+                
+                  
+                  
+                  
+		<div >
+
+                  <a class="dropdown-item" href="/archives/" target="_self" data-umami-event="Navigation-Archive">
+
+                    <i class="iconfont icon-archive-fill"></i>
+                    <span>归档</span>
+                  </a>
+		</div>
+                
+                  
+                  
+                  
+		<div >
+
+                  <a class="dropdown-item" href="/categories/" target="_self" data-umami-event="Navigation-Category">
+
+                    <i class="iconfont icon-category-fill"></i>
+                    <span>分类</span>
+                  </a>
+		</div>
+                
+                  
+                  
+                  
+		<div >
+
+                  <a class="dropdown-item" href="/tags/" target="_self" data-umami-event="Navigation-Tag">
+
+                    <i class="iconfont icon-tags-fill"></i>
+                    <span>标签</span>
+                  </a>
+		</div>
+                
+                  
+                  
+                  
+		<div >
+
+                  <a class="dropdown-item" href="/shuoshuo/" target="_self" data-umami-event="Navigation-Shuoshuo">
+
+                    <i class="iconfont icon-24gf-bubblesDots4"></i>
+                    <span>说说</span>
+                  </a>
+		</div>
+                
+              </div>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item dropdown">
+              <a class="nav-link dropdown-toggle" target="_self" href="javascript:;" role="button"
+                 data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                <i class="iconfont icon-momo"></i>
+                <span>社交</span>
+              </a>
+              <div class="dropdown-menu" aria-labelledby="navbarDropdown">
+                
+                  
+                  
+                  
+		<div >
+
+                  <a class="dropdown-item" href="/links/" target="_self" data-umami-event="Navigation-Friends">
+
+                    <i class="iconfont icon-link-fill"></i>
+                    <span>友链</span>
+                  </a>
+		</div>
+                
+                  
+                  
+                  
+		<div >
+
+                  <a class="dropdown-item" href="/messagebd/" target="_self" data-umami-event="Navigation-MessageBoard">
+
+                    <i class="iconfont icon-comment"></i>
+                    <span>留言板</span>
+                  </a>
+		</div>
+                
+                  
+                  
+                  
+		<div >
+
+                  <a class="dropdown-item" href="/atom.xml" target="_self" data-umami-event="Navigation-RSS">
+
+                    <i class="iconfont icon-dingyue"></i>
+                    <span>RSS订阅</span>
+                  </a>
+		</div>
+                
+                  
+                  
+                  
+		<div >
+
+                  <a class="dropdown-item" href="/reccomments/" target="_self" data-umami-event="Navigation-Recent-Comments">
+
+                    <i class="iconfont icon-icon-pinglunguanli-pinglunliebiao"></i>
+                    <span>近期评论</span>
+                  </a>
+		</div>
+                
+              </div>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item dropdown">
+              <a class="nav-link dropdown-toggle" target="_self" href="javascript:;" role="button"
+                 data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                <i class="iconfont icon-user-fill"></i>
+                <span>个人</span>
+              </a>
+              <div class="dropdown-menu" aria-labelledby="navbarDropdown">
+                
+                  
+                  
+                  
+		<div >
+
+                  <a class="dropdown-item" href="/about/" target="_self" data-umami-event="Navigation-AboutMe">
+
+                    <i class="iconfont icon-guanyuwomen"></i>
+                    <span>关于</span>
+                  </a>
+		</div>
+                
+                  
+                  
+                  
+		<div >
+
+                  <a class="dropdown-item" href="/playlist/" target="_self" data-umami-event="Navigation-Music">
+
+                    <i class="iconfont icon-music"></i>
+                    <span>歌单</span>
+                  </a>
+		</div>
+                
+                  
+                  
+                  
+		<div >
+
+                  <a class="dropdown-item" href="https://uipv4.zywvvd.com:33035" target="_self" data-umami-event="Navigation-Nextcloud">
+
+                    <i class="iconfont icon-xuniyingpan"></i>
+                    <span>网盘</span>
+                  </a>
+		</div>
+                
+                  
+                  
+                  
+		<div >
+
+                  <a class="dropdown-item" href="https://uipv4.zywvvd.com:33036" target="_self" data-umami-event="Navigation-OneDev">
+
+                    <i class="iconfont icon-git"></i>
+                    <span>仓库</span>
+                  </a>
+		</div>
+                
+                  
+                  
+                  
+		<div >
+
+                  <a class="dropdown-item" href="https://uipv4.zywvvd.com:33041" target="_self" data-umami-event="Navigation-Wiki">
+
+                    <i class="iconfont icon-wiki"></i>
+                    <span>百科</span>
+                  </a>
+		</div>
+                
+              </div>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item dropdown">
+              <a class="nav-link dropdown-toggle" target="_self" href="javascript:;" role="button"
+                 data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                <i class="iconfont icon-ic_fly"></i>
+                <span>导航</span>
+              </a>
+              <div class="dropdown-menu" aria-labelledby="navbarDropdown">
+                
+                  
+                  
+                  
+		<div >
+
+                  <a class="dropdown-item" href="/site-map/" target="_self" data-umami-event="Navigation-SiteMap">
+
+                    <i class="iconfont icon-lianjie"></i>
+                    <span>链接</span>
+                  </a>
+		</div>
+                
+                  
+                  
+                  
+		<div >
+
+                  <a class="dropdown-item" href="/nodeppt/hexo/snavigation/" target="_self" data-umami-event="Navigation-Search">
+
+                    <i class="iconfont icon-sousuo"></i>
+                    <span>搜索</span>
+                  </a>
+		</div>
+                
+              </div>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item dropdown">
+              <a class="nav-link dropdown-toggle" target="_self" href="javascript:;" role="button"
+                 data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                <i class="iconfont icon-wangzhan"></i>
+                <span>站点</span>
+              </a>
+              <div class="dropdown-menu" aria-labelledby="navbarDropdown">
+                
+                  
+                  
+                  
+		<div >
+
+                  <a class="dropdown-item" href="https://uipv4.zywvvd.com:33039/share/0zx3o21oIpZTZqwC/%E5%8F%88%E8%A7%81%E8%8B%8D%E5%B2%9A" target="_self" data-umami-event="Navigation-Umami">
+
+                    <i class="iconfont icon-tongji2"></i>
+                    <span>站点分析</span>
+                  </a>
+		</div>
+                
+                  
+                  
+                  
+		<div >
+
+                  <a class="dropdown-item" href="/earth_sta/" target="_self" data-umami-event="Navigation-Globe">
+
+                    <i class="iconfont icon-tongjifenxi-xiangmubiaogetongji"></i>
+                    <span>访问统计</span>
+                  </a>
+		</div>
+                
+                  
+                  
+                  
+		<div >
+
+                  <a class="dropdown-item" href="https://uipv4.zywvvd.com:33034/status/show" target="_self" data-umami-event="Navigation-Monitor">
+
+                    <i class="iconfont icon-jiankong"></i>
+                    <span>站点监控</span>
+                  </a>
+		</div>
+                
+              </div>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item dropdown">
+              <a class="nav-link dropdown-toggle" target="_self" href="javascript:;" role="button"
+                 data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                <i class="iconfont icon-chuansong"></i>
+                <span>传送</span>
+              </a>
+              <div class="dropdown-menu" aria-labelledby="navbarDropdown">
+                
+                  
+                  
+                  
+		<div >
+
+                  <a class="dropdown-item" href="https://www.foreverblog.cn/go.html" target="_self" data-umami-event="Navigation-ForeverBolg">
+
+                    <i class="iconfont icon-a-BlackHole"></i>
+                    <span>十年之约</span>
+                  </a>
+		</div>
+                
+                  
+                  
+                  
+		<div >
+
+                  <a class="dropdown-item" href="https://www.travellings.cn/go.html" target="_self" data-umami-event="Navigation-DriveTo">
+
+                    <i class="iconfont icon-train1"></i>
+                    <span>开往</span>
+                  </a>
+		</div>
+                
+                  
+                  
+                  
+		<div >
+
+                  <a class="dropdown-item" href="https://bf.zzxworld.com/" target="_self" data-umami-event="Navigation-BlogFinder">
+
+                    <i class="iconfont icon-icon-"></i>
+                    <span>BlogFinder</span>
+                  </a>
+		</div>
+                
+              </div>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item dropdown">
+              <a class="nav-link dropdown-toggle" target="_self" href="javascript:;" role="button"
+                 data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                <i class="iconfont icon-gongju"></i>
+                <span>工具</span>
+              </a>
+              <div class="dropdown-menu" aria-labelledby="navbarDropdown">
+                
+                  
+                  
+                  
+		<div >
+
+                  <a class="dropdown-item" href="/navigates/calculator" target="_self" data-umami-event="Navigation-Calculator">
+
+                    <i class="iconfont icon-jisuan"></i>
+                    <span>计算器</span>
+                  </a>
+		</div>
+                
+                  
+                  
+                  
+		<div >
+
+                  <a class="dropdown-item" href="/navigates/webgraphviz" target="_self" data-umami-event="Navigation-WebGtaphviz">
+
+                    <i class="iconfont icon-tongyong-huatugongju2"></i>
+                    <span>Graphviz</span>
+                  </a>
+		</div>
+                
+                  
+                  
+                  
+		<div >
+
+                  <a class="dropdown-item" href="/navigates/formular_reco" target="_self" data-umami-event="Navigation-Formular-Reco">
+
+                    <i class="iconfont icon-a-checkformula"></i>
+                    <span>公式识别</span>
+                  </a>
+		</div>
+                
+              </div>
+            </li>
+          
+        
+        
+          <li class="nav-item" id="search-btn">
+            <a class="nav-link" target="_self" href="javascript:;" data-toggle="modal" data-target="#modalSearch" aria-label="Search">
+              <i class="iconfont icon-search"></i>
+            </a>
+          </li>
+          
+        
+        
+          <li class="nav-item" id="color-toggle-btn">
+            <a class="nav-link" target="_self" href="javascript:;" aria-label="Color Toggle">
+              <i class="iconfont icon-dark" id="color-toggle-icon"></i>
+            </a>
+          </li>
+        
+      </ul>
+    </div>
+  </div>
+</nav>
+
+  
+
+<div id="banner" class="banner" parallax=true
+     style="background: url('https://uipv4.zywvvd.com:33030/HexoFiles/new/bg-trans.png') no-repeat center center; background-size: cover;">
+  <div class="full-bg-img">
+    <div class="mask flex-center" style="background-color: rgba(0, 0, 0, 0)">
+      <div class="banner-text text-center fade-in-up">
+        <div class="h2">
+          
+            <span id="subtitle">Redis 数据库介绍</span>
+          
+        </div>
+
+        
+          
+  <div class="mt-3">
+    
+      <span class="post-meta mr-2">
+        <i class="iconfont icon-author" aria-hidden="true"></i>
+        Yiwei Zhang
+      </span>
+    
+    
+      <span class="post-meta">
+        <i class="iconfont icon-date-fill" aria-hidden="true"></i>
+        <time datetime="2025-07-10 14:25" pubdate>
+          2025年7月10日 下午
+        </time>
+      </span>
+    
+  </div>
+
+  <div class="mt-1">
+    
+      <span class="post-meta mr-2">
+        <i class="iconfont icon-chart"></i>
+        
+          <!-- compatible with older versions-->
+          5.1k 字
+        
+      </span>
+    
+
+    
+      <span class="post-meta mr-2">
+        <i class="iconfont icon-clock-fill"></i>
+        
+        
+        
+          <!-- compatible with older versions-->
+          43 分钟
+        
+      </span>
+    
+
+    
+    
+      
+        <span id="vvdpost_container_page_pvuv" style="display: none">
+          <i class="iconfont icon-eye" aria-hidden="true"></i>
+          <span id="vvdpost_value_page_pv">0</span> 次&nbsp&nbsp
+		  <i class="iconfont icon-users" aria-hidden="true"></i>
+		  <span id="vvdpost_value_page_uv">0</span> 人&nbsp&nbsp
+		  <i class="iconfont icon-comment" aria-hidden="true"></i>
+		  <span id="vvdpost_value_page_cn">0</span> 条
+        </span>
+
+    <script>
+    document.addEventListener("DOMContentLoaded", function() {
+	      console.log("PVUV_" + window.location.pathname);
+
+	      // 使用 fetch API 发送 POST 请求
+	      fetch('https://uipv4.zywvvd.com:33037/poststats', { 
+		  method: 'POST',
+		  headers: {
+		      'Content-Type': 'application/json'
+		  },
+		  body: JSON.stringify(window.location.pathname) // 将路径名作为对象发送，以便在服务器端更容易处理
+	      })
+	      .then(response => {
+		  // 检查响应状态
+		  if (!response.ok) {
+		      throw new Error('Network response was not ok ' + response.statusText);
+		  }
+		  return response.json(); // 解析 JSON 响应
+	      })
+	      .then(data => {
+		  // 处理解析后的数据
+		  console.log(data.pv);
+		  var pvCtn = document.querySelector('#vvdpost_container_page_pvuv');
+		  if (pvCtn) {
+		      var pvEle = document.querySelector('#vvdpost_value_page_pv');
+		      var uvEle = document.querySelector('#vvdpost_value_page_uv');
+		      var cnEle = document.querySelector('#vvdpost_value_page_cn');
+		      if (pvEle && uvEle) {
+		          pvEle.innerText = data.pv;
+		          uvEle.innerText = data.uv;
+		          cnEle.innerText = data.cn;
+		          pvCtn.style.display = 'inline';
+		      }
+		  }
+	      })
+	      .catch(error => {
+		  // 处理请求错误
+		  console.error('There has been a problem with your fetch operation:', error);
+	      });
+      });
+  </script>
+      
+    
+  </div>
+
+
+        
+      </div>
+
+      
+        <div class="scroll-down-bar">
+          <i class="iconfont icon-arrowdown"></i>
+        </div>
+      
+    </div>
+  </div>
+</div>
+
+</div>
+
+
+	<script type="text/javascript" src="/vvd_js/jquery.js"></script>
+	<script async src="https://uipv4.zywvvd.com:33039/script.js" data-website-id="dd4a05c6-dde2-4743-9c3a-a79d6bee0778"></script>
+	<div class="banner" id='banner' >
+
+		<div class="full-bg-img" >
+
+			
+				<script>
+					var ua = navigator.userAgent;
+					var ipad = ua.match(/(iPad).*OS\s([\d_]+)/),
+						isIphone = !ipad && ua.match(/(iPhone\sOS)\s([\d_]+)/),
+						isAndroid = ua.match(/(Android)\s+([\d.]+)/),
+						isMobile = isIphone || isAndroid;
+
+					function set_video_attr(id){
+						var height = document.body.clientHeight
+						var width = document.body.clientWidth
+						var video_item = document.getElementById(id);
+
+						if (height / width < 0.56){
+							video_item.setAttribute('width', '100%');
+							video_item.setAttribute('height', 'auto');
+						} else {
+							video_item.setAttribute('height', '100%');
+							video_item.setAttribute('width', 'auto');
+						}
+					}
+
+					fetch('https://uipv4.zywvvd.com:33037/wallpaper-pair')
+					  .then(response => response.json()) // 解析JSON数据
+					  .then(data => {
+						console.log('获取链接成功');
+						video_url = data[0][0]
+						pre_show_image_url = data[0][1]
+
+						banner_obj = document.getElementById("banner")
+						banner_obj.style.cssText = "background: url('" + pre_show_image_url + "') no-repeat;"
+
+						vvd_banner_obj = document.getElementById("vvd_banner_img")
+						vvd_banner_content = "<img id='banner_img_item' src='" + pre_show_image_url + "'style='position: fixed; z-index: -999'>"
+						vvd_banner_obj.innerHTML = vvd_banner_content 
+
+						if (!isMobile) {
+							video_html_res = "<video id='video_item' style='position: fixed; z-index: -888;'  muted='muted' src=" + video_url + " autoplay='autoplay' loop='loop'></video>"
+							document.getElementById("banner_video_insert").innerHTML = video_html_res;
+							set_video_attr('video_item')
+							set_video_attr('banner_img_item')
+						}
+					    
+					  })
+					  .catch((error) => {
+					    console.error('请求失败,尝试本地获取背景图像：', error);
+	    					$.getJSON('/vvd_js/video_url.json', function(data){
+
+							var video_list_length = data.length
+							var seed = Math.random()
+							index = Math.floor(seed * video_list_length)
+
+							video_url = data[index][0]
+							pre_show_image_url = data[index][1]
+
+							banner_obj = document.getElementById("banner")
+							banner_obj.style.cssText = "background: url('" + pre_show_image_url + "') no-repeat;"
+
+							vvd_banner_obj = document.getElementById("vvd_banner_img")
+							vvd_banner_content = "<img id='banner_img_item' src='" + pre_show_image_url + "'style='position: fixed; z-index: -999'>"
+							vvd_banner_obj.innerHTML = vvd_banner_content 
+
+							if (!isMobile) {
+								video_html_res = "<video id='video_item' style='position: fixed; z-index: -888;'  muted='muted' src=" + video_url + " autoplay='autoplay' loop='loop'></video>"
+								document.getElementById("banner_video_insert").innerHTML = video_html_res;
+								set_video_attr('video_item')
+								set_video_attr('banner_img_item')
+							}
+						});
+					  });
+
+
+
+
+
+
+					if (!isMobile){
+						window.onresize = function(){
+							set_video_attr('video_item')
+							set_video_attr('banner_img_item')
+							}
+						}
+				</script>
+
+			
+
+
+			
+			</div>
+		</div>
+    </div>
+
+  </header>
+
+  <main>
+    
+      
+
+
+
+<div class="container-fluid nopadding-x">
+  <div class="row nomargin-x">
+    <div class="side-col d-none d-lg-block col-lg-2">
+      
+
+    </div>
+
+    <div class="col-lg-8 nopadding-x-md">
+      <div class="container nopadding-x-md" id="board-ctn">
+        <div id="board">
+          <article class="post-content mx-auto">
+
+            <!-- <h1 id="seo-header">Redis 数据库介绍</h1> -->
+
+            
+              <p id="updated-time" class="note note-info" style="">
+                
+                  
+                    <!-- compatible with older versions-->
+                    本文最后更新于：2025年7月10日 下午
+                  
+                
+              </p>
+            
+            
+              <div class="markdown-body">
+                
+                <blockquote>
+<p>Redis 是一个开源的、基于内存的数据结构存储系统，常用作数据库、缓存和消息代理。本文记录相关内容。</p>
+</blockquote>
+<span id="more"></span>
+<h3 id="简介">简介</h3>
+<p>Redis（<strong>RE</strong>mote <strong>DI</strong>ctionary <strong>S</strong>erver，远程字典服务器）是一个使用ANSI C编写的支持网络、基于内存、分布式、可选持久性的键值对存储数据库。根据月度排行网站DB-Engines.com的数据，Redis是最流行的键值对存储数据库。</p>
+<p>Redis 是一个开源的、基于内存的数据结构存储系统，常用作数据库、缓存和消息代理。它支持多种数据结构，如字符串、列表、哈希、集合和有序集合，并且能够快速、灵活地进行数据存取。Redis将数据存储在内存中，这使得它具有极快的读写速度，同时还支持数据持久化，可以将数据保存到磁盘上。</p>
+<ol>
+<li>核心概念:</li>
+</ol>
+<ul>
+<li>
+<p><strong>键值对存储:</strong></p>
+<p>Redis 是一种NoSQL 数据库，其核心数据模型是键值对。</p>
+<p>每个数据都通过一个唯一的键来访问，这使得数据检索非常高效。</p>
+</li>
+<li>
+<p><strong>内存存储:</strong></p>
+<p>Redis 将数据存储在内存中，而不是传统的硬盘上。</p>
+<p>这极大地提高了数据读写速度，使其成为缓存和快速数据访问的理想选择。</p>
+</li>
+<li>
+<p><strong>支持多种数据结构:</strong></p>
+<p>除了简单的字符串，Redis 还支持列表、哈希、集合和有序集合等多种数据结构。</p>
+<p>这使得Redis 能够满足各种不同的应用场景，例如缓存、消息队列、排行榜等。</p>
+</li>
+<li>
+<p><strong>数据持久化:</strong></p>
+<p>尽管Redis 主要基于内存，但它也支持数据持久化，可以将数据保存到磁盘上。这确保了在服务器重启后，数据可以被恢复，避免了数据丢失。</p>
+</li>
+</ul>
+<ol start="2">
+<li>主要用途:</li>
+</ol>
+<ul>
+<li>
+<p><strong>缓存:</strong></p>
+<p>Redis 经常被用作缓存层，存储频繁访问的数据，减少对主数据库的访问，从而提高应用程序的性能。</p>
+</li>
+<li>
+<p><strong>会话管理:</strong></p>
+<p>Redis 可以用来存储用户会话信息，方便用户在不同页面之间保持登录状态。</p>
+</li>
+<li>
+<p><strong>消息队列:</strong></p>
+<p>Redis 的发布/订阅功能可以用于构建消息队列，实现异步处理和解耦系统组件。</p>
+</li>
+<li>
+<p><strong>排行榜:</strong></p>
+<p>Redis 的有序集合数据结构非常适合构建排行榜，例如游戏积分榜或社交媒体的点赞榜。</p>
+</li>
+</ul>
+<ol start="3">
+<li>主要特点:</li>
+</ol>
+<ul>
+<li>
+<p><strong>高性能:</strong></p>
+<p>Redis 的内存存储和优化的数据结构使其具有极高的读写性能。</p>
+</li>
+<li>
+<p><strong>灵活性:</strong></p>
+<p>支持多种数据结构，可以满足不同的应用需求。</p>
+</li>
+<li>
+<p><strong>可扩展性:</strong></p>
+<p>Redis 可以通过集群部署，实现水平扩展，满足高并发、大数据量的需求。</p>
+</li>
+<li>
+<p>**持久化:**支持数据持久化，保证数据的可靠性。</p>
+</li>
+</ul>
+<h3 id="工作原理"><strong>工作原理</strong></h3>
+<h4 id="基于内存的数据存储"><strong>基于内存的数据存储</strong></h4>
+<p>Redis是一个内存中的数据结构存储系统，意味着它使用计算机的主内存（RAM）来存储所有的数据。这种内存优先的设计使得Redis能够提供极高的性能，因为内存的数据访问速度远远超过了传统硬盘存储。</p>
+<p>由于存储在内存中，Redis能够以微秒级别的延迟对数据进行读写操作，这对于需要快速响应的应用来说至关重要，如缓存系统、实时分析平台和高频交易系统等。然而，内存资源相对有限且价格较高，因此Redis也提供了数据驱动的逐出策略（如LRU—最近最少使用算法）和精细的内存管理功能，确保有效利用可用内存。</p>
+<h4 id="数据结构与操作命令"><strong>数据结构与操作命令</strong></h4>
+<p>Redis提供了丰富的数据结构，每种结构都有专门的操作命令：</p>
+<ul>
+<li>字符串（String）：最基本的数据类型，用于存储文本或二进制数据。常用命令包括 GET、SET 用于存取数据，INCR、DECR 用于原子性递增或递减操作。</li>
+<li>哈希（Hash）：用于存储对象，由字段和字段值组成的映射表。HGET、HSET 用于获取和设置字段值，HGETALL 用来获取哈希表的所有字段和值。</li>
+<li>列表（List）：有序集合，支持双端插入和删除操作。LPUSH、RPUSH 用于从左端或右端插入元素，LPOP、RPOP 用于从两端弹出元素，LRANGE 用于获取列表片段。</li>
+<li>集合（Set）：无序且元素唯一的集合。SADD、SREM 用于添加或移除元素，SMEMBERS 用于获取所有元素，SINTER、SUNION 和 SDIFF 用于集合运算。</li>
+<li>有序集合（Sorted Set）：类似 Set，但每个元素关联一个分数值，按分数有序排列。ZADD 添加元素，ZRANGE 按照分数范围查询元素，ZREM 删除元素。</li>
+</ul>
+<p>Redis还支持位操作、地理空间索引、HyperLogLogs等高级数据结构，通过一系列特定的命令进行操作，使得Redis能够应用于广泛的场景中。</p>
+<h4 id="持久化机制"><strong>持久化机制</strong></h4>
+<p>为了保证内存中的数据在断电或故障时不会丢失，Redis提供了两种主要的持久化机制：RDB（Redis Database）和AOF（Append Only File）。</p>
+<ul>
+<li>RDB：通过创建数据集的时间点快照来实现持久化。这是通过周期性地执行一个称为“BGSAVE”的操作来完成的，它会产生一个包含了Redis在某一时刻所有数据的二进制文件。RDB文件是一个压缩的二进制文件，可以用来在需要的时候，快速恢复整个数据集。它适合于数据备份和灾难恢复，但在发生故障后，自上次快照以来的所有数据都有可能丢失。</li>
+<li>AOF：记录每一个写操作命令到一个日志文件中，命令以追加的方式保存。AOF文件以纯文本格式存储，提供了更好的数据安全性，因为它可以配置为每次写操作后同步到磁盘，或者每秒同步一次。在Redis重启时，AOF文件中的命令会被重新执行，以重建内存中的数据状态。通过AOF恢复数据通常比RDB更慢，但可以更频繁地记录数据状态，减少数据丢失的可能性。</li>
+</ul>
+<h4 id="单线程架构"><strong>单线程架构</strong></h4>
+<p>Redis的单线程架构指的是它的核心数据操作是由一个单一的线程来执行的。这种设计带来了简单性和效率，因为避免了多线程上下文切换的开销，并简化了并发控制，因为不需要考虑数据在多个线程间的同步问题。尽管Redis处理命令的主循环是单线程的，它还是能利用IO多路复用技术来同时处理多个客户端的请求。此外，对于某些耗时操作，如持久化和部分网络IO处理，Redis会使用后台线程来避免阻塞主线程，确保了服务的响应性。单线程架构使得Redis可以高效地处理大量的请求，同时保持操作的原子性和一致性。</p>
+<h4 id="哨兵和集群机制"><strong>哨兵和集群机制</strong></h4>
+<p>为了实现高可用性和水平扩展，Redis提供了哨兵（Sentinel）机制和集群（Cluster）模式。</p>
+<ul>
+<li>Redis哨兵（Sentinel）是一个高可用性解决方案。哨兵系统可以监测Redis主从服务器的健康状态，自动执行故障转移，选举新的主服务器，并通知应用程序新主服务器的地址。哨兵还负责通知管理员，发送警报，并执行自定义脚本响应各种事件。</li>
+<li>Redis集群（Cluster）提供了一个数据分区（sharding）和自动管理的环境，支持在多个节点间进行数据共享。它能够在节点间自动分配数据，并在节点故障时提供自动的故障转移功能。集群通过分片来提高数据库的可扩展性，并能在不中断服务的情况下，动态地添加或移除节点。</li>
+</ul>
+<h3 id="数据库特性">数据库特性</h3>
+<h4 id="数据模型">数据模型</h4>
+<p>Redis的外围由一个键、值映射的字典构成。Redis有以下这五种基本类型：</p>
+<p><img src="https://uipv4.zywvvd.com:33030/HexoFiles/vvd_image_files/202507101438206.png" srcset="/img/loading.gif" lazyload alt=""></p>
+<p>（1）<strong>String（字符串）</strong></p>
+<ul>
+<li><strong>概述</strong>：Redis 最基本的数据类型，存储单个键值对，值可以是字符串、数字。</li>
+<li><strong>命令</strong>：
+<ul>
+<li><code>SET key value</code> —— 设置值</li>
+<li><code>GET key</code> —— 获取值</li>
+<li><code>INCR key</code> / <code>DECR key</code> —— 递增/递减（适用于计数）</li>
+<li><code>APPEND key value</code> —— 追加字符串</li>
+</ul>
+</li>
+<li><strong>应用场景</strong>：
+<ul>
+<li>缓存用户信息（如 <code>SET user:1:name &quot;Alice&quot;</code>）</li>
+<li>计数（如 <code>INCR views:page1</code> 记录页面浏览量）</li>
+</ul>
+</li>
+</ul>
+<hr>
+<p>（2）<strong>Hash（哈希）</strong></p>
+<ul>
+<li><strong>概述</strong>：类似于 <strong>Python 的字典</strong>，一个键值对可以包含多个字段，每个字段存储一个值。</li>
+<li><strong>命令</strong>：
+<ul>
+<li><code>HSET key field value</code> —— 设置字段值</li>
+<li><code>HGET key field</code> —— 获取字段值</li>
+<li><code>HGETALL key</code> —— 获取所有字段和值</li>
+</ul>
+</li>
+<li><strong>应用场景</strong>：
+<ul>
+<li>存储用户信息，如：</li>
+<li>shell</li>
+<li>CopyEdit</li>
+<li><code>HSET user:1 name &quot;Alice&quot; age &quot;25&quot;</code></li>
+<li>适用于对象存储，节省空间（相比多个 <code>String</code> 结构）</li>
+</ul>
+</li>
+</ul>
+<hr>
+<p>（3） <strong>List（列表）</strong></p>
+<ul>
+<li><strong>概述</strong>：双向链表，可以用作<strong>队列（FIFO）</strong> 或 <strong>栈（LIFO）</strong> 结构。</li>
+<li><strong>命令</strong>：
+<ul>
+<li><code>LPUSH key value</code> —— 左侧插入（类似栈）</li>
+<li><code>RPUSH key value</code> —— 右侧插入（类似队列）</li>
+<li><code>LPOP key</code> / <code>RPOP key</code> —— 弹出左/右端的元素</li>
+<li><code>LRANGE key start stop</code> —— 获取指定范围的元素</li>
+</ul>
+</li>
+<li><strong>应用场景</strong>：
+<ul>
+<li><strong>消息队列</strong>（生产者 <code>RPUSH</code>，消费者 <code>LPOP</code>）</li>
+<li><strong>任务列表</strong>（如异步任务处理）</li>
+</ul>
+</li>
+</ul>
+<hr>
+<p>（4） <strong>Set（集合）</strong></p>
+<ul>
+<li><strong>概述</strong>：<strong>无序、不重复</strong>集合，适用于去重和求交/并/差集运算。</li>
+<li><strong>命令</strong>：
+<ul>
+<li><code>SADD key value</code> —— 添加元素</li>
+<li><code>SMEMBERS key</code> —— 获取集合中的所有元素</li>
+<li><code>SISMEMBER key value</code> —— 判断某元素是否存在</li>
+<li><code>SINTER key1 key2</code> / <code>SUNION key1 key2</code> / <code>SDIFF key1 key2</code> —— 交集/并集/差集</li>
+</ul>
+</li>
+<li><strong>应用场景</strong>：
+<ul>
+<li><strong>社交网络好友列表</strong>（如 <code>SINTER user:1:friends user:2:friends</code> 获取共同好友）</li>
+<li><strong>防止重复</strong>（如 <code>SADD ip_blacklist &quot;192.168.1.1&quot;</code>）</li>
+</ul>
+</li>
+</ul>
+<hr>
+<p>（5） <strong>Sorted Set（有序集合）</strong></p>
+<ul>
+<li><strong>概述</strong>：类似 <code>Set</code>，但每个元素都有一个<strong>分数（score）</strong>，支持排序。</li>
+<li><strong>命令</strong>：
+<ul>
+<li><code>ZADD key score value</code> —— 添加元素并指定分数</li>
+<li><code>ZRANGE key start stop [WITHSCORES]</code> —— 按分数排序后取值</li>
+<li><code>ZREVRANGE key start stop</code> —— 逆序获取</li>
+<li><code>ZRANK key value</code> —— 获取某元素的排名</li>
+</ul>
+</li>
+<li><strong>应用场景</strong>：
+<ul>
+<li><strong>排行榜</strong>（如存储游戏分数 <code>ZADD leaderboard 100 &quot;Alice&quot;</code>）</li>
+<li><strong>限流</strong>（记录最近访问的用户）</li>
+</ul>
+</li>
+</ul>
+<p>它还有三种特殊的数据结构类型</p>
+<p>（1）<strong>HyperLogLog（基数统计）</strong></p>
+<ul>
+<li><strong>概述</strong>：用于<strong>基数统计</strong>（近似去重），比 <code>Set</code> 更节省内存，但不是 100% 精确。</li>
+<li><strong>命令</strong>：
+<ul>
+<li><code>PFADD key value</code> —— 添加元素</li>
+<li><code>PFCOUNT key</code> —— 获取基数</li>
+</ul>
+</li>
+<li><strong>应用场景</strong>：
+<ul>
+<li><strong>统计 UV（Unique Visitor）</strong>（如 <code>PFADD uv_counter user1</code>）</li>
+</ul>
+</li>
+</ul>
+<hr>
+<p>（2）<strong>Bitmaps（二进制位图）</strong></p>
+<ul>
+<li><strong>概述</strong>：用于存储二进制数据，可实现<strong>布隆过滤器</strong>等功能。</li>
+<li><strong>命令</strong>：
+<ul>
+<li><code>SETBIT key offset value</code> —— 设置某个位</li>
+<li><code>GETBIT key offset</code> —— 获取某个位</li>
+</ul>
+</li>
+<li><strong>应用场景</strong>：
+<ul>
+<li><strong>签到系统</strong>（如 <code>SETBIT sign:20250301 user1 1</code> 记录用户是否签到）</li>
+<li><strong>大规模用户状态跟踪</strong></li>
+</ul>
+</li>
+</ul>
+<hr>
+<p>（3） <strong>Streams（流数据）</strong></p>
+<ul>
+<li><strong>概述</strong>：Redis 5.0 引入的新数据结构，适用于<strong>消息队列和日志系统</strong>。</li>
+<li><strong>命令</strong>：
+<ul>
+<li><code>XADD key * field value</code> —— 添加消息</li>
+<li><code>XRANGE key start end</code> —— 读取消息</li>
+<li><code>XREAD COUNT count STREAMS key start_id</code> —— 读取最新消息</li>
+</ul>
+</li>
+<li><strong>应用场景</strong>：
+<ul>
+<li><strong>日志存储</strong></li>
+<li><strong>实时数据分析</strong></li>
+<li><strong>异步任务处理</strong></li>
+</ul>
+</li>
+</ul>
+<p>值的类型决定了值本身支持的操作。Redis支持不同无序、有序的列表，无序、有序的集合间的交集、并集等高级服务器端原子操作。</p>
+<table>
+<thead>
+<tr>
+<th>数据结构</th>
+<th>主要特点</th>
+<th>典型应用</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>String</td>
+<td>单值存储</td>
+<td>缓存、计数</td>
+</tr>
+<tr>
+<td>Hash</td>
+<td>键值对集合</td>
+<td>对象存储</td>
+</tr>
+<tr>
+<td>List</td>
+<td>有序列表</td>
+<td>消息队列、任务调度</td>
+</tr>
+<tr>
+<td>Set</td>
+<td>无序唯一元素</td>
+<td>去重、交集并集计算</td>
+</tr>
+<tr>
+<td>Sorted Set</td>
+<td>带排序的集合</td>
+<td>排行榜、限流</td>
+</tr>
+<tr>
+<td>HyperLogLog</td>
+<td>近似去重</td>
+<td>统计 UV</td>
+</tr>
+<tr>
+<td>Bitmaps</td>
+<td>位存储</td>
+<td>用户状态、签到</td>
+</tr>
+<tr>
+<td>Streams</td>
+<td>消息流</td>
+<td>日志、数据流处理</td>
+</tr>
+</tbody>
+</table>
+<h4 id="持久化">持久化</h4>
+<p>目前通过两种方式实现持久化：</p>
+<ul>
+<li>使用快照，一种半持久耐用模式。不时的将数据集以异步方式从内存以RDB格式写入硬盘。</li>
+<li>1.1版本开始使用更安全的AOF格式替代，一种只能追加的日志类型。将数据集修改操作记录起来。Redis能够在后台对只可追加的记录进行修改，从而避免日志的无限增长。</li>
+</ul>
+<h4 id="同步">同步</h4>
+<p>Redis支持主从同步。数据可以从主服务器向任意数量的从服务器上同步，从服务器可以是关联其他从服务器的主服务器。这使得Redis可执行单层树复制。从服务器可以有意无意的对数据进行写操作。</p>
+<p>由于完全实现了发布/订阅机制，使得从数据库在任何地方同步树时，可订阅一个频道并接收主服务器完整的消息发布记录。同步对读取操作的可扩展性和数据冗余很有帮助。</p>
+<h4 id="性能">性能</h4>
+<p>当数据依赖不再需要，Redis这种基于内存的性质，与在执行一个事务时将每个变化都写入硬盘的数据库系统相比就显得执行效率非常高。写与读操作速度没有明显差别。</p>
+<h3 id="为什么快">为什么快</h3>
+<p><img src="https://uipv4.zywvvd.com:33030/HexoFiles/vvd_image_files/202507101449490.png" srcset="/img/loading.gif" lazyload alt=""></p>
+<h4 id="基于内存存储实现"><strong>基于内存存储实现</strong></h4>
+<p>我们都知道内存读写是比在磁盘快很多的，Redis基于内存存储实现的数据库，相对于数据存在磁盘的MySQL数据库，省去磁盘I/O的消耗。</p>
+<h4 id="高效的数据结构"><strong>高效的数据结构</strong></h4>
+<p>我们知道，Mysql索引为了提高效率，选择了B+树的数据结构。其实合理的数据结构，就是可以让你的应用/程序更快。先看下Redis的数据结构&amp;内部编码图：</p>
+<p><img src="https://uipv4.zywvvd.com:33030/HexoFiles/vvd_image_files/202507101451748.png" srcset="/img/loading.gif" lazyload alt=""></p>
+<h4 id="SDS简单动态字符串"><strong>SDS简单动态字符串</strong></h4>
+<p><img src="https://uipv4.zywvvd.com:33030/HexoFiles/vvd_image_files/202507101451869.png" srcset="/img/loading.gif" lazyload alt=""></p>
+<ul>
+<li>字符串长度处理：Redis获取字符串长度，时间复杂度为O(1)，而C语言中，需要从头开始遍历，复杂度为O（n）;</li>
+<li>空间预分配：字符串修改越频繁的话，内存分配越频繁，就会消耗性能，而SDS修改和空间扩充，会额外分配未使用的空间，减少性能损耗。</li>
+<li>惰性空间释放：SDS 缩短时，不是回收多余的内存空间，而是free记录下多余的空间，后续有变更，直接使用free中记录的空间，减少分配。</li>
+<li>二进制安全：Redis可以存储一些二进制数据，在C语言中字符串遇到’\0’会结束，而 SDS中标志字符串结束的是len属性。</li>
+</ul>
+<h4 id="字典"><strong>字典</strong></h4>
+<p>Redis 作为 K-V 型内存数据库，所有的键值就是用字典来存储。字典就是哈希表，比如HashMap，通过key就可以直接获取到对应的value。而哈希表的特性，在O（1）时间复杂度就可以获得对应的值。</p>
+<p><img src="https://uipv4.zywvvd.com:33030/HexoFiles/vvd_image_files/202507101452850.png" srcset="/img/loading.gif" lazyload alt=""></p>
+<ul>
+<li>跳跃表是Redis特有的数据结构，就是在链表的基础上，增加多级索引提升查找效率。</li>
+<li>跳跃表支持平均 O（logN）,最坏 O（N）复杂度的节点查找，还可以通过顺序性操作批量处理节点。</li>
+</ul>
+<h4 id="合理的数据编码"><strong>合理的数据编码</strong></h4>
+<p>Redis 支持多种数据数据类型，每种基本类型，可能对多种数据结构。什么时候,使用什么样数据结构，使用什么样编码，是redis设计者总结优化的结果。</p>
+<ul>
+<li>String：如果存储数字的话，是用int类型的编码;如果存储非数字，小于等于39字节的字符串，是embstr；大于39个字节，则是raw编码。</li>
+<li>List：如果列表的元素个数小于512个，列表每个元素的值都小于64字节（默认），使用ziplist编码，否则使用linkedlist编码</li>
+<li>Hash：哈希类型元素个数小于512个，所有值小于64字节的话，使用ziplist编码,否则使用hashtable编码。</li>
+<li>Set：如果集合中的元素都是整数且元素个数小于512个，使用intset编码，否则使用hashtable编码。</li>
+<li>Zset：当有序集合的元素个数小于128个，每个元素的值小于64字节时，使用ziplist编码，否则使用skiplist（跳跃表）编码</li>
+</ul>
+<h4 id="合理的线程模型"><strong>合理的线程模型</strong></h4>
+<p><strong>I/O 多路复用</strong></p>
+<p><img src="https://uipv4.zywvvd.com:33030/HexoFiles/vvd_image_files/202507101453749.png" srcset="/img/loading.gif" lazyload alt=""></p>
+<p>I/O 多路复用</p>
+<blockquote>
+<p>多路I/O复用技术可以让单个线程高效的处理多个连接请求，而Redis使用用epoll作为I/O多路复用技术的实现。并且，Redis自身的事件处理模型将epoll中的连接、读写、关闭都转换为事件，不在网络I/O上浪费过多的时间。</p>
+</blockquote>
+<ul>
+<li>I/O ：网络 I/O</li>
+<li>多路 ：多个网络连接</li>
+<li>复用：复用同一个线程。</li>
+<li>IO多路复用其实就是一种同步IO模型，它实现了一个线程可以监视多个文件句柄；一旦某个文件句柄就绪，就能够通知应用程序进行相应的读写操作；而没有文件句柄就绪时,就会阻塞应用程序，交出cpu。</li>
+</ul>
+<h3 id="常用应用场景">常用应用场景</h3>
+<p><img src="https://uipv4.zywvvd.com:33030/HexoFiles/vvd_image_files/202507101457871.png" srcset="/img/loading.gif" lazyload alt=""></p>
+<p>1 <strong>缓存</strong></p>
+<ul>
+<li><strong>网页索引：</strong>
+<ul>
+<li>将常用的网页内容缓存到Redis中，减少数据库的访问次数，提高网页的响应速度。</li>
+</ul>
+</li>
+<li><strong>API缓存：</strong>
+<ul>
+<li>缓存 API 的响应结果，减少服务的压力。</li>
+</ul>
+</li>
+<li><strong>对象索引：</strong>
+<ul>
+<li>存储常用的Java对象、Python对象等，提高应用程序的性能。</li>
+</ul>
+</li>
+</ul>
+<p>2 <strong>会话管理</strong></p>
+<ul>
+<li><strong>网站会话：</strong>
+<ul>
+<li>将的用户会话信息（如登录状态、购物车内容等）存储在Redis中，实现会话共享和持久化。</li>
+</ul>
+</li>
+<li><strong>议题讨论：</strong>
+<ul>
+<li>在各地系统中，利用Redis集中管理会话信息，实现跨服务器的会话共享。</li>
+</ul>
+</li>
+</ul>
+<p>3 <strong>计数器</strong></p>
+<ul>
+<li><strong>网页版本：</strong>
+<ul>
+<li>统计网页的访问次数、点赞数、评论数等。</li>
+</ul>
+</li>
+<li><strong>API查询：</strong>
+<ul>
+<li>限制API的调用次数，防止恶意攻击。</li>
+</ul>
+</li>
+<li><strong>秒杀计数器：</strong>
+<ul>
+<li>在秒杀活动中，统计商品的剩余数量。</li>
+</ul>
+</li>
+</ul>
+<p>4 <strong>排行榜</strong></p>
+<ul>
+<li><strong>热门排行榜：</strong>
+<ul>
+<li>根据用户的点击量、评论量等，生成热门排行榜。</li>
+</ul>
+</li>
+<li><strong>游戏排行榜：</strong>
+<ul>
+<li>记录游戏玩家的得分、排名等。</li>
+</ul>
+</li>
+<li><strong>社交排行榜：</strong>
+<ul>
+<li>显示用户粉丝数、关注数等。</li>
+</ul>
+</li>
+</ul>
+<p>5 <strong>分布式锁</strong></p>
+<ul>
+<li><strong>实现互斥：</strong>
+<ul>
+<li>在多个系统中，使用Redis实现互斥锁，保证同一只有一个线程或进程时刻可以访问共享资源。</li>
+</ul>
+</li>
+<li><strong>防止重复提交：</strong>
+<ul>
+<li>在处理用户提交的请求时，使用Redis锁防止重复提交。</li>
+</ul>
+</li>
+</ul>
+<p>6 <strong>消息排队</strong></p>
+<ul>
+<li><strong>异步处理：</strong>
+<ul>
+<li>将一些运行的任务放入Redis队列中，异步处理，提高系统的响应速度。</li>
+</ul>
+</li>
+<li><strong>发布/订阅：</strong>
+<ul>
+<li>实现消息的发布和订阅，用于实时消息主体、事件通知等。</li>
+</ul>
+</li>
+</ul>
+<p>7 <strong>社交网络</strong></p>
+<ul>
+<li><strong>用户关系：</strong>
+<ul>
+<li>存储用户的关注关系、好友关系等。</li>
+</ul>
+</li>
+<li><strong>时间线：</strong>
+<ul>
+<li>显示发布用户的内容、好友的动态等。</li>
+</ul>
+</li>
+</ul>
+<p>8 <strong>地理空间数据</strong></p>
+<ul>
+<li><strong>附近地点搜索：</strong>
+<ul>
+<li>搜索附近的用户、商家、地点等。</li>
+</ul>
+</li>
+<li><strong>地理围栏：</strong>
+<ul>
+<li>监控用户或设备的断路，触发相应的事件。</li>
+</ul>
+</li>
+</ul>
+<h3 id="Python-示例"><strong>Python 示例</strong></h3>
+<ul>
+<li>数据缓存</li>
+</ul>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br></pre></td><td class="code"><pre><code class="hljs python"><span class="hljs-comment"># coding:utf-8</span><br><span class="hljs-keyword">import</span> redis<br><br><span class="hljs-comment"># lredis-server保持開啓狀態，如果在客戶端設定了密碼 添加password=密碼即可</span><br>pool = redis.ConnectionPool(host=<span class="hljs-string">&#x27;127.0.0.1&#x27;</span>, port=<span class="hljs-number">6379</span>, db=<span class="hljs-number">0</span>)<br>r = redis.StrictRedis(connection_pool=pool)<br><span class="hljs-comment"># 字符串</span><br>r.<span class="hljs-built_in">set</span>(<span class="hljs-string">&#x27;test&#x27;</span>, <span class="hljs-string">&#x27;aaa&#x27;</span>)<br><span class="hljs-built_in">print</span> r.get(<span class="hljs-string">&#x27;test&#x27;</span>)<br><span class="hljs-comment"># 列表</span><br><span class="hljs-comment"># 注意python、lrange兩個range的範圍</span><br>x = <span class="hljs-number">0</span><br><span class="hljs-keyword">for</span> x <span class="hljs-keyword">in</span> <span class="hljs-built_in">range</span>(<span class="hljs-number">0</span>, <span class="hljs-number">11</span>):<br>    r.lpush(<span class="hljs-string">&#x27;list&#x27;</span>, x)<br>    x = x + <span class="hljs-number">1</span><br><span class="hljs-built_in">print</span> r.lrange(<span class="hljs-string">&#x27;list&#x27;</span>, <span class="hljs-string">&#x27;0&#x27;</span>, <span class="hljs-string">&#x27;10&#x27;</span>)<br><br><span class="hljs-comment"># 雜湊</span><br>dict_hash = &#123;<span class="hljs-string">&#x27;name&#x27;</span>: <span class="hljs-string">&#x27;tang&#x27;</span>, <span class="hljs-string">&#x27;password&#x27;</span>: <span class="hljs-string">&#x27;tang_passwd&#x27;</span>&#125;<br>r.hmset(<span class="hljs-string">&#x27;hash_test&#x27;</span>, dict_hash)<br><span class="hljs-built_in">print</span> r.hgetall(<span class="hljs-string">&#x27;hash_test&#x27;</span>)<br><br><span class="hljs-comment"># 集合</span><br>r.sadd(<span class="hljs-string">&#x27;set_test&#x27;</span>, <span class="hljs-string">&#x27;aaa&#x27;</span>, <span class="hljs-string">&#x27;bbb&#x27;</span>)<br>r.sadd(<span class="hljs-string">&#x27;set_test&#x27;</span>, <span class="hljs-string">&#x27;ccc&#x27;</span>)<br>r.sadd(<span class="hljs-string">&#x27;set_test&#x27;</span>, <span class="hljs-string">&#x27;ddd&#x27;</span>)<br><span class="hljs-built_in">print</span> r.smembers(<span class="hljs-string">&#x27;set_test&#x27;</span>)<br><br><span class="hljs-comment"># 有序集</span><br>r.zadd(<span class="hljs-string">&#x27;zset_test&#x27;</span>, &#123;<span class="hljs-string">&#x27;aaa&#x27;</span>: <span class="hljs-number">1</span>, <span class="hljs-string">&#x27;bbb&#x27;</span>: <span class="hljs-number">1</span>&#125;)<br>r.zadd(<span class="hljs-string">&#x27;zset_test&#x27;</span>, &#123;<span class="hljs-string">&#x27;ccc&#x27;</span>: <span class="hljs-number">1</span>&#125;)<br>r.zadd(<span class="hljs-string">&#x27;zset_test&#x27;</span>, &#123;<span class="hljs-string">&#x27;ddd&#x27;</span>: <span class="hljs-number">1</span>&#125;)<br><span class="hljs-built_in">print</span> r.zrange(<span class="hljs-string">&#x27;zset_test&#x27;</span>, <span class="hljs-number">0</span>, <span class="hljs-number">10</span>)<br></code></pre></td></tr></table></figure>
+<ul>
+<li>分布式锁</li>
+</ul>
+<p>任务获取时尝试加锁</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><code class="hljs python"><span class="hljs-keyword">import</span> redis<br><span class="hljs-keyword">import</span> uuid<br><br><span class="hljs-comment"># 连接到Redis</span><br>redis_client = redis.Redis(host=<span class="hljs-string">&#x27;redis-host&#x27;</span>, port=<span class="hljs-number">6379</span>)<br><br><span class="hljs-keyword">def</span> <span class="hljs-title function_">acquire_task_lock</span>(<span class="hljs-params">task_id, host_id, timeout_ms=<span class="hljs-number">5000</span></span>):<br>    <span class="hljs-comment"># 原子操作：设置锁（不存在时才创建，超时自动释放）</span><br>    <span class="hljs-keyword">return</span> redis_client.<span class="hljs-built_in">set</span>(<br>        <span class="hljs-string">f&quot;task_lock:<span class="hljs-subst">&#123;task_id&#125;</span>&quot;</span>, <br>        host_id, <br>        nx=<span class="hljs-literal">True</span>, <br>        px=timeout_ms<br>    )<br></code></pre></td></tr></table></figure>
+<p>任务执行</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br></pre></td><td class="code"><pre><code class="hljs python"><span class="hljs-keyword">def</span> <span class="hljs-title function_">execute_task</span>(<span class="hljs-params">task_id</span>):<br>    host_id = uuid.uuid4().<span class="hljs-built_in">hex</span>  <span class="hljs-comment"># 生成主机唯一标识</span><br>    <span class="hljs-keyword">if</span> acquire_task_lock(task_id, host_id):<br>        <span class="hljs-keyword">try</span>:<br>            <span class="hljs-comment"># 1. 从MySQL获取任务详情</span><br>            task = mysql_query(<span class="hljs-string">f&quot;SELECT * FROM tasks WHERE id=<span class="hljs-subst">&#123;task_id&#125;</span> FOR UPDATE&quot;</span>)<br>            <br>            <span class="hljs-comment"># 2. 执行业务逻辑（长时任务需续期锁）</span><br>            run_task(task)<br>            <br>        <span class="hljs-keyword">finally</span>:<br>            <span class="hljs-comment"># 3. 释放锁（校验持有者）</span><br>            release_lock_script = <span class="hljs-string">&quot;&quot;&quot;</span><br><span class="hljs-string">                if redis.call(&quot;GET&quot;, KEYS[1]) == ARGV[1] then</span><br><span class="hljs-string">                    return redis.call(&quot;DEL&quot;, KEYS[1])</span><br><span class="hljs-string">                end</span><br><span class="hljs-string">                return 0</span><br><span class="hljs-string">            &quot;&quot;&quot;</span><br>            redis_client.<span class="hljs-built_in">eval</span>(release_lock_script, <span class="hljs-number">1</span>, <span class="hljs-string">f&quot;task_lock:<span class="hljs-subst">&#123;task_id&#125;</span>&quot;</span>, host_id)<br>    <span class="hljs-keyword">else</span>:<br>        <span class="hljs-built_in">print</span>(<span class="hljs-string">&quot;获取锁失败，任务已被其他主机执行&quot;</span>)<br><br></code></pre></td></tr></table></figure>
+<h3 id="参考资料">参考资料</h3>
+<ul>
+<li><a target="_blank" rel="noopener" href="https://zh.wikipedia.org/wiki/Redis">https://zh.wikipedia.org/wiki/Redis</a></li>
+<li><a target="_blank" rel="noopener" href="https://zhuanlan.zhihu.com/p/663851226">https://zhuanlan.zhihu.com/p/663851226</a></li>
+<li><a target="_blank" rel="noopener" href="https://blog.csdn.net/moton2017/article/details/145990776">https://blog.csdn.net/moton2017/article/details/145990776</a></li>
+<li><a target="_blank" rel="noopener" href="https://cloud.tencent.com/developer/article/1875020">https://cloud.tencent.com/developer/article/1875020</a></li>
+<li><a target="_blank" rel="noopener" href="https://www.aliyun.com/getting-started/what-is/what-is-redis">https://www.aliyun.com/getting-started/what-is/what-is-redis</a></li>
+<li><a target="_blank" rel="noopener" href="https://www.cnblogs.com/powertoolsteam/p/redis.html">https://www.cnblogs.com/powertoolsteam/p/redis.html</a></li>
+</ul>
+<link rel="stylesheet" href="/css/spoiler.css" type="text/css"><script src="/js/spoiler.js" type="text/javascript" async></script>
+                
+
+
+				<br /><br />
+				<blockquote>
+					<p>文章链接：<br /> 
+					<a style="font-size: 0.85rem" target="_blank" rel="noopener" href="https://www.zywvvd.com/notes/coding/dataset/redis-intr/redis-intr/">https://www.zywvvd.com/notes/coding/dataset/redis-intr/redis-intr/</a>
+					</p>
+				</blockquote>
+
+
+              </div>
+            
+            <hr/>
+			
+			<!-- 添加打赏模块 -->
+			<div class="reward-container">
+				
+					<button id="rewardBtn" class="reward-btn">
+						 
+							❤ 打赏
+							
+					</button>
+					<p class="tea">“觉得不错的话，给点打赏吧 ୧(๑•̀⌄•́๑)૭”</p>
+					<div id="rewardImgContainer" class="reward-img-container">
+						<div class="singleImgContainer">
+							<img id="wechatImg" class="reward-img" src="https://uipv4.zywvvd.com:33030/HexoFiles/vvd_pc_upload/wechatpay.png" srcset="/img/loading.gif" lazyload alt="微信二维码">
+							<p class="wechatPay">微信支付</p>
+						</div>
+						<div class="singleImgContainer">
+							<img id="alipayImg" class="reward-img" src="https://uipv4.zywvvd.com:33030/HexoFiles/vvd_pc_upload/alipay.png" srcset="/img/loading.gif" lazyload alt="支付宝二维码">
+							<p class="aliPay">支付宝支付</p>
+						</div>
+					</div>
+				
+			</div>
+			
+            <div>
+              <div class="post-metas my-3">
+  
+    <div class="post-meta mr-3 d-flex align-items-center">
+      <i class="iconfont icon-category"></i>
+      
+
+<span class="category-chains">
+  
+  
+    
+      <span class="category-chain">
+        
+  <a href="/categories/Coding/" class="category-chain-item">Coding</a>
+  
+  
+    <span>></span>
+    
+  <a href="/categories/Coding/Database/" class="category-chain-item">Database</a>
+  
+  
+
+  
+
+      </span>
+    
+  
+</span>
+
+    </div>
+  
+  
+    <div class="post-meta">
+      <i class="iconfont icon-tags"></i>
+      
+        <a href="/tags/Coding/" class="print-no-link">#Coding</a>
+      
+        <a href="/tags/Database/" class="print-no-link">#Database</a>
+      
+    </div>
+  
+</div>
+
+
+              
+  
+
+  <div class="license-box my-3">
+    <div class="license-title">
+      <div>Redis 数据库介绍</div>
+      <div>https://www.zywvvd.com/notes/coding/dataset/redis-intr/redis-intr/</div>
+    </div>
+    <div class="license-meta">
+      
+        <div class="license-meta-item">
+          <div>作者</div>
+          <div>Yiwei Zhang</div>
+        </div>
+      
+      
+        <div class="license-meta-item license-meta-date">
+          <div>发布于</div>
+          <div>2025年7月10日</div>
+        </div>
+      
+      
+      
+        <div class="license-meta-item">
+          <div>许可协议</div>
+          <div>
+            
+              
+              
+                <a class="print-no-link" target="_blank" href="https://creativecommons.org/licenses/by/4.0/">
+                  <span class="hint--top hint--rounded" aria-label="BY - 署名">
+                    <i class="iconfont icon-by"></i>
+                  </span>
+                </a>
+              
+            
+          </div>
+        </div>
+      
+    </div>
+    <div class="license-icon iconfont"></div>
+  </div>
+
+
+
+              
+                <div class="post-prevnext my-3">
+                  <article class="post-prev col-6">
+                    
+                    
+                  </article>
+                  <article class="post-next col-6">
+                    
+                    
+                      <a href="/notes/coding/dataset/ubuntu-kernel-mongo-error/ubuntu-kernel-mongo-error/" title="Ubuntu 22.04 内核自动升级导致 MongoDB 7.0.12 错误记录">
+                        <span class="hidden-mobile">Ubuntu 22.04 内核自动升级导致 MongoDB 7.0.12 错误记录</span>
+                        <span class="visible-mobile">下一篇</span>
+                        <i class="iconfont icon-arrowright"></i>
+                      </a>
+                    
+                  </article>
+                </div>
+              
+            </div>
+
+            
+  
+  
+    <article id="comments" lazyload>
+      
+  <div id="waline"></div>
+  <script type="text/javascript">
+    Fluid.utils.loadComments('#waline', function() {
+      Fluid.utils.createCssLink('https://lib.baomitu.com/waline/2.14.8/waline.min.css')
+      Fluid.utils.createScript('https://lib.baomitu.com/waline/2.14.8/waline.min.js', function() {
+        var options = Object.assign(
+          {"serverURL":"https://uipv4.zywvvd.com:33033/","path":"window.location.pathname","meta":["nick","mail","link"],"requiredMeta":["nick"],"lang":"zh-CN","emoji":["https://cdn.jsdelivr.net/gh/walinejs/emojis/weibo"],"dark":"html[data-user-color-scheme=\"dark\"]","wordLimit":0,"pageSize":10,"reaction":true,"locale":{"placeholder":"山高路远，常来玩吖 ~","reactionTitle":null}},
+          {
+            el: '#waline',
+            path: window.location.pathname
+          }
+        )
+        Waline.init(options);
+        Fluid.utils.waitElementVisible('#waline .vcontent', () => {
+          var imgSelector = '#waline .vcontent img:not(.vemoji)';
+          Fluid.plugins.imageCaption(imgSelector);
+          Fluid.plugins.fancyBox(imgSelector);
+        })
+      });
+    });
+  </script>
+  <noscript>Please enable JavaScript to view the comments</noscript>
+
+
+    </article>
+  
+
+
+          </article>
+        </div>
+      </div>
+    </div>
+
+    <div class="side-col d-none d-lg-block col-lg-2">
+      
+  <aside class="sidebar" style="margin-left: -1rem">
+    <div id="toc">
+  <p class="toc-header">
+    <i class="iconfont icon-list"></i>
+    <span>目录</span>
+  </p>
+  <div class="toc-body" id="toc-body"></div>
+</div>
+
+
+
+  </aside>
+
+
+    </div>
+  </div>
+</div>
+
+
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+  
+  
+
+
+
+
+
+  <script>
+  Fluid.utils.createScript('https://lib.baomitu.com/mermaid/8.14.0/mermaid.min.js', function() {
+    mermaid.initialize({"theme":"default"});
+
+    Fluid.utils.listenDOMLoaded(function() {
+      Fluid.events.registerRefreshCallback(function() {
+        if ('mermaid' in window) {
+          mermaid.init();
+        }
+      });
+    });
+  });
+</script>
+
+
+
+
+
+
+    
+
+    
+      <a id="scroll-top-button" aria-label="TOP" href="#" role="button">
+        <i class="iconfont icon-xiangshangjiantou" aria-hidden="true"></i>
+      </a>
+    
+
+    
+      <div class="modal fade" id="modalSearch" tabindex="-1" role="dialog" aria-labelledby="ModalLabel"
+     aria-hidden="true">
+  <div class="modal-dialog modal-dialog-scrollable modal-lg" role="document">
+    <div class="modal-content">
+      <div class="modal-header text-center">
+        <h4 class="modal-title w-100 font-weight-bold">搜索</h4>
+        <button type="button" id="local-search-close" class="close" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body mx-3">
+        <div class="md-form mb-5">
+          <input type="text" id="local-search-input" class="form-control validate">
+          <label data-error="x" data-success="v" for="local-search-input">关键词</label>
+        </div>
+        <div class="list-group" id="local-search-result"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+    
+
+    
+  </main>
+
+  <footer>
+    <div class="footer-inner">
+  
+    <div class="footer-content">
+       <div class="vvd_footer" style="font-size: 0.85rem;"> <a href="https://hexo.io" target="_blank" rel="nofollow noopener" color="#d7d8d9" data-umami-event="Footer-Hexo"><span class="umami--click--Footer-Hexo">Hexo</span></a> <i class="iconfont icon-love"></i> <a href="https://github.com/fluid-dev/hexo-theme-fluid" target="_blank" rel="nofollow noopener" data-umami-event="Footer-Fluid"><span class="umami--click--Footer-Fluid">Fluid</span></a> <i class="iconfont icon-love"></i> <a href="https://uipv4.zywvvd.com:33039/share/0zx3o21oIpZTZqwC/%E5%8F%88%E8%A7%81%E8%8B%8D%E5%B2%9A" target="_blank" rel="nofollow noopener" data-umami-event="Footer-Umami"><span class="umami--click--Footer-Umami">Umami</span></a> <div style="font-size: 0.85rem;"> <span id="timeDate">载入天数...</span> <span id="times">载入时分秒...</span> <script src="/vvd_js/duration.js"></script> </div> <div style="font-size: 0.85rem;"> <span> 总访问量 <span style="color: #d7d8d9;" id="PVstatic">0</span> 次&nbsp</span> <span> 总访客数 <span style="color: #d7d8d9;" id="UVstatic">0</span> 人&nbsp</span> <span> 当前在线 <span style="color: #d7d8d9;" id="ACTstatic">0</span> 人&nbsp</span> <script src="https://uipv4.zywvvd.com:33037/statistics" defer></script> </div> <div> <span> Copyright © 2020-2025. All Rights Reserved.</span> </div> <div style="font-size: 0.88rem;"> <a target="_blank" rel="noopener" href="https://developer.hitokoto.cn/" id="hitokoto_text"><span style="color: #d7d8d9;"  id="hitokoto"></span></a> <script src="https://uipv4.zywvvd.com:33044/?encode=js&select=%23hitokoto" defer></script> </div> <a href="https://icp.gov.moe/?keyword=20230615" target="_blank">萌ICP备20230615号</a>
+
+
+</div> 
+    </div>
+  
+  
+  
+  
+</div>
+
+  </footer>
+
+  <!-- Scripts -->
+  
+  <script  src="https://lib.baomitu.com/nprogress/0.2.0/nprogress.min.js" ></script>
+  <link  rel="stylesheet" href="https://lib.baomitu.com/nprogress/0.2.0/nprogress.min.css" />
+
+  <script>
+    NProgress.configure({"showSpinner":false,"trickleSpeed":100})
+    NProgress.start()
+    window.addEventListener('load', function() {
+      NProgress.done();
+    })
+  </script>
+
+
+<script  src="https://lib.baomitu.com/jquery/3.6.0/jquery.min.js" ></script>
+<script  src="https://lib.baomitu.com/twitter-bootstrap/4.6.1/js/bootstrap.min.js" ></script>
+<script  src="/js/events.js" ></script>
+<script  src="/js/plugins.js" ></script>
+
+
+
+
+
+  
+    <script  src="/js/img-lazyload.js" ></script>
+  
+
+
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/tocbot/4.18.2/tocbot.min.js', function() {
+    var toc = jQuery('#toc');
+    if (toc.length === 0 || !window.tocbot) { return; }
+    var boardCtn = jQuery('#board-ctn');
+    var boardTop = boardCtn.offset().top;
+
+    window.tocbot.init(Object.assign({
+      tocSelector     : '#toc-body',
+      contentSelector : '.markdown-body',
+      linkClass       : 'tocbot-link',
+      activeLinkClass : 'tocbot-active-link',
+      listClass       : 'tocbot-list',
+      isCollapsedClass: 'tocbot-is-collapsed',
+      collapsibleClass: 'tocbot-is-collapsible',
+      scrollSmooth    : true,
+      includeTitleTags: true,
+      headingsOffset  : -boardTop,
+    }, CONFIG.toc));
+    if (toc.find('.toc-list-item').length > 0) {
+      toc.css('visibility', 'visible');
+    }
+
+    Fluid.events.registerRefreshCallback(function() {
+      if ('tocbot' in window) {
+        tocbot.refresh();
+        var toc = jQuery('#toc');
+        if (toc.length === 0 || !tocbot) {
+          return;
+        }
+        if (toc.find('.toc-list-item').length > 0) {
+          toc.css('visibility', 'visible');
+        }
+      }
+    });
+  });
+</script>
+
+
+  <script src=https://lib.baomitu.com/clipboard.js/2.0.10/clipboard.min.js></script>
+
+  <script>Fluid.plugins.codeWidget();</script>
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/anchor-js/4.3.1/anchor.min.js', function() {
+    window.anchors.options = {
+      placement: CONFIG.anchorjs.placement,
+      visible  : CONFIG.anchorjs.visible
+    };
+    if (CONFIG.anchorjs.icon) {
+      window.anchors.options.icon = CONFIG.anchorjs.icon;
+    }
+    var el = (CONFIG.anchorjs.element || 'h1,h2,h3,h4,h5,h6').split(',');
+    var res = [];
+    for (var item of el) {
+      res.push('.markdown-body > ' + item.trim());
+    }
+    if (CONFIG.anchorjs.placement === 'left') {
+      window.anchors.options.class = 'anchorjs-link-left';
+    }
+    window.anchors.add(res.join(', '));
+
+    Fluid.events.registerRefreshCallback(function() {
+      if ('anchors' in window) {
+        anchors.removeAll();
+        var el = (CONFIG.anchorjs.element || 'h1,h2,h3,h4,h5,h6').split(',');
+        var res = [];
+        for (var item of el) {
+          res.push('.markdown-body > ' + item.trim());
+        }
+        if (CONFIG.anchorjs.placement === 'left') {
+          anchors.options.class = 'anchorjs-link-left';
+        }
+        anchors.add(res.join(', '));
+      }
+    });
+  });
+</script>
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/fancybox/3.5.7/jquery.fancybox.min.js', function() {
+    Fluid.plugins.fancyBox();
+  });
+</script>
+
+
+  <script>Fluid.plugins.imageCaption();</script>
+
+  
+      <script>
+        if (!window.MathJax) {
+          window.MathJax = {
+            tex    : {
+              inlineMath: { '[+]': [['$', '$']] }
+            },
+            options: {
+              renderActions: {
+                insertedScript: [200, () => {
+                  document.querySelectorAll('mjx-container').forEach(node => {
+                    let target = node.parentNode;
+                    if (target.nodeName.toLowerCase() === 'li') {
+                      target.parentNode.classList.add('has-jax');
+                    }
+                  });
+                }, '', false]
+              }
+            }
+          };
+        } else {
+          MathJax.startup.document.state(0);
+          MathJax.texReset();
+          MathJax.typeset();
+          MathJax.typesetPromise();
+        }
+
+        Fluid.events.registerRefreshCallback(function() {
+          if ('MathJax' in window && MathJax.startup.document && typeof MathJax.startup.document.state === 'function') {
+            MathJax.startup.document.state(0);
+            MathJax.texReset();
+            MathJax.typeset();
+            MathJax.typesetPromise();
+          }
+        });
+      </script>
+    
+
+  <script  src="https://lib.baomitu.com/mathjax/3.2.1/es5/tex-mml-chtml.js" ></script>
+
+  <script defer src="/js/leancloud.js" ></script>
+
+  <script  src="/js/local-search.js" ></script>
+
+
+
+
+  
+<script src="//cdn.jsdelivr.net/npm/aplayer/dist/APlayer.min.js"></script>
+<script src="//cdn.jsdelivr.net/gh/metowolf/MetingJS@1.2/dist/Meting.min.js"></script>
+<script src="/js/reward.js"></script>
+
+
+
+<!-- 主题的启动项，将它保持在最底部 -->
+<!-- the boot of the theme, keep it at the bottom -->
+<script  src="/js/boot.js" ></script>
+
+
+  <script type="text/javascript">
+    /*窗口监视*/
+    var originalTitle = document.title;
+    window.onblur = function(){document.title = "明眸如初"};
+    window.onfocus = function(){document.title = originalTitle};
+  </script>
+
+
+  <div id="tooltip-rightmenu" class="tooltip-rightmenu">如需原始右键菜单请按下 <strong>Ctrl+右键</strong></div>
+
+<div id="rightmenu-wrapper" style="">
+  <ul class="list-v rightmenu" id="rightmenu-content">
+	  <li class="navigation menuNavigation-Content">
+		<a class="nav icon-only fix-cursor-default" onclick="history.back()"><i class="iconfont icon-zuojiantou1"></i></a>
+		<a class="nav icon-only fix-cursor-default" onclick="history.forward()"><i class="iconfont icon-youjiantou1"></i></a>
+		<a class="nav icon-only fix-cursor-default" onclick="window.location.reload()"><i class="iconfont icon-shuaxin"></i></a>
+		<a  aria-label="TOP" href="#" role="button"><i class="iconfont icon-xiangshang"></i></a>
+	  </li>
+
+		<hr class="menuLoad-Content" style="display: block;">
+	  <li class="menuLoad-Content" style="display: block;">
+		<a class="vlts-menu fix-cursor-default" target="_self" href="javascript:;" data-toggle="modal" data-target="#modalSearch" aria-label="Search">
+		  <span>
+			  <i class="iconfont icon-sousuo1 rightmenu-icon"></i>
+			  站内搜索
+		  </span>
+		</a>
+	  </li>
+
+	  <li class="menuLoad-Content" style="display: block;">
+		<a class="vlts-menu fix-cursor-default"  href="https://www.zywvvd.com/messagebd/" data-group="link">
+		  <span>
+			  <i class="iconfont icon-yangshi_icon_tongyong_chat rightmenu-icon">  </i>
+			   留言吐槽 
+		   </span>
+		</a>
+	  </li>
+
+
+	  <li class="menuLoad-Content" style="display: block;">
+		<a class="vlts-menu fix-cursor-default" id="help" target="_blank" rel="noopener" href="https://www.foreverblog.cn/go.html" data-group="link">
+		<span>
+			  <i class="iconfont icon-a-BlackHole rightmenu-icon"></i>
+			  虫洞穿梭
+		  </span>
+		</a>
+	  </li>
+
+	<a id="scroll-top-button" aria-label="TOP" href="#" role="button" style="bottom: 20px; right: 52.6364px;">
+        <i class="iconfont icon-xiangshangjiantou" aria-hidden="true"></i>
+      </a>
+
+	<hr class="menuLoad-Content" style="display: block;">
+	
+	  <li class="menuLoad-Content" style="display: block;">
+		<a class="vlts-menu fix-cursor-default" id="destroy-airplane" target="_blank" rel="noopener"  data-group="link">
+		<span>
+			  <i class="iconfont icon-feiji rightmenu-icon"></i>
+			  破坏小飞机
+		  </span>
+		</a>
+	  </li>
+  </ul>
+</div>
+
+<script>
+	var ua = navigator.userAgent;
+	var ipad = ua.match(/(iPad).*OS\s([\d_]+)/),
+		isIphone = !ipad && ua.match(/(iPhone\sOS)\s([\d_]+)/),
+		isAndroid = ua.match(/(Android)\s+([\d.]+)/),
+		isMobile = isIphone || isAndroid;
+
+	if(!isMobile) {
+		// 为按钮添加事件处理器
+		document.getElementById('destroy-airplane').onclick = function() {
+		  console.log('飞机起飞！');
+		  // 定义要执行的JavaScript代码
+		var KICKASSVERSION='2.0';
+		var s = document.createElement('script');
+		s.type='text/javascript';
+		document.body.appendChild(s);
+		s.src='https://uipv4.zywvvd.com:33030/HexoFiles/js/games/airplane/airplane.js';
+		void(0);
+		};
+	}
+</script>
+
+
+
+
+
+<link href="/css/custom.css"type="text/css"rel="stylesheet"/>
+<script src="/vvd_js/right_menu.js" type="text/javascript"></script>
+<link href="/css/right_menu.css"type="text/css"rel="stylesheet"/>
+<script src="/vvd_js/go.js"></script>
+
+
+  <noscript>
+    <div class="noscript-warning">博客在允许 JavaScript 运行的环境下浏览效果更佳</div>
+  </noscript>
+<script src="/live2dw/lib/L2Dwidget.min.js?094cbace49a39548bed64abff5988b05"></script><script>L2Dwidget.init({"pluginRootPath":"live2dw/","pluginJsPath":"lib/","pluginModelPath":"assets/","tagMode":false,"log":false,"model":{"jsonPath":"/live2dw/assets/z16.model.json"},"display":{"position":"left","width":200,"height":400},"mobile":{"show":false},"react":{"opacity":0.9}});</script></body>
+</html>
