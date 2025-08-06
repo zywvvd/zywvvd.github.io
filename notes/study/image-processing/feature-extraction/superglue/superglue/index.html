@@ -26,7 +26,7 @@
 <meta property="og:locale" content="zh_CN">
 <meta property="og:image" content="https://uipv4.zywvvd.com:33030/HexoFiles/vvd_image_files/202508061014717.png">
 <meta property="article:published_time" content="2025-08-05T09:45:46.000Z">
-<meta property="article:modified_time" content="2025-08-06T06:39:03.418Z">
+<meta property="article:modified_time" content="2025-08-06T06:56:08.589Z">
 <meta property="article:author" content="Yiwei Zhang">
 <meta property="article:tag" content="Image_Processing">
 <meta property="article:tag" content="Feature_Extraction">
@@ -923,12 +923,14 @@ $$<br>
 <li>每个关键点最多只能和另图中一个点关联</li>
 <li>由于感知器的融合和失误，允许有的点没有关联。</li>
 </ol>
-<p>我们给出一个软分配矩阵 $𝑃∈[0,1], 𝑀×𝑁$，根据上述约束，我们有如下关系：<br>
-$$<br>
-\mathbf{P} \mathbf{1}<em>{N} \leq \mathbf{1}</em>{M} \quad \text { and } \quad<br>
-\mathbf{P}^{\top} \mathbf{1}<em>{M} \leq \mathbf{1}</em>{N}<br>
-$$<br>
-<img src="https://uipv4.zywvvd.com:33030/HexoFiles/vvd_image_files/202508061319132.png" srcset="/img/loading.gif" lazyload alt=""></p>
+<p>我们给出一个软分配矩阵 $𝑃∈[0,1], 𝑀×𝑁$，根据上述约束，我们有如下关系：</p>
+
+$$
+\mathbf{P} \mathbf{1}_{N} \leq \mathbf{1}_{M} \quad \text { and } \quad
+\mathbf{P}^{\top} \mathbf{1}_{M} \leq \mathbf{1}_{N}
+$$
+
+<p><img src="https://uipv4.zywvvd.com:33030/HexoFiles/vvd_image_files/202508061319132.png" srcset="/img/loading.gif" lazyload alt=""></p>
 <p>首先要理解分配矩阵𝑃是什么。𝑃的每一行代表来自于图𝐴中的某个特征点对应图𝐵的𝑁种匹配的可能性。如上图所示，图𝐴有3个特征点，图𝐵有4个特征点，那么这个分配矩阵的维度就是𝑃∈𝑅3×4。对于第0行，即图A的第0号特征点，它可能在图B中有4个匹配点，由上图种给出的软分配矩阵𝑃的第0行数据可以看到，最大是数字是0.6，即图𝐴的第0号特征与图B的第1号特征是匹配的。相应的，对于𝑃的第0列，最大是数字是0.5，即图𝐵的第0号特征与图𝐴的第1号特征是匹配的，这看起来非常合理。</p>
 <p>这里需要注意的是，这个𝑃是一个所谓的“软分配”矩阵，所以其中的元素并非是绝对的0或1。对于𝑃还需要满足规定：在理想情况下𝑃的行之和或者列之和等于1。此处的“理想情况”指的是图𝐴与图𝐵中的所有特征都可以在对方的图像上找到对应关系。但是实际情况下，可能存在遮挡/视角变化/检测噪声等因素的干扰，大概率会出现图𝐴在图𝐵中找不到对应的匹配点，反之亦然。</p>
 <p><img src="https://uipv4.zywvvd.com:33030/HexoFiles/vvd_image_files/202508061321943.png" srcset="/img/loading.gif" lazyload alt=""></p>
@@ -937,26 +939,30 @@ $$<br>
 <h3 id="注意力GNN">注意力GNN</h3>
 <p>这里有个有意思的说法：特征点的位置以及视觉外观能够提高其特异性。另外一个具有启发性的观点是人类在寻找匹配点过程是具有参考价值的。想一下人类是怎样进行特征匹配的，人类通过来回浏览两个图像试探性筛选匹配关键点，并进行来回检查（如果不是匹配的特征，观察一下周围有没有匹配的更好的点，直到找到匹配点/或没有匹配）。上述过程人们通过主动寻找上下文来增加特征点特异性，这样可以排除一些具有奇异性的匹配。本文的核心就是利用基于注意力机制的GNN实现上述过程，即模拟了人类进行特征匹配。</p>
 <h4 id="特征点Encode">特征点Encode</h4>
-<p>首先根据上述说法，特征点位置+描述会获得更强的特征匹配特异性，所以这里将特征点的位置以及描述子合并成每个特征点𝑖的初始表示 $𝑥_𝑖$<br>
-$$<br>
-^{(0)} \mathbf{x}<em>{i}=\mathbf{d}</em>{i}+\mathbf{M L<br>
-P}<em>{\mathrm{enc}}\left(\mathbf{p}</em>{i}\right)<br>
-$$<br>
-其中MLP表示多层感知机（Multilayer Perceptron ，MLP）此处用于对低维特征升维，上式实际上是将视觉外观以及特征点位置进行了耦合，正因如此，这使得该Encode形式使得后续的注意力机制能够充分考虑到特征的外观以及位置相似度。</p>
+<p>首先根据上述说法，特征点位置+描述会获得更强的特征匹配特异性，所以这里将特征点的位置以及描述子合并成每个特征点𝑖的初始表示 $𝑥_𝑖$</p>
+
+$$
+^{(0)} \mathbf{x}_{i}=\mathbf{d}_{i}+\mathbf{M L
+P}_{\mathrm{enc}}\left(\mathbf{p}_{i}\right)
+$$
+
+<p>其中MLP表示多层感知机（Multilayer Perceptron ，MLP）此处用于对低维特征升维，上式实际上是将视觉外观以及特征点位置进行了耦合，正因如此，这使得该Encode形式使得后续的注意力机制能够充分考虑到特征的外观以及位置相似度。</p>
 <p>特征点编码代码如下：</p>
 <figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br></pre></td><td class="code"><pre><code class="hljs python"><span class="hljs-keyword">class</span> <span class="hljs-title class_">KeypointEncoder</span>(nn.Module):<br>    <span class="hljs-string">&quot;&quot;&quot; Joint encoding of visual appearance and location using MLPs&quot;&quot;&quot;</span><br>    <span class="hljs-string">&quot;&quot;&quot; feature_dim: 256, layers: [32, 64, 128, 256]&quot;&quot;&quot;</span><br>    <span class="hljs-keyword">def</span> <span class="hljs-title function_">__init__</span>(<span class="hljs-params">self, feature_dim, layers</span>):<br>        <span class="hljs-built_in">super</span>().__init__()<br>        self.encoder = MLP([<span class="hljs-number">3</span>] + layers + [feature_dim]) <span class="hljs-comment"># MLP([3, 32, 64, 128, 256, 256])</span><br>        nn.init.constant_(self.encoder[-<span class="hljs-number">1</span>].bias, <span class="hljs-number">0.0</span>)<br><br>    <span class="hljs-keyword">def</span> <span class="hljs-title function_">forward</span>(<span class="hljs-params">self, kpts, scores</span>):<br>        inputs = [kpts.transpose(<span class="hljs-number">1</span>, <span class="hljs-number">2</span>), scores.unsqueeze(<span class="hljs-number">1</span>)]<br>        <span class="hljs-keyword">return</span> self.encoder(torch.cat(inputs, dim=<span class="hljs-number">1</span>))    <span class="hljs-comment"># DIM: 1x256xM</span><br>    <br><span class="hljs-keyword">def</span> <span class="hljs-title function_">MLP</span>(<span class="hljs-params">channels: <span class="hljs-built_in">list</span>, do_bn=<span class="hljs-literal">True</span></span>):<br>    <span class="hljs-string">&quot;&quot;&quot; Multi-layer perceptron &quot;&quot;&quot;</span><br>    n = <span class="hljs-built_in">len</span>(channels)<br>    layers = []<br>    <span class="hljs-keyword">for</span> i <span class="hljs-keyword">in</span> <span class="hljs-built_in">range</span>(<span class="hljs-number">1</span>, n):<br>        layers.append(<br>            nn.Conv1d(channels[i - <span class="hljs-number">1</span>], channels[i], kernel_size=<span class="hljs-number">1</span>, bias=<span class="hljs-literal">True</span>))<br>        <span class="hljs-keyword">if</span> i &lt; (n-<span class="hljs-number">1</span>):<br>            <span class="hljs-keyword">if</span> do_bn:<br>                layers.append(nn.BatchNorm1d(channels[i]))<br>            layers.append(nn.ReLU())<br>    <span class="hljs-keyword">return</span> nn.Sequential(*layers)<br></code></pre></td></tr></table></figure>
 <p>将描述子与编码后的特征点相加可以得到后续多层GNN的输入的初值：</p>
 <figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><code class="hljs python"><span class="hljs-comment"># Keypoint MLP encoder.</span><br>desc0 = desc0 + self.kenc(kpts0, data[<span class="hljs-string">&#x27;scores0&#x27;</span>]) <span class="hljs-comment">#图A</span><br>desc1 = desc1 + self.kenc(kpts1, data[<span class="hljs-string">&#x27;scores1&#x27;</span>]) <span class="hljs-comment">#图B</span><br></code></pre></td></tr></table></figure>
 <h4 id="多层GNN">多层GNN</h4>
 <p>考虑一个单一的完全图，它的节点是图像中每个特征点，这个图包括两种不同的无向边：一种是“Intra-image edges”（self edge）𝐸self ，它连接了来自图像内部特征点；另外一种是“Inter-image edges”（cross edge）𝐸cross ，它连接本图特征点𝑖与另外一张图所有特征点。</p>
-<p>令$(ℓ)𝑥_𝑖^𝐴$表示为图像 𝐴 上第 𝑖 个元素在第 ℓ 层的中间表达形式。信息（message）$𝑚_{𝐸→𝑖}$是聚合了所有特征点 ${𝑗:(𝑖,𝑗)∈𝐸}$之后点结果（将自我注意力以及交叉注意力进行聚合），其中 $𝐸∈{𝐸_{self },𝐸_{cross} }$，所以图像 𝐴 中所有特征 𝑖 传递更新的残差信息（residual message）是：<br>
-$$<br>
-^{(\ell+1)} \mathbf{x}<em>{i}<sup>{A}=</sup>{(\ell)}<br>
-\mathbf{x}</em>{i}<sup>{A}+\operatorname{MLP}\left(\left[</sup>{(\ell)}<br>
-\mathbf{x}<em>{i}^{A} | \mathbf{m}</em>{\mathcal{E} \rightarrow<br>
-i}\right]\right)<br>
-$$<br>
-其中[⋅‖⋅]表示串联操作。同样的，图像𝐵上所有特征有类似的更新形式。可以看到self 以及cross edges绑在一起并交替进行更新，先self后cross，作者提到共有固定数量的𝐿层。</p>
+<p>令$(ℓ)𝑥_𝑖^𝐴$表示为图像 𝐴 上第 𝑖 个元素在第 ℓ 层的中间表达形式。信息（message）$𝑚_{𝐸→𝑖}$是聚合了所有特征点 ${𝑗:(𝑖,𝑗)∈𝐸}$之后点结果（将自我注意力以及交叉注意力进行聚合），其中 $𝐸∈{𝐸_{self },𝐸_{cross} }$，所以图像 𝐴 中所有特征 𝑖 传递更新的残差信息（residual message）是：</p>
+
+$$
+^{(\ell+1)} \mathbf{x}_{i}^{A}=^{(\ell)}
+\mathbf{x}_{i}^{A}+\operatorname{MLP}\left(\left[^{(\ell)}
+\mathbf{x}_{i}^{A} \| \mathbf{m}_{\mathcal{E} \rightarrow
+i}\right]\right)
+$$
+
+<p>其中[⋅‖⋅]表示串联操作。同样的，图像𝐵上所有特征有类似的更新形式。可以看到self 以及cross edges绑在一起并交替进行更新，先self后cross，作者提到共有固定数量的𝐿层。</p>
 <p>需要说明的是，这里的self/cross-attention实际上就是模拟了人类来回浏览匹配的过程，其中self-attention是为了使得特征更加具有匹配特异性，而cross-attention是为了用这些具有特异性的点做图像间特征的相似度比较。</p>
 <ul>
 <li>代码如下：</li>
@@ -965,62 +971,72 @@ $$<br>
 <h4 id="Attentional-Aggregation">Attentional Aggregation</h4>
 <p>这一小节介绍上述介绍种的message是如何获得的。</p>
 <p>文章的亮点之一就是将注意力机制用于特征匹配，这到底是如何实现的呢？</p>
-<p>作者提到，注意力机制将self以及cross信息聚合得到$𝑚_{𝐸→𝑖}$。其中 self edge 利用了self-attention，cross edge利用了cross-attention。类似于数据库检索，我们想要查询 $𝑞_𝑖$ 基于元素的属性即键 $𝑘_𝑖$，检索到了某些元素的值 $𝑣_𝑗$。<br>
-$$<br>
-\mathbf{m}<em>{\mathcal{E} \rightarrow i}=\sum</em>{j:(i, j) \in \mathcal{E}}<br>
-\alpha_{i j} \mathbf{v}<em>{j}<br>
-$$<br>
-其中注意力权重 $𝛼</em>{𝑖𝑗}$ 是查询与检索到对象键值相似度的Softmax即，$\alpha_{i<br>
-j}=\operatorname{Softmax}<em>{j}\left(\mathbf{q}</em>{i}^{\top}<br>
-\mathbf{k}_{j}\right)$</p>
-<p>这里需要解释一下键（key），query以及值（value）。令待查询点特征点𝑖位于查询图像𝑄上，所有的源特征点位于图像𝑆上，其中 $(𝑄,𝑆)∈{𝐴,𝐵}^2$，于是我们可以将 key，query 以及 value 写成下述形式：<br>
-$$<br>
-\begin{aligned} \mathbf{q}<em>{i} &amp;=\mathbf{W}</em>{1}^{(\ell)}<br>
-\mathbf{x}<em>{i}^{Q}+\mathbf{b}</em>{1} \\left[\begin{array}{l}\mathbf{k}<em>{j}<br>
-\ \mathbf{v}</em>{j}\end{array}\right]<br>
-&amp;=\left<a href="%5Cell">\begin{array}{l}\mathbf{W}<em>{2} \<br>
-\mathbf{W}</em>{3}\end{array}\right</a><br>
-\mathbf{x}<em>{j}^{S}+\left[\begin{array}{l}\mathbf{b}</em>{2} \<br>
-\mathbf{b}<em>{3}\end{array}\right] \end{aligned}<br>
-$$<br>
-每一层ℓ都有其对应的一套投影参数，这些参数被所有的特征点共享。理解一下：此处的𝑞𝑖对应于待查询图像上某个特征点𝑖的一种表示（self-attention映射），$𝑘_𝑗$以及 $𝑣_𝑗$ 都是来自于召回的图像特征点𝑗的一种表示（映射）；$𝛼</em>{𝑖𝑗}$ 表示这两个特征相似度，它是由 $𝑞_𝑖$ 以及 $𝑘_𝑗$ 计算得到（在这里体现了cross-attention的思想），越大就表示这两个特征越相似，然后利用该相似度对 $𝑣_𝑗$ 加权求和得到 $𝑚_{𝐸→𝑖}$，这就是所谓的<strong>特征聚合</strong>。</p>
+<p>作者提到，注意力机制将self以及cross信息聚合得到$𝑚_{𝐸→𝑖}$。其中 self edge 利用了self-attention，cross edge利用了cross-attention。类似于数据库检索，我们想要查询 $𝑞_𝑖$ 基于元素的属性即键 $𝑘_𝑖$，检索到了某些元素的值 $𝑣_𝑗$。</p>
+
+$$
+\mathbf{m}_{\mathcal{E} \rightarrow i}=\sum_{j:(i, j) \in \mathcal{E}}
+\alpha_{i j} \mathbf{v}_{j}
+$$
+其中注意力权重 $𝛼_{𝑖𝑗}$ 是查询与检索到对象键值相似度的Softmax即，$\alpha_{i
+j}=\operatorname{Softmax}_{j}\left(\mathbf{q}_{i}^{\top}
+\mathbf{k}_{j}\right)$
+
+这里需要解释一下键（key），query以及值（value）。令待查询点特征点𝑖位于查询图像𝑄上，所有的源特征点位于图像𝑆上，其中 $(𝑄,𝑆)∈\{𝐴,𝐵\}^2$，于是我们可以将 key，query 以及 value 写成下述形式：
+$$
+\begin{aligned} \mathbf{q}_{i} &=\mathbf{W}_{1}^{(\ell)}
+\mathbf{x}_{i}^{Q}+\mathbf{b}_{1} \\\left[\begin{array}{l}\mathbf{k}_{j}
+\\ \mathbf{v}_{j}\end{array}\right]
+&=\left[\begin{array}{l}\mathbf{W}_{2} \\
+\mathbf{W}_{3}\end{array}\right](\ell)
+\mathbf{x}_{j}^{S}+\left[\begin{array}{l}\mathbf{b}_{2} \\
+\mathbf{b}_{3}\end{array}\right] \end{aligned}
+$$
+
+<p>每一层ℓ都有其对应的一套投影参数，这些参数被所有的特征点共享。理解一下：此处的𝑞𝑖对应于待查询图像上某个特征点𝑖的一种表示（self-attention映射），$𝑘_𝑗$以及 $𝑣_𝑗$ 都是来自于召回的图像特征点𝑗的一种表示（映射）；$𝛼_{𝑖𝑗}$ 表示这两个特征相似度，它是由 $𝑞_𝑖$ 以及 $𝑘_𝑗$ 计算得到（在这里体现了cross-attention的思想），越大就表示这两个特征越相似，然后利用该相似度对 $𝑣_𝑗$ 加权求和得到 $𝑚_{𝐸→𝑖}$，这就是所谓的<strong>特征聚合</strong>。</p>
 <p>上面提到的这些概念有些难以理解，作者特意对上述过程进行了可视化，self-attention就是一张图像内部的边相连进行聚合，它能够更加关注具有特异性的所有点，且并不仅局限于其邻域位置特征；cross-attention做的就是匹配那些外观相似的两张图像见的特征。</p>
 <p><img src="https://uipv4.zywvvd.com:33030/HexoFiles/vvd_image_files/202508061337171.png" srcset="/img/loading.gif" lazyload alt=""></p>
 <p><img src="https://uipv4.zywvvd.com:33030/HexoFiles/vvd_image_files/202508061339531.png" srcset="/img/loading.gif" lazyload alt=""></p>
 <p>下图展示了每层self-attention以及across-attention中权重 $𝛼_{𝑖𝑗}$的结果。按照匹配从难到易，文中画出了3个不同的特征点作为演示，绿色特征点（容易），蓝色特征点（中等）以及红色特征点（困难）。对于self-attention，初始时它（某个特征）关联了图像上所有的点（首行），然后逐渐地关注在与该特征相邻近的特征点（尾行）。同样地，cross-attention主要关注去匹配可能的特征点，随着层的增加，它逐渐减少匹配点集直到收敛。绿色特征点在第9层就已经趋近收敛，而红色特征直到最后才能趋紧收敛（匹配）。可以看到无论是self还是cross，它们关注的区域都会随着网络层深度的增加而逐渐缩小。</p>
 <p><img src="https://uipv4.zywvvd.com:33030/HexoFiles/vvd_image_files/202508061342663.png" srcset="/img/loading.gif" lazyload alt=""></p>
-<p>经过了𝐿次self/cross-attention后就可以得到注意力GNN的输出，对于图像𝐴我们有：<br>
-$$<br>
-\mathbf{f}<em>{i}^{A}=\mathbf{W} \cdot^{(L)} \mathbf{x}</em>{i}^{A}+\mathbf{b},<br>
-\quad \forall i \in \mathcal{A}<br>
-$$<br>
-我们可以把$𝑓_𝑖^𝐴$理解为<strong>匹配描述子</strong>（类比特征描述子），专门为特征匹配服务，对于图像𝐵具有类似的形式。</p>
+<p>经过了𝐿次self/cross-attention后就可以得到注意力GNN的输出，对于图像𝐴我们有：</p>
+
+$$
+\mathbf{f}_{i}^{A}=\mathbf{W} \cdot^{(L)} \mathbf{x}_{i}^{A}+\mathbf{b},
+\quad \forall i \in \mathcal{A}
+$$
+
+<p>我们可以把$𝑓_𝑖^𝐴$理解为<strong>匹配描述子</strong>（类比特征描述子），专门为特征匹配服务，对于图像𝐵具有类似的形式。</p>
 <h3 id="匹配层（Optimal-matching-layer）">匹配层（Optimal matching layer）</h3>
 <p>接下来的任务就是去构建软分配矩阵𝑃。对于一般的图匹配流程，这个分配矩阵可以通过计算一个得分矩阵$\mathbf{S} \in \mathbb{R}^{M \times<br>
 N}$（用来表示一些潜在的匹配）来实现。具体而言，通过最大化总体得分 $\sum_{i, j} \mathbf{S}<em>{i, j} \mathbf{P}</em>{i,<br>
 j}$ 即可得到这个分配矩阵𝑃，其中要注意的是𝑃是有约束的。</p>
 <h4 id="匹配得分预测">匹配得分预测</h4>
 <p><img src="https://uipv4.zywvvd.com:33030/HexoFiles/vvd_image_files/202508061344379.png" srcset="/img/loading.gif" lazyload alt=""></p>
-<p>作者使用GNN聚合得到的$\mathbf{f}<em>{i}<sup>{A}$以及$\mathbf{f}_{i}</sup>{B}$计算内积得到得分：<br>
-$$<br>
-\mathbf{S}</em>{i, j}=&lt;\mathbf{f}<em>{i}^{A}, \mathbf{f}</em>{j}^{B}&gt;,<br>
-\forall(i, j) \in \mathcal{A} \times \mathcal{B}<br>
-$$</p>
+
+
+作者使用GNN聚合得到的$\mathbf{f}_{i}^{A}$以及$\mathbf{f}_{i}^{B}$计算内积得到得分：
+$$
+\mathbf{S}_{i, j}=<\mathbf{f}_{i}^{A}, \mathbf{f}_{j}^{B}>,
+\forall(i, j) \in \mathcal{A} \times \mathcal{B}
+$$
+
+
 <h4 id="遮挡以及可见性">遮挡以及可见性</h4>
-<p>类似于SuperPoint在提取特征点时增加了一层dustbin通道，专门为了应对图像中没有特征点情况。本文借鉴了该思想，在得分矩阵$𝑆$的最后一列/行设置为dustbins可以得到$\overline{\mathbf{S}}$，这样做的作用在于可以滤出错误的匹配点。<br>
-$$<br>
-\overline{\mathbf{S}}<em>{i, N+1}=\overline{\mathbf{S}}</em>{M+1,<br>
-j}=\overline{\mathbf{S}}<em>{M+1, N+1}=z \in \mathbb{R}<br>
-$$<br>
-图像𝐴上的特征点被分配到图像𝐵上某个特征匹配或者被分配到dustbin，这就意味着每个dustbin有𝑁,𝑀个匹配，因此软分配矩阵有如下约束：<br>
-$$<br>
-\overline{\mathbf{P}} \mathbf{1}</em>{N+1}=\mathbf{a} \quad\text {  and }<br>
-\quad \overline{\mathbf{P}}^{\top} \mathbf{1}<em>{M+1}=\mathbf{b}<br>
-$$<br>
-其中$\mathbf{a}=\left[\begin{array}{ll}\mathbf{1}</em>{M}^{\top}<br>
-&amp; N\end{array}\right]<sup>{\top}$，$\mathbf{b}=\left[\begin{array}{ll}\mathbf{1}_{N}</sup>{\top}<br>
-&amp; M\end{array}\right]^{\top}$。𝑎 <strong>表示图𝐴中特征点以及dustbin的期望匹配数</strong>，即正常情况下，图𝐴中每个特征点在图𝐵中仅且仅有1个匹配点，但是对于图𝐴的dustbin而言，它可能匹配到图B的任何一个特征点，即有𝑁种可能性，所以$\mathbf{a} =<br>
-\left[\begin{array}{ll}\mathbf{1}_{M}^{\top} &amp;<br>
+<p>类似于SuperPoint在提取特征点时增加了一层dustbin通道，专门为了应对图像中没有特征点情况。本文借鉴了该思想，在得分矩阵$𝑆$的最后一列/行设置为dustbins可以得到$\overline{\mathbf{S}}$，这样做的作用在于可以滤出错误的匹配点。</p>
+
+$$
+\overline{\mathbf{S}}_{i, N+1}=\overline{\mathbf{S}}_{M+1,
+j}=\overline{\mathbf{S}}_{M+1, N+1}=z \in \mathbb{R}
+$$
+图像𝐴上的特征点被分配到图像𝐵上某个特征匹配或者被分配到dustbin，这就意味着每个dustbin有𝑁,𝑀个匹配，因此软分配矩阵有如下约束：
+$$
+\overline{\mathbf{P}} \mathbf{1}_{N+1}=\mathbf{a} \quad\text {  and }
+\quad \overline{\mathbf{P}}^{\top} \mathbf{1}_{M+1}=\mathbf{b}
+$$
+其中$\mathbf{a}=\left[\begin{array}{ll}\mathbf{1}_{M}^{\top}
+& N\end{array}\right]^{\top}$，$\mathbf{b}=\left[\begin{array}{ll}\mathbf{1}_{N}^{\top}
+& M\end{array}\right]^{\top}$。𝑎 **表示图𝐴中特征点以及dustbin的期望匹配数**，即正常情况下，图𝐴中每个特征点在图𝐵中仅且仅有1个匹配点，但是对于图𝐴的dustbin而言，它可能匹配到图B的任何一个特征点，即有𝑁种可能性，所以$\mathbf{a} =
+<p>\left[\begin{array}{ll}\mathbf{1}_{M}^{\top} &amp;<br>
 N\end{array}\right]^{\top}$。</p>
 <blockquote>
 <p>作者Sarlin在这个<a target="_blank" rel="noopener" href="https://github.com/magicleap/SuperGluePretrainedNetwork/issues/36">问题</a>中提到，上式的约束项之所以被替换成=，是因为做了类似于<code>松弛化</code>的操作，这么做的好处是将原本难以优化的不等问题变为恒等约束（原话为&quot;These are like slack variables that enforce the equality constraint&quot;），同时可以比较好的应对没有匹配的特征或者错误的特征（这其实是<strong>增加dustbin通道的原因，它起到滤除外点的作用</strong>）。</p>
@@ -1059,11 +1075,13 @@ N\end{array}\right]^{\top}$。</p>
 <p><img src="https://uipv4.zywvvd.com:33030/HexoFiles/vvd_image_files/202508061422276.png" srcset="/img/loading.gif" lazyload alt=""></p>
 <p>作者Sarlin提供的代码如下：</p>
 <figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br></pre></td><td class="code"><pre><code class="hljs python"><span class="hljs-keyword">def</span> <span class="hljs-title function_">log_optimal_transport</span>(<span class="hljs-params">scores: torch.Tensor, alpha: torch.Tensor, iters: <span class="hljs-built_in">int</span></span>) -&gt; torch.Tensor:<br>    <span class="hljs-string">&quot;&quot;&quot; Perform Differentiable Optimal Transport in Log-space for stability&quot;&quot;&quot;</span><br>    b, m, n = scores.shape<br>    one = scores.new_tensor(<span class="hljs-number">1</span>)<br>    ms, ns = (m*one).to(scores), (n*one).to(scores)<br><br>    bins0 = alpha.expand(b, m, <span class="hljs-number">1</span>)<br>    bins1 = alpha.expand(b, <span class="hljs-number">1</span>, n)<br>    alpha = alpha.expand(b, <span class="hljs-number">1</span>, <span class="hljs-number">1</span>)<br><br>    couplings = torch.cat([torch.cat([scores, bins0], -<span class="hljs-number">1</span>),<br>                           torch.cat([bins1, alpha], -<span class="hljs-number">1</span>)], <span class="hljs-number">1</span>)<br><br>    norm = - (ms + ns).log()<br>    log_mu = torch.cat([norm.expand(m), ns.log()[<span class="hljs-literal">None</span>] + norm])<br>    log_nu = torch.cat([norm.expand(n), ms.log()[<span class="hljs-literal">None</span>] + norm])<br>    log_mu, log_nu = log_mu[<span class="hljs-literal">None</span>].expand(b, -<span class="hljs-number">1</span>), log_nu[<span class="hljs-literal">None</span>].expand(b, -<span class="hljs-number">1</span>)<br><br>    Z = log_sinkhorn_iterations(couplings, log_mu, log_nu, iters)<br>    Z = Z - norm  <span class="hljs-comment"># multiply probabilities by M+N</span><br>    <span class="hljs-keyword">return</span> Z<br><span class="hljs-keyword">def</span> <span class="hljs-title function_">log_sinkhorn_iterations</span>(<span class="hljs-params">Z, log_mu, log_nu, iters: <span class="hljs-built_in">int</span></span>):<br>    <span class="hljs-string">&quot;&quot;&quot; Perform Sinkhorn Normalization in Log-space for stability&quot;&quot;&quot;</span><br>    u, v = torch.zeros_like(log_mu), torch.zeros_like(log_nu)<br>    <span class="hljs-keyword">for</span> _ <span class="hljs-keyword">in</span> <span class="hljs-built_in">range</span>(iters):<br>        u = log_mu - torch.logsumexp(Z + v.unsqueeze(<span class="hljs-number">1</span>), dim=<span class="hljs-number">2</span>)<br>        v = log_nu - torch.logsumexp(Z + u.unsqueeze(<span class="hljs-number">2</span>), dim=<span class="hljs-number">1</span>)<br>    <span class="hljs-keyword">return</span> Z + u.unsqueeze(<span class="hljs-number">2</span>) + v.unsqueeze(<span class="hljs-number">1</span>)    <br></code></pre></td></tr></table></figure>
-<h3 id=""></h3>
 <h3 id="损失函数">损失函数</h3>
-<p>$$<br>
-\begin{aligned}\mathrm{Loss}&amp;=-\sum_{(i,j)\in\mathcal{M}}\log\bar{\mathbf{P}}<em>{i,j}\&amp;-\sum</em>{i\in\mathcal{I}}\log\bar{\mathbf{P}}<em>{i,N+1}-\sum</em>{j\in\mathcal{J}}\log\bar{\mathbf{P}}_{M+1,j}.\end{aligned}<br>
-$$</p>
+
+$$
+\begin{aligned}\mathrm{Loss}&=-\sum_{(i,j)\in\mathcal{M}}\log\bar{\mathbf{P}}_{i,j}\\&-\sum_{i\in\mathcal{I}}\log\bar{\mathbf{P}}_{i,N+1}-\sum_{j\in\mathcal{J}}\log\bar{\mathbf{P}}_{M+1,j}.\end{aligned}
+$$
+
+
 <p>设计中图神经网络和最优匹配层都是可微的，这就让反向传播可以一直从最终的匹配结果一直到最初的视觉描述子。SG是基于ground truth（gt）匹配监督学习来的。argmin负log似然函数获得结果。</p>
 <h3 id="流程框图">流程框图</h3>
 <p><img src="https://uipv4.zywvvd.com:33030/HexoFiles/vvd_image_files/202508061436508.png" srcset="/img/loading.gif" lazyload alt=""></p>
