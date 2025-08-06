@@ -26,7 +26,7 @@
 <meta property="og:locale" content="zh_CN">
 <meta property="og:image" content="https://uipv4.zywvvd.com:33030/HexoFiles/vvd_image_files/202508061014717.png">
 <meta property="article:published_time" content="2025-08-05T09:45:46.000Z">
-<meta property="article:modified_time" content="2025-08-06T06:56:08.589Z">
+<meta property="article:modified_time" content="2025-08-06T07:09:41.135Z">
 <meta property="article:author" content="Yiwei Zhang">
 <meta property="article:tag" content="Image_Processing">
 <meta property="article:tag" content="Feature_Extraction">
@@ -913,11 +913,13 @@ document.addEventListener("readystatechange", function() {
 <p>整个算法的处理流程如下图所示：<br>
 <img src="https://uipv4.zywvvd.com:33030/HexoFiles/vvd_image_files/202508061048446.png" srcset="/img/loading.gif" lazyload alt=""></p>
 <p><img src="https://uipv4.zywvvd.com:33030/HexoFiles/vvd_image_files/202508061111115.png" srcset="/img/loading.gif" lazyload alt=""></p>
-<p>设有一对输入图片 $A, B$ ，其中各自具有关键点集合 $p$  和相应的视觉描述子（descriptor）  $d$ 。将这两者合并起来 $(p,d)$ 作为本地特征。每个关键点包含点坐标 $x,y$  和可信度 $c$ ，视觉描述子由 SuperPoint 之类的CNN获得(或者是传统特征SIFT)。第 $i$ 个位置坐标 $p_i:=(x,y,c)$ 经过一个由多层感知机构成的编码器处理后与特征描述向量 $d_i$ 相加，得到图神经网络的一个节点 $x_i$ ，该节点被称作局部特征图 . $A$  有 $M$ 个本地特征，而图 $B$ 有 $N$ 个。<br>
-$$<br>
-\mathbf{x}<em>{i}=\mathbf{d}</em>{i}+\mathrm{MLP}<em>{\mathrm{enc}}\left(\mathbf{p}</em>{i}\right)<br>
-$$<br>
-为了获取上下文环境信息，本文采用图神经网络对特征信息进行聚合。本文提出一种多重图神经网络结构，将原图和待匹配图像中的特征点放在一起构成一个完整的图（graph），图中包含两种类型的无向边，一种是图像内部的边（Intra-image edges）也就是原图或待匹配图像内部特征点之间的连线，另一种是图像之间的边（Inter-image edges），即原图中的特征点和待匹配图像中的特征点之间的连线。因为包含两种类型的无向边，因此称为多重图神经网络。</p>
+<p>设有一对输入图片 $A, B$ ，其中各自具有关键点集合 $p$  和相应的视觉描述子（descriptor）  $d$ 。将这两者合并起来 $(p,d)$ 作为本地特征。每个关键点包含点坐标 $x,y$  和可信度 $c$ ，视觉描述子由 SuperPoint 之类的CNN获得(或者是传统特征SIFT)。第 $i$ 个位置坐标 $p_i:=(x,y,c)$ 经过一个由多层感知机构成的编码器处理后与特征描述向量 $d_i$ 相加，得到图神经网络的一个节点 $x_i$ ，该节点被称作局部特征图 . $A$  有 $M$ 个本地特征，而图 $B$ 有 $N$ 个。</p>
+
+$$
+\mathbf{x}_{i}=\mathbf{d}_{i}+\mathrm{MLP}_{\mathrm{enc}}\left(\mathbf{p}_{i}\right)
+$$
+
+<p>为了获取上下文环境信息，本文采用图神经网络对特征信息进行聚合。本文提出一种多重图神经网络结构，将原图和待匹配图像中的特征点放在一起构成一个完整的图（graph），图中包含两种类型的无向边，一种是图像内部的边（Intra-image edges）也就是原图或待匹配图像内部特征点之间的连线，另一种是图像之间的边（Inter-image edges），即原图中的特征点和待匹配图像中的特征点之间的连线。因为包含两种类型的无向边，因此称为多重图神经网络。</p>
 <p>SG希望求解一种分配方法，实现从A的本地特征到B的本地特征之间的关联，于是构造一个M×N矩阵，矩阵元素是[0,1]的的值描述关键点之间的关联可信度。并定义了两个限制条件：</p>
 <ol>
 <li>每个关键点最多只能和另图中一个点关联</li>
@@ -1036,8 +1038,8 @@ $$
 其中$\mathbf{a}=\left[\begin{array}{ll}\mathbf{1}_{M}^{\top}
 & N\end{array}\right]^{\top}$，$\mathbf{b}=\left[\begin{array}{ll}\mathbf{1}_{N}^{\top}
 & M\end{array}\right]^{\top}$。𝑎 **表示图𝐴中特征点以及dustbin的期望匹配数**，即正常情况下，图𝐴中每个特征点在图𝐵中仅且仅有1个匹配点，但是对于图𝐴的dustbin而言，它可能匹配到图B的任何一个特征点，即有𝑁种可能性，所以$\mathbf{a} =
-<p>\left[\begin{array}{ll}\mathbf{1}_{M}^{\top} &amp;<br>
-N\end{array}\right]^{\top}$。</p>
+\left[\begin{array}{ll}\mathbf{1}_{M}^{\top} &
+N\end{array}\right]^{\top}$。
 <blockquote>
 <p>作者Sarlin在这个<a target="_blank" rel="noopener" href="https://github.com/magicleap/SuperGluePretrainedNetwork/issues/36">问题</a>中提到，上式的约束项之所以被替换成=，是因为做了类似于<code>松弛化</code>的操作，这么做的好处是将原本难以优化的不等问题变为恒等约束（原话为&quot;These are like slack variables that enforce the equality constraint&quot;），同时可以比较好的应对没有匹配的特征或者错误的特征（这其实是<strong>增加dustbin通道的原因，它起到滤除外点的作用</strong>）。</p>
 </blockquote>
