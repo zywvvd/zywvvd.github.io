@@ -30,7 +30,7 @@
 <meta property="og:image" content="https://uipv4.zywvvd.com:33030/HexoFiles/vvd_image_files/202508061601781.png">
 <meta property="og:image" content="https://uipv4.zywvvd.com:33030/HexoFiles/vvd_image_files/202508061603983.png">
 <meta property="article:published_time" content="2025-08-06T07:21:13.000Z">
-<meta property="article:modified_time" content="2025-08-06T08:09:24.689Z">
+<meta property="article:modified_time" content="2025-08-06T09:45:55.610Z">
 <meta property="article:author" content="Yiwei Zhang">
 <meta property="article:tag" content="Image_Processing">
 <meta property="article:tag" content="Feature_Extraction">
@@ -960,13 +960,17 @@ document.addEventListener("readystatechange", function() {
 </li>
 <li>
 <p>其次，我们引入了精细化的关键点指导。我们观察到先前的方法在特征传播期间纠缠关键点位置特征和局部描述符，这使得模型过度依赖于学习的位置相关先验-我们在第4节中的消融实验突出了这个问题。学习的先验知识在具有在训练时未看到的匹配模式的图像对下是脆弱的，从而限制了泛化能力。为了解决这个问题，我们提出了一种新的位置引导注意力，它将关键点位置特征 p 和局部描述符 d 分开。位置信息在该模块中用作空间上下文，并且不并入用于匹配的最终局部描述符表示中。有了这些新的元素，我们的注意力层，如图3（右）所示，定义如下，其中我们以关键点 $A_i$为例：</p>
+
+
+$$
+\begin{aligned}\mathbf{d}_{i}^{A}\leftarrow\mathbf{d}_{i}^{A}+\mathrm{MLP}([\mathbf{d}_{i}^{A}|\Delta\mathbf{d}_{i}^{A}]),\mathrm{where}\\ \Delta\mathbf{d}_{i}^{A}=\mathrm{Softmax}(\frac{\mathbf{q}_{i}^{A}(\mathbf{k}^{S})^{T}}{\sqrt{C}})\cdot\mathbf{v}^{S}\in\mathbb{R}^{C},\mathrm{and}\\ \mathbf{q}_{i}^{A}=\mathbf{W}^{q}(\mathbf{d}_{i}^{A}+\mathbf{p}_{i}^{A})+\mathbf{b}^{q}\in\mathbb{R}^{C},\\\mathbf{k}^{S}=\mathbf{W}^{k}(\mathbf{d}^{S}+\mathbf{p}^{S})+\mathbf{b}^{k}\in\mathbb{R}^{K\times C},\\\mathbf{v}^{S}=\mathbf{W}^{v}(\mathbf{d}^{S})+\mathbf{b}^{v}\in\mathbb{R}^{K\times C}.\end{aligned}
+$$
+
+
 </li>
-</ul>
-<p>$$<br>
-\begin{aligned}\mathbf{d}<em>{i}<sup>{A}\leftarrow\mathbf{d}_{i}</sup>{A}+\mathrm{MLP}([\mathbf{d}</em>{i}<sup>{A}|\Delta\mathbf{d}_{i}</sup>{A}]),\mathrm{where}\ \Delta\mathbf{d}<em>{i}<sup>{A}=\mathrm{Softmax}(\frac{\mathbf{q}_{i}</sup>{A}(\mathbf{k}<sup>{S})</sup>{T}}{\sqrt{C}})\cdot\mathbf{v}<sup>{S}\in\mathbb{R}</sup>{C},\mathrm{and}\ \mathbf{q}</em>{i}<sup>{A}=\mathbf{W}</sup>{q}(\mathbf{d}_{i}<sup>{A}+\mathbf{p}_{i}</sup>{A})+\mathbf{b}<sup>{q}\in\mathbb{R}</sup>{C},\\mathbf{k}<sup>{S}=\mathbf{W}</sup>{k}(\mathbf{d}<sup>{S}+\mathbf{p}</sup>{S})+\mathbf{b}<sup>{k}\in\mathbb{R}</sup>{K\times C},\\mathbf{v}<sup>{S}=\mathbf{W}</sup>{v}(\mathbf{d}<sup>{S})+\mathbf{b}</sup>{v}\in\mathbb{R}^{K\times C}.\end{aligned}<br>
-$$</p>
-<ul>
-<li>直觉上，查询和键计算注意力权重，其中考虑了特征亲和力和空间相关性。然而，注意力更新值️ $Δ d^A_i$仅由局部描述符分量组成。这种设计允许模型使用关键点的位置特征来推断关键点之间的空间相关性，同时避免过度依赖它。</li>
+<li>
+<p>直觉上，查询和键计算注意力权重，其中考虑了特征亲和力和空间相关性。然而，注意力更新值️ $Δ d^A_i$仅由局部描述符分量组成。这种设计允许模型使用关键点的位置特征来推断关键点之间的空间相关性，同时避免过度依赖它。</p>
+</li>
 </ul>
 <h4 id="匹配层和损失函数">匹配层和损失函数</h4>
 <p>我们使用改进的关键点表示来产生成对相似性矩阵 $S∈R<sup>{N×M}$，其中$S_{i，j}=d_i</sup>A⋅(d_j<sup>B)</sup>T$。然后我们使用Sinkhorn算法来细化相似性，这产生匹配矩阵 $M ∈ [0，1]^{N×M}$，其中$M_{i，j}$ 表示关键点$A_i$ 和 $B_j$ 之间的匹配概率。为了训练OmniGlue，我们使用地面真值最小化匹配矩阵的负对数似然。</p>
