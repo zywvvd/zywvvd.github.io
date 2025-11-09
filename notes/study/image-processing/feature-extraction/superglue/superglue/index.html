@@ -1,0 +1,1734 @@
+
+
+<!DOCTYPE html>
+<html lang="zh-CN" data-default-color-scheme=auto>
+
+
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="baidu-site-verification" content="codeva-rLWafCJGYc" />
+  <link rel="apple-touch-icon" sizes="76x76" href="/image/avatar.png">
+  <link rel="icon" href="/image/avatar.png">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, shrink-to-fit=no">
+  <meta http-equiv="x-ua-compatible" content="ie=edge">
+  
+  <meta name="theme-color" content="#2f4154">
+  <meta name="author" content="Yiwei Zhang">
+  <meta name="keywords" content="人工智能, 深度学习, 个人博客, 机器学习">
+  
+    <meta name="description" content="SuperGlue 是 Magic Leap 完成的 CVPR 2020 研究项目, 用于为 SuperPoint 基础上进行描述子特征匹配。本文记录相关内容。">
+<meta property="og:type" content="article">
+<meta property="og:title" content="SuperGlue 使用图神经网络学习特征匹配">
+<meta property="og:url" content="https://www.zywvvd.com/notes/study/image-processing/feature-extraction/superglue/superglue/index.html">
+<meta property="og:site_name" content="又见苍岚">
+<meta property="og:description" content="SuperGlue 是 Magic Leap 完成的 CVPR 2020 研究项目, 用于为 SuperPoint 基础上进行描述子特征匹配。本文记录相关内容。">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="https://uipv4.zywvvd.com:33030/HexoFiles/vvd_image_files/202508061014717.png">
+<meta property="article:published_time" content="2025-08-05T09:45:46.000Z">
+<meta property="article:modified_time" content="2025-11-09T15:48:54.420Z">
+<meta property="article:author" content="Yiwei Zhang">
+<meta property="article:tag" content="Image_Processing">
+<meta property="article:tag" content="Feature_Extraction">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:image" content="https://uipv4.zywvvd.com:33030/HexoFiles/vvd_image_files/202508061014717.png">
+  
+  
+  
+  <title>SuperGlue 使用图神经网络学习特征匹配 - 又见苍岚</title>
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/twitter-bootstrap/4.6.1/css/bootstrap.min.css" />
+
+
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/github-markdown-css/4.0.0/github-markdown.min.css" />
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/hint.css/2.7.0/hint.min.css" />
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/fancybox/3.5.7/jquery.fancybox.min.css" />
+
+
+
+<!-- 主题依赖的图标库，不要自行修改 -->
+<!-- Do not modify the link that theme dependent icons -->
+
+<link rel="stylesheet" href="//at.alicdn.com/t/font_1749284_hj8rtnfg7um.css">
+
+
+
+<link rel="stylesheet" href="//at.alicdn.com/t/font_1736178_lbnruvf0jn.css">
+
+
+<link  rel="stylesheet" href="/css/main.css" />
+
+
+  <link id="highlight-css" rel="stylesheet" href="/css/highlight.css" />
+  
+    <link id="highlight-css-dark" rel="stylesheet" href="/css/highlight-dark.css" />
+  
+
+
+
+  
+<link rel="stylesheet" href="/css/custom.css">
+<link rel="stylesheet" href="/css/reward.css">
+<link rel="stylesheet" href="//cdn.jsdelivr.net/npm/aplayer/dist/APlayer.min.css">
+
+
+
+  <script id="fluid-configs">
+    var Fluid = window.Fluid || {};
+    Fluid.ctx = Object.assign({}, Fluid.ctx)
+    var CONFIG = {"hostname":"www.zywvvd.com","root":"/","version":"1.9.7","typing":{"enable":true,"typeSpeed":90,"cursorChar":"_","loop":false,"scope":["home"]},"anchorjs":{"enable":true,"element":"h1,h2,h3,h4,h5,h6","placement":"left","visible":"hover","icon":""},"progressbar":{"enable":true,"height_px":3,"color":"#29d","options":{"showSpinner":false,"trickleSpeed":100}},"code_language":{"enable":true,"default":"TEXT"},"copy_btn":true,"image_caption":{"enable":true},"image_zoom":{"enable":true,"img_url_replace":["",""]},"toc":{"enable":true,"placement":"right","headingSelector":"h1,h2,h3,h4,h5,h6","collapseDepth":0},"lazyload":{"enable":true,"loading_img":"/img/loading.gif","onlypost":false,"offset_factor":2},"web_analytics":{"enable":true,"follow_dnt":true,"baidu":null,"google":null,"tencent":{"sid":null,"cid":null},"woyaola":null,"cnzz":null,"leancloud":{"app_id":"Cv0XNeBSBdAPAIuVj3PsyM3R-MdYXbMMI","app_key":"4PU1rNlGrqXWzhfW3dgq98oX","server_url":null,"path":"window.location.pathname","ignore_local":false},"gtag":null},"search_path":"/local-search.xml","include_content_in_search":true};
+
+    if (CONFIG.web_analytics.follow_dnt) {
+      var dntVal = navigator.doNotTrack || window.doNotTrack || navigator.msDoNotTrack;
+      Fluid.ctx.dnt = dntVal && (dntVal.startsWith('1') || dntVal.startsWith('yes') || dntVal.startsWith('on'));
+    }
+  </script>
+  <script  src="/js/utils.js" ></script>
+  <script  src="/js/color-schema.js" ></script>
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+    
+  
+
+
+
+  
+<meta name="generator" content="Hexo 7.2.0"><link rel="alternate" href="/atom.xml" title="又见苍岚" type="application/atom+xml">
+</head>
+
+<script>
+// 页面加载完成后隐藏加载动画
+document.addEventListener("readystatechange", function() {
+    const loader = document.getElementById('Loadanimation');
+    if (loader) {
+        // 停留1秒后开始淡出
+        setTimeout(function() {
+            loader.style.transition = 'opacity 1.2s';
+            loader.style.opacity = '0';
+            // 淡出完成后隐藏
+            setTimeout(() => {
+                loader.style.display = 'none';
+            }, 1000); // 等待淡出动画完成
+        }, 700); // 停留0.8秒
+    }
+});
+</script>
+
+
+
+<body>
+  
+<div id="Loadanimation" style="z-index:999999;">
+<div id="Loadanimation-center">
+   <div id="Loadanimation-center-absolute">
+       <div class="xccx_object" id="xccx_four"></div>
+       <div class="xccx_object" id="xccx_three"></div>
+       <div class="xccx_object" id="xccx_two"></div>
+       <div class="xccx_object" id="xccx_one"></div>
+   </div>
+</div>
+</div>
+
+<link href="/css/loading.css"type="text/css"rel="stylesheet"/>
+
+
+
+
+
+
+<div>
+	<div class='real_mask' style="
+		background-color: rgba(0,0,0,0.4);
+		width: 100%;
+		height: 100%;
+		position: fixed;
+		z-index: -777;
+	"></div>
+	<div id="banner_video_insert">
+	</div>	
+	<div id='vvd_banner_img'>
+	</div>
+</div>
+<div id="banner"></div>
+
+
+
+
+
+
+
+  <header>
+    
+
+<div class="header-inner" style="height: 80vh;">
+  <nav id="navbar" class="navbar fixed-top  navbar-expand-lg navbar-dark scrolling-navbar">
+  <div class="container">
+    <a class="navbar-brand" href="/">
+      <strong>CangLan</strong>
+    </a>
+
+    <button id="navbar-toggler-btn" class="navbar-toggler" type="button" data-toggle="collapse"
+            data-target="#navbarSupportedContent"
+            aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
+      <div class="animated-icon"><span></span><span></span><span></span></div>
+    </button>
+
+    <!-- Collapsible content -->
+    <div class="collapse navbar-collapse" id="navbarSupportedContent">
+      <ul class="navbar-nav ml-auto text-center">
+        
+          
+          
+          
+          
+            <li class="nav-item">
+		<div >
+		      <a class="nav-link" href="/" target="_self" data-umami-event="Navigation-Homepage">
+
+		        <i class="iconfont icon-home-fill"></i>
+		        <span>首页</span>
+		      </a>
+		</div>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item dropdown">
+              <a class="nav-link dropdown-toggle" target="_self" href="javascript:;" role="button"
+                 data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                <i class="iconfont icon-shuji1"></i>
+                <span>文章</span>
+              </a>
+              <div class="dropdown-menu" aria-labelledby="navbarDropdown">
+                
+                  
+                  
+                  
+		<div >
+
+                  <a class="dropdown-item" href="/archives/" target="_self" data-umami-event="Navigation-Archive">
+
+                    <i class="iconfont icon-archive-fill"></i>
+                    <span>归档</span>
+                  </a>
+		</div>
+                
+                  
+                  
+                  
+		<div >
+
+                  <a class="dropdown-item" href="/categories/" target="_self" data-umami-event="Navigation-Category">
+
+                    <i class="iconfont icon-category-fill"></i>
+                    <span>分类</span>
+                  </a>
+		</div>
+                
+                  
+                  
+                  
+		<div >
+
+                  <a class="dropdown-item" href="/tags/" target="_self" data-umami-event="Navigation-Tag">
+
+                    <i class="iconfont icon-tags-fill"></i>
+                    <span>标签</span>
+                  </a>
+		</div>
+                
+                  
+                  
+                  
+		<div >
+
+                  <a class="dropdown-item" href="/shuoshuo/" target="_self" data-umami-event="Navigation-Shuoshuo">
+
+                    <i class="iconfont icon-24gf-bubblesDots4"></i>
+                    <span>说说</span>
+                  </a>
+		</div>
+                
+              </div>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item dropdown">
+              <a class="nav-link dropdown-toggle" target="_self" href="javascript:;" role="button"
+                 data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                <i class="iconfont icon-momo"></i>
+                <span>社交</span>
+              </a>
+              <div class="dropdown-menu" aria-labelledby="navbarDropdown">
+                
+                  
+                  
+                  
+		<div >
+
+                  <a class="dropdown-item" href="/links/" target="_self" data-umami-event="Navigation-Friends">
+
+                    <i class="iconfont icon-link-fill"></i>
+                    <span>友链</span>
+                  </a>
+		</div>
+                
+                  
+                  
+                  
+		<div >
+
+                  <a class="dropdown-item" href="/messagebd/" target="_self" data-umami-event="Navigation-MessageBoard">
+
+                    <i class="iconfont icon-comment"></i>
+                    <span>留言板</span>
+                  </a>
+		</div>
+                
+                  
+                  
+                  
+		<div >
+
+                  <a class="dropdown-item" href="/atom.xml" target="_self" data-umami-event="Navigation-RSS">
+
+                    <i class="iconfont icon-dingyue"></i>
+                    <span>RSS订阅</span>
+                  </a>
+		</div>
+                
+                  
+                  
+                  
+		<div >
+
+                  <a class="dropdown-item" href="/reccomments/" target="_self" data-umami-event="Navigation-Recent-Comments">
+
+                    <i class="iconfont icon-icon-pinglunguanli-pinglunliebiao"></i>
+                    <span>近期评论</span>
+                  </a>
+		</div>
+                
+              </div>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item dropdown">
+              <a class="nav-link dropdown-toggle" target="_self" href="javascript:;" role="button"
+                 data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                <i class="iconfont icon-user-fill"></i>
+                <span>个人</span>
+              </a>
+              <div class="dropdown-menu" aria-labelledby="navbarDropdown">
+                
+                  
+                  
+                  
+		<div >
+
+                  <a class="dropdown-item" href="/about/" target="_self" data-umami-event="Navigation-AboutMe">
+
+                    <i class="iconfont icon-guanyuwomen"></i>
+                    <span>关于</span>
+                  </a>
+		</div>
+                
+                  
+                  
+                  
+		<div >
+
+                  <a class="dropdown-item" href="/playlist/" target="_self" data-umami-event="Navigation-Music">
+
+                    <i class="iconfont icon-music"></i>
+                    <span>歌单</span>
+                  </a>
+		</div>
+                
+                  
+                  
+                  
+		<div >
+
+                  <a class="dropdown-item" href="https://uipv4.zywvvd.com:33035" target="_self" data-umami-event="Navigation-Nextcloud">
+
+                    <i class="iconfont icon-xuniyingpan"></i>
+                    <span>网盘</span>
+                  </a>
+		</div>
+                
+                  
+                  
+                  
+		<div >
+
+                  <a class="dropdown-item" href="https://uipv4.zywvvd.com:33036" target="_self" data-umami-event="Navigation-OneDev">
+
+                    <i class="iconfont icon-git"></i>
+                    <span>仓库</span>
+                  </a>
+		</div>
+                
+                  
+                  
+                  
+		<div >
+
+                  <a class="dropdown-item" href="https://uipv4.zywvvd.com:33041" target="_self" data-umami-event="Navigation-Wiki">
+
+                    <i class="iconfont icon-wiki"></i>
+                    <span>百科</span>
+                  </a>
+		</div>
+                
+              </div>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item dropdown">
+              <a class="nav-link dropdown-toggle" target="_self" href="javascript:;" role="button"
+                 data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                <i class="iconfont icon-ic_fly"></i>
+                <span>导航</span>
+              </a>
+              <div class="dropdown-menu" aria-labelledby="navbarDropdown">
+                
+                  
+                  
+                  
+		<div >
+
+                  <a class="dropdown-item" href="/site-map/" target="_self" data-umami-event="Navigation-SiteMap">
+
+                    <i class="iconfont icon-lianjie"></i>
+                    <span>链接</span>
+                  </a>
+		</div>
+                
+                  
+                  
+                  
+		<div >
+
+                  <a class="dropdown-item" href="/nodeppt/hexo/snavigation/" target="_self" data-umami-event="Navigation-Search">
+
+                    <i class="iconfont icon-sousuo"></i>
+                    <span>搜索</span>
+                  </a>
+		</div>
+                
+              </div>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item dropdown">
+              <a class="nav-link dropdown-toggle" target="_self" href="javascript:;" role="button"
+                 data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                <i class="iconfont icon-wangzhan"></i>
+                <span>站点</span>
+              </a>
+              <div class="dropdown-menu" aria-labelledby="navbarDropdown">
+                
+                  
+                  
+                  
+		<div >
+
+                  <a class="dropdown-item" href="https://uipv4.zywvvd.com:33039/share/0zx3o21oIpZTZqwC/%E5%8F%88%E8%A7%81%E8%8B%8D%E5%B2%9A" target="_self" data-umami-event="Navigation-Umami">
+
+                    <i class="iconfont icon-tongji2"></i>
+                    <span>站点分析</span>
+                  </a>
+		</div>
+                
+                  
+                  
+                  
+		<div >
+
+                  <a class="dropdown-item" href="/earth_sta/" target="_self" data-umami-event="Navigation-Globe">
+
+                    <i class="iconfont icon-tongjifenxi-xiangmubiaogetongji"></i>
+                    <span>访问统计</span>
+                  </a>
+		</div>
+                
+                  
+                  
+                  
+		<div >
+
+                  <a class="dropdown-item" href="https://uipv4.zywvvd.com:33034/status/show" target="_self" data-umami-event="Navigation-Monitor">
+
+                    <i class="iconfont icon-jiankong"></i>
+                    <span>站点监控</span>
+                  </a>
+		</div>
+                
+              </div>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item dropdown">
+              <a class="nav-link dropdown-toggle" target="_self" href="javascript:;" role="button"
+                 data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                <i class="iconfont icon-chuansong"></i>
+                <span>传送</span>
+              </a>
+              <div class="dropdown-menu" aria-labelledby="navbarDropdown">
+                
+                  
+                  
+                  
+		<div >
+
+                  <a class="dropdown-item" href="https://www.foreverblog.cn/go.html" target="_self" data-umami-event="Navigation-ForeverBolg">
+
+                    <i class="iconfont icon-a-BlackHole"></i>
+                    <span>十年之约</span>
+                  </a>
+		</div>
+                
+                  
+                  
+                  
+		<div >
+
+                  <a class="dropdown-item" href="https://www.travellings.cn/go.html" target="_self" data-umami-event="Navigation-DriveTo">
+
+                    <i class="iconfont icon-train1"></i>
+                    <span>开往</span>
+                  </a>
+		</div>
+                
+                  
+                  
+                  
+		<div >
+
+                  <a class="dropdown-item" href="https://bf.zzxworld.com/" target="_self" data-umami-event="Navigation-BlogFinder">
+
+                    <i class="iconfont icon-icon-"></i>
+                    <span>BlogFinder</span>
+                  </a>
+		</div>
+                
+                  
+                  
+                  
+		<div >
+
+                  <a class="dropdown-item" href="https://www.perass.com/" target="_self" data-umami-event="Navigation-Bloghome">
+
+                    <i class="iconfont icon-home-fill"></i>
+                    <span>博客之家</span>
+                  </a>
+		</div>
+                
+              </div>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item dropdown">
+              <a class="nav-link dropdown-toggle" target="_self" href="javascript:;" role="button"
+                 data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                <i class="iconfont icon-gongju"></i>
+                <span>工具</span>
+              </a>
+              <div class="dropdown-menu" aria-labelledby="navbarDropdown">
+                
+                  
+                  
+                  
+		<div >
+
+                  <a class="dropdown-item" href="/navigates/calculator" target="_self" data-umami-event="Navigation-Calculator">
+
+                    <i class="iconfont icon-jisuan"></i>
+                    <span>计算器</span>
+                  </a>
+		</div>
+                
+                  
+                  
+                  
+		<div >
+
+                  <a class="dropdown-item" href="/navigates/webgraphviz" target="_self" data-umami-event="Navigation-WebGtaphviz">
+
+                    <i class="iconfont icon-tongyong-huatugongju2"></i>
+                    <span>Graphviz</span>
+                  </a>
+		</div>
+                
+                  
+                  
+                  
+		<div >
+
+                  <a class="dropdown-item" href="/navigates/formular_reco" target="_self" data-umami-event="Navigation-Formular-Reco">
+
+                    <i class="iconfont icon-a-checkformula"></i>
+                    <span>公式识别</span>
+                  </a>
+		</div>
+                
+              </div>
+            </li>
+          
+        
+        
+          <li class="nav-item" id="search-btn">
+            <a class="nav-link" target="_self" href="javascript:;" data-toggle="modal" data-target="#modalSearch" aria-label="Search">
+              <i class="iconfont icon-search"></i>
+            </a>
+          </li>
+          
+        
+        
+          <li class="nav-item" id="color-toggle-btn">
+            <a class="nav-link" target="_self" href="javascript:;" aria-label="Color Toggle">
+              <i class="iconfont icon-dark" id="color-toggle-icon"></i>
+            </a>
+          </li>
+        
+      </ul>
+    </div>
+  </div>
+</nav>
+
+  
+
+<div id="banner" class="banner" parallax=true
+     style="background: url('https://uipv4.zywvvd.com:33030/HexoFiles/new/bg-trans.png') no-repeat center center; background-size: cover;">
+  <div class="full-bg-img">
+    <div class="mask flex-center" style="background-color: rgba(0, 0, 0, 0)">
+      <div class="banner-text text-center fade-in-up">
+        <div class="h2">
+          
+            <span id="subtitle">SuperGlue 使用图神经网络学习特征匹配</span>
+          
+        </div>
+
+        
+          
+  <div class="mt-3">
+    
+      <span class="post-meta mr-2">
+        <i class="iconfont icon-author" aria-hidden="true"></i>
+        Yiwei Zhang
+      </span>
+    
+    
+      <span class="post-meta">
+        <i class="iconfont icon-date-fill" aria-hidden="true"></i>
+        <time datetime="2025-08-05 17:45" pubdate>
+          2025年8月5日 下午
+        </time>
+      </span>
+    
+  </div>
+
+  <div class="mt-1">
+    
+      <span class="post-meta mr-2">
+        <i class="iconfont icon-chart"></i>
+        
+          <!-- compatible with older versions-->
+          5.8k 字
+        
+      </span>
+    
+
+    
+      <span class="post-meta mr-2">
+        <i class="iconfont icon-clock-fill"></i>
+        
+        
+        
+          <!-- compatible with older versions-->
+          49 分钟
+        
+      </span>
+    
+
+    
+    
+      
+        <span id="vvdpost_container_page_pvuv" style="display: none">
+          <i class="iconfont icon-eye" aria-hidden="true"></i>
+          <span id="vvdpost_value_page_pv">0</span> 次&nbsp&nbsp
+		  <i class="iconfont icon-users" aria-hidden="true"></i>
+		  <span id="vvdpost_value_page_uv">0</span> 人&nbsp&nbsp
+		  <i class="iconfont icon-comment" aria-hidden="true"></i>
+		  <span id="vvdpost_value_page_cn">0</span> 条
+        </span>
+
+    <script>
+    document.addEventListener("DOMContentLoaded", function() {
+	      console.log("PVUV_" + window.location.pathname);
+
+	      // 使用 fetch API 发送 POST 请求
+	      fetch('https://uipv4.zywvvd.com:33037/poststats', { 
+		  method: 'POST',
+		  headers: {
+		      'Content-Type': 'application/json'
+		  },
+		  body: JSON.stringify(window.location.pathname) // 将路径名作为对象发送，以便在服务器端更容易处理
+	      })
+	      .then(response => {
+		  // 检查响应状态
+		  if (!response.ok) {
+		      throw new Error('Network response was not ok ' + response.statusText);
+		  }
+		  return response.json(); // 解析 JSON 响应
+	      })
+	      .then(data => {
+		  // 处理解析后的数据
+		  console.log(data.pv);
+		  var pvCtn = document.querySelector('#vvdpost_container_page_pvuv');
+		  if (pvCtn) {
+		      var pvEle = document.querySelector('#vvdpost_value_page_pv');
+		      var uvEle = document.querySelector('#vvdpost_value_page_uv');
+		      var cnEle = document.querySelector('#vvdpost_value_page_cn');
+		      if (pvEle && uvEle) {
+		          pvEle.innerText = data.pv;
+		          uvEle.innerText = data.uv;
+		          cnEle.innerText = data.cn;
+		          pvCtn.style.display = 'inline';
+		      }
+		  }
+	      })
+	      .catch(error => {
+		  // 处理请求错误
+		  console.error('There has been a problem with your fetch operation:', error);
+	      });
+      });
+  </script>
+      
+    
+  </div>
+
+
+        
+      </div>
+
+      
+        <div class="scroll-down-bar">
+          <i class="iconfont icon-arrowdown"></i>
+        </div>
+      
+    </div>
+  </div>
+</div>
+
+</div>
+
+
+	<script type="text/javascript" src="/vvd_js/jquery.js"></script>
+	<script async src="https://uipv4.zywvvd.com:33039/script.js" data-website-id="dd4a05c6-dde2-4743-9c3a-a79d6bee0778"></script>
+	<div class="banner" id='banner' >
+
+		<div class="full-bg-img" >
+
+			
+				<script>
+					var ua = navigator.userAgent;
+					var ipad = ua.match(/(iPad).*OS\s([\d_]+)/),
+						isIphone = !ipad && ua.match(/(iPhone\sOS)\s([\d_]+)/),
+						isAndroid = ua.match(/(Android)\s+([\d.]+)/),
+						isMobile = isIphone || isAndroid;
+
+					function set_video_attr(id){
+						var height = document.body.clientHeight
+						var width = document.body.clientWidth
+						var video_item = document.getElementById(id);
+
+						if (height / width < 0.56){
+							video_item.setAttribute('width', '100%');
+							video_item.setAttribute('height', 'auto');
+						} else {
+							video_item.setAttribute('height', '100%');
+							video_item.setAttribute('width', 'auto');
+						}
+					}
+
+					fetch('https://uipv4.zywvvd.com:33037/wallpaper-pair')
+					  .then(response => response.json()) // 解析JSON数据
+					  .then(data => {
+						console.log('获取链接成功');
+						video_url = data[0][0]
+						pre_show_image_url = data[0][1]
+
+						banner_obj = document.getElementById("banner")
+						banner_obj.style.cssText = "background: url('" + pre_show_image_url + "') no-repeat;"
+
+						vvd_banner_obj = document.getElementById("vvd_banner_img")
+						vvd_banner_content = "<img id='banner_img_item' src='" + pre_show_image_url + "'style='position: fixed; z-index: -999'>"
+						vvd_banner_obj.innerHTML = vvd_banner_content 
+
+						if (!isMobile) {
+							video_html_res = "<video id='video_item' style='position: fixed; z-index: -888;'  muted='muted' src=" + video_url + " autoplay='autoplay' loop='loop'></video>"
+							document.getElementById("banner_video_insert").innerHTML = video_html_res;
+							set_video_attr('video_item')
+							set_video_attr('banner_img_item')
+						}
+					    
+					  })
+					  .catch((error) => {
+					    console.error('请求失败,尝试本地获取背景图像：', error);
+	    					$.getJSON('/vvd_js/video_url.json', function(data){
+
+							var video_list_length = data.length
+							var seed = Math.random()
+							index = Math.floor(seed * video_list_length)
+
+							video_url = data[index][0]
+							pre_show_image_url = data[index][1]
+
+							banner_obj = document.getElementById("banner")
+							banner_obj.style.cssText = "background: url('" + pre_show_image_url + "') no-repeat;"
+
+							vvd_banner_obj = document.getElementById("vvd_banner_img")
+							vvd_banner_content = "<img id='banner_img_item' src='" + pre_show_image_url + "'style='position: fixed; z-index: -999'>"
+							vvd_banner_obj.innerHTML = vvd_banner_content 
+
+							if (!isMobile) {
+								video_html_res = "<video id='video_item' style='position: fixed; z-index: -888;'  muted='muted' src=" + video_url + " autoplay='autoplay' loop='loop'></video>"
+								document.getElementById("banner_video_insert").innerHTML = video_html_res;
+								set_video_attr('video_item')
+								set_video_attr('banner_img_item')
+							}
+						});
+					  });
+
+
+
+
+
+
+					if (!isMobile){
+						window.onresize = function(){
+							set_video_attr('video_item')
+							set_video_attr('banner_img_item')
+							}
+						}
+				</script>
+
+			
+
+
+			
+			</div>
+		</div>
+    </div>
+
+  </header>
+
+  <main>
+    
+      
+
+
+
+<div class="container-fluid nopadding-x">
+  <div class="row nomargin-x">
+    <div class="side-col d-none d-lg-block col-lg-2">
+      
+
+    </div>
+
+    <div class="col-lg-8 nopadding-x-md">
+      <div class="container nopadding-x-md" id="board-ctn">
+        <div id="board">
+          <article class="post-content mx-auto">
+
+            <!-- <h1 id="seo-header">SuperGlue 使用图神经网络学习特征匹配</h1> -->
+
+            
+              <p id="updated-time" class="note note-info" style="">
+                
+                  
+                    <!-- compatible with older versions-->
+                    本文最后更新于：2025年11月9日 晚上
+                  
+                
+              </p>
+            
+            
+              <div class="markdown-body">
+                
+                <blockquote>
+<p>SuperGlue 是 Magic Leap 完成的 CVPR 2020 研究项目, 用于为 SuperPoint 基础上进行描述子特征匹配。本文记录相关内容。</p>
+</blockquote>
+<span id="more"></span>
+<p><img src="https://uipv4.zywvvd.com:33030/HexoFiles/vvd_image_files/202508061014717.png" srcset="/img/loading.gif" lazyload alt=""></p>
+<h3 id="简介">简介</h3>
+<p>SuperGlue (SG) 是 Magic Leap 完成的 CVPR 2020 研究项目。SuperGlue 网络是一个图神经网络，结合了最优匹配层，经过训练可以对两组稀疏图像特征进行匹配。该存储库包括 PyTorch 代码和预训练权重，用于在 SuperPoint 关键点和描述符之上运行 SuperGlue 匹配网络。</p>
+<p>SuperGlue 是一种图神经网络，可同时执行上下文聚合、匹配和局部特征过滤，以实现宽基线姿态估计。它速度快、可解释，并且在室内和室外都非常可靠。它通过共同寻找对应关系并拒绝不可匹配的点来匹配两组局部特征。 通过求解可微最优传输问题来估计分配，其成本由图神经网络预测。我们引入了一种基于注意力的灵活上下文聚合机制，使 SuperGlue 能够联合推理底层 3D 场景和特征分配。与传统的手工设计启发式方法相比，我们的技术通过图像对的端到端训练来学习 3D 世界的几何变换和规律性。SuperGlue 优于其他学习方法，并在具有挑战性的现实世界室内和室外环境中的姿势估计任务中取得了最先进的结果。所提出的方法在现代 GPU 上实时进行匹配，并且可以很容易地集成到现代 SfM 或 SLAM 系统中。</p>
+<ul>
+<li>官方网站：<a target="_blank" rel="noopener" href="https://psarlin.com/superglue/">https://psarlin.com/superglue/</a></li>
+<li>原始论文：<a target="_blank" rel="noopener" href="https://arxiv.org/abs/1911.11763">https://arxiv.org/abs/1911.11763</a></li>
+<li>官方仓库：<a target="_blank" rel="noopener" href="https://github.com/magicleap/SuperGluePretrainedNetwork">https://github.com/magicleap/SuperGluePretrainedNetwork</a></li>
+<li>视频链接：<a target="_blank" rel="noopener" href="https://youtu.be/95Eysm0IeB0">https://youtu.be/95Eysm0IeB0</a></li>
+</ul>
+<p><img src="https://uipv4.zywvvd.com:33030/HexoFiles/gif/super-glue-1.gif" srcset="/img/loading.gif" lazyload alt=""></p>
+<h3 id="功能定位">功能定位</h3>
+<p><img src="https://uipv4.zywvvd.com:33030/HexoFiles/vvd_image_files/202508061050229.png" srcset="/img/loading.gif" lazyload alt=""></p>
+<p>上图所示是完整的图片匹配任务流程，被分为前端、中端和后端三部分，其中SG主要在<strong>中端</strong>发挥作用。</p>
+<p>SG将学习特征匹配（learning feature matching）视为求解两个本地特征集合之间的部分分配（partial assignment）问题。</p>
+<p>作者从经典图论的线性分配（linear assignment）出发，之后拓展到可以用可微方法求解的最优运输问题（optimal transport），其中成本函数通过图神经网络预测获得。启发自Transformer，即注意力机制可以同时利用关键点空间联系和视觉表征。除此之外SG还通过大量标记过的图像对学习到了用于姿态重建的先验知识。</p>
+<h3 id="核心思想">核心思想</h3>
+<p>提出一种基于图神经网络的特征点匹配方法，把图像中的特征点看作图的节点，通过注意力机制聚合特征信息，得到用于匹配的特征向量。然后把匹配问题看作一个可微的最优运输问题（differentiable optimal transport problem），利用 Sinkhorn Algorithm 算法进行求解。</p>
+<p>整个框架由两个主要模块组成：注意力GNN以及最优匹配层。其中注意力GNN将特征点以及描述子编码成为一个向量（该向量可以理解为特征匹配向量），随后利用自我注意力以及交叉注意力来回增强（重复𝐿次）这个向量𝑓的特征匹配性能；随后进入最优匹配层，通过计算特征匹配向量的内积得到匹配度得分矩阵，然后通过Sinkhorn算法（迭代𝑇次）解算出最优特征分配矩阵。</p>
+<p>整个算法的处理流程如下图所示：<br>
+<img src="https://uipv4.zywvvd.com:33030/HexoFiles/vvd_image_files/202508061048446.png" srcset="/img/loading.gif" lazyload alt=""></p>
+<p><img src="https://uipv4.zywvvd.com:33030/HexoFiles/vvd_image_files/202508061111115.png" srcset="/img/loading.gif" lazyload alt=""></p>
+<p>设有一对输入图片 $A, B$ ，其中各自具有关键点集合 $p$  和相应的视觉描述子（descriptor）  $d$ 。将这两者合并起来 $(p,d)$ 作为本地特征。每个关键点包含点坐标 $x,y$  和可信度 $c$ ，视觉描述子由 SuperPoint 之类的CNN获得(或者是传统特征SIFT)。第 $i$ 个位置坐标 $p_i:=(x,y,c)$ 经过一个由多层感知机构成的编码器处理后与特征描述向量 $d_i$ 相加，得到图神经网络的一个节点 $x_i$ ，该节点被称作局部特征图 . $A$  有 $M$ 个本地特征，而图 $B$ 有 $N$ 个。</p>
+
+$$
+\mathbf{x}_{i}=\mathbf{d}_{i}+\mathrm{MLP}_{\mathrm{enc}}\left(\mathbf{p}_{i}\right)
+$$
+
+<p>为了获取上下文环境信息，本文采用图神经网络对特征信息进行聚合。本文提出一种多重图神经网络结构，将原图和待匹配图像中的特征点放在一起构成一个完整的图（graph），图中包含两种类型的无向边，一种是图像内部的边（Intra-image edges）也就是原图或待匹配图像内部特征点之间的连线，另一种是图像之间的边（Inter-image edges），即原图中的特征点和待匹配图像中的特征点之间的连线。因为包含两种类型的无向边，因此称为多重图神经网络。</p>
+<p>SG希望求解一种分配方法，实现从A的本地特征到B的本地特征之间的关联，于是构造一个M×N矩阵，矩阵元素是[0,1]的的值描述关键点之间的关联可信度。并定义了两个限制条件：</p>
+<ol>
+<li>每个关键点最多只能和另图中一个点关联</li>
+<li>由于感知器的融合和失误，允许有的点没有关联。</li>
+</ol>
+<p>我们给出一个软分配矩阵 $𝑃∈[0,1], 𝑀×𝑁$，根据上述约束，我们有如下关系：</p>
+
+$$
+\mathbf{P} \mathbf{1}_{N} \leq \mathbf{1}_{M} \quad \text { and } \quad
+\mathbf{P}^{\top} \mathbf{1}_{M} \leq \mathbf{1}_{N}
+$$
+
+<p><img src="https://uipv4.zywvvd.com:33030/HexoFiles/vvd_image_files/202508061319132.png" srcset="/img/loading.gif" lazyload alt=""></p>
+<p>首先要理解分配矩阵𝑃是什么。𝑃的每一行代表来自于图𝐴中的某个特征点对应图𝐵的𝑁种匹配的可能性。如上图所示，图𝐴有3个特征点，图𝐵有4个特征点，那么这个分配矩阵的维度就是𝑃∈𝑅3×4。对于第0行，即图A的第0号特征点，它可能在图B中有4个匹配点，由上图种给出的软分配矩阵𝑃的第0行数据可以看到，最大是数字是0.6，即图𝐴的第0号特征与图B的第1号特征是匹配的。相应的，对于𝑃的第0列，最大是数字是0.5，即图𝐵的第0号特征与图𝐴的第1号特征是匹配的，这看起来非常合理。</p>
+<p>这里需要注意的是，这个𝑃是一个所谓的“软分配”矩阵，所以其中的元素并非是绝对的0或1。对于𝑃还需要满足规定：在理想情况下𝑃的行之和或者列之和等于1。此处的“理想情况”指的是图𝐴与图𝐵中的所有特征都可以在对方的图像上找到对应关系。但是实际情况下，可能存在遮挡/视角变化/检测噪声等因素的干扰，大概率会出现图𝐴在图𝐵中找不到对应的匹配点，反之亦然。</p>
+<p><img src="https://uipv4.zywvvd.com:33030/HexoFiles/vvd_image_files/202508061321943.png" srcset="/img/loading.gif" lazyload alt=""></p>
+<p>如上图所示，对于𝑃的第3列，即图𝐵的第3号特征而言，它并没有找到于其对应的特征匹配，所以对应的第3列之和是小于1的，确切来说对于一个调校的特别好的网络而言，第3列之和接近于0。</p>
+<p>但是我们在做优化问题时并不喜欢不等于，所以作者后续对得分矩阵以及对应的分配矩阵进行了增广，让上述约束变成了=。</p>
+<h3 id="注意力GNN">注意力GNN</h3>
+<p>这里有个有意思的说法：特征点的位置以及视觉外观能够提高其特异性。另外一个具有启发性的观点是人类在寻找匹配点过程是具有参考价值的。想一下人类是怎样进行特征匹配的，人类通过来回浏览两个图像试探性筛选匹配关键点，并进行来回检查（如果不是匹配的特征，观察一下周围有没有匹配的更好的点，直到找到匹配点/或没有匹配）。上述过程人们通过主动寻找上下文来增加特征点特异性，这样可以排除一些具有奇异性的匹配。本文的核心就是利用基于注意力机制的GNN实现上述过程，即模拟了人类进行特征匹配。</p>
+<h4 id="特征点Encode">特征点Encode</h4>
+<p>首先根据上述说法，特征点位置+描述会获得更强的特征匹配特异性，所以这里将特征点的位置以及描述子合并成每个特征点𝑖的初始表示 $𝑥_𝑖$</p>
+
+$$
+^{(0)} \mathbf{x}_{i}=\mathbf{d}_{i}+\mathbf{M L
+P}_{\mathrm{enc}}\left(\mathbf{p}_{i}\right)
+$$
+
+<p>其中MLP表示多层感知机（Multilayer Perceptron ，MLP）此处用于对低维特征升维，上式实际上是将视觉外观以及特征点位置进行了耦合，正因如此，这使得该Encode形式使得后续的注意力机制能够充分考虑到特征的外观以及位置相似度。</p>
+<p>特征点编码代码如下：</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br></pre></td><td class="code"><pre><code class="hljs python"><span class="hljs-keyword">class</span> <span class="hljs-title class_">KeypointEncoder</span>(nn.Module):<br>    <span class="hljs-string">&quot;&quot;&quot; Joint encoding of visual appearance and location using MLPs&quot;&quot;&quot;</span><br>    <span class="hljs-string">&quot;&quot;&quot; feature_dim: 256, layers: [32, 64, 128, 256]&quot;&quot;&quot;</span><br>    <span class="hljs-keyword">def</span> <span class="hljs-title function_">__init__</span>(<span class="hljs-params">self, feature_dim, layers</span>):<br>        <span class="hljs-built_in">super</span>().__init__()<br>        self.encoder = MLP([<span class="hljs-number">3</span>] + layers + [feature_dim]) <span class="hljs-comment"># MLP([3, 32, 64, 128, 256, 256])</span><br>        nn.init.constant_(self.encoder[-<span class="hljs-number">1</span>].bias, <span class="hljs-number">0.0</span>)<br><br>    <span class="hljs-keyword">def</span> <span class="hljs-title function_">forward</span>(<span class="hljs-params">self, kpts, scores</span>):<br>        inputs = [kpts.transpose(<span class="hljs-number">1</span>, <span class="hljs-number">2</span>), scores.unsqueeze(<span class="hljs-number">1</span>)]<br>        <span class="hljs-keyword">return</span> self.encoder(torch.cat(inputs, dim=<span class="hljs-number">1</span>))    <span class="hljs-comment"># DIM: 1x256xM</span><br>    <br><span class="hljs-keyword">def</span> <span class="hljs-title function_">MLP</span>(<span class="hljs-params">channels: <span class="hljs-built_in">list</span>, do_bn=<span class="hljs-literal">True</span></span>):<br>    <span class="hljs-string">&quot;&quot;&quot; Multi-layer perceptron &quot;&quot;&quot;</span><br>    n = <span class="hljs-built_in">len</span>(channels)<br>    layers = []<br>    <span class="hljs-keyword">for</span> i <span class="hljs-keyword">in</span> <span class="hljs-built_in">range</span>(<span class="hljs-number">1</span>, n):<br>        layers.append(<br>            nn.Conv1d(channels[i - <span class="hljs-number">1</span>], channels[i], kernel_size=<span class="hljs-number">1</span>, bias=<span class="hljs-literal">True</span>))<br>        <span class="hljs-keyword">if</span> i &lt; (n-<span class="hljs-number">1</span>):<br>            <span class="hljs-keyword">if</span> do_bn:<br>                layers.append(nn.BatchNorm1d(channels[i]))<br>            layers.append(nn.ReLU())<br>    <span class="hljs-keyword">return</span> nn.Sequential(*layers)<br></code></pre></td></tr></table></figure>
+<p>将描述子与编码后的特征点相加可以得到后续多层GNN的输入的初值：</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><code class="hljs python"><span class="hljs-comment"># Keypoint MLP encoder.</span><br>desc0 = desc0 + self.kenc(kpts0, data[<span class="hljs-string">&#x27;scores0&#x27;</span>]) <span class="hljs-comment">#图A</span><br>desc1 = desc1 + self.kenc(kpts1, data[<span class="hljs-string">&#x27;scores1&#x27;</span>]) <span class="hljs-comment">#图B</span><br></code></pre></td></tr></table></figure>
+<h4 id="多层GNN">多层GNN</h4>
+<p>考虑一个单一的完全图，它的节点是图像中每个特征点，这个图包括两种不同的无向边：一种是“Intra-image edges”（self edge）𝐸self ，它连接了来自图像内部特征点；另外一种是“Inter-image edges”（cross edge）𝐸cross ，它连接本图特征点𝑖与另外一张图所有特征点。</p>
+<p>令$(ℓ)𝑥_𝑖^𝐴$表示为图像 𝐴 上第 𝑖 个元素在第 ℓ 层的中间表达形式。信息（message）$𝑚_{𝐸→𝑖}$是聚合了所有特征点 ${𝑗:(𝑖,𝑗)∈𝐸}$之后点结果（将自我注意力以及交叉注意力进行聚合），其中 $𝐸∈{𝐸_{self },𝐸_{cross} }$，所以图像 𝐴 中所有特征 𝑖 传递更新的残差信息（residual message）是：</p>
+
+$$
+^{(\ell+1)} \mathbf{x}_{i}^{A}=^{(\ell)}
+\mathbf{x}_{i}^{A}+\operatorname{MLP}\left(\left[^{(\ell)}
+\mathbf{x}_{i}^{A} \| \mathbf{m}_{\mathcal{E} \rightarrow
+i}\right]\right)
+$$
+
+<p>其中[⋅‖⋅]表示串联操作。同样的，图像𝐵上所有特征有类似的更新形式。可以看到self 以及cross edges绑在一起并交替进行更新，先self后cross，作者提到共有固定数量的𝐿层。</p>
+<p>需要说明的是，这里的self/cross-attention实际上就是模拟了人类来回浏览匹配的过程，其中self-attention是为了使得特征更加具有匹配特异性，而cross-attention是为了用这些具有特异性的点做图像间特征的相似度比较。</p>
+<ul>
+<li>代码如下：</li>
+</ul>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br></pre></td><td class="code"><pre><code class="hljs python"><span class="hljs-keyword">class</span> <span class="hljs-title class_">AttentionalGNN</span>(nn.Module):<br>    <span class="hljs-keyword">def</span> <span class="hljs-title function_">__init__</span>(<span class="hljs-params">self, feature_dim: <span class="hljs-built_in">int</span>, layer_names: <span class="hljs-built_in">list</span></span>):<br>        <span class="hljs-built_in">super</span>().__init__()<br>        self.layers = nn.ModuleList([<br>            AttentionalPropagation(feature_dim, <span class="hljs-number">4</span>)<br>            <span class="hljs-keyword">for</span> _ <span class="hljs-keyword">in</span> <span class="hljs-built_in">range</span>(<span class="hljs-built_in">len</span>(layer_names))])<br>        self.names = layer_names<br><br>    <span class="hljs-keyword">def</span> <span class="hljs-title function_">forward</span>(<span class="hljs-params">self, desc0, desc1</span>):<br>        <span class="hljs-keyword">for</span> layer, name <span class="hljs-keyword">in</span> <span class="hljs-built_in">zip</span>(self.layers, self.names):<br>            layer.attn.prob = []<br>            <span class="hljs-keyword">if</span> name == <span class="hljs-string">&#x27;cross&#x27;</span>:<br>                src0, src1 = desc1, desc0<br>            <span class="hljs-keyword">else</span>:  <span class="hljs-comment"># if name == &#x27;self&#x27;:</span><br>                src0, src1 = desc0, desc1<br>            delta0, delta1 = layer(desc0, src0), layer(desc1, src1)<br>            desc0, desc1 = (desc0 + delta0), (desc1 + delta1)<br>        <span class="hljs-keyword">return</span> desc0, desc1<br><br><span class="hljs-keyword">class</span> <span class="hljs-title class_">AttentionalPropagation</span>(nn.Module):<br>    <span class="hljs-keyword">def</span> <span class="hljs-title function_">__init__</span>(<span class="hljs-params">self, feature_dim: <span class="hljs-built_in">int</span>, num_heads: <span class="hljs-built_in">int</span></span>):<br>        <span class="hljs-built_in">super</span>().__init__()<br>        self.attn = MultiHeadedAttention(num_heads, feature_dim)<br>        self.mlp = MLP([feature_dim*<span class="hljs-number">2</span>, feature_dim*<span class="hljs-number">2</span>, feature_dim]) <span class="hljs-comment">#其中MLP隐含层配置[512,512,256] </span><br>        nn.init.constant_(self.mlp[-<span class="hljs-number">1</span>].bias, <span class="hljs-number">0.0</span>)<br><br>    <span class="hljs-keyword">def</span> <span class="hljs-title function_">forward</span>(<span class="hljs-params">self, x, source</span>):<br>        message = self.attn(x, source, source)           <span class="hljs-comment"># q,k,v, DIM: 1x256xM</span><br>        <span class="hljs-keyword">return</span> self.mlp(torch.cat([x, message], dim=<span class="hljs-number">1</span>))  <span class="hljs-comment">#DIM: 1x256xM</span><br></code></pre></td></tr></table></figure>
+<h4 id="Attentional-Aggregation">Attentional Aggregation</h4>
+<p>这一小节介绍上述介绍种的message是如何获得的。</p>
+<p>文章的亮点之一就是将注意力机制用于特征匹配，这到底是如何实现的呢？</p>
+<p>作者提到，注意力机制将self以及cross信息聚合得到$𝑚_{𝐸→𝑖}$。其中 self edge 利用了self-attention，cross edge利用了cross-attention。类似于数据库检索，我们想要查询 $𝑞_𝑖$ 基于元素的属性即键 $𝑘_𝑖$，检索到了某些元素的值 $𝑣_𝑗$。</p>
+
+$$
+\mathbf{m}_{\mathcal{E} \rightarrow i}=\sum_{j:(i, j) \in \mathcal{E}}
+\alpha_{i j} \mathbf{v}_{j}
+$$
+其中注意力权重 $𝛼_{𝑖𝑗}$ 是查询与检索到对象键值相似度的Softmax即，$\alpha_{i
+j}=\operatorname{Softmax}_{j}\left(\mathbf{q}_{i}^{\top}
+\mathbf{k}_{j}\right)$
+
+这里需要解释一下键（key），query以及值（value）。令待查询点特征点𝑖位于查询图像𝑄上，所有的源特征点位于图像𝑆上，其中 $(𝑄,𝑆)∈\{𝐴,𝐵\}^2$，于是我们可以将 key，query 以及 value 写成下述形式：
+$$
+\begin{aligned} \mathbf{q}_{i} &=\mathbf{W}_{1}^{(\ell)}
+\mathbf{x}_{i}^{Q}+\mathbf{b}_{1} \\\left[\begin{array}{l}\mathbf{k}_{j}
+\\ \mathbf{v}_{j}\end{array}\right]
+&=\left[\begin{array}{l}\mathbf{W}_{2} \\
+\mathbf{W}_{3}\end{array}\right](\ell)
+\mathbf{x}_{j}^{S}+\left[\begin{array}{l}\mathbf{b}_{2} \\
+\mathbf{b}_{3}\end{array}\right] \end{aligned}
+$$
+
+<p>每一层ℓ都有其对应的一套投影参数，这些参数被所有的特征点共享。理解一下：此处的𝑞𝑖对应于待查询图像上某个特征点𝑖的一种表示（self-attention映射），$𝑘_𝑗$以及 $𝑣_𝑗$ 都是来自于召回的图像特征点𝑗的一种表示（映射）；$𝛼_{𝑖𝑗}$ 表示这两个特征相似度，它是由 $𝑞_𝑖$ 以及 $𝑘_𝑗$ 计算得到（在这里体现了cross-attention的思想），越大就表示这两个特征越相似，然后利用该相似度对 $𝑣_𝑗$ 加权求和得到 $𝑚_{𝐸→𝑖}$，这就是所谓的<strong>特征聚合</strong>。</p>
+<p>上面提到的这些概念有些难以理解，作者特意对上述过程进行了可视化，self-attention就是一张图像内部的边相连进行聚合，它能够更加关注具有特异性的所有点，且并不仅局限于其邻域位置特征；cross-attention做的就是匹配那些外观相似的两张图像见的特征。</p>
+<p><img src="https://uipv4.zywvvd.com:33030/HexoFiles/vvd_image_files/202508061337171.png" srcset="/img/loading.gif" lazyload alt=""></p>
+<p><img src="https://uipv4.zywvvd.com:33030/HexoFiles/vvd_image_files/202508061339531.png" srcset="/img/loading.gif" lazyload alt=""></p>
+<p>下图展示了每层self-attention以及across-attention中权重 $𝛼_{𝑖𝑗}$的结果。按照匹配从难到易，文中画出了3个不同的特征点作为演示，绿色特征点（容易），蓝色特征点（中等）以及红色特征点（困难）。对于self-attention，初始时它（某个特征）关联了图像上所有的点（首行），然后逐渐地关注在与该特征相邻近的特征点（尾行）。同样地，cross-attention主要关注去匹配可能的特征点，随着层的增加，它逐渐减少匹配点集直到收敛。绿色特征点在第9层就已经趋近收敛，而红色特征直到最后才能趋紧收敛（匹配）。可以看到无论是self还是cross，它们关注的区域都会随着网络层深度的增加而逐渐缩小。</p>
+<p><img src="https://uipv4.zywvvd.com:33030/HexoFiles/vvd_image_files/202508061342663.png" srcset="/img/loading.gif" lazyload alt=""></p>
+<p>经过了𝐿次self/cross-attention后就可以得到注意力GNN的输出，对于图像𝐴我们有：</p>
+
+$$
+\mathbf{f}_{i}^{A}=\mathbf{W} \cdot^{(L)} \mathbf{x}_{i}^{A}+\mathbf{b},
+\quad \forall i \in \mathcal{A}
+$$
+
+<p>我们可以把$𝑓_𝑖^𝐴$理解为<strong>匹配描述子</strong>（类比特征描述子），专门为特征匹配服务，对于图像𝐵具有类似的形式。</p>
+<h3 id="匹配层（Optimal-matching-layer）">匹配层（Optimal matching layer）</h3>
+<p>接下来的任务就是去构建软分配矩阵𝑃。对于一般的图匹配流程，这个分配矩阵可以通过计算一个得分矩阵$\mathbf{S} \in \mathbb{R}^{M \times<br>
+N}$（用来表示一些潜在的匹配）来实现。具体而言，通过最大化总体得分 $\sum_{i, j} \mathbf{S}<em>{i, j} \mathbf{P}</em>{i,<br>
+j}$ 即可得到这个分配矩阵𝑃，其中要注意的是𝑃是有约束的。</p>
+<h4 id="匹配得分预测">匹配得分预测</h4>
+<p><img src="https://uipv4.zywvvd.com:33030/HexoFiles/vvd_image_files/202508061344379.png" srcset="/img/loading.gif" lazyload alt=""></p>
+
+
+作者使用GNN聚合得到的$\mathbf{f}_{i}^{A}$以及$\mathbf{f}_{i}^{B}$计算内积得到得分：
+$$
+\mathbf{S}_{i, j}=<\mathbf{f}_{i}^{A}, \mathbf{f}_{j}^{B}>,
+\forall(i, j) \in \mathcal{A} \times \mathcal{B}
+$$
+
+
+<h4 id="遮挡以及可见性">遮挡以及可见性</h4>
+<p>类似于SuperPoint在提取特征点时增加了一层dustbin通道，专门为了应对图像中没有特征点情况。本文借鉴了该思想，在得分矩阵$𝑆$的最后一列/行设置为dustbins可以得到$\overline{\mathbf{S}}$，这样做的作用在于可以滤出错误的匹配点。</p>
+
+$$
+\overline{\mathbf{S}}_{i, N+1}=\overline{\mathbf{S}}_{M+1,
+j}=\overline{\mathbf{S}}_{M+1, N+1}=z \in \mathbb{R}
+$$
+图像𝐴上的特征点被分配到图像𝐵上某个特征匹配或者被分配到dustbin，这就意味着每个dustbin有𝑁,𝑀个匹配，因此软分配矩阵有如下约束：
+$$
+\overline{\mathbf{P}} \mathbf{1}_{N+1}=\mathbf{a} \quad\text {  and }
+\quad \overline{\mathbf{P}}^{\top} \mathbf{1}_{M+1}=\mathbf{b}
+$$
+其中$\mathbf{a}=\left[\begin{array}{ll}\mathbf{1}_{M}^{\top}
+& N\end{array}\right]^{\top}$，$\mathbf{b}=\left[\begin{array}{ll}\mathbf{1}_{N}^{\top}
+& M\end{array}\right]^{\top}$。𝑎 **表示图𝐴中特征点以及dustbin的期望匹配数**，即正常情况下，图𝐴中每个特征点在图𝐵中仅且仅有1个匹配点，但是对于图𝐴的dustbin而言，它可能匹配到图B的任何一个特征点，即有𝑁种可能性，所以$\mathbf{a} =
+\left[\begin{array}{ll}\mathbf{1}_{M}^{\top} &
+N\end{array}\right]^{\top}$。
+<blockquote>
+<p>作者Sarlin在这个<a target="_blank" rel="noopener" href="https://github.com/magicleap/SuperGluePretrainedNetwork/issues/36">问题</a>中提到，上式的约束项之所以被替换成=，是因为做了类似于<code>松弛化</code>的操作，这么做的好处是将原本难以优化的不等问题变为恒等约束（原话为&quot;These are like slack variables that enforce the equality constraint&quot;），同时可以比较好的应对没有匹配的特征或者错误的特征（这其实是<strong>增加dustbin通道的原因，它起到滤除外点的作用</strong>）。</p>
+</blockquote>
+<h4 id="Sinkhorn-Algorithm">Sinkhorn Algorithm</h4>
+<p>求解最大化总体得分可由“Sinkhorn Algorithm”进行求解。</p>
+<p><img src="https://uipv4.zywvvd.com:33030/HexoFiles/vvd_image_files/202508061351962.png" srcset="/img/loading.gif" lazyload alt=""></p>
+<p>如上图所示，蓝色背景区域的几个公式给出了针对该特征匹配问题的“代价函数”，准确来说应该是<strong>负的代价函数</strong>。因为原始的最优传输问题中$\mathbf{\bar{S}}$扮演的角色应该是<code>cost matrix</code>，即代价矩阵；对比之下，本例中 $\mathbf{\bar{S}}$ 为匹配描述子的余弦相似度，这正好与代价矩阵相反。正因如此，相较于原始最优传输问题的最小化代价函数，本例的目标是最大化匹配描述子的相似度，所以上式为max而非min。</p>
+<p>至于如何求解最优传输问题，<code>sinkhorn algorithm</code>算法能够以一种迭代的方式对该问题进行求解，具体的方法是：</p>
+<ul>
+<li>给定：匹配描述子的余弦相似度矩阵 $\bar{S}$，两个分布 𝑎 和 𝑏，正则项𝜆（越大表示分配越均匀，默认为1）</li>
+<li>初始化：分配矩阵：$\mathbf{\bar{P}} =<br>
+\exp^{-\lambda \mathbf{\bar{S}}}$ 重复：
+<ul>
+<li>缩放行，使得行之和为𝑎.</li>
+<li>缩放列，使得列之和为𝑏. 直至收敛.</li>
+</ul>
+</li>
+</ul>
+<p>这里给出一个简单的例子，一步步阐述<code>sinkhorn algorithm</code>是如何运作的。</p>
+<ul>
+<li>首先给定输入，并初始化分配矩阵（注，为方便起见，分配矩阵被初始化为代价矩阵 $\mathbf{\bar{P}}<br>
+=\mathbf{\bar{S}}$，实际情况下是 $\mathbf{\bar{P}} = \exp^{-\lambda<br>
+\mathbf{\bar{S}}}$）</li>
+</ul>
+<p><img src="https://uipv4.zywvvd.com:33030/HexoFiles/vvd_image_files/202508061418500.png" srcset="/img/loading.gif" lazyload alt=""></p>
+<ul>
+<li>步骤1：计算目前的行之和； 步骤2：对于P矩阵的每一行，分别除以上述行之和并乘目标行之和a；</li>
+</ul>
+<p><img src="https://uipv4.zywvvd.com:33030/HexoFiles/vvd_image_files/202508061420835.png" srcset="/img/loading.gif" lazyload alt=""></p>
+<ul>
+<li>步骤3：计算目前的列之和； 步骤4：对于P矩阵的每一列，分别除以上述列之和并乘目标列之和b；</li>
+</ul>
+<p><img src="https://uipv4.zywvvd.com:33030/HexoFiles/vvd_image_files/202508061421963.png" srcset="/img/loading.gif" lazyload alt=""></p>
+<p>对行列重复执行1-4步，经过4次迭代后分配矩阵的行之和就与𝑎一致，列之和与𝑏一致。</p>
+<p><img src="https://uipv4.zywvvd.com:33030/HexoFiles/vvd_image_files/202508061422276.png" srcset="/img/loading.gif" lazyload alt=""></p>
+<p>作者Sarlin提供的代码如下：</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br></pre></td><td class="code"><pre><code class="hljs python"><span class="hljs-keyword">def</span> <span class="hljs-title function_">log_optimal_transport</span>(<span class="hljs-params">scores: torch.Tensor, alpha: torch.Tensor, iters: <span class="hljs-built_in">int</span></span>) -&gt; torch.Tensor:<br>    <span class="hljs-string">&quot;&quot;&quot; Perform Differentiable Optimal Transport in Log-space for stability&quot;&quot;&quot;</span><br>    b, m, n = scores.shape<br>    one = scores.new_tensor(<span class="hljs-number">1</span>)<br>    ms, ns = (m*one).to(scores), (n*one).to(scores)<br><br>    bins0 = alpha.expand(b, m, <span class="hljs-number">1</span>)<br>    bins1 = alpha.expand(b, <span class="hljs-number">1</span>, n)<br>    alpha = alpha.expand(b, <span class="hljs-number">1</span>, <span class="hljs-number">1</span>)<br><br>    couplings = torch.cat([torch.cat([scores, bins0], -<span class="hljs-number">1</span>),<br>                           torch.cat([bins1, alpha], -<span class="hljs-number">1</span>)], <span class="hljs-number">1</span>)<br><br>    norm = - (ms + ns).log()<br>    log_mu = torch.cat([norm.expand(m), ns.log()[<span class="hljs-literal">None</span>] + norm])<br>    log_nu = torch.cat([norm.expand(n), ms.log()[<span class="hljs-literal">None</span>] + norm])<br>    log_mu, log_nu = log_mu[<span class="hljs-literal">None</span>].expand(b, -<span class="hljs-number">1</span>), log_nu[<span class="hljs-literal">None</span>].expand(b, -<span class="hljs-number">1</span>)<br><br>    Z = log_sinkhorn_iterations(couplings, log_mu, log_nu, iters)<br>    Z = Z - norm  <span class="hljs-comment"># multiply probabilities by M+N</span><br>    <span class="hljs-keyword">return</span> Z<br><span class="hljs-keyword">def</span> <span class="hljs-title function_">log_sinkhorn_iterations</span>(<span class="hljs-params">Z, log_mu, log_nu, iters: <span class="hljs-built_in">int</span></span>):<br>    <span class="hljs-string">&quot;&quot;&quot; Perform Sinkhorn Normalization in Log-space for stability&quot;&quot;&quot;</span><br>    u, v = torch.zeros_like(log_mu), torch.zeros_like(log_nu)<br>    <span class="hljs-keyword">for</span> _ <span class="hljs-keyword">in</span> <span class="hljs-built_in">range</span>(iters):<br>        u = log_mu - torch.logsumexp(Z + v.unsqueeze(<span class="hljs-number">1</span>), dim=<span class="hljs-number">2</span>)<br>        v = log_nu - torch.logsumexp(Z + u.unsqueeze(<span class="hljs-number">2</span>), dim=<span class="hljs-number">1</span>)<br>    <span class="hljs-keyword">return</span> Z + u.unsqueeze(<span class="hljs-number">2</span>) + v.unsqueeze(<span class="hljs-number">1</span>)    <br></code></pre></td></tr></table></figure>
+<h3 id="损失函数">损失函数</h3>
+
+$$
+\begin{aligned}\mathrm{Loss}&=-\sum_{(i,j)\in\mathcal{M}}\log\bar{\mathbf{P}}_{i,j}\\&-\sum_{i\in\mathcal{I}}\log\bar{\mathbf{P}}_{i,N+1}-\sum_{j\in\mathcal{J}}\log\bar{\mathbf{P}}_{M+1,j}.\end{aligned}
+$$
+
+
+<p>设计中图神经网络和最优匹配层都是可微的，这就让反向传播可以一直从最终的匹配结果一直到最初的视觉描述子。SG是基于ground truth（gt）匹配监督学习来的。argmin负log似然函数获得结果。</p>
+<h3 id="流程框图">流程框图</h3>
+<p><img src="https://uipv4.zywvvd.com:33030/HexoFiles/vvd_image_files/202508061436508.png" srcset="/img/loading.gif" lazyload alt=""></p>
+<h3 id="实验">实验</h3>
+<p>特征匹配的目的是为了解算出两帧之间的相对位姿，所以实验对比的一个指标就是<strong>单应矩阵</strong>估计，另外还有室内外的位姿估计。</p>
+<h4 id="单应矩阵估计">单应矩阵估计</h4>
+<p>能够获得非常高的匹配召回率（98.3%）同时获得超高的精度，比传统的暴力匹配都好了一大截。</p>
+<p><img src="https://uipv4.zywvvd.com:33030/HexoFiles/vvd_image_files/202508061424611.png" srcset="/img/loading.gif" lazyload alt=""></p>
+<h4 id="室内外位姿估计">室内外位姿估计</h4>
+<p>下表看来，大基线室内位姿估计也是相当棒，完胜传统算法。</p>
+<p><img src="https://uipv4.zywvvd.com:33030/HexoFiles/vvd_image_files/202508061426667.png" srcset="/img/loading.gif" lazyload alt=""></p>
+<h3 id="网络耗时">网络耗时</h3>
+<p>接下来放出大家比较关心的网络耗时，下图是在NVIDIA GeForce GTX 1080 GPU跑了500次的结果，512个点69ms（14.5fps），1024个点87ms（11.5fps）。</p>
+<p><img src="https://uipv4.zywvvd.com:33030/HexoFiles/vvd_image_files/202508061435932.png" srcset="/img/loading.gif" lazyload alt=""></p>
+<h3 id="更多匹配结果">更多匹配结果</h3>
+<p>第一列是SuperPoint+暴力匹配结果，第二列是SuperPoint+OAnet（ICCV 2019）结果，第三列是SuperPoint+SuperGlue结果。能看到SuperGlue惊人的特征匹配能力，尤其是在大视角变化时优势明显（红线表示错误匹配，绿线表示正确匹配）。</p>
+<p><img src="https://uipv4.zywvvd.com:33030/HexoFiles/vvd_image_files/202508061435040.png" srcset="/img/loading.gif" lazyload alt=""></p>
+<h3 id="改进点-Update-2022-05-17">改进点 (Update: 2022.05.17)</h3>
+<p>主要从<strong>改进特征编码形式，attention形式，改进最优传输问题的求解策略</strong>等角度进行展开。</p>
+<ul>
+<li><strong>A Unified Framework for Implicit Sinkhorn Differentiation</strong>，CVPR 2022，，分析了深度学习中任务中通用<code>Sinkhorn</code>层的隐含梯度的使用，文中指出SuperGlue中使用的是自动微分的<code>sinkhorn algorithm</code>，收敛速度可能较慢且容易出现OOM，而本算法能够解决该问题(不过并没有进行验证) <strong>[<a target="_blank" rel="noopener" href="https://github.com/marvin-eisenberger/implicit-sinkhorn">Code</a>]</strong></li>
+<li><strong>OpenGlue - Open Source Pipeline for Image Matching</strong>，arXiv 2022，复现了SuperGlue，包括训练以及推理过程，OpenGlue对基于图的匹配过程进行概况，形成了一套易替换和后续开发的模块和流程；此外基于上述流程对SuperGlue中attention等步骤进行改进；开源协议有更新，OpenGlue可商用 <strong>[<a target="_blank" rel="noopener" href="https://github.com/ucuapps/OpenGlue">Code</a>]</strong></li>
+<li><strong>MatchFormer: Interleaving Attention in Transformers for Feature Matching</strong>，arXiv 2022，改进的LoFTR， 将attention引入特征编码阶段，大幅度提升特征匹配在大视角变化时的匹配性能 <strong>[<a target="_blank" rel="noopener" href="https://github.com/jamycheung/MatchFormer">Code</a>]</strong></li>
+<li><strong>LoFTR: Detector-Free Local Feature Matching with Transformers</strong>, CVPR 2021，无特征匹配，匹配性能强劲 <strong>[<a target="_blank" rel="noopener" href="https://github.com/zju3dv/LoFTR">Code</a>]</strong></li>
+<li><strong>valgur/SuperGluePretrainedNetwork</strong>, 实现了 C++ 调用 SuperGlue：包含使用 <a target="_blank" rel="noopener" href="https://pytorch.org/docs/stable/generated/torch.jit.script.html">jit scripts</a> 将SuperPoint以及SuperGlue序列化，然后使用pytorch的 C++ 接口进行调用 <strong>[<a target="_blank" rel="noopener" href="https://github.com/valgur/SuperGluePretrainedNetwork">Code</a>]</strong></li>
+<li><strong>SuperGlue with Physarum Dynamics</strong>, 最优传输问题的求解由Sinkhorn Algorithm 替换成 <a target="_blank" rel="noopener" href="https://arxiv.org/abs/2004.14539">Physarum Dynamics solver</a> <strong>[<a target="_blank" rel="noopener" href="https://github.com/HeatherJiaZG/Superglue-with-Physarum-Dynamics">Code</a>]</strong></li>
+<li><strong>Superglue-Jittor</strong>，改进了图注意力机制中矩阵运算，采用分块优化的方式进行，降低了匹配过程中的显存占用；使用<code>dual-Softmax</code> 替换 <code>sinkhorn algorithm</code> <strong>[<a target="_blank" rel="noopener" href="https://github.com/smy-THU/superglue-jittor">Code</a>]</strong></li>
+<li><strong>SuperGlue PyTorch Implementation</strong>，pytorch复现SuperGlue <strong>[<a target="_blank" rel="noopener" href="https://github.com/HeatherJiaZG/SuperGlue-pytorch">Code</a>]</strong></li>
+<li><strong>MNNSuperGlue</strong>，MNN Superglue 关键点匹配C++实现 <strong>[<a target="_blank" rel="noopener" href="https://github.com/Hanson0910/MNNSuperGlue">Code</a>]</strong></li>
+</ul>
+<h3 id="原始论文">原始论文</h3>
+<iframe src='https://uipv4.zywvvd.com:33030/HexoFiles/js/vvd_js/pdfjs/web/viewer.html?file=https://uipv4.zywvvd.com:33030/HexoFiles/pdf/superglue.pdf' style='width:100%;height:900px'></iframe>
+<h3 id="参考资料">参考资料</h3>
+<ul>
+<li><a target="_blank" rel="noopener" href="https://psarlin.com/superglue/">https://psarlin.com/superglue/</a></li>
+<li><a target="_blank" rel="noopener" href="https://github.com/magicleap/SuperGluePretrainedNetwork">https://github.com/magicleap/SuperGluePretrainedNetwork</a></li>
+<li><a target="_blank" rel="noopener" href="https://vincentqin.tech/posts/superglue/">https://vincentqin.tech/posts/superglue/</a></li>
+<li><a target="_blank" rel="noopener" href="https://blog.csdn.net/qq_36104364/article/details/119911626">https://blog.csdn.net/qq_36104364/article/details/119911626</a></li>
+<li><a target="_blank" rel="noopener" href="https://zhuanlan.zhihu.com/p/494789871">https://zhuanlan.zhihu.com/p/494789871</a></li>
+</ul>
+<link rel="stylesheet" href="/css/spoiler.css" type="text/css"><script src="/js/spoiler.js" type="text/javascript" async></script>
+                
+
+
+				<br /><br />
+				<blockquote>
+					<p>文章链接：<br /> 
+					<a style="font-size: 0.85rem" target="_blank" rel="noopener" href="https://www.zywvvd.com/notes/study/image-processing/feature-extraction/superglue/superglue/">https://www.zywvvd.com/notes/study/image-processing/feature-extraction/superglue/superglue/</a>
+					</p>
+				</blockquote>
+
+
+              </div>
+            
+            <hr/>
+			
+			<!-- 添加打赏模块 -->
+			<div class="reward-container">
+				
+					<button id="rewardBtn" class="reward-btn">
+						 
+							❤ 打赏
+							
+					</button>
+					<p class="tea">“觉得不错的话，给点打赏吧 ୧(๑•̀⌄•́๑)૭”</p>
+					<div id="rewardImgContainer" class="reward-img-container">
+						<div class="singleImgContainer">
+							<img id="wechatImg" class="reward-img" src="https://uipv4.zywvvd.com:33030/HexoFiles/vvd_pc_upload/wechatpay.png" srcset="/img/loading.gif" lazyload alt="微信二维码">
+							<p class="wechatPay">微信支付</p>
+						</div>
+						<div class="singleImgContainer">
+							<img id="alipayImg" class="reward-img" src="https://uipv4.zywvvd.com:33030/HexoFiles/vvd_pc_upload/alipay.png" srcset="/img/loading.gif" lazyload alt="支付宝二维码">
+							<p class="aliPay">支付宝支付</p>
+						</div>
+					</div>
+				
+			</div>
+			
+            <div>
+              <div class="post-metas my-3">
+  
+    <div class="post-meta mr-3 d-flex align-items-center">
+      <i class="iconfont icon-category"></i>
+      
+
+<span class="category-chains">
+  
+  
+    
+      <span class="category-chain">
+        
+  <a href="/categories/Image-Processing/" class="category-chain-item">Image_Processing</a>
+  
+  
+    <span>></span>
+    
+  <a href="/categories/Image-Processing/Feature-Extraction/" class="category-chain-item">Feature_Extraction</a>
+  
+  
+
+  
+
+      </span>
+    
+  
+</span>
+
+    </div>
+  
+  
+    <div class="post-meta">
+      <i class="iconfont icon-tags"></i>
+      
+        <a href="/tags/Image-Processing/" class="print-no-link">#Image_Processing</a>
+      
+        <a href="/tags/Feature-Extraction/" class="print-no-link">#Feature_Extraction</a>
+      
+    </div>
+  
+</div>
+
+
+              
+  
+
+  <div class="license-box my-3">
+    <div class="license-title">
+      <div>SuperGlue 使用图神经网络学习特征匹配</div>
+      <div>https://www.zywvvd.com/notes/study/image-processing/feature-extraction/superglue/superglue/</div>
+    </div>
+    <div class="license-meta">
+      
+        <div class="license-meta-item">
+          <div>作者</div>
+          <div>Yiwei Zhang</div>
+        </div>
+      
+      
+        <div class="license-meta-item license-meta-date">
+          <div>发布于</div>
+          <div>2025年8月5日</div>
+        </div>
+      
+      
+      
+        <div class="license-meta-item">
+          <div>许可协议</div>
+          <div>
+            
+              
+              
+                <a class="print-no-link" target="_blank" href="https://creativecommons.org/licenses/by/4.0/">
+                  <span class="hint--top hint--rounded" aria-label="BY - 署名">
+                    <i class="iconfont icon-by"></i>
+                  </span>
+                </a>
+              
+            
+          </div>
+        </div>
+      
+    </div>
+    <div class="license-icon iconfont"></div>
+  </div>
+
+
+
+              
+                <div class="post-prevnext my-3">
+                  <article class="post-prev col-6">
+                    
+                    
+                      <a href="/notes/study/image-processing/feature-extraction/omniglue/omniglue/" title="OmniGlue 特征匹配">
+                        <i class="iconfont icon-arrowleft"></i>
+                        <span class="hidden-mobile">OmniGlue 特征匹配</span>
+                        <span class="visible-mobile">上一篇</span>
+                      </a>
+                    
+                  </article>
+                  <article class="post-next col-6">
+                    
+                    
+                      <a href="/notes/system/linux/ubuntu-xlsx2img/ubuntu-xlsx2img/" title="Ubuntu 下将 xlsx 文件按照 sheet 转换为 图片">
+                        <span class="hidden-mobile">Ubuntu 下将 xlsx 文件按照 sheet 转换为 图片</span>
+                        <span class="visible-mobile">下一篇</span>
+                        <i class="iconfont icon-arrowright"></i>
+                      </a>
+                    
+                  </article>
+                </div>
+              
+            </div>
+
+            
+  
+  
+    <article id="comments" lazyload>
+      
+  <div id="waline"></div>
+  <script type="text/javascript">
+    Fluid.utils.loadComments('#waline', function() {
+      Fluid.utils.createCssLink('https://lib.baomitu.com/waline/2.14.8/waline.min.css')
+      Fluid.utils.createScript('https://lib.baomitu.com/waline/2.14.8/waline.min.js', function() {
+        var options = Object.assign(
+          {"serverURL":"https://uipv4.zywvvd.com:33033/","path":"window.location.pathname","meta":["nick","mail","link"],"requiredMeta":["nick"],"lang":"zh-CN","emoji":["https://cdn.jsdelivr.net/gh/walinejs/emojis/weibo"],"dark":"html[data-user-color-scheme=\"dark\"]","wordLimit":0,"pageSize":10,"reaction":true,"locale":{"placeholder":"山高路远，常来玩吖 ~","reactionTitle":null}},
+          {
+            el: '#waline',
+            path: window.location.pathname
+          }
+        )
+        Waline.init(options);
+        Fluid.utils.waitElementVisible('#waline .vcontent', () => {
+          var imgSelector = '#waline .vcontent img:not(.vemoji)';
+          Fluid.plugins.imageCaption(imgSelector);
+          Fluid.plugins.fancyBox(imgSelector);
+        })
+      });
+    });
+  </script>
+  <noscript>Please enable JavaScript to view the comments</noscript>
+
+
+    </article>
+  
+
+
+          </article>
+        </div>
+      </div>
+    </div>
+
+    <div class="side-col d-none d-lg-block col-lg-2">
+      
+  <aside class="sidebar" style="margin-left: -1rem">
+    <div id="toc">
+  <p class="toc-header">
+    <i class="iconfont icon-list"></i>
+    <span>目录</span>
+  </p>
+  <div class="toc-body" id="toc-body"></div>
+</div>
+
+
+
+  </aside>
+
+
+    </div>
+  </div>
+</div>
+
+
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+  
+  
+
+
+
+
+
+  <script>
+  Fluid.utils.createScript('https://lib.baomitu.com/mermaid/8.14.0/mermaid.min.js', function() {
+    mermaid.initialize({"theme":"default"});
+
+    Fluid.utils.listenDOMLoaded(function() {
+      Fluid.events.registerRefreshCallback(function() {
+        if ('mermaid' in window) {
+          mermaid.init();
+        }
+      });
+    });
+  });
+</script>
+
+
+
+
+
+
+    
+
+    
+      <a id="scroll-top-button" aria-label="TOP" href="#" role="button">
+        <i class="iconfont icon-xiangshangjiantou" aria-hidden="true"></i>
+      </a>
+    
+
+    
+      <div class="modal fade" id="modalSearch" tabindex="-1" role="dialog" aria-labelledby="ModalLabel"
+     aria-hidden="true">
+  <div class="modal-dialog modal-dialog-scrollable modal-lg" role="document">
+    <div class="modal-content">
+      <div class="modal-header text-center">
+        <h4 class="modal-title w-100 font-weight-bold">搜索</h4>
+        <button type="button" id="local-search-close" class="close" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body mx-3">
+        <div class="md-form mb-5">
+          <input type="text" id="local-search-input" class="form-control validate">
+          <label data-error="x" data-success="v" for="local-search-input">关键词</label>
+        </div>
+        <div class="list-group" id="local-search-result"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+    
+
+    
+  </main>
+
+  <footer>
+    <div class="footer-inner">
+  
+    <div class="footer-content">
+       <div class="vvd_footer" style="font-size: 0.85rem;"> <a href="https://hexo.io" target="_blank" rel="nofollow noopener" color="#d7d8d9" data-umami-event="Footer-Hexo"><span class="umami--click--Footer-Hexo">Hexo</span></a> <i class="iconfont icon-love"></i> <a href="https://github.com/fluid-dev/hexo-theme-fluid" target="_blank" rel="nofollow noopener" data-umami-event="Footer-Fluid"><span class="umami--click--Footer-Fluid">Fluid</span></a> <i class="iconfont icon-love"></i> <a href="https://uipv4.zywvvd.com:33039/share/0zx3o21oIpZTZqwC/%E5%8F%88%E8%A7%81%E8%8B%8D%E5%B2%9A" target="_blank" rel="nofollow noopener" data-umami-event="Footer-Umami"><span class="umami--click--Footer-Umami">Umami</span></a> <div style="font-size: 0.85rem;"> <span id="timeDate">载入天数...</span> <span id="times">载入时分秒...</span> <script src="/vvd_js/duration.js"></script> </div> <div style="font-size: 0.85rem;"> <span> 总访问量 <span style="color: #d7d8d9;" id="PVstatic">0</span> 次&nbsp</span> <span> 总访客数 <span style="color: #d7d8d9;" id="UVstatic">0</span> 人&nbsp</span> <span> 当前在线 <span style="color: #d7d8d9;" id="ACTstatic">0</span> 人&nbsp</span> <script src="https://uipv4.zywvvd.com:33037/statistics" defer></script> </div> <div> <span> Copyright © 2020-2025. All Rights Reserved.</span> </div> <div style="font-size: 0.88rem;"> <a target="_blank" rel="noopener" href="https://developer.hitokoto.cn/" id="hitokoto_text"><span style="color: #d7d8d9;"  id="hitokoto"></span></a> <script src="https://uipv4.zywvvd.com:33044/?encode=js&select=%23hitokoto" defer></script> </div> <a href="https://icp.gov.moe/?keyword=20230615" target="_blank">萌ICP备20230615号</a>
+
+
+</div> 
+    </div>
+  
+  
+  
+  
+</div>
+
+  </footer>
+
+  <!-- Scripts -->
+  
+  <script  src="https://lib.baomitu.com/nprogress/0.2.0/nprogress.min.js" ></script>
+  <link  rel="stylesheet" href="https://lib.baomitu.com/nprogress/0.2.0/nprogress.min.css" />
+
+  <script>
+    NProgress.configure({"showSpinner":false,"trickleSpeed":100})
+    NProgress.start()
+    window.addEventListener('load', function() {
+      NProgress.done();
+    })
+  </script>
+
+
+<script  src="https://lib.baomitu.com/jquery/3.6.0/jquery.min.js" ></script>
+<script  src="https://lib.baomitu.com/twitter-bootstrap/4.6.1/js/bootstrap.min.js" ></script>
+<script  src="/js/events.js" ></script>
+<script  src="/js/plugins.js" ></script>
+
+
+
+
+
+  
+    <script  src="/js/img-lazyload.js" ></script>
+  
+
+
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/tocbot/4.18.2/tocbot.min.js', function() {
+    var toc = jQuery('#toc');
+    if (toc.length === 0 || !window.tocbot) { return; }
+    var boardCtn = jQuery('#board-ctn');
+    var boardTop = boardCtn.offset().top;
+
+    window.tocbot.init(Object.assign({
+      tocSelector     : '#toc-body',
+      contentSelector : '.markdown-body',
+      linkClass       : 'tocbot-link',
+      activeLinkClass : 'tocbot-active-link',
+      listClass       : 'tocbot-list',
+      isCollapsedClass: 'tocbot-is-collapsed',
+      collapsibleClass: 'tocbot-is-collapsible',
+      scrollSmooth    : true,
+      includeTitleTags: true,
+      headingsOffset  : -boardTop,
+    }, CONFIG.toc));
+    if (toc.find('.toc-list-item').length > 0) {
+      toc.css('visibility', 'visible');
+    }
+
+    Fluid.events.registerRefreshCallback(function() {
+      if ('tocbot' in window) {
+        tocbot.refresh();
+        var toc = jQuery('#toc');
+        if (toc.length === 0 || !tocbot) {
+          return;
+        }
+        if (toc.find('.toc-list-item').length > 0) {
+          toc.css('visibility', 'visible');
+        }
+      }
+    });
+  });
+</script>
+
+
+  <script src=https://lib.baomitu.com/clipboard.js/2.0.10/clipboard.min.js></script>
+
+  <script>Fluid.plugins.codeWidget();</script>
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/anchor-js/4.3.1/anchor.min.js', function() {
+    window.anchors.options = {
+      placement: CONFIG.anchorjs.placement,
+      visible  : CONFIG.anchorjs.visible
+    };
+    if (CONFIG.anchorjs.icon) {
+      window.anchors.options.icon = CONFIG.anchorjs.icon;
+    }
+    var el = (CONFIG.anchorjs.element || 'h1,h2,h3,h4,h5,h6').split(',');
+    var res = [];
+    for (var item of el) {
+      res.push('.markdown-body > ' + item.trim());
+    }
+    if (CONFIG.anchorjs.placement === 'left') {
+      window.anchors.options.class = 'anchorjs-link-left';
+    }
+    window.anchors.add(res.join(', '));
+
+    Fluid.events.registerRefreshCallback(function() {
+      if ('anchors' in window) {
+        anchors.removeAll();
+        var el = (CONFIG.anchorjs.element || 'h1,h2,h3,h4,h5,h6').split(',');
+        var res = [];
+        for (var item of el) {
+          res.push('.markdown-body > ' + item.trim());
+        }
+        if (CONFIG.anchorjs.placement === 'left') {
+          anchors.options.class = 'anchorjs-link-left';
+        }
+        anchors.add(res.join(', '));
+      }
+    });
+  });
+</script>
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/fancybox/3.5.7/jquery.fancybox.min.js', function() {
+    Fluid.plugins.fancyBox();
+  });
+</script>
+
+
+  <script>Fluid.plugins.imageCaption();</script>
+
+  
+      <script>
+        if (!window.MathJax) {
+          window.MathJax = {
+            tex    : {
+              inlineMath: { '[+]': [['$', '$']] }
+            },
+            options: {
+              renderActions: {
+                insertedScript: [200, () => {
+                  document.querySelectorAll('mjx-container').forEach(node => {
+                    let target = node.parentNode;
+                    if (target.nodeName.toLowerCase() === 'li') {
+                      target.parentNode.classList.add('has-jax');
+                    }
+                  });
+                }, '', false]
+              }
+            }
+          };
+        } else {
+          MathJax.startup.document.state(0);
+          MathJax.texReset();
+          MathJax.typeset();
+          MathJax.typesetPromise();
+        }
+
+        Fluid.events.registerRefreshCallback(function() {
+          if ('MathJax' in window && MathJax.startup.document && typeof MathJax.startup.document.state === 'function') {
+            MathJax.startup.document.state(0);
+            MathJax.texReset();
+            MathJax.typeset();
+            MathJax.typesetPromise();
+          }
+        });
+      </script>
+    
+
+  <script  src="https://lib.baomitu.com/mathjax/3.2.1/es5/tex-mml-chtml.js" ></script>
+
+  <script defer src="/js/leancloud.js" ></script>
+
+  <script  src="/js/local-search.js" ></script>
+
+
+
+
+  
+<script src="//cdn.jsdelivr.net/npm/aplayer/dist/APlayer.min.js"></script>
+<script src="//cdn.jsdelivr.net/gh/metowolf/MetingJS@1.2/dist/Meting.min.js"></script>
+<script src="/js/reward.js"></script>
+
+
+
+<!-- 主题的启动项，将它保持在最底部 -->
+<!-- the boot of the theme, keep it at the bottom -->
+<script  src="/js/boot.js" ></script>
+
+
+  <script type="text/javascript">
+    /*窗口监视*/
+    var originalTitle = document.title;
+    window.onblur = function(){document.title = "明眸如初"};
+    window.onfocus = function(){document.title = originalTitle};
+  </script>
+
+
+  <div id="tooltip-rightmenu" class="tooltip-rightmenu">如需原始右键菜单请按下 <strong>Ctrl+右键</strong></div>
+
+<div id="rightmenu-wrapper" style="">
+  <ul class="list-v rightmenu" id="rightmenu-content">
+	  <li class="navigation menuNavigation-Content">
+		<a class="nav icon-only fix-cursor-default" onclick="history.back()"><i class="iconfont icon-zuojiantou1"></i></a>
+		<a class="nav icon-only fix-cursor-default" onclick="history.forward()"><i class="iconfont icon-youjiantou1"></i></a>
+		<a class="nav icon-only fix-cursor-default" onclick="window.location.reload()"><i class="iconfont icon-shuaxin"></i></a>
+		<a  aria-label="TOP" href="#" role="button"><i class="iconfont icon-xiangshang"></i></a>
+	  </li>
+
+		<hr class="menuLoad-Content" style="display: block;">
+	  <li class="menuLoad-Content" style="display: block;">
+		<a class="vlts-menu fix-cursor-default" target="_self" href="javascript:;" data-toggle="modal" data-target="#modalSearch" aria-label="Search">
+		  <span>
+			  <i class="iconfont icon-sousuo1 rightmenu-icon"></i>
+			  站内搜索
+		  </span>
+		</a>
+	  </li>
+
+	  <li class="menuLoad-Content" style="display: block;">
+		<a class="vlts-menu fix-cursor-default"  href="https://www.zywvvd.com/messagebd/" data-group="link">
+		  <span>
+			  <i class="iconfont icon-yangshi_icon_tongyong_chat rightmenu-icon">  </i>
+			   留言吐槽 
+		   </span>
+		</a>
+	  </li>
+
+
+	  <li class="menuLoad-Content" style="display: block;">
+		<a class="vlts-menu fix-cursor-default" id="help" target="_blank" rel="noopener" href="https://www.foreverblog.cn/go.html" data-group="link">
+		<span>
+			  <i class="iconfont icon-a-BlackHole rightmenu-icon"></i>
+			  虫洞穿梭
+		  </span>
+		</a>
+	  </li>
+
+	<a id="scroll-top-button" aria-label="TOP" href="#" role="button" style="bottom: 20px; right: 52.6364px;">
+        <i class="iconfont icon-xiangshangjiantou" aria-hidden="true"></i>
+      </a>
+
+	<hr class="menuLoad-Content" style="display: block;">
+	
+	  <li class="menuLoad-Content" style="display: block;">
+		<a class="vlts-menu fix-cursor-default" id="destroy-airplane" target="_blank" rel="noopener"  data-group="link">
+		<span>
+			  <i class="iconfont icon-feiji rightmenu-icon"></i>
+			  破坏小飞机
+		  </span>
+		</a>
+	  </li>
+  </ul>
+</div>
+
+<script>
+	var ua = navigator.userAgent;
+	var ipad = ua.match(/(iPad).*OS\s([\d_]+)/),
+		isIphone = !ipad && ua.match(/(iPhone\sOS)\s([\d_]+)/),
+		isAndroid = ua.match(/(Android)\s+([\d.]+)/),
+		isMobile = isIphone || isAndroid;
+
+	if(!isMobile) {
+		// 为按钮添加事件处理器
+		document.getElementById('destroy-airplane').onclick = function() {
+		  console.log('飞机起飞！');
+		  // 定义要执行的JavaScript代码
+		var KICKASSVERSION='2.0';
+		var s = document.createElement('script');
+		s.type='text/javascript';
+		document.body.appendChild(s);
+		s.src='https://uipv4.zywvvd.com:33030/HexoFiles/js/games/airplane/airplane.js';
+		void(0);
+		};
+	}
+</script>
+
+
+
+
+
+<link href="/css/custom.css"type="text/css"rel="stylesheet"/>
+<script src="/vvd_js/right_menu.js" type="text/javascript"></script>
+<link href="/css/right_menu.css"type="text/css"rel="stylesheet"/>
+<script src="/vvd_js/go.js"></script>
+
+
+  <noscript>
+    <div class="noscript-warning">博客在允许 JavaScript 运行的环境下浏览效果更佳</div>
+  </noscript>
+<script src="/live2dw/lib/L2Dwidget.min.js?094cbace49a39548bed64abff5988b05"></script><script>L2Dwidget.init({"pluginRootPath":"live2dw/","pluginJsPath":"lib/","pluginModelPath":"assets/","tagMode":false,"log":false,"model":{"jsonPath":"/live2dw/assets/z16.model.json"},"display":{"position":"left","width":200,"height":400},"mobile":{"show":false},"react":{"opacity":0.9}});</script></body>
+</html>
