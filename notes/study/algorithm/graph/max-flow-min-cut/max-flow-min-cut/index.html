@@ -1,0 +1,1725 @@
+
+
+<!DOCTYPE html>
+<html lang="zh-CN" data-default-color-scheme=auto>
+
+
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="baidu-site-verification" content="codeva-rLWafCJGYc" />
+  <link rel="apple-touch-icon" sizes="76x76" href="/image/avatar.png">
+  <link rel="icon" href="/image/avatar.png">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, shrink-to-fit=no">
+  <meta http-equiv="x-ua-compatible" content="ie=edge">
+  
+  <meta name="theme-color" content="#2f4154">
+  <meta name="author" content="Yiwei Zhang">
+  <meta name="keywords" content="人工智能, 深度学习, 个人博客, 机器学习">
+  
+    <meta name="description" content="最大流最小割（maxflow-mincut）是图像分割的经典算法之一，同时也在&quot;Graph Cut&quot;、&quot;Grab Cut&quot;等算法中都有被使用过。本文记录相关算法。">
+<meta property="og:type" content="article">
+<meta property="og:title" content="最大流最小割算法">
+<meta property="og:url" content="https://www.zywvvd.com/notes/study/algorithm/graph/max-flow-min-cut/max-flow-min-cut/index.html">
+<meta property="og:site_name" content="又见苍岚">
+<meta property="og:description" content="最大流最小割（maxflow-mincut）是图像分割的经典算法之一，同时也在&quot;Graph Cut&quot;、&quot;Grab Cut&quot;等算法中都有被使用过。本文记录相关算法。">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="https://uipv4.zywvvd.com:33030/HexoFiles/vvd_pc_upload/202211072235081.jpg">
+<meta property="og:image" content="https://uipv4.zywvvd.com:33030/HexoFiles/vvd_pc_upload/202211072255829.jpg">
+<meta property="og:image" content="https://uipv4.zywvvd.com:33030/HexoFiles/vvd_pc_upload/202211072259673.jpg">
+<meta property="og:image" content="https://uipv4.zywvvd.com:33030/HexoFiles/vvd_pc_upload/202211102113007.jpg">
+<meta property="og:image" content="https://uipv4.zywvvd.com:33030/HexoFiles/vvd_pc_upload/202211062237023.jpg">
+<meta property="og:image" content="https://uipv4.zywvvd.com:33030/HexoFiles/vvd_pc_upload/202211092314573.jpg">
+<meta property="og:image" content="https://uipv4.zywvvd.com:33030/HexoFiles/vvd_pc_upload/202211092317923.jpg">
+<meta property="og:image" content="https://uipv4.zywvvd.com:33030/HexoFiles/vvd_pc_upload/202211092314573.jpg">
+<meta property="og:image" content="https://uipv4.zywvvd.com:33030/HexoFiles/vvd_pc_upload/202211102041744.jpg">
+<meta property="og:image" content="https://uipv4.zywvvd.com:33030/HexoFiles/vvd_pc_upload/202211102057038.jpg">
+<meta property="og:image" content="https://uipv4.zywvvd.com:33030/HexoFiles/vvd_pc_upload/202211102201064.jpg">
+<meta property="og:image" content="https://uipv4.zywvvd.com:33030/HexoFiles/vvd_pc_upload/202211102202486.jpg">
+<meta property="og:image" content="https://uipv4.zywvvd.com:33030/HexoFiles/vvd_pc_upload/202211102202395.jpg">
+<meta property="og:image" content="https://uipv4.zywvvd.com:33030/HexoFiles/vvd_pc_upload/202211102202390.jpg">
+<meta property="og:image" content="https://uipv4.zywvvd.com:33030/HexoFiles/vvd_pc_upload/202211102202775.jpg">
+<meta property="og:image" content="https://uipv4.zywvvd.com:33030/HexoFiles/vvd_pc_upload/202211102211009.jpg">
+<meta property="og:image" content="https://uipv4.zywvvd.com:33030/HexoFiles/vvd_pc_upload/202211102228550.jpg">
+<meta property="og:image" content="https://uipv4.zywvvd.com:33030/HexoFiles/vvd_pc_upload/202211102228323.jpg">
+<meta property="og:image" content="https://uipv4.zywvvd.com:33030/HexoFiles/vvd_pc_upload/202211102247467.jpg">
+<meta property="og:image" content="https://uipv4.zywvvd.com:33030/HexoFiles/vvd_pc_upload/202211102257444.jpg">
+<meta property="article:published_time" content="2022-11-06T14:29:07.000Z">
+<meta property="article:modified_time" content="2024-05-07T05:57:50.524Z">
+<meta property="article:author" content="Yiwei Zhang">
+<meta property="article:tag" content="Algorithm">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:image" content="https://uipv4.zywvvd.com:33030/HexoFiles/vvd_pc_upload/202211072235081.jpg">
+  
+  
+  
+  <title>最大流最小割算法 - 又见苍岚</title>
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/twitter-bootstrap/4.6.1/css/bootstrap.min.css" />
+
+
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/github-markdown-css/4.0.0/github-markdown.min.css" />
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/hint.css/2.7.0/hint.min.css" />
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/fancybox/3.5.7/jquery.fancybox.min.css" />
+
+
+
+<!-- 主题依赖的图标库，不要自行修改 -->
+<!-- Do not modify the link that theme dependent icons -->
+
+<link rel="stylesheet" href="//at.alicdn.com/t/font_1749284_hj8rtnfg7um.css">
+
+
+
+<link rel="stylesheet" href="//at.alicdn.com/t/font_1736178_lbnruvf0jn.css">
+
+
+<link  rel="stylesheet" href="/css/main.css" />
+
+
+  <link id="highlight-css" rel="stylesheet" href="/css/highlight.css" />
+  
+    <link id="highlight-css-dark" rel="stylesheet" href="/css/highlight-dark.css" />
+  
+
+
+
+  
+<link rel="stylesheet" href="/css/custom.css">
+<link rel="stylesheet" href="/css/reward.css">
+<link rel="stylesheet" href="//cdn.jsdelivr.net/npm/aplayer/dist/APlayer.min.css">
+
+
+
+  <script id="fluid-configs">
+    var Fluid = window.Fluid || {};
+    Fluid.ctx = Object.assign({}, Fluid.ctx)
+    var CONFIG = {"hostname":"www.zywvvd.com","root":"/","version":"1.9.7","typing":{"enable":true,"typeSpeed":90,"cursorChar":"_","loop":false,"scope":["home"]},"anchorjs":{"enable":true,"element":"h1,h2,h3,h4,h5,h6","placement":"left","visible":"hover","icon":""},"progressbar":{"enable":true,"height_px":3,"color":"#29d","options":{"showSpinner":false,"trickleSpeed":100}},"code_language":{"enable":true,"default":"TEXT"},"copy_btn":true,"image_caption":{"enable":true},"image_zoom":{"enable":true,"img_url_replace":["",""]},"toc":{"enable":true,"placement":"right","headingSelector":"h1,h2,h3,h4,h5,h6","collapseDepth":0},"lazyload":{"enable":true,"loading_img":"/img/loading.gif","onlypost":false,"offset_factor":2},"web_analytics":{"enable":true,"follow_dnt":true,"baidu":null,"google":null,"tencent":{"sid":null,"cid":null},"woyaola":null,"cnzz":null,"leancloud":{"app_id":"Cv0XNeBSBdAPAIuVj3PsyM3R-MdYXbMMI","app_key":"4PU1rNlGrqXWzhfW3dgq98oX","server_url":null,"path":"window.location.pathname","ignore_local":false},"gtag":null},"search_path":"/local-search.xml","include_content_in_search":true};
+
+    if (CONFIG.web_analytics.follow_dnt) {
+      var dntVal = navigator.doNotTrack || window.doNotTrack || navigator.msDoNotTrack;
+      Fluid.ctx.dnt = dntVal && (dntVal.startsWith('1') || dntVal.startsWith('yes') || dntVal.startsWith('on'));
+    }
+  </script>
+  <script  src="/js/utils.js" ></script>
+  <script  src="/js/color-schema.js" ></script>
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+    
+  
+
+
+
+  
+<meta name="generator" content="Hexo 7.2.0"><link rel="alternate" href="/atom.xml" title="又见苍岚" type="application/atom+xml">
+</head>
+
+<script>
+// 页面加载完成后隐藏加载动画
+document.addEventListener("readystatechange", function() {
+    const loader = document.getElementById('Loadanimation');
+    if (loader) {
+        // 停留1秒后开始淡出
+        setTimeout(function() {
+            loader.style.transition = 'opacity 1.2s';
+            loader.style.opacity = '0';
+            // 淡出完成后隐藏
+            setTimeout(() => {
+                loader.style.display = 'none';
+            }, 1000); // 等待淡出动画完成
+        }, 700); // 停留0.8秒
+    }
+});
+</script>
+
+
+
+<body>
+  
+<div id="Loadanimation" style="z-index:999999;">
+<div id="Loadanimation-center">
+   <div id="Loadanimation-center-absolute">
+       <div class="xccx_object" id="xccx_four"></div>
+       <div class="xccx_object" id="xccx_three"></div>
+       <div class="xccx_object" id="xccx_two"></div>
+       <div class="xccx_object" id="xccx_one"></div>
+   </div>
+</div>
+</div>
+
+<link href="/css/loading.css"type="text/css"rel="stylesheet"/>
+
+
+
+
+
+
+<div>
+	<div class='real_mask' style="
+		background-color: rgba(0,0,0,0.4);
+		width: 100%;
+		height: 100%;
+		position: fixed;
+		z-index: -777;
+	"></div>
+	<div id="banner_video_insert">
+	</div>	
+	<div id='vvd_banner_img'>
+	</div>
+</div>
+<div id="banner"></div>
+
+
+
+
+
+
+
+  <header>
+    
+
+<div class="header-inner" style="height: 80vh;">
+  <nav id="navbar" class="navbar fixed-top  navbar-expand-lg navbar-dark scrolling-navbar">
+  <div class="container">
+    <a class="navbar-brand" href="/">
+      <strong>CangLan</strong>
+    </a>
+
+    <button id="navbar-toggler-btn" class="navbar-toggler" type="button" data-toggle="collapse"
+            data-target="#navbarSupportedContent"
+            aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
+      <div class="animated-icon"><span></span><span></span><span></span></div>
+    </button>
+
+    <!-- Collapsible content -->
+    <div class="collapse navbar-collapse" id="navbarSupportedContent">
+      <ul class="navbar-nav ml-auto text-center">
+        
+          
+          
+          
+          
+            <li class="nav-item">
+		<div >
+		      <a class="nav-link" href="/" target="_self" data-umami-event="Navigation-Homepage">
+
+		        <i class="iconfont icon-home-fill"></i>
+		        <span>首页</span>
+		      </a>
+		</div>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item dropdown">
+              <a class="nav-link dropdown-toggle" target="_self" href="javascript:;" role="button"
+                 data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                <i class="iconfont icon-shuji1"></i>
+                <span>文章</span>
+              </a>
+              <div class="dropdown-menu" aria-labelledby="navbarDropdown">
+                
+                  
+                  
+                  
+		<div >
+
+                  <a class="dropdown-item" href="/archives/" target="_self" data-umami-event="Navigation-Archive">
+
+                    <i class="iconfont icon-archive-fill"></i>
+                    <span>归档</span>
+                  </a>
+		</div>
+                
+                  
+                  
+                  
+		<div >
+
+                  <a class="dropdown-item" href="/categories/" target="_self" data-umami-event="Navigation-Category">
+
+                    <i class="iconfont icon-category-fill"></i>
+                    <span>分类</span>
+                  </a>
+		</div>
+                
+                  
+                  
+                  
+		<div >
+
+                  <a class="dropdown-item" href="/tags/" target="_self" data-umami-event="Navigation-Tag">
+
+                    <i class="iconfont icon-tags-fill"></i>
+                    <span>标签</span>
+                  </a>
+		</div>
+                
+                  
+                  
+                  
+		<div >
+
+                  <a class="dropdown-item" href="/shuoshuo/" target="_self" data-umami-event="Navigation-Shuoshuo">
+
+                    <i class="iconfont icon-24gf-bubblesDots4"></i>
+                    <span>说说</span>
+                  </a>
+		</div>
+                
+              </div>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item dropdown">
+              <a class="nav-link dropdown-toggle" target="_self" href="javascript:;" role="button"
+                 data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                <i class="iconfont icon-momo"></i>
+                <span>社交</span>
+              </a>
+              <div class="dropdown-menu" aria-labelledby="navbarDropdown">
+                
+                  
+                  
+                  
+		<div >
+
+                  <a class="dropdown-item" href="/links/" target="_self" data-umami-event="Navigation-Friends">
+
+                    <i class="iconfont icon-link-fill"></i>
+                    <span>友链</span>
+                  </a>
+		</div>
+                
+                  
+                  
+                  
+		<div >
+
+                  <a class="dropdown-item" href="/messagebd/" target="_self" data-umami-event="Navigation-MessageBoard">
+
+                    <i class="iconfont icon-comment"></i>
+                    <span>留言板</span>
+                  </a>
+		</div>
+                
+                  
+                  
+                  
+		<div >
+
+                  <a class="dropdown-item" href="/atom.xml" target="_self" data-umami-event="Navigation-RSS">
+
+                    <i class="iconfont icon-dingyue"></i>
+                    <span>RSS订阅</span>
+                  </a>
+		</div>
+                
+                  
+                  
+                  
+		<div >
+
+                  <a class="dropdown-item" href="/reccomments/" target="_self" data-umami-event="Navigation-Recent-Comments">
+
+                    <i class="iconfont icon-icon-pinglunguanli-pinglunliebiao"></i>
+                    <span>近期评论</span>
+                  </a>
+		</div>
+                
+              </div>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item dropdown">
+              <a class="nav-link dropdown-toggle" target="_self" href="javascript:;" role="button"
+                 data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                <i class="iconfont icon-user-fill"></i>
+                <span>个人</span>
+              </a>
+              <div class="dropdown-menu" aria-labelledby="navbarDropdown">
+                
+                  
+                  
+                  
+		<div >
+
+                  <a class="dropdown-item" href="/about/" target="_self" data-umami-event="Navigation-AboutMe">
+
+                    <i class="iconfont icon-guanyuwomen"></i>
+                    <span>关于</span>
+                  </a>
+		</div>
+                
+                  
+                  
+                  
+		<div >
+
+                  <a class="dropdown-item" href="/playlist/" target="_self" data-umami-event="Navigation-Music">
+
+                    <i class="iconfont icon-music"></i>
+                    <span>歌单</span>
+                  </a>
+		</div>
+                
+                  
+                  
+                  
+		<div >
+
+                  <a class="dropdown-item" href="https://uipv4.zywvvd.com:33035" target="_self" data-umami-event="Navigation-Nextcloud">
+
+                    <i class="iconfont icon-xuniyingpan"></i>
+                    <span>网盘</span>
+                  </a>
+		</div>
+                
+                  
+                  
+                  
+		<div >
+
+                  <a class="dropdown-item" href="https://uipv4.zywvvd.com:33036" target="_self" data-umami-event="Navigation-OneDev">
+
+                    <i class="iconfont icon-git"></i>
+                    <span>仓库</span>
+                  </a>
+		</div>
+                
+                  
+                  
+                  
+		<div >
+
+                  <a class="dropdown-item" href="https://uipv4.zywvvd.com:33041" target="_self" data-umami-event="Navigation-Wiki">
+
+                    <i class="iconfont icon-wiki"></i>
+                    <span>百科</span>
+                  </a>
+		</div>
+                
+              </div>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item dropdown">
+              <a class="nav-link dropdown-toggle" target="_self" href="javascript:;" role="button"
+                 data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                <i class="iconfont icon-ic_fly"></i>
+                <span>导航</span>
+              </a>
+              <div class="dropdown-menu" aria-labelledby="navbarDropdown">
+                
+                  
+                  
+                  
+		<div >
+
+                  <a class="dropdown-item" href="/site-map/" target="_self" data-umami-event="Navigation-SiteMap">
+
+                    <i class="iconfont icon-lianjie"></i>
+                    <span>链接</span>
+                  </a>
+		</div>
+                
+                  
+                  
+                  
+		<div >
+
+                  <a class="dropdown-item" href="/nodeppt/hexo/snavigation/" target="_self" data-umami-event="Navigation-Search">
+
+                    <i class="iconfont icon-sousuo"></i>
+                    <span>搜索</span>
+                  </a>
+		</div>
+                
+              </div>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item dropdown">
+              <a class="nav-link dropdown-toggle" target="_self" href="javascript:;" role="button"
+                 data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                <i class="iconfont icon-wangzhan"></i>
+                <span>站点</span>
+              </a>
+              <div class="dropdown-menu" aria-labelledby="navbarDropdown">
+                
+                  
+                  
+                  
+		<div >
+
+                  <a class="dropdown-item" href="https://uipv4.zywvvd.com:33039/share/0zx3o21oIpZTZqwC/%E5%8F%88%E8%A7%81%E8%8B%8D%E5%B2%9A" target="_self" data-umami-event="Navigation-Umami">
+
+                    <i class="iconfont icon-tongji2"></i>
+                    <span>站点分析</span>
+                  </a>
+		</div>
+                
+                  
+                  
+                  
+		<div >
+
+                  <a class="dropdown-item" href="/earth_sta/" target="_self" data-umami-event="Navigation-Globe">
+
+                    <i class="iconfont icon-tongjifenxi-xiangmubiaogetongji"></i>
+                    <span>访问统计</span>
+                  </a>
+		</div>
+                
+                  
+                  
+                  
+		<div >
+
+                  <a class="dropdown-item" href="https://uipv4.zywvvd.com:33034/status/show" target="_self" data-umami-event="Navigation-Monitor">
+
+                    <i class="iconfont icon-jiankong"></i>
+                    <span>站点监控</span>
+                  </a>
+		</div>
+                
+              </div>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item dropdown">
+              <a class="nav-link dropdown-toggle" target="_self" href="javascript:;" role="button"
+                 data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                <i class="iconfont icon-chuansong"></i>
+                <span>传送</span>
+              </a>
+              <div class="dropdown-menu" aria-labelledby="navbarDropdown">
+                
+                  
+                  
+                  
+		<div >
+
+                  <a class="dropdown-item" href="https://www.foreverblog.cn/go.html" target="_self" data-umami-event="Navigation-ForeverBolg">
+
+                    <i class="iconfont icon-a-BlackHole"></i>
+                    <span>十年之约</span>
+                  </a>
+		</div>
+                
+                  
+                  
+                  
+		<div >
+
+                  <a class="dropdown-item" href="https://www.travellings.cn/go.html" target="_self" data-umami-event="Navigation-DriveTo">
+
+                    <i class="iconfont icon-train1"></i>
+                    <span>开往</span>
+                  </a>
+		</div>
+                
+                  
+                  
+                  
+		<div >
+
+                  <a class="dropdown-item" href="https://bf.zzxworld.com/" target="_self" data-umami-event="Navigation-BlogFinder">
+
+                    <i class="iconfont icon-icon-"></i>
+                    <span>BlogFinder</span>
+                  </a>
+		</div>
+                
+                  
+                  
+                  
+		<div >
+
+                  <a class="dropdown-item" href="https://www.perass.com/" target="_self" data-umami-event="Navigation-Bloghome">
+
+                    <i class="iconfont icon-home-fill"></i>
+                    <span>博客之家</span>
+                  </a>
+		</div>
+                
+              </div>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item dropdown">
+              <a class="nav-link dropdown-toggle" target="_self" href="javascript:;" role="button"
+                 data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                <i class="iconfont icon-gongju"></i>
+                <span>工具</span>
+              </a>
+              <div class="dropdown-menu" aria-labelledby="navbarDropdown">
+                
+                  
+                  
+                  
+		<div >
+
+                  <a class="dropdown-item" href="/navigates/calculator" target="_self" data-umami-event="Navigation-Calculator">
+
+                    <i class="iconfont icon-jisuan"></i>
+                    <span>计算器</span>
+                  </a>
+		</div>
+                
+                  
+                  
+                  
+		<div >
+
+                  <a class="dropdown-item" href="/navigates/webgraphviz" target="_self" data-umami-event="Navigation-WebGtaphviz">
+
+                    <i class="iconfont icon-tongyong-huatugongju2"></i>
+                    <span>Graphviz</span>
+                  </a>
+		</div>
+                
+                  
+                  
+                  
+		<div >
+
+                  <a class="dropdown-item" href="/navigates/formular_reco" target="_self" data-umami-event="Navigation-Formular-Reco">
+
+                    <i class="iconfont icon-a-checkformula"></i>
+                    <span>公式识别</span>
+                  </a>
+		</div>
+                
+              </div>
+            </li>
+          
+        
+        
+          <li class="nav-item" id="search-btn">
+            <a class="nav-link" target="_self" href="javascript:;" data-toggle="modal" data-target="#modalSearch" aria-label="Search">
+              <i class="iconfont icon-search"></i>
+            </a>
+          </li>
+          
+        
+        
+          <li class="nav-item" id="color-toggle-btn">
+            <a class="nav-link" target="_self" href="javascript:;" aria-label="Color Toggle">
+              <i class="iconfont icon-dark" id="color-toggle-icon"></i>
+            </a>
+          </li>
+        
+      </ul>
+    </div>
+  </div>
+</nav>
+
+  
+
+<div id="banner" class="banner" parallax=true
+     style="background: url('https://uipv4.zywvvd.com:33030/HexoFiles/new/bg-trans.png') no-repeat center center; background-size: cover;">
+  <div class="full-bg-img">
+    <div class="mask flex-center" style="background-color: rgba(0, 0, 0, 0)">
+      <div class="banner-text text-center fade-in-up">
+        <div class="h2">
+          
+            <span id="subtitle">最大流最小割算法</span>
+          
+        </div>
+
+        
+          
+  <div class="mt-3">
+    
+      <span class="post-meta mr-2">
+        <i class="iconfont icon-author" aria-hidden="true"></i>
+        Yiwei Zhang
+      </span>
+    
+    
+      <span class="post-meta">
+        <i class="iconfont icon-date-fill" aria-hidden="true"></i>
+        <time datetime="2022-11-06 22:29" pubdate>
+          2022年11月6日 晚上
+        </time>
+      </span>
+    
+  </div>
+
+  <div class="mt-1">
+    
+      <span class="post-meta mr-2">
+        <i class="iconfont icon-chart"></i>
+        
+          <!-- compatible with older versions-->
+          3k 字
+        
+      </span>
+    
+
+    
+      <span class="post-meta mr-2">
+        <i class="iconfont icon-clock-fill"></i>
+        
+        
+        
+          <!-- compatible with older versions-->
+          26 分钟
+        
+      </span>
+    
+
+    
+    
+      
+        <span id="vvdpost_container_page_pvuv" style="display: none">
+          <i class="iconfont icon-eye" aria-hidden="true"></i>
+          <span id="vvdpost_value_page_pv">0</span> 次&nbsp&nbsp
+		  <i class="iconfont icon-users" aria-hidden="true"></i>
+		  <span id="vvdpost_value_page_uv">0</span> 人&nbsp&nbsp
+		  <i class="iconfont icon-comment" aria-hidden="true"></i>
+		  <span id="vvdpost_value_page_cn">0</span> 条
+        </span>
+
+    <script>
+    document.addEventListener("DOMContentLoaded", function() {
+	      console.log("PVUV_" + window.location.pathname);
+
+	      // 使用 fetch API 发送 POST 请求
+	      fetch('https://uipv4.zywvvd.com:33037/poststats', { 
+		  method: 'POST',
+		  headers: {
+		      'Content-Type': 'application/json'
+		  },
+		  body: JSON.stringify(window.location.pathname) // 将路径名作为对象发送，以便在服务器端更容易处理
+	      })
+	      .then(response => {
+		  // 检查响应状态
+		  if (!response.ok) {
+		      throw new Error('Network response was not ok ' + response.statusText);
+		  }
+		  return response.json(); // 解析 JSON 响应
+	      })
+	      .then(data => {
+		  // 处理解析后的数据
+		  console.log(data.pv);
+		  var pvCtn = document.querySelector('#vvdpost_container_page_pvuv');
+		  if (pvCtn) {
+		      var pvEle = document.querySelector('#vvdpost_value_page_pv');
+		      var uvEle = document.querySelector('#vvdpost_value_page_uv');
+		      var cnEle = document.querySelector('#vvdpost_value_page_cn');
+		      if (pvEle && uvEle) {
+		          pvEle.innerText = data.pv;
+		          uvEle.innerText = data.uv;
+		          cnEle.innerText = data.cn;
+		          pvCtn.style.display = 'inline';
+		      }
+		  }
+	      })
+	      .catch(error => {
+		  // 处理请求错误
+		  console.error('There has been a problem with your fetch operation:', error);
+	      });
+      });
+  </script>
+      
+    
+  </div>
+
+
+        
+      </div>
+
+      
+        <div class="scroll-down-bar">
+          <i class="iconfont icon-arrowdown"></i>
+        </div>
+      
+    </div>
+  </div>
+</div>
+
+</div>
+
+
+	<script type="text/javascript" src="/vvd_js/jquery.js"></script>
+	<script async src="https://uipv4.zywvvd.com:33039/script.js" data-website-id="dd4a05c6-dde2-4743-9c3a-a79d6bee0778"></script>
+	<div class="banner" id='banner' >
+
+		<div class="full-bg-img" >
+
+			
+				<script>
+					var ua = navigator.userAgent;
+					var ipad = ua.match(/(iPad).*OS\s([\d_]+)/),
+						isIphone = !ipad && ua.match(/(iPhone\sOS)\s([\d_]+)/),
+						isAndroid = ua.match(/(Android)\s+([\d.]+)/),
+						isMobile = isIphone || isAndroid;
+
+					function set_video_attr(id){
+						var height = document.body.clientHeight
+						var width = document.body.clientWidth
+						var video_item = document.getElementById(id);
+
+						if (height / width < 0.56){
+							video_item.setAttribute('width', '100%');
+							video_item.setAttribute('height', 'auto');
+						} else {
+							video_item.setAttribute('height', '100%');
+							video_item.setAttribute('width', 'auto');
+						}
+					}
+
+					fetch('https://uipv4.zywvvd.com:33037/wallpaper-pair')
+					  .then(response => response.json()) // 解析JSON数据
+					  .then(data => {
+						console.log('获取链接成功');
+						video_url = data[0][0]
+						pre_show_image_url = data[0][1]
+
+						banner_obj = document.getElementById("banner")
+						banner_obj.style.cssText = "background: url('" + pre_show_image_url + "') no-repeat;"
+
+						vvd_banner_obj = document.getElementById("vvd_banner_img")
+						vvd_banner_content = "<img id='banner_img_item' src='" + pre_show_image_url + "'style='position: fixed; z-index: -999'>"
+						vvd_banner_obj.innerHTML = vvd_banner_content 
+
+						if (!isMobile) {
+							video_html_res = "<video id='video_item' style='position: fixed; z-index: -888;'  muted='muted' src=" + video_url + " autoplay='autoplay' loop='loop'></video>"
+							document.getElementById("banner_video_insert").innerHTML = video_html_res;
+							set_video_attr('video_item')
+							set_video_attr('banner_img_item')
+						}
+					    
+					  })
+					  .catch((error) => {
+					    console.error('请求失败,尝试本地获取背景图像：', error);
+	    					$.getJSON('/vvd_js/video_url.json', function(data){
+
+							var video_list_length = data.length
+							var seed = Math.random()
+							index = Math.floor(seed * video_list_length)
+
+							video_url = data[index][0]
+							pre_show_image_url = data[index][1]
+
+							banner_obj = document.getElementById("banner")
+							banner_obj.style.cssText = "background: url('" + pre_show_image_url + "') no-repeat;"
+
+							vvd_banner_obj = document.getElementById("vvd_banner_img")
+							vvd_banner_content = "<img id='banner_img_item' src='" + pre_show_image_url + "'style='position: fixed; z-index: -999'>"
+							vvd_banner_obj.innerHTML = vvd_banner_content 
+
+							if (!isMobile) {
+								video_html_res = "<video id='video_item' style='position: fixed; z-index: -888;'  muted='muted' src=" + video_url + " autoplay='autoplay' loop='loop'></video>"
+								document.getElementById("banner_video_insert").innerHTML = video_html_res;
+								set_video_attr('video_item')
+								set_video_attr('banner_img_item')
+							}
+						});
+					  });
+
+
+
+
+
+
+					if (!isMobile){
+						window.onresize = function(){
+							set_video_attr('video_item')
+							set_video_attr('banner_img_item')
+							}
+						}
+				</script>
+
+			
+
+
+			
+			</div>
+		</div>
+    </div>
+
+  </header>
+
+  <main>
+    
+      
+
+
+
+<div class="container-fluid nopadding-x">
+  <div class="row nomargin-x">
+    <div class="side-col d-none d-lg-block col-lg-2">
+      
+
+    </div>
+
+    <div class="col-lg-8 nopadding-x-md">
+      <div class="container nopadding-x-md" id="board-ctn">
+        <div id="board">
+          <article class="post-content mx-auto">
+
+            <!-- <h1 id="seo-header">最大流最小割算法</h1> -->
+
+            
+              <p id="updated-time" class="note note-info" style="">
+                
+                  
+                    <!-- compatible with older versions-->
+                    本文最后更新于：2024年5月7日 下午
+                  
+                
+              </p>
+            
+            
+              <div class="markdown-body">
+                
+                <blockquote>
+<p>最大流最小割（maxflow-mincut）是图像分割的经典算法之一，同时也在&quot;Graph Cut&quot;、&quot;Grab Cut&quot;等算法中都有被使用过。本文记录相关算法。</p>
+</blockquote>
+<span id="more"></span>
+<h3 id="简介">简介</h3>
+<ul>
+<li>最大流最小割算法是图像分割的经典算法之一，同时也在&quot;Graph Cut&quot;、&quot;Grab Cut&quot;等算法中都有被使用过。</li>
+<li>最小割最大流算法是指在一个有向的图中，能够从源点（source）到达汇点（terminal）的最大流量等于如果从图中剪除就能够导致网络流中断的边的集合的最小容量和。即在任何网络中，最大流的值等于最小割的容量。</li>
+<li>原始论文：<a target="_blank" rel="noopener" href="https://static.aminer.org/pdf/PDF/000/292/851/demonstration_of_segmentation_with_interactive_graph_cuts.pdf">《Interactive Graph Cuts for Optimal Boundary &amp; Region Segmentation of Objects in N-D Images》</a></li>
+</ul>
+<h3 id="核心概念">核心概念</h3>
+<ul>
+<li>最大流最小割算法设计一些图论的概念，以一个简单的图为例，介绍一些概念</li>
+</ul>
+<p><img src="https://uipv4.zywvvd.com:33030/HexoFiles/vvd_pc_upload/202211072235081.jpg" srcset="/img/loading.gif" lazyload alt=""></p>
+<h4 id="割">割</h4>
+<ul>
+<li>将一个图的节点分为两种，切割的方法就是<strong>割</strong>，两种节点之间的连接线组成的集合叫做<strong>割集</strong></li>
+</ul>
+<p><img src="https://uipv4.zywvvd.com:33030/HexoFiles/vvd_pc_upload/202211072255829.jpg" srcset="/img/loading.gif" lazyload alt=""></p>
+<ul>
+<li>需要说明的是，切割分开的节点不必相连，举例如图下图所示，也是一个合法的割</li>
+</ul>
+<p><img src="https://uipv4.zywvvd.com:33030/HexoFiles/vvd_pc_upload/202211072259673.jpg" srcset="/img/loading.gif" lazyload alt=""></p>
+<h4 id="最小割">最小割</h4>
+<ul>
+<li>图的最小切割是其在某种意义上是最小的切割。图的最小割可以分很多情况进行讨论，例如有向图、无向图，边的权重等。</li>
+</ul>
+<p><img src="https://uipv4.zywvvd.com:33030/HexoFiles/vvd_pc_upload/202211102113007.jpg" srcset="/img/loading.gif" lazyload alt=""></p>
+<ul>
+<li>对于无权重图来说，割为将 $S$ 到 $T$ 彻底分割开的断掉边数量最少的割</li>
+<li>下图是一张无向无权重图和它的两个割，红色的线格割掉了三条边，而绿色的线割掉了两条边，很明显绿色的线为该图的最小割。</li>
+</ul>
+<p><img src="https://uipv4.zywvvd.com:33030/HexoFiles/vvd_pc_upload/202211062237023.jpg" srcset="/img/loading.gif" lazyload alt=""></p>
+<ul>
+<li>如下图所示，是一个有向带权图，共有4个顶点和5条边。每条边上的箭头代表了边的方向，每条边上的数字代表了边的权重。</li>
+</ul>
+<p><img src="https://uipv4.zywvvd.com:33030/HexoFiles/vvd_pc_upload/202211092314573.jpg" srcset="/img/loading.gif" lazyload alt=""></p>
+<ul>
+<li>最小割指的是是割集权重最小的割</li>
+</ul>
+<p><img src="https://uipv4.zywvvd.com:33030/HexoFiles/vvd_pc_upload/202211092317923.jpg" srcset="/img/loading.gif" lazyload alt=""></p>
+<h4 id="流">流</h4>
+<p><img src="https://uipv4.zywvvd.com:33030/HexoFiles/vvd_pc_upload/202211092314573.jpg" srcset="/img/loading.gif" lazyload alt=""></p>
+<ul>
+<li>有向有权图中，假设 $S$ 是一个一直出水的源头，有向边可以从源头按照自己的方向流水，非源头节点输出的水量不大于输入的水量，每条边流过的水量不大于边的权重，每一个从 $S$ 到 $T$ 节点送水的方案为一个<strong>流</strong>，$T$ 收到的总水为这个流的水量</li>
+</ul>
+<p><img src="https://uipv4.zywvvd.com:33030/HexoFiles/vvd_pc_upload/202211102041744.jpg" srcset="/img/loading.gif" lazyload alt=""></p>
+<blockquote>
+<p>上图浅蓝色线条为流水方案，路径与水量用 <code>S-&gt;1-&gt;2-&gt;3-&gt;T:2</code> 表示，但显然这个并不是流量最大的流。</p>
+</blockquote>
+<h4 id="最大流">最大流</h4>
+<ul>
+<li>在确定的向有权图中，由 $S$ 到 $T$ 的水量最大的流为最大流</li>
+</ul>
+<p><img src="https://uipv4.zywvvd.com:33030/HexoFiles/vvd_pc_upload/202211102057038.jpg" srcset="/img/loading.gif" lazyload alt=""></p>
+<h3 id="最大流-Ford-Fulkerson-算法">最大流 <em>Ford-Fulkerson</em> 算法</h3>
+<ol>
+<li>初始化，所有边的flow都初始化为0</li>
+</ol>
+<p><img src="https://uipv4.zywvvd.com:33030/HexoFiles/vvd_pc_upload/202211102201064.jpg" srcset="/img/loading.gif" lazyload alt=""></p>
+<ol start="2">
+<li>
+<p>沿着增广路径增加flow。增广路径是一条从 $s$ 到 $t$ 的无向路径，但也有些条件，可以经过没有满容量的前向路径（$s$ 到 $t$）或者是不为空的反向路径( $t$ -&gt; $s$)</p>
+<blockquote>
+<p>核心思路在于用深度优先或广度优先搜索增广路径时提供反向流水（反悔）的可能</p>
+</blockquote>
+</li>
+</ol>
+<p><img src="https://uipv4.zywvvd.com:33030/HexoFiles/vvd_pc_upload/202211102202486.jpg" srcset="/img/loading.gif" lazyload alt=""></p>
+<p><img src="https://uipv4.zywvvd.com:33030/HexoFiles/vvd_pc_upload/202211102202395.jpg" srcset="/img/loading.gif" lazyload alt=""></p>
+<ul>
+<li>已经“流水”的路径可以“反悔”，而且过程中仍然保持着流的合理性。</li>
+</ul>
+<p><img src="https://uipv4.zywvvd.com:33030/HexoFiles/vvd_pc_upload/202211102202390.jpg" srcset="/img/loading.gif" lazyload alt=""></p>
+<p><img src="https://uipv4.zywvvd.com:33030/HexoFiles/vvd_pc_upload/202211102202775.jpg" srcset="/img/loading.gif" lazyload alt=""></p>
+<ul>
+<li>在找不到更多增广路径时就完成了最大流的搜索算法</li>
+</ul>
+<p><img src="https://uipv4.zywvvd.com:33030/HexoFiles/vvd_pc_upload/202211102211009.jpg" srcset="/img/loading.gif" lazyload alt=""></p>
+<h3 id="最大流-Yuri-Boykov算法">最大流 Yuri Boykov算法</h3>
+<ul>
+<li>
+<p>假设以源点s和汇点t在图结构上构造两颗没有交集的树，分别为树S和树T，如下图所示。树S中的所有边都是由父节点指向子节点（存在流量），树T中则由子节点指向父节点。不在两树中的节点为“自由”状态。搜索树S和T中的节点只有两种状态：“主动”和“被动”。主动态的节点表示搜索树的外边界节点，意思是从该节点出发还可以扩展搜索树，而被动态节点表示搜索树内部的节点，树不能由该节点向外扩展。主动态节点因为可以向外扩展，所以有可能会搜索到另一搜索树的节点，当主动节点检测到另一搜索树的节点，就找到了一条增广路径。</p>
+</li>
+<li>
+<p>Yuri提出的算法主要循环以下三个步骤：</p>
+<ol>
+<li>“增长”阶段：搜索树S和T扩展节点，直到两树相遇，得到一条由源点s到汇点t的增广路径。</li>
+<li>“增广”阶段：根据找到的增广路径将搜索树拆分为子树或森林。</li>
+<li>“领养”阶段：搜索树S和T重新构建。</li>
+</ol>
+</li>
+<li>
+<p><strong>初始化</strong></p>
+<p>初始化时，搜索树S只有源点s为主动节点，搜索树T只有汇点t作为主动节点，增长搜索树直到它们的主动节点相遇，得到一条增广路径P。如果P为空则算法终止，反之则对P进行增广流量处理。然后对孤点进行领养处理，以此循环。</p>
+</li>
+<li>
+<p><strong>增长阶段</strong></p>
+<p>主动态节点搜索相邻且邻边仍有可用流量的自由节点作为搜索树新的子节点，新增长的子节点又称为该搜索树的主动态节点，搜索树继续扩展增长。当主动态节点的所有邻点都检测过，主动态节点变为被动态节点。当两颗搜索树的主动态节点搜索到对方的节点时，增长阶段终止。然后根据当前建树情况，找到一条增广路径。</p>
+</li>
+<li>
+<p><strong>增广阶段</strong></p>
+<p>这个阶段根据增长阶段找到的增广路径进行增广流量统计，即求出经过该路径的最大流量，意味着路径中至少有一条边达到饱和态，也就是所经流量等于该边的流量值。因此搜索树S和T中会出现一种新的节点，称为“孤点”（orphans），意思就是连接它与其父节点的边已达饱和态，没有流可以再到达这个节点。</p>
+<p>所以在增广阶段搜索树S和T可能会拆分为多棵子树，从而形成森林。源点s和汇点t仍充当两颗子树的根节点，而孤点成为其余子树的根节点。</p>
+<p>首先找到路径P的瓶颈值，即最小流量边，为该路径的最大流量值。流量经过后，路径P中至少有一条边变为饱和态，即所经流量等于自身流量值，该边连接的子节点变为孤点。</p>
+</li>
+<li>
+<p><strong>领养阶段</strong></p>
+<p>领养阶段字面上理解就能看出是针对孤点进行处理的阶段，该阶段也是为了恢复搜索树S和T的单一性，即图中除了两颗搜索树，其余节点都归为主动态、被动态和自由态，消除孤点。做法是为每个孤点找到一个新的合法父节点，该父节点原来必须与孤点属于同一搜索树，而且父节点与孤点间有一条未饱和（仍有可经流量）的边。若没有符合要求的父节点，该孤点变为自由节点。以此处理所有孤点和孤点的子节点。当所有孤点都处理后，领养阶段结束，最终只剩下原有的搜索树S和T。</p>
+</li>
+</ul>
+<blockquote>
+<p>最大流的求解过程就是循环重复以上三个阶段，直到搜索树S和T不能再增长。</p>
+</blockquote>
+<h3 id="最大流和最小割的关系">最大流和最小割的关系</h3>
+<h4 id="最大流最小割定理">最大流最小割定理</h4>
+<ul>
+<li>任意一个图中，从起点 $S$ 到终点 $T$ 的最大流的流量，等于分离起点 $S$ 和终点 $T$ 的最小割的容量。</li>
+</ul>
+<h4 id="等价简要证明">等价简要证明</h4>
+<ol>
+<li>
+<p><strong>最大流不可能大于最小割</strong></p>
+<p>因为最大流所有的水流都一定经过最小割那些割边，流过的水流怎么可能比水管容量还大呢？</p>
+</li>
+<li>
+<p><strong>最大流不可能小于最小割</strong></p>
+<p>如果小，那么说明水管容量没有物尽其用，可以继续加大水流。</p>
+</li>
+</ol>
+<ul>
+<li>由此可见，最大流和最小割是等价的，是在求解同一个问题。</li>
+<li>在求解最小割时往往会转换成最大流的求解。</li>
+</ul>
+<h4 id="对偶证明">对偶证明</h4>
+<ul>
+<li>首先定义一个概念 $net\ flow$,经过一个割 $cut(A,B)$ 的 $net\ flow$ 等于从 $A$ 到 $B$ 的边 <code>flow</code> 的和减去从 $B$ 到 $A$ 边 $flow$ 的和。</li>
+<li>然后我们就有了 $flow\ value$ 引理：$f$ 为任意的流，$cut(A,B)$ 为任意的割，那么 $f$ 的值 $flow\ value $（也就是 $t$ 的 $inflow$）等于经过 $cut(A,B)$ 的 $net\ flow$.</li>
+<li>如下图，$value\ of\ flow = 8+9+10 = 27$ ,而割的 $net\ flow = 8+2+7-2+12 = 27$.要证明这个引理可以用数学归纳法。</li>
+</ul>
+<p><img src="https://uipv4.zywvvd.com:33030/HexoFiles/vvd_pc_upload/202211102228550.jpg" srcset="/img/loading.gif" lazyload alt=""></p>
+<ul>
+<li><strong>Weak duality</strong>(弱对偶)：$f$ 为任意的流，$cut(A,B)$ 为任意的割，那么 $Value\  of\ flow &lt;= capacity\ of\ cut(A,B)$</li>
+<li>因为 $cut(A,B)$ 等于从 $A$ 到 $B$ 流量，而 $value\ of\ flow$ 等于 $cut(A,B)$ 的 $net\ flow$, 还得减去从$B$ 到 $A$ 边的流量。</li>
+</ul>
+<p><img src="https://uipv4.zywvvd.com:33030/HexoFiles/vvd_pc_upload/202211102228323.jpg" srcset="/img/loading.gif" lazyload alt=""></p>
+<blockquote>
+<p>那么现在我们可以引出两个定理：</p>
+</blockquote>
+<ul>
+<li>
+<p><strong>增广路径定理</strong>（<strong>Augmenting Path theorem</strong>）: 一个流 $f$ 是最大流当且仅当没有增广路径。</p>
+</li>
+<li>
+<p><strong>最小割最大流定理</strong>（<strong>Maxflow-mincut theorem</strong>）: Maxflow 的值等于最小割的容量。</p>
+</li>
+</ul>
+<blockquote>
+<p>要证明上面的定理，只要证明下面三个条件是等价的就可以了：</p>
+</blockquote>
+<ol>
+<li>
+<p>存在一个割的容量等于$flow\ f$ 的值</p>
+</li>
+<li>
+<p>$f$ 是最大流</p>
+</li>
+<li>
+<p>对于$f$没有增广路径</p>
+</li>
+</ol>
+<h4 id="等价证明">等价证明</h4>
+<ul>
+<li>
+<p>首先我们证明 <code>1-&gt;2</code>。假设我们有一个割 $cut(A,B)$ 的容量等于 $f$ 的值，那么利用弱对偶的关系，其他流的值&lt;= $cut(A,B)$ 的容量，而由于 <code>1</code> 的假设，$cut(A,B)$ 的容量等于 $f$ 的值，因此得到其他流的值都小于 $f$ 的值，从而 <code>2</code> 成立</p>
+</li>
+<li>
+<p>接着证明 <code>2-&gt;3</code>。我们来证明它的逆否命题。对于 <strong>$f$ 如果还有增广路径，那$f$不是最大流</strong>，这很显然，如果按照 Ford-Fulkerson 算法的话，我们还可以增加 <strong>flow f</strong> 的值，因此 $f$ 就不会是最大流，因此逆否命题成立，也就代表 <code>2-&gt;3</code>成立。</p>
+</li>
+<li>
+<p>最后证明从 <code>3-&gt;1</code>。让割 $cut(A,B)$ 满足这么一个条件：$s$ 在 $A$ 中，且 $A$ 中的顶点通过一些无向的边连接而成，这些边要么是不是满的前向边要么是非空的反向边。如下图中加粗的边。</p>
+</li>
+</ul>
+<p><img src="https://uipv4.zywvvd.com:33030/HexoFiles/vvd_pc_upload/202211102247467.jpg" srcset="/img/loading.gif" lazyload alt=""></p>
+<p>​		那么根据定义，$s$ 在 $A$ 中，由于没有增广路径，因此 $t$ 在 $B$中。</p>
+<p>​		由于这个割的 $B$ 到 $A$ 的边流量全是 0</p>
+<p>​		这个割的容量 <em>=</em> 沿着这个割的 netflow (从 $A$ 到 $B$ 边的流量 - 从 $B$ 到 $A$ 边的流量)</p>
+<p>​		又根据 <strong>flow-value</strong> 引理，**net flow = value of low,**因此推出 <code>1</code></p>
+<h3 id="最大流的结果转换为最小割">最大流的结果转换为最小割</h3>
+<blockquote>
+<p>根据最大流的解得到最小割的解：就是和证明 <code>3-&gt;1</code> 中的一样让割 $cut(A,B)$ 满足这么一个条件：$s$ 在 $A$ 中，且 $A$ 中的顶点通过一些无向的边连接而成，这些边要么是不是满的前向边要么是非空的反向边</p>
+</blockquote>
+<ul>
+<li>把流量已经占满的所有边去掉</li>
+</ul>
+<p><img src="https://uipv4.zywvvd.com:33030/HexoFiles/vvd_pc_upload/202211102257444.jpg" srcset="/img/loading.gif" lazyload alt=""></p>
+<ul>
+<li>以顶点 $s$ 为起点进行图遍历（遍历的方法可以选择BFS广度优先遍历）。遍历结束后，可以得到遍历经过的所有点：$S、B、C、D$。</li>
+<li>把 $S、B、C、D$ 构成一个子图（上图中紫色部分），其他的点 $A、E、F、t$ 构成另一个子图（图中黄色部分）。连接两个子图的边有两种情况：
+<ul>
+<li>已被占满的前向边：$s$ -&gt; $A$，$B$ -&gt; $E$， $D$ -&gt; $t$</li>
+<li>没有流量的反向边：$A$ -&gt; $B$， $E$ -&gt; $D$</li>
+</ul>
+</li>
+<li>其中“已被占满的前向边”就是我们要求的最小割。对于上图来说，就是”$s$ -&gt; $A$”、”$B$ -&gt; $E$”、”$D$ -&gt; $t$”这3条边。</li>
+</ul>
+<h3 id="参考资料">参考资料</h3>
+<ul>
+<li><a target="_blank" rel="noopener" href="https://www.jianshu.com/p/79f045056e65">https://www.jianshu.com/p/79f045056e65</a></li>
+<li><a target="_blank" rel="noopener" href="https://blog.csdn.net/mmm_jsw/article/details/83787395">https://blog.csdn.net/mmm_jsw/article/details/83787395</a></li>
+<li><a target="_blank" rel="noopener" href="https://static.aminer.org/pdf/PDF/000/292/851/demonstration_of_segmentation_with_interactive_graph_cuts.pdf">Interactive Graph Cuts for Optimal Boundary &amp; Region Segmentation of Objects in N-D Images</a></li>
+<li><a target="_blank" rel="noopener" href="https://www.zhihu.com/question/65478661">https://www.zhihu.com/question/65478661</a></li>
+<li><a target="_blank" rel="noopener" href="https://imlogm.github.io/%E5%9B%BE%E5%83%8F%E5%A4%84%E7%90%86/mincut-maxflow/">https://imlogm.github.io/图像处理/mincut-maxflow/</a></li>
+<li><a target="_blank" rel="noopener" href="https://blog.csdn.net/a519781181/article/details/51908303">https://blog.csdn.net/a519781181/article/details/51908303</a></li>
+<li><em>PrincetonUniversity - Algorithm:</em> <a target="_blank" rel="noopener" href="https://class.coursera.org/algs4partII-006/lecture/22"><em>https://class.coursera.org/algs4partII-006/lecture/22</em></a></li>
+<li>An Experimental Comparison of <em>Min-Cut/Max-Flow Algorithms for</em> <em>Energy Minimization in Vision</em></li>
+<li><a target="_blank" rel="noopener" href="https://blog.csdn.net/ilovejohnny/article/details/52016742">https://blog.csdn.net/ilovejohnny/article/details/52016742</a></li>
+</ul>
+<link rel="stylesheet" href="/css/spoiler.css" type="text/css"><script src="/js/spoiler.js" type="text/javascript" async></script>
+                
+
+
+				<br /><br />
+				<blockquote>
+					<p>文章链接：<br /> 
+					<a style="font-size: 0.85rem" target="_blank" rel="noopener" href="https://www.zywvvd.com/notes/study/algorithm/graph/max-flow-min-cut/max-flow-min-cut/">https://www.zywvvd.com/notes/study/algorithm/graph/max-flow-min-cut/max-flow-min-cut/</a>
+					</p>
+				</blockquote>
+
+
+              </div>
+            
+            <hr/>
+			
+			<!-- 添加打赏模块 -->
+			<div class="reward-container">
+				
+					<button id="rewardBtn" class="reward-btn">
+						 
+							❤ 打赏
+							
+					</button>
+					<p class="tea">“觉得不错的话，给点打赏吧 ୧(๑•̀⌄•́๑)૭”</p>
+					<div id="rewardImgContainer" class="reward-img-container">
+						<div class="singleImgContainer">
+							<img id="wechatImg" class="reward-img" src="https://uipv4.zywvvd.com:33030/HexoFiles/vvd_pc_upload/wechatpay.png" srcset="/img/loading.gif" lazyload alt="微信二维码">
+							<p class="wechatPay">微信支付</p>
+						</div>
+						<div class="singleImgContainer">
+							<img id="alipayImg" class="reward-img" src="https://uipv4.zywvvd.com:33030/HexoFiles/vvd_pc_upload/alipay.png" srcset="/img/loading.gif" lazyload alt="支付宝二维码">
+							<p class="aliPay">支付宝支付</p>
+						</div>
+					</div>
+				
+			</div>
+			
+            <div>
+              <div class="post-metas my-3">
+  
+    <div class="post-meta mr-3 d-flex align-items-center">
+      <i class="iconfont icon-category"></i>
+      
+
+<span class="category-chains">
+  
+  
+    
+      <span class="category-chain">
+        
+  <a href="/categories/Algorithm/" class="category-chain-item">Algorithm</a>
+  
+  
+
+      </span>
+    
+  
+</span>
+
+    </div>
+  
+  
+    <div class="post-meta">
+      <i class="iconfont icon-tags"></i>
+      
+        <a href="/tags/Algorithm/" class="print-no-link">#Algorithm</a>
+      
+    </div>
+  
+</div>
+
+
+              
+  
+
+  <div class="license-box my-3">
+    <div class="license-title">
+      <div>最大流最小割算法</div>
+      <div>https://www.zywvvd.com/notes/study/algorithm/graph/max-flow-min-cut/max-flow-min-cut/</div>
+    </div>
+    <div class="license-meta">
+      
+        <div class="license-meta-item">
+          <div>作者</div>
+          <div>Yiwei Zhang</div>
+        </div>
+      
+      
+        <div class="license-meta-item license-meta-date">
+          <div>发布于</div>
+          <div>2022年11月6日</div>
+        </div>
+      
+      
+      
+        <div class="license-meta-item">
+          <div>许可协议</div>
+          <div>
+            
+              
+              
+                <a class="print-no-link" target="_blank" href="https://creativecommons.org/licenses/by/4.0/">
+                  <span class="hint--top hint--rounded" aria-label="BY - 署名">
+                    <i class="iconfont icon-by"></i>
+                  </span>
+                </a>
+              
+            
+          </div>
+        </div>
+      
+    </div>
+    <div class="license-icon iconfont"></div>
+  </div>
+
+
+
+              
+                <div class="post-prevnext my-3">
+                  <article class="post-prev col-6">
+                    
+                    
+                      <a href="/notes/tools/git/git-patch/git-patch/" title="Git 补丁 patch 使用方法">
+                        <i class="iconfont icon-arrowleft"></i>
+                        <span class="hidden-mobile">Git 补丁 patch 使用方法</span>
+                        <span class="visible-mobile">上一篇</span>
+                      </a>
+                    
+                  </article>
+                  <article class="post-next col-6">
+                    
+                    
+                      <a href="/notes/coding/cpp/jsoncpp/jsoncpp/" title="Visual Studio 配置 C++ JsonCpp 使用环境">
+                        <span class="hidden-mobile">Visual Studio 配置 C++ JsonCpp 使用环境</span>
+                        <span class="visible-mobile">下一篇</span>
+                        <i class="iconfont icon-arrowright"></i>
+                      </a>
+                    
+                  </article>
+                </div>
+              
+            </div>
+
+            
+  
+  
+    <article id="comments" lazyload>
+      
+  <div id="waline"></div>
+  <script type="text/javascript">
+    Fluid.utils.loadComments('#waline', function() {
+      Fluid.utils.createCssLink('https://lib.baomitu.com/waline/2.14.8/waline.min.css')
+      Fluid.utils.createScript('https://lib.baomitu.com/waline/2.14.8/waline.min.js', function() {
+        var options = Object.assign(
+          {"serverURL":"https://uipv4.zywvvd.com:33033/","path":"window.location.pathname","meta":["nick","mail","link"],"requiredMeta":["nick"],"lang":"zh-CN","emoji":["https://cdn.jsdelivr.net/gh/walinejs/emojis/weibo"],"dark":"html[data-user-color-scheme=\"dark\"]","wordLimit":0,"pageSize":10,"reaction":true,"locale":{"placeholder":"山高路远，常来玩吖 ~","reactionTitle":null}},
+          {
+            el: '#waline',
+            path: window.location.pathname
+          }
+        )
+        Waline.init(options);
+        Fluid.utils.waitElementVisible('#waline .vcontent', () => {
+          var imgSelector = '#waline .vcontent img:not(.vemoji)';
+          Fluid.plugins.imageCaption(imgSelector);
+          Fluid.plugins.fancyBox(imgSelector);
+        })
+      });
+    });
+  </script>
+  <noscript>Please enable JavaScript to view the comments</noscript>
+
+
+    </article>
+  
+
+
+          </article>
+        </div>
+      </div>
+    </div>
+
+    <div class="side-col d-none d-lg-block col-lg-2">
+      
+  <aside class="sidebar" style="margin-left: -1rem">
+    <div id="toc">
+  <p class="toc-header">
+    <i class="iconfont icon-list"></i>
+    <span>目录</span>
+  </p>
+  <div class="toc-body" id="toc-body"></div>
+</div>
+
+
+
+  </aside>
+
+
+    </div>
+  </div>
+</div>
+
+
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+  
+  
+
+
+
+
+
+  <script>
+  Fluid.utils.createScript('https://lib.baomitu.com/mermaid/8.14.0/mermaid.min.js', function() {
+    mermaid.initialize({"theme":"default"});
+
+    Fluid.utils.listenDOMLoaded(function() {
+      Fluid.events.registerRefreshCallback(function() {
+        if ('mermaid' in window) {
+          mermaid.init();
+        }
+      });
+    });
+  });
+</script>
+
+
+
+
+
+
+    
+
+    
+      <a id="scroll-top-button" aria-label="TOP" href="#" role="button">
+        <i class="iconfont icon-xiangshangjiantou" aria-hidden="true"></i>
+      </a>
+    
+
+    
+      <div class="modal fade" id="modalSearch" tabindex="-1" role="dialog" aria-labelledby="ModalLabel"
+     aria-hidden="true">
+  <div class="modal-dialog modal-dialog-scrollable modal-lg" role="document">
+    <div class="modal-content">
+      <div class="modal-header text-center">
+        <h4 class="modal-title w-100 font-weight-bold">搜索</h4>
+        <button type="button" id="local-search-close" class="close" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body mx-3">
+        <div class="md-form mb-5">
+          <input type="text" id="local-search-input" class="form-control validate">
+          <label data-error="x" data-success="v" for="local-search-input">关键词</label>
+        </div>
+        <div class="list-group" id="local-search-result"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+    
+
+    
+  </main>
+
+  <footer>
+    <div class="footer-inner">
+  
+    <div class="footer-content">
+       <div class="vvd_footer" style="font-size: 0.85rem;"> <a href="https://hexo.io" target="_blank" rel="nofollow noopener" color="#d7d8d9" data-umami-event="Footer-Hexo"><span class="umami--click--Footer-Hexo">Hexo</span></a> <i class="iconfont icon-love"></i> <a href="https://github.com/fluid-dev/hexo-theme-fluid" target="_blank" rel="nofollow noopener" data-umami-event="Footer-Fluid"><span class="umami--click--Footer-Fluid">Fluid</span></a> <i class="iconfont icon-love"></i> <a href="https://uipv4.zywvvd.com:33039/share/0zx3o21oIpZTZqwC/%E5%8F%88%E8%A7%81%E8%8B%8D%E5%B2%9A" target="_blank" rel="nofollow noopener" data-umami-event="Footer-Umami"><span class="umami--click--Footer-Umami">Umami</span></a> <div style="font-size: 0.85rem;"> <span id="timeDate">载入天数...</span> <span id="times">载入时分秒...</span> <script src="/vvd_js/duration.js"></script> </div> <div style="font-size: 0.85rem;"> <span> 总访问量 <span style="color: #d7d8d9;" id="PVstatic">0</span> 次&nbsp</span> <span> 总访客数 <span style="color: #d7d8d9;" id="UVstatic">0</span> 人&nbsp</span> <span> 当前在线 <span style="color: #d7d8d9;" id="ACTstatic">0</span> 人&nbsp</span> <script src="https://uipv4.zywvvd.com:33037/statistics" defer></script> </div> <div> <span> Copyright © 2020-2025. All Rights Reserved.</span> </div> <div style="font-size: 0.88rem;"> <a target="_blank" rel="noopener" href="https://developer.hitokoto.cn/" id="hitokoto_text"><span style="color: #d7d8d9;"  id="hitokoto"></span></a> <script src="https://uipv4.zywvvd.com:33044/?encode=js&select=%23hitokoto" defer></script> </div> <a href="https://icp.gov.moe/?keyword=20230615" target="_blank">萌ICP备20230615号</a>
+
+
+</div> 
+    </div>
+  
+  
+  
+  
+</div>
+
+  </footer>
+
+  <!-- Scripts -->
+  
+  <script  src="https://lib.baomitu.com/nprogress/0.2.0/nprogress.min.js" ></script>
+  <link  rel="stylesheet" href="https://lib.baomitu.com/nprogress/0.2.0/nprogress.min.css" />
+
+  <script>
+    NProgress.configure({"showSpinner":false,"trickleSpeed":100})
+    NProgress.start()
+    window.addEventListener('load', function() {
+      NProgress.done();
+    })
+  </script>
+
+
+<script  src="https://lib.baomitu.com/jquery/3.6.0/jquery.min.js" ></script>
+<script  src="https://lib.baomitu.com/twitter-bootstrap/4.6.1/js/bootstrap.min.js" ></script>
+<script  src="/js/events.js" ></script>
+<script  src="/js/plugins.js" ></script>
+
+
+
+
+
+  
+    <script  src="/js/img-lazyload.js" ></script>
+  
+
+
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/tocbot/4.18.2/tocbot.min.js', function() {
+    var toc = jQuery('#toc');
+    if (toc.length === 0 || !window.tocbot) { return; }
+    var boardCtn = jQuery('#board-ctn');
+    var boardTop = boardCtn.offset().top;
+
+    window.tocbot.init(Object.assign({
+      tocSelector     : '#toc-body',
+      contentSelector : '.markdown-body',
+      linkClass       : 'tocbot-link',
+      activeLinkClass : 'tocbot-active-link',
+      listClass       : 'tocbot-list',
+      isCollapsedClass: 'tocbot-is-collapsed',
+      collapsibleClass: 'tocbot-is-collapsible',
+      scrollSmooth    : true,
+      includeTitleTags: true,
+      headingsOffset  : -boardTop,
+    }, CONFIG.toc));
+    if (toc.find('.toc-list-item').length > 0) {
+      toc.css('visibility', 'visible');
+    }
+
+    Fluid.events.registerRefreshCallback(function() {
+      if ('tocbot' in window) {
+        tocbot.refresh();
+        var toc = jQuery('#toc');
+        if (toc.length === 0 || !tocbot) {
+          return;
+        }
+        if (toc.find('.toc-list-item').length > 0) {
+          toc.css('visibility', 'visible');
+        }
+      }
+    });
+  });
+</script>
+
+
+  <script src=https://lib.baomitu.com/clipboard.js/2.0.10/clipboard.min.js></script>
+
+  <script>Fluid.plugins.codeWidget();</script>
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/anchor-js/4.3.1/anchor.min.js', function() {
+    window.anchors.options = {
+      placement: CONFIG.anchorjs.placement,
+      visible  : CONFIG.anchorjs.visible
+    };
+    if (CONFIG.anchorjs.icon) {
+      window.anchors.options.icon = CONFIG.anchorjs.icon;
+    }
+    var el = (CONFIG.anchorjs.element || 'h1,h2,h3,h4,h5,h6').split(',');
+    var res = [];
+    for (var item of el) {
+      res.push('.markdown-body > ' + item.trim());
+    }
+    if (CONFIG.anchorjs.placement === 'left') {
+      window.anchors.options.class = 'anchorjs-link-left';
+    }
+    window.anchors.add(res.join(', '));
+
+    Fluid.events.registerRefreshCallback(function() {
+      if ('anchors' in window) {
+        anchors.removeAll();
+        var el = (CONFIG.anchorjs.element || 'h1,h2,h3,h4,h5,h6').split(',');
+        var res = [];
+        for (var item of el) {
+          res.push('.markdown-body > ' + item.trim());
+        }
+        if (CONFIG.anchorjs.placement === 'left') {
+          anchors.options.class = 'anchorjs-link-left';
+        }
+        anchors.add(res.join(', '));
+      }
+    });
+  });
+</script>
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/fancybox/3.5.7/jquery.fancybox.min.js', function() {
+    Fluid.plugins.fancyBox();
+  });
+</script>
+
+
+  <script>Fluid.plugins.imageCaption();</script>
+
+  
+      <script>
+        if (!window.MathJax) {
+          window.MathJax = {
+            tex    : {
+              inlineMath: { '[+]': [['$', '$']] }
+            },
+            options: {
+              renderActions: {
+                insertedScript: [200, () => {
+                  document.querySelectorAll('mjx-container').forEach(node => {
+                    let target = node.parentNode;
+                    if (target.nodeName.toLowerCase() === 'li') {
+                      target.parentNode.classList.add('has-jax');
+                    }
+                  });
+                }, '', false]
+              }
+            }
+          };
+        } else {
+          MathJax.startup.document.state(0);
+          MathJax.texReset();
+          MathJax.typeset();
+          MathJax.typesetPromise();
+        }
+
+        Fluid.events.registerRefreshCallback(function() {
+          if ('MathJax' in window && MathJax.startup.document && typeof MathJax.startup.document.state === 'function') {
+            MathJax.startup.document.state(0);
+            MathJax.texReset();
+            MathJax.typeset();
+            MathJax.typesetPromise();
+          }
+        });
+      </script>
+    
+
+  <script  src="https://lib.baomitu.com/mathjax/3.2.1/es5/tex-mml-chtml.js" ></script>
+
+  <script defer src="/js/leancloud.js" ></script>
+
+  <script  src="/js/local-search.js" ></script>
+
+
+
+
+  
+<script src="//cdn.jsdelivr.net/npm/aplayer/dist/APlayer.min.js"></script>
+<script src="//cdn.jsdelivr.net/gh/metowolf/MetingJS@1.2/dist/Meting.min.js"></script>
+<script src="/js/reward.js"></script>
+
+
+
+<!-- 主题的启动项，将它保持在最底部 -->
+<!-- the boot of the theme, keep it at the bottom -->
+<script  src="/js/boot.js" ></script>
+
+
+  <script type="text/javascript">
+    /*窗口监视*/
+    var originalTitle = document.title;
+    window.onblur = function(){document.title = "明眸如初"};
+    window.onfocus = function(){document.title = originalTitle};
+  </script>
+
+
+  <div id="tooltip-rightmenu" class="tooltip-rightmenu">如需原始右键菜单请按下 <strong>Ctrl+右键</strong></div>
+
+<div id="rightmenu-wrapper" style="">
+  <ul class="list-v rightmenu" id="rightmenu-content">
+	  <li class="navigation menuNavigation-Content">
+		<a class="nav icon-only fix-cursor-default" onclick="history.back()"><i class="iconfont icon-zuojiantou1"></i></a>
+		<a class="nav icon-only fix-cursor-default" onclick="history.forward()"><i class="iconfont icon-youjiantou1"></i></a>
+		<a class="nav icon-only fix-cursor-default" onclick="window.location.reload()"><i class="iconfont icon-shuaxin"></i></a>
+		<a  aria-label="TOP" href="#" role="button"><i class="iconfont icon-xiangshang"></i></a>
+	  </li>
+
+		<hr class="menuLoad-Content" style="display: block;">
+	  <li class="menuLoad-Content" style="display: block;">
+		<a class="vlts-menu fix-cursor-default" target="_self" href="javascript:;" data-toggle="modal" data-target="#modalSearch" aria-label="Search">
+		  <span>
+			  <i class="iconfont icon-sousuo1 rightmenu-icon"></i>
+			  站内搜索
+		  </span>
+		</a>
+	  </li>
+
+	  <li class="menuLoad-Content" style="display: block;">
+		<a class="vlts-menu fix-cursor-default"  href="https://www.zywvvd.com/messagebd/" data-group="link">
+		  <span>
+			  <i class="iconfont icon-yangshi_icon_tongyong_chat rightmenu-icon">  </i>
+			   留言吐槽 
+		   </span>
+		</a>
+	  </li>
+
+
+	  <li class="menuLoad-Content" style="display: block;">
+		<a class="vlts-menu fix-cursor-default" id="help" target="_blank" rel="noopener" href="https://www.foreverblog.cn/go.html" data-group="link">
+		<span>
+			  <i class="iconfont icon-a-BlackHole rightmenu-icon"></i>
+			  虫洞穿梭
+		  </span>
+		</a>
+	  </li>
+
+	<a id="scroll-top-button" aria-label="TOP" href="#" role="button" style="bottom: 20px; right: 52.6364px;">
+        <i class="iconfont icon-xiangshangjiantou" aria-hidden="true"></i>
+      </a>
+
+	<hr class="menuLoad-Content" style="display: block;">
+	
+	  <li class="menuLoad-Content" style="display: block;">
+		<a class="vlts-menu fix-cursor-default" id="destroy-airplane" target="_blank" rel="noopener"  data-group="link">
+		<span>
+			  <i class="iconfont icon-feiji rightmenu-icon"></i>
+			  破坏小飞机
+		  </span>
+		</a>
+	  </li>
+  </ul>
+</div>
+
+<script>
+	var ua = navigator.userAgent;
+	var ipad = ua.match(/(iPad).*OS\s([\d_]+)/),
+		isIphone = !ipad && ua.match(/(iPhone\sOS)\s([\d_]+)/),
+		isAndroid = ua.match(/(Android)\s+([\d.]+)/),
+		isMobile = isIphone || isAndroid;
+
+	if(!isMobile) {
+		// 为按钮添加事件处理器
+		document.getElementById('destroy-airplane').onclick = function() {
+		  console.log('飞机起飞！');
+		  // 定义要执行的JavaScript代码
+		var KICKASSVERSION='2.0';
+		var s = document.createElement('script');
+		s.type='text/javascript';
+		document.body.appendChild(s);
+		s.src='https://uipv4.zywvvd.com:33030/HexoFiles/js/games/airplane/airplane.js';
+		void(0);
+		};
+	}
+</script>
+
+
+
+
+
+<link href="/css/custom.css"type="text/css"rel="stylesheet"/>
+<script src="/vvd_js/right_menu.js" type="text/javascript"></script>
+<link href="/css/right_menu.css"type="text/css"rel="stylesheet"/>
+<script src="/vvd_js/go.js"></script>
+
+
+  <noscript>
+    <div class="noscript-warning">博客在允许 JavaScript 运行的环境下浏览效果更佳</div>
+  </noscript>
+<script src="/live2dw/lib/L2Dwidget.min.js?094cbace49a39548bed64abff5988b05"></script><script>L2Dwidget.init({"pluginRootPath":"live2dw/","pluginJsPath":"lib/","pluginModelPath":"assets/","tagMode":false,"log":false,"model":{"jsonPath":"/live2dw/assets/z16.model.json"},"display":{"position":"left","width":200,"height":400},"mobile":{"show":false},"react":{"opacity":0.9}});</script></body>
+</html>

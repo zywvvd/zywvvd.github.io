@@ -1,0 +1,1787 @@
+
+
+<!DOCTYPE html>
+<html lang="zh-CN" data-default-color-scheme=auto>
+
+
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="baidu-site-verification" content="codeva-rLWafCJGYc" />
+  <link rel="apple-touch-icon" sizes="76x76" href="/image/avatar.png">
+  <link rel="icon" href="/image/avatar.png">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, shrink-to-fit=no">
+  <meta http-equiv="x-ua-compatible" content="ie=edge">
+  
+  <meta name="theme-color" content="#2f4154">
+  <meta name="author" content="Yiwei Zhang">
+  <meta name="keywords" content="人工智能, 深度学习, 个人博客, 机器学习">
+  
+    <meta name="description" content="霍夫变换（Hough Transform）是一个关于图像领域类的一个算法，被用来检测图像中的各类曲线，直线，圆，椭圆等等，本文记录相关内容与 OpenCV 实现。">
+<meta property="og:type" content="article">
+<meta property="og:title" content="OpenCV 图像分析之 —— 霍夫变换(Hough Transform)">
+<meta property="og:url" content="https://www.zywvvd.com/notes/study/image-processing/opencv/opencv-hough/opencv-hough/index.html">
+<meta property="og:site_name" content="又见苍岚">
+<meta property="og:description" content="霍夫变换（Hough Transform）是一个关于图像领域类的一个算法，被用来检测图像中的各类曲线，直线，圆，椭圆等等，本文记录相关内容与 OpenCV 实现。">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="https://uipv4.zywvvd.com:33030/HexoFiles/vvd_dell/20220330152350.png">
+<meta property="og:image" content="https://uipv4.zywvvd.com:33030/HexoFiles/vvd_dell/20220330190632.png">
+<meta property="og:image" content="https://uipv4.zywvvd.com:33030/HexoFiles/vvd_dell/20220330190928.png">
+<meta property="og:image" content="https://uipv4.zywvvd.com:33030/HexoFiles/vvd_dell/20220330214152.png">
+<meta property="og:image" content="https://uipv4.zywvvd.com:33030/HexoFiles/vvd_dell/20220330220641.png">
+<meta property="og:image" content="https://uipv4.zywvvd.com:33030/HexoFiles/vvd_dell/20220330221930.png">
+<meta property="og:image" content="https://uipv4.zywvvd.com:33030/HexoFiles/vvd_dell/20220330222409.png">
+<meta property="og:image" content="https://uipv4.zywvvd.com:33030/HexoFiles/vvd_dell/20220330222544.png">
+<meta property="og:image" content="https://uipv4.zywvvd.com:33030/HexoFiles/vvd_dell/20220330222646.png">
+<meta property="og:image" content="https://uipv4.zywvvd.com:33030/HexoFiles/vvd_dell/20220330222810.png">
+<meta property="og:image" content="https://uipv4.zywvvd.com:33030/HexoFiles/vvd_dell/20220330224322.png">
+<meta property="og:image" content="https://uipv4.zywvvd.com:33030/HexoFiles/vvd_dell/20220330234802.png">
+<meta property="og:image" content="https://uipv4.zywvvd.com:33030/HexoFiles/vvd_dell/20220331000804.png">
+<meta property="og:image" content="https://uipv4.zywvvd.com:33030/HexoFiles/vvd_dell/20220401112956.png">
+<meta property="og:image" content="https://uipv4.zywvvd.com:33030/HexoFiles/vvd_dell/20220401113803.png">
+<meta property="article:published_time" content="2022-03-30T02:55:57.000Z">
+<meta property="article:modified_time" content="2024-05-07T05:57:50.536Z">
+<meta property="article:author" content="Yiwei Zhang">
+<meta property="article:tag" content="OpenCV">
+<meta property="article:tag" content="Image_Processing">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:image" content="https://uipv4.zywvvd.com:33030/HexoFiles/vvd_dell/20220330152350.png">
+  
+  
+  
+  <title>OpenCV 图像分析之 —— 霍夫变换(Hough Transform) - 又见苍岚</title>
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/twitter-bootstrap/4.6.1/css/bootstrap.min.css" />
+
+
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/github-markdown-css/4.0.0/github-markdown.min.css" />
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/hint.css/2.7.0/hint.min.css" />
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/fancybox/3.5.7/jquery.fancybox.min.css" />
+
+
+
+<!-- 主题依赖的图标库，不要自行修改 -->
+<!-- Do not modify the link that theme dependent icons -->
+
+<link rel="stylesheet" href="//at.alicdn.com/t/font_1749284_hj8rtnfg7um.css">
+
+
+
+<link rel="stylesheet" href="//at.alicdn.com/t/font_1736178_lbnruvf0jn.css">
+
+
+<link  rel="stylesheet" href="/css/main.css" />
+
+
+  <link id="highlight-css" rel="stylesheet" href="/css/highlight.css" />
+  
+    <link id="highlight-css-dark" rel="stylesheet" href="/css/highlight-dark.css" />
+  
+
+
+
+  
+<link rel="stylesheet" href="/css/custom.css">
+<link rel="stylesheet" href="/css/reward.css">
+<link rel="stylesheet" href="//cdn.jsdelivr.net/npm/aplayer/dist/APlayer.min.css">
+
+
+
+  <script id="fluid-configs">
+    var Fluid = window.Fluid || {};
+    Fluid.ctx = Object.assign({}, Fluid.ctx)
+    var CONFIG = {"hostname":"www.zywvvd.com","root":"/","version":"1.9.7","typing":{"enable":true,"typeSpeed":90,"cursorChar":"_","loop":false,"scope":["home"]},"anchorjs":{"enable":true,"element":"h1,h2,h3,h4,h5,h6","placement":"left","visible":"hover","icon":""},"progressbar":{"enable":true,"height_px":3,"color":"#29d","options":{"showSpinner":false,"trickleSpeed":100}},"code_language":{"enable":true,"default":"TEXT"},"copy_btn":true,"image_caption":{"enable":true},"image_zoom":{"enable":true,"img_url_replace":["",""]},"toc":{"enable":true,"placement":"right","headingSelector":"h1,h2,h3,h4,h5,h6","collapseDepth":0},"lazyload":{"enable":true,"loading_img":"/img/loading.gif","onlypost":false,"offset_factor":2},"web_analytics":{"enable":true,"follow_dnt":true,"baidu":null,"google":null,"tencent":{"sid":null,"cid":null},"woyaola":null,"cnzz":null,"leancloud":{"app_id":"Cv0XNeBSBdAPAIuVj3PsyM3R-MdYXbMMI","app_key":"4PU1rNlGrqXWzhfW3dgq98oX","server_url":null,"path":"window.location.pathname","ignore_local":false},"gtag":null},"search_path":"/local-search.xml","include_content_in_search":true};
+
+    if (CONFIG.web_analytics.follow_dnt) {
+      var dntVal = navigator.doNotTrack || window.doNotTrack || navigator.msDoNotTrack;
+      Fluid.ctx.dnt = dntVal && (dntVal.startsWith('1') || dntVal.startsWith('yes') || dntVal.startsWith('on'));
+    }
+  </script>
+  <script  src="/js/utils.js" ></script>
+  <script  src="/js/color-schema.js" ></script>
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+    
+  
+
+
+
+  
+<meta name="generator" content="Hexo 7.2.0"><link rel="alternate" href="/atom.xml" title="又见苍岚" type="application/atom+xml">
+</head>
+
+<script>
+// 页面加载完成后隐藏加载动画
+document.addEventListener("readystatechange", function() {
+    const loader = document.getElementById('Loadanimation');
+    if (loader) {
+        // 停留1秒后开始淡出
+        setTimeout(function() {
+            loader.style.transition = 'opacity 1.2s';
+            loader.style.opacity = '0';
+            // 淡出完成后隐藏
+            setTimeout(() => {
+                loader.style.display = 'none';
+            }, 1000); // 等待淡出动画完成
+        }, 700); // 停留0.8秒
+    }
+});
+</script>
+
+
+
+<body>
+  
+<div id="Loadanimation" style="z-index:999999;">
+<div id="Loadanimation-center">
+   <div id="Loadanimation-center-absolute">
+       <div class="xccx_object" id="xccx_four"></div>
+       <div class="xccx_object" id="xccx_three"></div>
+       <div class="xccx_object" id="xccx_two"></div>
+       <div class="xccx_object" id="xccx_one"></div>
+   </div>
+</div>
+</div>
+
+<link href="/css/loading.css"type="text/css"rel="stylesheet"/>
+
+
+
+
+
+
+<div>
+	<div class='real_mask' style="
+		background-color: rgba(0,0,0,0.4);
+		width: 100%;
+		height: 100%;
+		position: fixed;
+		z-index: -777;
+	"></div>
+	<div id="banner_video_insert">
+	</div>	
+	<div id='vvd_banner_img'>
+	</div>
+</div>
+<div id="banner"></div>
+
+
+
+
+
+
+
+  <header>
+    
+
+<div class="header-inner" style="height: 80vh;">
+  <nav id="navbar" class="navbar fixed-top  navbar-expand-lg navbar-dark scrolling-navbar">
+  <div class="container">
+    <a class="navbar-brand" href="/">
+      <strong>CangLan</strong>
+    </a>
+
+    <button id="navbar-toggler-btn" class="navbar-toggler" type="button" data-toggle="collapse"
+            data-target="#navbarSupportedContent"
+            aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
+      <div class="animated-icon"><span></span><span></span><span></span></div>
+    </button>
+
+    <!-- Collapsible content -->
+    <div class="collapse navbar-collapse" id="navbarSupportedContent">
+      <ul class="navbar-nav ml-auto text-center">
+        
+          
+          
+          
+          
+            <li class="nav-item">
+		<div >
+		      <a class="nav-link" href="/" target="_self" data-umami-event="Navigation-Homepage">
+
+		        <i class="iconfont icon-home-fill"></i>
+		        <span>首页</span>
+		      </a>
+		</div>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item dropdown">
+              <a class="nav-link dropdown-toggle" target="_self" href="javascript:;" role="button"
+                 data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                <i class="iconfont icon-shuji1"></i>
+                <span>文章</span>
+              </a>
+              <div class="dropdown-menu" aria-labelledby="navbarDropdown">
+                
+                  
+                  
+                  
+		<div >
+
+                  <a class="dropdown-item" href="/archives/" target="_self" data-umami-event="Navigation-Archive">
+
+                    <i class="iconfont icon-archive-fill"></i>
+                    <span>归档</span>
+                  </a>
+		</div>
+                
+                  
+                  
+                  
+		<div >
+
+                  <a class="dropdown-item" href="/categories/" target="_self" data-umami-event="Navigation-Category">
+
+                    <i class="iconfont icon-category-fill"></i>
+                    <span>分类</span>
+                  </a>
+		</div>
+                
+                  
+                  
+                  
+		<div >
+
+                  <a class="dropdown-item" href="/tags/" target="_self" data-umami-event="Navigation-Tag">
+
+                    <i class="iconfont icon-tags-fill"></i>
+                    <span>标签</span>
+                  </a>
+		</div>
+                
+                  
+                  
+                  
+		<div >
+
+                  <a class="dropdown-item" href="/shuoshuo/" target="_self" data-umami-event="Navigation-Shuoshuo">
+
+                    <i class="iconfont icon-24gf-bubblesDots4"></i>
+                    <span>说说</span>
+                  </a>
+		</div>
+                
+              </div>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item dropdown">
+              <a class="nav-link dropdown-toggle" target="_self" href="javascript:;" role="button"
+                 data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                <i class="iconfont icon-momo"></i>
+                <span>社交</span>
+              </a>
+              <div class="dropdown-menu" aria-labelledby="navbarDropdown">
+                
+                  
+                  
+                  
+		<div >
+
+                  <a class="dropdown-item" href="/links/" target="_self" data-umami-event="Navigation-Friends">
+
+                    <i class="iconfont icon-link-fill"></i>
+                    <span>友链</span>
+                  </a>
+		</div>
+                
+                  
+                  
+                  
+		<div >
+
+                  <a class="dropdown-item" href="/messagebd/" target="_self" data-umami-event="Navigation-MessageBoard">
+
+                    <i class="iconfont icon-comment"></i>
+                    <span>留言板</span>
+                  </a>
+		</div>
+                
+                  
+                  
+                  
+		<div >
+
+                  <a class="dropdown-item" href="/atom.xml" target="_self" data-umami-event="Navigation-RSS">
+
+                    <i class="iconfont icon-dingyue"></i>
+                    <span>RSS订阅</span>
+                  </a>
+		</div>
+                
+                  
+                  
+                  
+		<div >
+
+                  <a class="dropdown-item" href="/reccomments/" target="_self" data-umami-event="Navigation-Recent-Comments">
+
+                    <i class="iconfont icon-icon-pinglunguanli-pinglunliebiao"></i>
+                    <span>近期评论</span>
+                  </a>
+		</div>
+                
+              </div>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item dropdown">
+              <a class="nav-link dropdown-toggle" target="_self" href="javascript:;" role="button"
+                 data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                <i class="iconfont icon-user-fill"></i>
+                <span>个人</span>
+              </a>
+              <div class="dropdown-menu" aria-labelledby="navbarDropdown">
+                
+                  
+                  
+                  
+		<div >
+
+                  <a class="dropdown-item" href="/about/" target="_self" data-umami-event="Navigation-AboutMe">
+
+                    <i class="iconfont icon-guanyuwomen"></i>
+                    <span>关于</span>
+                  </a>
+		</div>
+                
+                  
+                  
+                  
+		<div >
+
+                  <a class="dropdown-item" href="/playlist/" target="_self" data-umami-event="Navigation-Music">
+
+                    <i class="iconfont icon-music"></i>
+                    <span>歌单</span>
+                  </a>
+		</div>
+                
+                  
+                  
+                  
+		<div >
+
+                  <a class="dropdown-item" href="https://uipv4.zywvvd.com:33035" target="_self" data-umami-event="Navigation-Nextcloud">
+
+                    <i class="iconfont icon-xuniyingpan"></i>
+                    <span>网盘</span>
+                  </a>
+		</div>
+                
+                  
+                  
+                  
+		<div >
+
+                  <a class="dropdown-item" href="https://uipv4.zywvvd.com:33036" target="_self" data-umami-event="Navigation-OneDev">
+
+                    <i class="iconfont icon-git"></i>
+                    <span>仓库</span>
+                  </a>
+		</div>
+                
+                  
+                  
+                  
+		<div >
+
+                  <a class="dropdown-item" href="https://uipv4.zywvvd.com:33041" target="_self" data-umami-event="Navigation-Wiki">
+
+                    <i class="iconfont icon-wiki"></i>
+                    <span>百科</span>
+                  </a>
+		</div>
+                
+              </div>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item dropdown">
+              <a class="nav-link dropdown-toggle" target="_self" href="javascript:;" role="button"
+                 data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                <i class="iconfont icon-ic_fly"></i>
+                <span>导航</span>
+              </a>
+              <div class="dropdown-menu" aria-labelledby="navbarDropdown">
+                
+                  
+                  
+                  
+		<div >
+
+                  <a class="dropdown-item" href="/site-map/" target="_self" data-umami-event="Navigation-SiteMap">
+
+                    <i class="iconfont icon-lianjie"></i>
+                    <span>链接</span>
+                  </a>
+		</div>
+                
+                  
+                  
+                  
+		<div >
+
+                  <a class="dropdown-item" href="/nodeppt/hexo/snavigation/" target="_self" data-umami-event="Navigation-Search">
+
+                    <i class="iconfont icon-sousuo"></i>
+                    <span>搜索</span>
+                  </a>
+		</div>
+                
+              </div>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item dropdown">
+              <a class="nav-link dropdown-toggle" target="_self" href="javascript:;" role="button"
+                 data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                <i class="iconfont icon-wangzhan"></i>
+                <span>站点</span>
+              </a>
+              <div class="dropdown-menu" aria-labelledby="navbarDropdown">
+                
+                  
+                  
+                  
+		<div >
+
+                  <a class="dropdown-item" href="https://uipv4.zywvvd.com:33039/share/0zx3o21oIpZTZqwC/%E5%8F%88%E8%A7%81%E8%8B%8D%E5%B2%9A" target="_self" data-umami-event="Navigation-Umami">
+
+                    <i class="iconfont icon-tongji2"></i>
+                    <span>站点分析</span>
+                  </a>
+		</div>
+                
+                  
+                  
+                  
+		<div >
+
+                  <a class="dropdown-item" href="/earth_sta/" target="_self" data-umami-event="Navigation-Globe">
+
+                    <i class="iconfont icon-tongjifenxi-xiangmubiaogetongji"></i>
+                    <span>访问统计</span>
+                  </a>
+		</div>
+                
+                  
+                  
+                  
+		<div >
+
+                  <a class="dropdown-item" href="https://uipv4.zywvvd.com:33034/status/show" target="_self" data-umami-event="Navigation-Monitor">
+
+                    <i class="iconfont icon-jiankong"></i>
+                    <span>站点监控</span>
+                  </a>
+		</div>
+                
+              </div>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item dropdown">
+              <a class="nav-link dropdown-toggle" target="_self" href="javascript:;" role="button"
+                 data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                <i class="iconfont icon-chuansong"></i>
+                <span>传送</span>
+              </a>
+              <div class="dropdown-menu" aria-labelledby="navbarDropdown">
+                
+                  
+                  
+                  
+		<div >
+
+                  <a class="dropdown-item" href="https://www.foreverblog.cn/go.html" target="_self" data-umami-event="Navigation-ForeverBolg">
+
+                    <i class="iconfont icon-a-BlackHole"></i>
+                    <span>十年之约</span>
+                  </a>
+		</div>
+                
+                  
+                  
+                  
+		<div >
+
+                  <a class="dropdown-item" href="https://www.travellings.cn/go.html" target="_self" data-umami-event="Navigation-DriveTo">
+
+                    <i class="iconfont icon-train1"></i>
+                    <span>开往</span>
+                  </a>
+		</div>
+                
+                  
+                  
+                  
+		<div >
+
+                  <a class="dropdown-item" href="https://bf.zzxworld.com/" target="_self" data-umami-event="Navigation-BlogFinder">
+
+                    <i class="iconfont icon-icon-"></i>
+                    <span>BlogFinder</span>
+                  </a>
+		</div>
+                
+                  
+                  
+                  
+		<div >
+
+                  <a class="dropdown-item" href="https://www.perass.com/" target="_self" data-umami-event="Navigation-Bloghome">
+
+                    <i class="iconfont icon-home-fill"></i>
+                    <span>博客之家</span>
+                  </a>
+		</div>
+                
+              </div>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item dropdown">
+              <a class="nav-link dropdown-toggle" target="_self" href="javascript:;" role="button"
+                 data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                <i class="iconfont icon-gongju"></i>
+                <span>工具</span>
+              </a>
+              <div class="dropdown-menu" aria-labelledby="navbarDropdown">
+                
+                  
+                  
+                  
+		<div >
+
+                  <a class="dropdown-item" href="/navigates/calculator" target="_self" data-umami-event="Navigation-Calculator">
+
+                    <i class="iconfont icon-jisuan"></i>
+                    <span>计算器</span>
+                  </a>
+		</div>
+                
+                  
+                  
+                  
+		<div >
+
+                  <a class="dropdown-item" href="/navigates/webgraphviz" target="_self" data-umami-event="Navigation-WebGtaphviz">
+
+                    <i class="iconfont icon-tongyong-huatugongju2"></i>
+                    <span>Graphviz</span>
+                  </a>
+		</div>
+                
+                  
+                  
+                  
+		<div >
+
+                  <a class="dropdown-item" href="/navigates/formular_reco" target="_self" data-umami-event="Navigation-Formular-Reco">
+
+                    <i class="iconfont icon-a-checkformula"></i>
+                    <span>公式识别</span>
+                  </a>
+		</div>
+                
+              </div>
+            </li>
+          
+        
+        
+          <li class="nav-item" id="search-btn">
+            <a class="nav-link" target="_self" href="javascript:;" data-toggle="modal" data-target="#modalSearch" aria-label="Search">
+              <i class="iconfont icon-search"></i>
+            </a>
+          </li>
+          
+        
+        
+          <li class="nav-item" id="color-toggle-btn">
+            <a class="nav-link" target="_self" href="javascript:;" aria-label="Color Toggle">
+              <i class="iconfont icon-dark" id="color-toggle-icon"></i>
+            </a>
+          </li>
+        
+      </ul>
+    </div>
+  </div>
+</nav>
+
+  
+
+<div id="banner" class="banner" parallax=true
+     style="background: url('https://uipv4.zywvvd.com:33030/HexoFiles/new/bg-trans.png') no-repeat center center; background-size: cover;">
+  <div class="full-bg-img">
+    <div class="mask flex-center" style="background-color: rgba(0, 0, 0, 0)">
+      <div class="banner-text text-center fade-in-up">
+        <div class="h2">
+          
+            <span id="subtitle">OpenCV 图像分析之 —— 霍夫变换(Hough Transform)</span>
+          
+        </div>
+
+        
+          
+  <div class="mt-3">
+    
+      <span class="post-meta mr-2">
+        <i class="iconfont icon-author" aria-hidden="true"></i>
+        Yiwei Zhang
+      </span>
+    
+    
+      <span class="post-meta">
+        <i class="iconfont icon-date-fill" aria-hidden="true"></i>
+        <time datetime="2022-03-30 10:55" pubdate>
+          2022年3月30日 上午
+        </time>
+      </span>
+    
+  </div>
+
+  <div class="mt-1">
+    
+      <span class="post-meta mr-2">
+        <i class="iconfont icon-chart"></i>
+        
+          <!-- compatible with older versions-->
+          3.9k 字
+        
+      </span>
+    
+
+    
+      <span class="post-meta mr-2">
+        <i class="iconfont icon-clock-fill"></i>
+        
+        
+        
+          <!-- compatible with older versions-->
+          33 分钟
+        
+      </span>
+    
+
+    
+    
+      
+        <span id="vvdpost_container_page_pvuv" style="display: none">
+          <i class="iconfont icon-eye" aria-hidden="true"></i>
+          <span id="vvdpost_value_page_pv">0</span> 次&nbsp&nbsp
+		  <i class="iconfont icon-users" aria-hidden="true"></i>
+		  <span id="vvdpost_value_page_uv">0</span> 人&nbsp&nbsp
+		  <i class="iconfont icon-comment" aria-hidden="true"></i>
+		  <span id="vvdpost_value_page_cn">0</span> 条
+        </span>
+
+    <script>
+    document.addEventListener("DOMContentLoaded", function() {
+	      console.log("PVUV_" + window.location.pathname);
+
+	      // 使用 fetch API 发送 POST 请求
+	      fetch('https://uipv4.zywvvd.com:33037/poststats', { 
+		  method: 'POST',
+		  headers: {
+		      'Content-Type': 'application/json'
+		  },
+		  body: JSON.stringify(window.location.pathname) // 将路径名作为对象发送，以便在服务器端更容易处理
+	      })
+	      .then(response => {
+		  // 检查响应状态
+		  if (!response.ok) {
+		      throw new Error('Network response was not ok ' + response.statusText);
+		  }
+		  return response.json(); // 解析 JSON 响应
+	      })
+	      .then(data => {
+		  // 处理解析后的数据
+		  console.log(data.pv);
+		  var pvCtn = document.querySelector('#vvdpost_container_page_pvuv');
+		  if (pvCtn) {
+		      var pvEle = document.querySelector('#vvdpost_value_page_pv');
+		      var uvEle = document.querySelector('#vvdpost_value_page_uv');
+		      var cnEle = document.querySelector('#vvdpost_value_page_cn');
+		      if (pvEle && uvEle) {
+		          pvEle.innerText = data.pv;
+		          uvEle.innerText = data.uv;
+		          cnEle.innerText = data.cn;
+		          pvCtn.style.display = 'inline';
+		      }
+		  }
+	      })
+	      .catch(error => {
+		  // 处理请求错误
+		  console.error('There has been a problem with your fetch operation:', error);
+	      });
+      });
+  </script>
+      
+    
+  </div>
+
+
+        
+      </div>
+
+      
+        <div class="scroll-down-bar">
+          <i class="iconfont icon-arrowdown"></i>
+        </div>
+      
+    </div>
+  </div>
+</div>
+
+</div>
+
+
+	<script type="text/javascript" src="/vvd_js/jquery.js"></script>
+	<script async src="https://uipv4.zywvvd.com:33039/script.js" data-website-id="dd4a05c6-dde2-4743-9c3a-a79d6bee0778"></script>
+	<div class="banner" id='banner' >
+
+		<div class="full-bg-img" >
+
+			
+				<script>
+					var ua = navigator.userAgent;
+					var ipad = ua.match(/(iPad).*OS\s([\d_]+)/),
+						isIphone = !ipad && ua.match(/(iPhone\sOS)\s([\d_]+)/),
+						isAndroid = ua.match(/(Android)\s+([\d.]+)/),
+						isMobile = isIphone || isAndroid;
+
+					function set_video_attr(id){
+						var height = document.body.clientHeight
+						var width = document.body.clientWidth
+						var video_item = document.getElementById(id);
+
+						if (height / width < 0.56){
+							video_item.setAttribute('width', '100%');
+							video_item.setAttribute('height', 'auto');
+						} else {
+							video_item.setAttribute('height', '100%');
+							video_item.setAttribute('width', 'auto');
+						}
+					}
+
+					fetch('https://uipv4.zywvvd.com:33037/wallpaper-pair')
+					  .then(response => response.json()) // 解析JSON数据
+					  .then(data => {
+						console.log('获取链接成功');
+						video_url = data[0][0]
+						pre_show_image_url = data[0][1]
+
+						banner_obj = document.getElementById("banner")
+						banner_obj.style.cssText = "background: url('" + pre_show_image_url + "') no-repeat;"
+
+						vvd_banner_obj = document.getElementById("vvd_banner_img")
+						vvd_banner_content = "<img id='banner_img_item' src='" + pre_show_image_url + "'style='position: fixed; z-index: -999'>"
+						vvd_banner_obj.innerHTML = vvd_banner_content 
+
+						if (!isMobile) {
+							video_html_res = "<video id='video_item' style='position: fixed; z-index: -888;'  muted='muted' src=" + video_url + " autoplay='autoplay' loop='loop'></video>"
+							document.getElementById("banner_video_insert").innerHTML = video_html_res;
+							set_video_attr('video_item')
+							set_video_attr('banner_img_item')
+						}
+					    
+					  })
+					  .catch((error) => {
+					    console.error('请求失败,尝试本地获取背景图像：', error);
+	    					$.getJSON('/vvd_js/video_url.json', function(data){
+
+							var video_list_length = data.length
+							var seed = Math.random()
+							index = Math.floor(seed * video_list_length)
+
+							video_url = data[index][0]
+							pre_show_image_url = data[index][1]
+
+							banner_obj = document.getElementById("banner")
+							banner_obj.style.cssText = "background: url('" + pre_show_image_url + "') no-repeat;"
+
+							vvd_banner_obj = document.getElementById("vvd_banner_img")
+							vvd_banner_content = "<img id='banner_img_item' src='" + pre_show_image_url + "'style='position: fixed; z-index: -999'>"
+							vvd_banner_obj.innerHTML = vvd_banner_content 
+
+							if (!isMobile) {
+								video_html_res = "<video id='video_item' style='position: fixed; z-index: -888;'  muted='muted' src=" + video_url + " autoplay='autoplay' loop='loop'></video>"
+								document.getElementById("banner_video_insert").innerHTML = video_html_res;
+								set_video_attr('video_item')
+								set_video_attr('banner_img_item')
+							}
+						});
+					  });
+
+
+
+
+
+
+					if (!isMobile){
+						window.onresize = function(){
+							set_video_attr('video_item')
+							set_video_attr('banner_img_item')
+							}
+						}
+				</script>
+
+			
+
+
+			
+			</div>
+		</div>
+    </div>
+
+  </header>
+
+  <main>
+    
+      
+
+
+
+<div class="container-fluid nopadding-x">
+  <div class="row nomargin-x">
+    <div class="side-col d-none d-lg-block col-lg-2">
+      
+
+    </div>
+
+    <div class="col-lg-8 nopadding-x-md">
+      <div class="container nopadding-x-md" id="board-ctn">
+        <div id="board">
+          <article class="post-content mx-auto">
+
+            <!-- <h1 id="seo-header">OpenCV 图像分析之 —— 霍夫变换(Hough Transform)</h1> -->
+
+            
+              <p id="updated-time" class="note note-info" style="">
+                
+                  
+                    <!-- compatible with older versions-->
+                    本文最后更新于：2024年5月7日 下午
+                  
+                
+              </p>
+            
+            
+              <div class="markdown-body">
+                
+                <blockquote>
+<p>霍夫变换（Hough Transform）是一个关于图像领域类的一个算法，被用来检测图像中的各类曲线，直线，圆，椭圆等等，本文记录相关内容与 OpenCV 实现。</p>
+</blockquote>
+<span id="more"></span>
+<h3 id="霍夫变换-Hough-Transform">霍夫变换 (Hough Transform)</h3>
+<p>Hough（霍夫）变换是一种用于检测线、圆或者图像中其他简单形状的方法。最初Hough变换是一种线变换，这是一种相对较快的检测二值图像中直线的方法，可以进一步推广到除简单线之外的情况。</p>
+<h3 id="霍夫线变换">霍夫线变换</h3>
+<ul>
+<li>在笛卡尔坐标系下存在很多直线，直线可以用<code>点截式</code>表示，假设笛卡尔坐标下的两个点$A=(X_1,Y_1)$和$B=(X_2,Y_2)$：</li>
+</ul>
+<p><img src="https://uipv4.zywvvd.com:33030/HexoFiles/vvd_dell/20220330152350.png" srcset="/img/loading.gif" lazyload alt=""></p>
+<ul>
+<li>在笛卡尔坐标系下两点确定的直线为 $y=kx+q$，考虑已知的 $A,B$ 两点，则可以确定唯一的 $k,q$：</li>
+</ul>
+<p>$$<br>
+\left{\begin{array}{l}q=-k x_{1}+y_{1} \ q=-k x_{2}+y_{2}\end{array}\right.<br>
+$$</p>
+<ul>
+<li>若以$k,q$为自变量、因变量可以绘制 <code>霍夫坐标系</code>，那么<strong>笛卡尔坐标系下的直线则对应霍夫坐标系下的一个点</strong>：</li>
+</ul>
+<p><img src="https://uipv4.zywvvd.com:33030/HexoFiles/vvd_dell/20220330190632.png" srcset="/img/loading.gif" lazyload alt=""></p>
+<ul>
+<li>相反，考虑在笛卡尔坐标系下的一个点$(x_1,y_1)$ ，过这一点的直线方程为：</li>
+</ul>
+<p>$$<br>
+q=-x_{1} k+y_{1}<br>
+$$</p>
+<ul>
+<li>此时该方程表示霍夫空间下的一条直线：</li>
+</ul>
+<p><img src="https://uipv4.zywvvd.com:33030/HexoFiles/vvd_dell/20220330190928.png" srcset="/img/loading.gif" lazyload alt=""></p>
+<ul>
+<li>当笛卡尔坐标中有两个点时,对应霍夫空间的两条直线表示:</li>
+</ul>
+<p><img src="https://uipv4.zywvvd.com:33030/HexoFiles/vvd_dell/20220330214152.png" srcset="/img/loading.gif" lazyload alt=""></p>
+<ul>
+<li>如果有三个共线的点:</li>
+</ul>
+<p><img src="https://uipv4.zywvvd.com:33030/HexoFiles/vvd_dell/20220330220641.png" srcset="/img/loading.gif" lazyload alt=""></p>
+<ul>
+<li>
+<p>可以看到笛卡尔坐标下共线的点在霍夫空间交于一点，因为笛卡尔坐标系下的直线对应霍夫空间中的一个点</p>
+</li>
+<li>
+<p>当有多个点的情况时：</p>
+</li>
+</ul>
+<p><img src="https://uipv4.zywvvd.com:33030/HexoFiles/vvd_dell/20220330221930.png" srcset="/img/loading.gif" lazyload alt=""></p>
+<ul>
+<li>其实$(3，2)$与$(4，1)$也可以组成直线，只不过它有两个点确定，而图中A、B两点是由三条直线汇成，这也是<strong>霍夫变换的后处理的基本方式</strong>：<strong>选择由尽可能多直线汇成的点</strong>。</li>
+<li>因此我们在霍夫空间确定$A, B$ 两个点确定的笛卡尔坐标下的直线</li>
+</ul>
+<p><img src="https://uipv4.zywvvd.com:33030/HexoFiles/vvd_dell/20220330222409.png" srcset="/img/loading.gif" lazyload alt=""></p>
+<ul>
+<li>然而斜截式表示竖线是不方便的</li>
+</ul>
+<p><img src="https://uipv4.zywvvd.com:33030/HexoFiles/vvd_dell/20220330222544.png" srcset="/img/loading.gif" lazyload alt=""></p>
+<ul>
+<li>$k=∞$是不方便表示的，因此考虑<strong>将笛卡尔坐标系换为：极坐标表示</strong>。</li>
+</ul>
+<p><img src="https://uipv4.zywvvd.com:33030/HexoFiles/vvd_dell/20220330222646.png" srcset="/img/loading.gif" lazyload alt=""></p>
+<ul>
+<li>在极坐标系下，其实是一样的：极坐标的点→霍夫空间的直线，只不过霍夫空间不再是$[k,q]$的参数，而是$ [\rho, \theta] $:</li>
+</ul>
+<p><img src="https://uipv4.zywvvd.com:33030/HexoFiles/vvd_dell/20220330222810.png" srcset="/img/loading.gif" lazyload alt=""></p>
+<h4 id="算法步骤">算法步骤</h4>
+<ol>
+<li>初始化累加器 $H$ 全零</li>
+</ol>
+<p><img src="https://uipv4.zywvvd.com:33030/HexoFiles/vvd_dell/20220330224322.png" srcset="/img/loading.gif" lazyload alt=""></p>
+<ol start="2">
+<li>遍历图像中的每一个边缘点</li>
+</ol>
+<figure class="highlight processing"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><code class="hljs processing"><span class="hljs-keyword">for</span> edge <span class="hljs-built_in">point</span> (x,y) in <span class="hljs-built_in">image</span>:<br>	<span class="hljs-keyword">for</span> theta = <span class="hljs-number">0</span> to <span class="hljs-number">180</span>:<br>		rho = x * <span class="hljs-built_in">cos</span>(theta) + y * <span class="hljs-built_in">sin</span>(theta)<br>		<span class="hljs-title function_">H</span>(<span class="hljs-built_in">round</span>(theta), <span class="hljs-built_in">round</span>(rho)) += <span class="hljs-number">1</span><br></code></pre></td></tr></table></figure>
+<ol start="3">
+<li>找到 $H$ 中局部最大值的点</li>
+<li>将点 $(\theta, \rho)$ 转换为图像中的直线</li>
+</ol>
+<p>$$<br>
+\rho=x \cos \theta+y \sin \theta<br>
+$$</p>
+<h4 id="cv2-HoughLines">cv2.HoughLines</h4>
+<blockquote>
+<p>使用标准霍夫变换查找二值图像中的直线。</p>
+<p><a target="_blank" rel="noopener" href="https://docs.opencv.org/4.5.5/dd/d1a/group__imgproc__feature.html#ga46b4e588934f6c8dfd509cc6e0e4545a">官方文档</a></p>
+</blockquote>
+<ul>
+<li>函数使用</li>
+</ul>
+<figure class="highlight glsl"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><code class="hljs glsl">cv2.HoughLines(<br>	image, 				<span class="hljs-meta"># 原图像。</span><br>	rho, 				<span class="hljs-meta"># 累加器的距离分辨率(以像素为单位)。</span><br>	theta, 				<span class="hljs-meta"># 累加器的弧度角分辨率。</span><br>	threshold[, 		<span class="hljs-meta"># 累加器阈值参数。只返回那些获得足够投票的直线(&gt; threshold)。</span><br>	<span class="hljs-keyword">lines</span>[, 			<span class="hljs-meta"># 返回的线，格式为 [[rho_1,theta_1], [rho_2,theta_2], ...]</span><br>	srn[, 				<span class="hljs-meta"># 对于多尺度 Hough 变换，它是距离分辨率 ρ 的一个除数。</span><br>						  粗的累加器距离分辨率为 ρ，精确的累加器分辨率为 ρ/srn。<br>						  如果同时使用 srn = <span class="hljs-number">0</span> 和 stn = <span class="hljs-number">0</span>，则使用经典的 Hough 变换。<br>						  否则，这两个参数都应该是正数。<br>	stn[, 				<span class="hljs-meta"># 对于多尺度 Hough 变换，它是距离分辨率 θ 的除数。</span><br>	min_theta[,			<span class="hljs-meta"># 对于标准和多尺度霍夫变换，最小角度检查线。必须在0和max_theta之间。</span><br>    max_theta			<span class="hljs-meta"># 对于标准和多尺度霍夫变换，检查线路的最大角度。必须在 min_theta 和 cv2.CV_pi 之间。</span><br>    ]]]]]) -&gt; <span class="hljs-keyword">lines</span><br></code></pre></td></tr></table></figure>
+<ul>
+<li>示例代码</li>
+</ul>
+<figure class="highlight stylus"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br></pre></td><td class="code"><pre><code class="hljs stylus"><span class="hljs-selector-tag">img</span> = mt<span class="hljs-selector-class">.cv_rgb_imread</span>(<span class="hljs-string">&#x27;hough_line.jpeg&#x27;</span>)<br>ori_img = <span class="hljs-selector-tag">img</span><span class="hljs-selector-class">.copy</span>()<br>gray = mt<span class="hljs-selector-class">.to_gray_image</span>(img)<br>edge = cv2<span class="hljs-selector-class">.Canny</span>(gray, <span class="hljs-number">17430</span>, <span class="hljs-number">34000</span>, apertureSize=<span class="hljs-number">7</span>, L2gradient=True)<br>lines = cv2<span class="hljs-selector-class">.HoughLines</span>(edge, rho=<span class="hljs-number">1</span>, theta=np.pi/<span class="hljs-number">180</span>, threshold=<span class="hljs-number">170</span>)<br><br><span class="hljs-keyword">for</span> line <span class="hljs-keyword">in</span> lines:<br>    rho,theta = line<span class="hljs-selector-attr">[0]</span><br>    <span class="hljs-selector-tag">a</span> = np<span class="hljs-selector-class">.cos</span>(theta)<br>    <span class="hljs-selector-tag">b</span> = np<span class="hljs-selector-class">.sin</span>(theta)<br>    x0 = a*rho<br>    y0 = b*rho<br>    x1 = <span class="hljs-built_in">int</span>(x0 + <span class="hljs-number">1000</span>*(-b))<br>    y1 = <span class="hljs-built_in">int</span>(y0 + <span class="hljs-number">1000</span>*(a))<br>    x2 = <span class="hljs-built_in">int</span>(x0 - <span class="hljs-number">1000</span>*(-b))<br>    y2 = <span class="hljs-built_in">int</span>(y0 - <span class="hljs-number">1000</span>*(a))<br><br>    cv2<span class="hljs-selector-class">.line</span>(<span class="hljs-selector-tag">img</span>,(x1,y1),(x2,y2),(<span class="hljs-number">250</span>,<span class="hljs-number">250</span>,<span class="hljs-number">40</span>),<span class="hljs-number">2</span>)<br><span class="hljs-function"><span class="hljs-title">PIS</span><span class="hljs-params">(ori_img, img)</span></span><br></code></pre></td></tr></table></figure>
+<p><img src="https://uipv4.zywvvd.com:33030/HexoFiles/vvd_dell/20220330234802.png" srcset="/img/loading.gif" lazyload alt=""></p>
+<h3 id="概率霍夫变换-Progressive-Probabilistic-Hough-Transform">概率霍夫变换(Progressive Probabilistic Hough Transform)</h3>
+<h4 id="霍夫变换用于检测直线的缺点">霍夫变换用于检测直线的缺点</h4>
+<ul>
+<li>
+<p>霍夫变换只是寻找图像中边缘像素的对齐区域，有些像素只是碰巧排成了直线，因此可能产生错误的检测结果；</p>
+</li>
+<li>
+<p>可能因为多条参数相近的直线穿过了同一个像素对齐区域，而导致出现重复的结果。</p>
+</li>
+</ul>
+<h4 id="算法流程"><strong>算法流程</strong></h4>
+<ul>
+<li>
+<p>为了解决上述问题并检测到线段，可以利用概率霍夫变换解决。</p>
+</li>
+<li>
+<p>概率霍夫变换算法的复杂度增加，但可以在扫描直线的过程中清除部分像素点，减少投票过程中用到的像素点。</p>
+</li>
+</ul>
+<ol>
+<li>
+<p>随机获取边缘图像上的前景点，映射到极坐标系画曲线；</p>
+<blockquote>
+<p>不是系统性地逐行扫描图像</p>
+</blockquote>
+</li>
+<li>
+<p>一旦累加器的某个入口处到达了预设的最小值，就沿着对应的直线扫描图像，并移除这条直线上的所有像素点</p>
+<blockquote>
+<p>删除点时包括还没投票的像素点</p>
+</blockquote>
+</li>
+<li>
+<p>搜索边缘图像上前景点，在直线L上的点（且点与点之间距离小于maxLineGap的）连成线段，然后这些点全部删除，并且记录该线段的参数（起始点和终止点），当然线段长度要满足最小长度；</p>
+<blockquote>
+<p>这个扫描过程还检测可以接受的线段长度。为此，算法定义两个额外的参数：一个是允许的线段最小长度，另一个是组成线段时允许的最大像素距离。</p>
+</blockquote>
+</li>
+<li>
+<p>重复1. 2. 3。</p>
+</li>
+</ol>
+<h4 id="cv2-HoughLinesP">cv2.HoughLinesP</h4>
+<blockquote>
+<p>用于实现概率霍夫变换寻找边缘中的直线</p>
+<p><a target="_blank" rel="noopener" href="https://docs.opencv.org/4.5.5/dd/d1a/group__imgproc__feature.html#ga8618180a5948286384e3b7ca02f6feeb">官方文档</a></p>
+</blockquote>
+<ul>
+<li>函数使用</li>
+</ul>
+<figure class="highlight glsl"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><code class="hljs glsl">cv2.HoughLinesP(<br>	image, 				<span class="hljs-meta"># 源图像。</span><br>	rho, 				<span class="hljs-meta"># 累加器的距离分辨率(以像素为单位)。</span><br>	theta, 				<span class="hljs-meta"># 累加器的弧度角分辨率。</span><br>	threshold[, 		<span class="hljs-meta"># 累加器阈值参数。只返回那些获得足够投票的直线(&gt; threshold)。</span><br>	<span class="hljs-keyword">lines</span>[, 			<span class="hljs-meta"># 返回线结果，格式为 [[xmin, ymin, xmax, ymax], ...]。</span><br>	minLineLength[, 	<span class="hljs-meta"># 最短线段长度。</span><br>	maxLineGap]]]		<span class="hljs-meta"># 点连接成线的最大距离。</span><br>	) -&gt; <span class="hljs-keyword">lines</span><br><br></code></pre></td></tr></table></figure>
+<ul>
+<li>示例代码</li>
+</ul>
+<figure class="highlight routeros"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><code class="hljs routeros">img = mt.cv_rgb_imread(<span class="hljs-string">&#x27;hough_line.jpeg&#x27;</span>)<br>ori_img = img.copy()<br>gray = mt.to_gray_image(img)<br>edge = cv2.Canny(gray, 17430, 34000, <span class="hljs-attribute">apertureSize</span>=7, <span class="hljs-attribute">L2gradient</span>=<span class="hljs-literal">True</span>)<br>lines = cv2.HoughLinesP(edge, <span class="hljs-attribute">rho</span>=1, <span class="hljs-attribute">theta</span>=np.pi/180, <span class="hljs-attribute">threshold</span>=30, <span class="hljs-attribute">minLineLength</span>=30, <span class="hljs-attribute">maxLineGap</span>=20)<br><span class="hljs-keyword">for</span> line <span class="hljs-keyword">in</span> lines:<br>    x1,y1,x2,y2 = line[0]<br>    cv2.line(img,(x1,y1),(x2,y2),(250,255,70),2)<br>PIS(ori_img, img)<br></code></pre></td></tr></table></figure>
+<p><img src="https://uipv4.zywvvd.com:33030/HexoFiles/vvd_dell/20220331000804.png" srcset="/img/loading.gif" lazyload alt=""></p>
+<h3 id="霍夫圆变换">霍夫圆变换</h3>
+<blockquote>
+<p>Hough圆变换的方法与之前描述的线变换方法相似。粗略解释的话，就是如果你想尝试用完全类似的方法去做，就要从累加平面变成累加三维的体积，三维坐标分别是圆心的位置x、y和圆的半径r。但这样做意味着更大的内存需求和更慢的速度。OpenCV中圆变换的实现通过采用一种称为Hough梯度法的较为复杂的方法来避免了这个问题。</p>
+</blockquote>
+<h4 id="理论方法">理论方法</h4>
+<ul>
+<li>图像坐标空间中的一条已知的曲线方程也可以建立其相应的参数空间。由此，图像坐标空间中的一点，在参数空间中就可以映射为相应的轨迹曲线或者曲面。</li>
+<li>若参数空间中对应各个间断点的曲线或者曲面能够相交，就能找到参数空间的极大值以及对应的参数；若参数空间中对应各个间断点的曲线或者曲面不能相交，则说明间断点不符合某已知曲线。</li>
+<li>Hough变换做曲线检测时，最重要的是写出图像坐标空间到参数空间的变换公式。</li>
+<li>对于已知的圆方程，其直角坐标的一般方程为：</li>
+</ul>
+
+$$
+(x-a)^{2}+(y-b)^{2}=r^{2}
+$$
+
+
+<ul>
+<li>其中，$(a,b)$为圆心坐标，$r$为圆的半径。那么，参数空间可以表示为$(a,b,r)$，图像坐标空间中的一个圆对应参数空间中的一个点。</li>
+<li>笛卡尔坐标空间中的一个点，对应霍夫三维空间中的一个’漏斗’。</li>
+</ul>
+<script src="https://uipv4.zywvvd.com:33030/HexoFiles/js/vvd_js/deployggb.js"></script>
+<script>
+var parameters = {
+"id": "ggbApplet",
+"width":700,
+"height":450,
+"showResetIcon":true,
+"borderColor":"white",
+"language":"en",
+"filename":"https://uipv4.zywvvd.com:33030/HexoFiles/vvd_dell/20220401002356.ggb"};
+var applet = new GGBApplet(parameters, '5.0');
+applet.setHTML5Codebase('/vvd_js/5.0/web3d/');
+applet.setHTML5Codebase('/vvd_js/5.0/web3d/');
+window.onload = function() {applet.inject('ggbApplet')};
+</script>
+<div id="ggbApplet" style='margin:0 auto'></div>
+<ul>
+<li>图中可以看到笛卡尔坐标系下的圆$x<sup>2+y</sup>2=1$ 上的三个点对应霍夫空间的三个’漏斗’：</li>
+</ul>
+
+$$
+(x_i-a)^{2}+(y_i-b)^{2}=r^{2}
+$$
+
+<blockquote>
+<p>其中 $i \in { 1,2,3 }$</p>
+</blockquote>
+<ul>
+<li>三个’漏斗’（取 $r &gt; 0$ 的部分）的交点为 $(0, 0, 1)$，表明这个圆对应霍夫空间的点。</li>
+</ul>
+<h4 id="OpenCV-实现思路">OpenCV 实现思路</h4>
+<blockquote>
+<p>Hough圆变换的方法与之前描述的线变换方法相似。粗略解释的话，就是如果你想尝试用完全类似的方法去做，就要从累加平面变成累加三维的体积，三维坐标分别是圆心的位置x、y和圆的半径r。但这样做意味着更大的内存需求和更慢的速度。OpenCV中圆变换的实现通过采用一种称为Hough梯度法的较为复杂的方法来避免了这个问题。</p>
+</blockquote>
+<ul>
+<li>在用霍夫变换检测圆的实现中使用两轮筛选。</li>
+<li>检测边缘发现可能的圆心，第一轮筛选使用一个二维累加器，找到可能的圆的位置。因为圆上像素点的梯度方向与半径方向是一致的，所以对每个像素点来说，累加器只对沿着梯度方向的入口增加计数（根据预先定义的最小和最大半径值）。</li>
+<li>一旦检测到可能的圆心（即收到预定数量的投票），就在第二轮筛选中建立半径值范围的一维直方图。这个直方图的尖峰就是被检测圆的半径</li>
+</ul>
+<h4 id="OpenCV-霍夫圆变换">OpenCV 霍夫圆变换</h4>
+<blockquote>
+<p>Hough梯度法工作过程如下。</p>
+</blockquote>
+<ol>
+<li>
+<p>首先，对图像进行边缘检测(可以使用<code>cv2.Canny()</code>);</p>
+</li>
+<li>
+<p>对每个轮廓图像中的非零点，考虑局部梯度(我们通过首先通过<code>cv2.Sobel()</code>计算一阶 Sobel x-导数 和 y-导数 来计算梯度）。</p>
+<p>通过这个梯度，我们沿着这个斜率表示的线在累加器内从一个最小值到一个最大值遍历每个点，同时，记录轮廓图像中每个非零像素所在的位置。</p>
+</li>
+<li>
+<p>然后候选圆心就从这些（二维）累加器中分离出来，这些点都高于一个阈值且同时大于其所有直接相邻的点。这些点根据其累加器值的降序排列，使得最有可能是圆心的点排在前面。</p>
+</li>
+<li>
+<p>对于每个圆心，考虑所有非零像素点（之前已经构建好该列表），将这些像素根据离圆心的距离排序。从最小距离到最大半径中选择一个最好的值作为圆的半径。</p>
+</li>
+<li>
+<p>如果有足够数量的点组合成一个圆并且其圆心与之前选中圆心的距离足够大，就保留这个圆心。</p>
+</li>
+</ol>
+<blockquote>
+<p>官方贴士：</p>
+<figure class="highlight pf"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs pf">通常该函数能很好地检测出圆的中心。但是，它可能无法找到正确的半径。您可以通过指定半径范围(<span class="hljs-keyword">min</span>Radius 和 <span class="hljs-keyword">max</span>Radius)来辅助函数。或者，在 HOUGH_gradient 方法的情况下，您可以将 <span class="hljs-keyword">max</span>Radius 设置为一个负数，只返回中心而不进行半径搜索，并使用另一个程序找到正确的半径。<br></code></pre></td></tr></table></figure>
+</blockquote>
+<h4 id="cv2-HoughCircles">cv2.HoughCircles</h4>
+<blockquote>
+<p>OpenCV 实现霍夫圆变换的函数</p>
+<p><a target="_blank" rel="noopener" href="https://docs.opencv.org/4.5.5/dd/d1a/group__imgproc__feature.html#ga47849c3be0d0406ad3ca45db65a25d2d">官方文档</a></p>
+</blockquote>
+<ul>
+<li>函数使用</li>
+</ul>
+<figure class="highlight pf"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br></pre></td><td class="code"><pre><code class="hljs pf">cv2.HoughCircles(<br>	image, 					<span class="hljs-comment"># 单通道灰度图像，uint8 格式</span><br>	method, 				<span class="hljs-comment"># 检测方法，支持 cv2.HOUGH_GRADIENT 和 cv2.HOUGH_GRADIENT_ALT</span><br>							  cv2.HOUGH_GRADIENT_ALT 是 <span class="hljs-number">4.3</span>.<span class="hljs-number">0</span> 版本的新方法，精度较高<br>	dp, 					<span class="hljs-comment"># 累加器分辨率与图像分辨率的反比</span><br>							<span class="hljs-comment"># 例如，如果 dp=1 ，则累加器具有与输入图像相同的分辨率。</span><br>							  如果 dp=<span class="hljs-number">2</span>，累加器的宽度和高度只有一半。<br>							<span class="hljs-comment"># 对于 HOUGH_GRADIENT_ALT 算法，除非有很小的圆需要检测，否则建议 dp=1.5</span><br>	<span class="hljs-keyword">min</span>Dist[, 				<span class="hljs-comment"># 检测到的圆心之间的最小距离。</span><br>							<span class="hljs-comment"># 如果参数太小，除了一个真实的圆之外，多个相邻的圆可能会被错误地检测到。</span><br>							  如果太大，有些圆圈可能会被漏掉。<br>	circles[, 				<span class="hljs-comment"># 返回的圆结果</span><br>							  如果是三维则结果为 (x, y, radius)<br>							  如果是四维则结果为 (x, y, radius, votes)<br>	param1[, 				<span class="hljs-comment"># 第一个参数</span><br>							  对于 cv2.HOUGH_GRADIENT 和 cv2.HOUGH_GRADIENT_ALT，<br>							  它是传递给 Canny 算子的两个阈值中较高的阈值(较低的阈值小两倍)。<br>							  注意，cv2.HOUGH_ HOUGH_GRADIENT_ALT 使用 Scharr 算法计算图像导数，<br>							  因此阈值通常应该较高，如<span class="hljs-number">300</span>或正常曝光和对比度图像。<br>	param2[, 				<span class="hljs-comment"># 第二个参数</span><br>							  在 cv2.HOUGH_GRADIENT 情况下，它是检测阶段圆心的累加阈值。<br>							  它越小，就可能检测到越多的错误圆环。与较大的累加器值对应的“圆”将首先返回。<br>							  在 cv2.HOUGH_ HOUGH_GRADIENT_ALT 算法的情况下，这是圆的“完美性”度量。<br>							  越接近<span class="hljs-number">1</span>，算法选择形状越好的圆形。在大多数情况下，<span class="hljs-number">0.9</span>就可以了。<br>							  如果你想更好地发现小圆，你可以把它减少到<span class="hljs-number">0.85</span>,<span class="hljs-number">0.8</span>甚至更少。<br>							  但同时也要尝试限制搜索范围[ <span class="hljs-keyword">min</span>Radius，<span class="hljs-keyword">max</span>Radius ] ，以避免出现许多错误的圆圈。<br>	<span class="hljs-keyword">min</span>Radius[, 			<span class="hljs-comment"># 最小的圆半径</span><br>	<span class="hljs-keyword">max</span>Radius]]]]]) -&gt; 		<span class="hljs-comment"># 最大圆半径。</span><br>							  如果该参数 <span class="hljs-variable">&lt;= 0，则使用最大图像维数。</span><br><span class="hljs-variable">							  如果该参数 &lt; 0，当方法为 cv2.HOUGH_GRADIENT 时函数返回中心，但不找半径；</span><br><span class="hljs-variable">							  cv2.HOUGH_GRADIENT_ALT 总是计算圆半径。</span><br><span class="hljs-variable">	circles</span><br><span class="hljs-variable"></span><br></code></pre></td></tr></table></figure>
+<ul>
+<li>示例代码 <code>cv2.HOUGH_GRADIENT</code></li>
+</ul>
+<figure class="highlight routeros"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><code class="hljs routeros">img_org = mt.cv_rgb_imread(<span class="hljs-string">&#x27;hough_circles.jpeg&#x27;</span>, <span class="hljs-attribute">gray</span>=<span class="hljs-literal">False</span>)<br>img_org = mt.image_resize(img_org, <span class="hljs-attribute">factor</span>=0.4)<br>img = mt.to_gray_image(img_org)<br><br>res = cv2.HoughCircles(img, cv2.HOUGH_GRADIENT, 1.2, 100, <span class="hljs-attribute">param1</span>=360, <span class="hljs-attribute">param2</span>=120, <span class="hljs-attribute">minRadius</span>=50, <span class="hljs-attribute">maxRadius</span>=300)<br><span class="hljs-keyword">for</span> circle <span class="hljs-keyword">in</span> res[0]:<br>    x, y,<span class="hljs-built_in"> radius </span>= circle<br>    cv2.circle(img_org, mt.vvd_round([x, y]), mt.vvd_round(radius), color=[255, 0, 0], <span class="hljs-attribute">thickness</span>=2)<br>PIS(img_org)<br></code></pre></td></tr></table></figure>
+<p><img src="https://uipv4.zywvvd.com:33030/HexoFiles/vvd_dell/20220401112956.png" srcset="/img/loading.gif" lazyload alt=""></p>
+<ul>
+<li>
+<p><code>cv2.HOUGH_GRADIENT</code></p>
+<ul>
+<li>第一，用 Sobel 导数计算局部梯度一伴随的假设是这可以被认为相当于一个局部切线一不是一个数值稳定的命题，甚至“大部分时间”都是这样，但是你应该期望在输出中产生一些噪音。</li>
+<li>第二，对每个候选圆心进行判断时要考虑轮廓图像中所有非零像素。因此，如果累加器阈值过低，算法就会很慢。</li>
+<li>第三，因为对每个圆心都只能选择一个圆，所以如果出现同心圆，最终将只能得到一个。最后，由于圆心根据累加器值升序排列，并且圆心距离先前被被接受的圆心太近时会被舍去，因而出现同心或近似同心圆时，算法更倾向于保留大圆。（由于Sobel导数产生的噪声，它只是一种“倾向”，但在无限分辨率下的平滑图像中，它就是必然的了。）</li>
+</ul>
+<blockquote>
+<p>部分问题在新版本的算法 <code>cv2.HOUGH_GRADIENT_ALT</code> 中得到了改进</p>
+</blockquote>
+</li>
+<li>
+<p>示例代码 <code>cv2.HOUGH_GRADIENT_ALT</code></p>
+</li>
+</ul>
+<figure class="highlight routeros"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><code class="hljs routeros">img_org = mt.cv_rgb_imread(<span class="hljs-string">&#x27;hough_circles.jpeg&#x27;</span>, <span class="hljs-attribute">gray</span>=<span class="hljs-literal">False</span>)<br>img_org = mt.image_resize(img_org, <span class="hljs-attribute">factor</span>=0.4)<br>img = mt.to_gray_image(img_org)<br><br>res = cv2.HoughCircles(img, cv2.HOUGH_GRADIENT_ALT, 1.2, 120, <span class="hljs-attribute">param1</span>=500, <span class="hljs-attribute">param2</span>=0.85, <span class="hljs-attribute">minRadius</span>=50, <span class="hljs-attribute">maxRadius</span>=300)<br><span class="hljs-keyword">for</span> circle <span class="hljs-keyword">in</span> res:<br>    x, y,<span class="hljs-built_in"> radius </span>= circle[0]<br>    cv2.circle(img_org, mt.vvd_round([x, y]), mt.vvd_round(radius), color=[255, 0, 0], <span class="hljs-attribute">thickness</span>=2)<br>PIS(img_org)<br></code></pre></td></tr></table></figure>
+<p><img src="https://uipv4.zywvvd.com:33030/HexoFiles/vvd_dell/20220401113803.png" srcset="/img/loading.gif" lazyload alt=""></p>
+<h3 id="参考资料">参考资料</h3>
+<ul>
+<li>《学习 OpenCV3》 第十二章</li>
+<li><a target="_blank" rel="noopener" href="https://www.cnblogs.com/php-rearch/p/6760683.html">https://www.cnblogs.com/php-rearch/p/6760683.html</a></li>
+<li><a target="_blank" rel="noopener" href="https://www.cnblogs.com/wangduo/p/6272972.html">https://www.cnblogs.com/wangduo/p/6272972.html</a></li>
+<li><a target="_blank" rel="noopener" href="https://blog.csdn.net/gehulushang/article/details/104959236">https://blog.csdn.net/gehulushang/article/details/104959236</a></li>
+</ul>
+<link rel="stylesheet" href="/css/spoiler.css" type="text/css"><script src="/js/spoiler.js" type="text/javascript" async></script>
+                
+
+
+				<br /><br />
+				<blockquote>
+					<p>文章链接：<br /> 
+					<a style="font-size: 0.85rem" target="_blank" rel="noopener" href="https://www.zywvvd.com/notes/study/image-processing/opencv/opencv-hough/opencv-hough/">https://www.zywvvd.com/notes/study/image-processing/opencv/opencv-hough/opencv-hough/</a>
+					</p>
+				</blockquote>
+
+
+              </div>
+            
+            <hr/>
+			
+			<!-- 添加打赏模块 -->
+			<div class="reward-container">
+				
+					<button id="rewardBtn" class="reward-btn">
+						 
+							❤ 打赏
+							
+					</button>
+					<p class="tea">“觉得不错的话，给点打赏吧 ୧(๑•̀⌄•́๑)૭”</p>
+					<div id="rewardImgContainer" class="reward-img-container">
+						<div class="singleImgContainer">
+							<img id="wechatImg" class="reward-img" src="https://uipv4.zywvvd.com:33030/HexoFiles/vvd_pc_upload/wechatpay.png" srcset="/img/loading.gif" lazyload alt="微信二维码">
+							<p class="wechatPay">微信支付</p>
+						</div>
+						<div class="singleImgContainer">
+							<img id="alipayImg" class="reward-img" src="https://uipv4.zywvvd.com:33030/HexoFiles/vvd_pc_upload/alipay.png" srcset="/img/loading.gif" lazyload alt="支付宝二维码">
+							<p class="aliPay">支付宝支付</p>
+						</div>
+					</div>
+				
+			</div>
+			
+            <div>
+              <div class="post-metas my-3">
+  
+    <div class="post-meta mr-3 d-flex align-items-center">
+      <i class="iconfont icon-category"></i>
+      
+
+<span class="category-chains">
+  
+  
+    
+      <span class="category-chain">
+        
+  <a href="/categories/Image-Processing/" class="category-chain-item">Image_Processing</a>
+  
+  
+    <span>></span>
+    
+  <a href="/categories/Image-Processing/OpenCV/" class="category-chain-item">OpenCV</a>
+  
+  
+
+  
+
+      </span>
+    
+  
+</span>
+
+    </div>
+  
+  
+    <div class="post-meta">
+      <i class="iconfont icon-tags"></i>
+      
+        <a href="/tags/OpenCV/" class="print-no-link">#OpenCV</a>
+      
+        <a href="/tags/Image-Processing/" class="print-no-link">#Image_Processing</a>
+      
+    </div>
+  
+</div>
+
+
+              
+  
+
+  <div class="license-box my-3">
+    <div class="license-title">
+      <div>OpenCV 图像分析之 —— 霍夫变换(Hough Transform)</div>
+      <div>https://www.zywvvd.com/notes/study/image-processing/opencv/opencv-hough/opencv-hough/</div>
+    </div>
+    <div class="license-meta">
+      
+        <div class="license-meta-item">
+          <div>作者</div>
+          <div>Yiwei Zhang</div>
+        </div>
+      
+      
+        <div class="license-meta-item license-meta-date">
+          <div>发布于</div>
+          <div>2022年3月30日</div>
+        </div>
+      
+      
+      
+        <div class="license-meta-item">
+          <div>许可协议</div>
+          <div>
+            
+              
+              
+                <a class="print-no-link" target="_blank" href="https://creativecommons.org/licenses/by/4.0/">
+                  <span class="hint--top hint--rounded" aria-label="BY - 署名">
+                    <i class="iconfont icon-by"></i>
+                  </span>
+                </a>
+              
+            
+          </div>
+        </div>
+      
+    </div>
+    <div class="license-icon iconfont"></div>
+  </div>
+
+
+
+              
+                <div class="post-prevnext my-3">
+                  <article class="post-prev col-6">
+                    
+                    
+                      <a href="/notes/study/image-processing/opencv/opencv-distance-trans/opencv-distance-trans/" title="OpenCV 图像分析之 —— 距离变换">
+                        <i class="iconfont icon-arrowleft"></i>
+                        <span class="hidden-mobile">OpenCV 图像分析之 —— 距离变换</span>
+                        <span class="visible-mobile">上一篇</span>
+                      </a>
+                    
+                  </article>
+                  <article class="post-next col-6">
+                    
+                    
+                      <a href="/notes/study/image-processing/opencv/opencv-canny/opencv-canny/" title="OpenCV 图像分析之 —— Canny">
+                        <span class="hidden-mobile">OpenCV 图像分析之 —— Canny</span>
+                        <span class="visible-mobile">下一篇</span>
+                        <i class="iconfont icon-arrowright"></i>
+                      </a>
+                    
+                  </article>
+                </div>
+              
+            </div>
+
+            
+  
+  
+    <article id="comments" lazyload>
+      
+  <div id="waline"></div>
+  <script type="text/javascript">
+    Fluid.utils.loadComments('#waline', function() {
+      Fluid.utils.createCssLink('https://lib.baomitu.com/waline/2.14.8/waline.min.css')
+      Fluid.utils.createScript('https://lib.baomitu.com/waline/2.14.8/waline.min.js', function() {
+        var options = Object.assign(
+          {"serverURL":"https://uipv4.zywvvd.com:33033/","path":"window.location.pathname","meta":["nick","mail","link"],"requiredMeta":["nick"],"lang":"zh-CN","emoji":["https://cdn.jsdelivr.net/gh/walinejs/emojis/weibo"],"dark":"html[data-user-color-scheme=\"dark\"]","wordLimit":0,"pageSize":10,"reaction":true,"locale":{"placeholder":"山高路远，常来玩吖 ~","reactionTitle":null}},
+          {
+            el: '#waline',
+            path: window.location.pathname
+          }
+        )
+        Waline.init(options);
+        Fluid.utils.waitElementVisible('#waline .vcontent', () => {
+          var imgSelector = '#waline .vcontent img:not(.vemoji)';
+          Fluid.plugins.imageCaption(imgSelector);
+          Fluid.plugins.fancyBox(imgSelector);
+        })
+      });
+    });
+  </script>
+  <noscript>Please enable JavaScript to view the comments</noscript>
+
+
+    </article>
+  
+
+
+          </article>
+        </div>
+      </div>
+    </div>
+
+    <div class="side-col d-none d-lg-block col-lg-2">
+      
+  <aside class="sidebar" style="margin-left: -1rem">
+    <div id="toc">
+  <p class="toc-header">
+    <i class="iconfont icon-list"></i>
+    <span>目录</span>
+  </p>
+  <div class="toc-body" id="toc-body"></div>
+</div>
+
+
+
+  </aside>
+
+
+    </div>
+  </div>
+</div>
+
+
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+  
+  
+
+
+
+
+
+  <script>
+  Fluid.utils.createScript('https://lib.baomitu.com/mermaid/8.14.0/mermaid.min.js', function() {
+    mermaid.initialize({"theme":"default"});
+
+    Fluid.utils.listenDOMLoaded(function() {
+      Fluid.events.registerRefreshCallback(function() {
+        if ('mermaid' in window) {
+          mermaid.init();
+        }
+      });
+    });
+  });
+</script>
+
+
+
+
+
+
+    
+
+    
+      <a id="scroll-top-button" aria-label="TOP" href="#" role="button">
+        <i class="iconfont icon-xiangshangjiantou" aria-hidden="true"></i>
+      </a>
+    
+
+    
+      <div class="modal fade" id="modalSearch" tabindex="-1" role="dialog" aria-labelledby="ModalLabel"
+     aria-hidden="true">
+  <div class="modal-dialog modal-dialog-scrollable modal-lg" role="document">
+    <div class="modal-content">
+      <div class="modal-header text-center">
+        <h4 class="modal-title w-100 font-weight-bold">搜索</h4>
+        <button type="button" id="local-search-close" class="close" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body mx-3">
+        <div class="md-form mb-5">
+          <input type="text" id="local-search-input" class="form-control validate">
+          <label data-error="x" data-success="v" for="local-search-input">关键词</label>
+        </div>
+        <div class="list-group" id="local-search-result"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+    
+
+    
+  </main>
+
+  <footer>
+    <div class="footer-inner">
+  
+    <div class="footer-content">
+       <div class="vvd_footer" style="font-size: 0.85rem;"> <a href="https://hexo.io" target="_blank" rel="nofollow noopener" color="#d7d8d9" data-umami-event="Footer-Hexo"><span class="umami--click--Footer-Hexo">Hexo</span></a> <i class="iconfont icon-love"></i> <a href="https://github.com/fluid-dev/hexo-theme-fluid" target="_blank" rel="nofollow noopener" data-umami-event="Footer-Fluid"><span class="umami--click--Footer-Fluid">Fluid</span></a> <i class="iconfont icon-love"></i> <a href="https://uipv4.zywvvd.com:33039/share/0zx3o21oIpZTZqwC/%E5%8F%88%E8%A7%81%E8%8B%8D%E5%B2%9A" target="_blank" rel="nofollow noopener" data-umami-event="Footer-Umami"><span class="umami--click--Footer-Umami">Umami</span></a> <div style="font-size: 0.85rem;"> <span id="timeDate">载入天数...</span> <span id="times">载入时分秒...</span> <script src="/vvd_js/duration.js"></script> </div> <div style="font-size: 0.85rem;"> <span> 总访问量 <span style="color: #d7d8d9;" id="PVstatic">0</span> 次&nbsp</span> <span> 总访客数 <span style="color: #d7d8d9;" id="UVstatic">0</span> 人&nbsp</span> <span> 当前在线 <span style="color: #d7d8d9;" id="ACTstatic">0</span> 人&nbsp</span> <script src="https://uipv4.zywvvd.com:33037/statistics" defer></script> </div> <div> <span> Copyright © 2020-2025. All Rights Reserved.</span> </div> <div style="font-size: 0.88rem;"> <a target="_blank" rel="noopener" href="https://developer.hitokoto.cn/" id="hitokoto_text"><span style="color: #d7d8d9;"  id="hitokoto"></span></a> <script src="https://uipv4.zywvvd.com:33044/?encode=js&select=%23hitokoto" defer></script> </div> <a href="https://icp.gov.moe/?keyword=20230615" target="_blank">萌ICP备20230615号</a>
+
+
+</div> 
+    </div>
+  
+  
+  
+  
+</div>
+
+  </footer>
+
+  <!-- Scripts -->
+  
+  <script  src="https://lib.baomitu.com/nprogress/0.2.0/nprogress.min.js" ></script>
+  <link  rel="stylesheet" href="https://lib.baomitu.com/nprogress/0.2.0/nprogress.min.css" />
+
+  <script>
+    NProgress.configure({"showSpinner":false,"trickleSpeed":100})
+    NProgress.start()
+    window.addEventListener('load', function() {
+      NProgress.done();
+    })
+  </script>
+
+
+<script  src="https://lib.baomitu.com/jquery/3.6.0/jquery.min.js" ></script>
+<script  src="https://lib.baomitu.com/twitter-bootstrap/4.6.1/js/bootstrap.min.js" ></script>
+<script  src="/js/events.js" ></script>
+<script  src="/js/plugins.js" ></script>
+
+
+
+
+
+  
+    <script  src="/js/img-lazyload.js" ></script>
+  
+
+
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/tocbot/4.18.2/tocbot.min.js', function() {
+    var toc = jQuery('#toc');
+    if (toc.length === 0 || !window.tocbot) { return; }
+    var boardCtn = jQuery('#board-ctn');
+    var boardTop = boardCtn.offset().top;
+
+    window.tocbot.init(Object.assign({
+      tocSelector     : '#toc-body',
+      contentSelector : '.markdown-body',
+      linkClass       : 'tocbot-link',
+      activeLinkClass : 'tocbot-active-link',
+      listClass       : 'tocbot-list',
+      isCollapsedClass: 'tocbot-is-collapsed',
+      collapsibleClass: 'tocbot-is-collapsible',
+      scrollSmooth    : true,
+      includeTitleTags: true,
+      headingsOffset  : -boardTop,
+    }, CONFIG.toc));
+    if (toc.find('.toc-list-item').length > 0) {
+      toc.css('visibility', 'visible');
+    }
+
+    Fluid.events.registerRefreshCallback(function() {
+      if ('tocbot' in window) {
+        tocbot.refresh();
+        var toc = jQuery('#toc');
+        if (toc.length === 0 || !tocbot) {
+          return;
+        }
+        if (toc.find('.toc-list-item').length > 0) {
+          toc.css('visibility', 'visible');
+        }
+      }
+    });
+  });
+</script>
+
+
+  <script src=https://lib.baomitu.com/clipboard.js/2.0.10/clipboard.min.js></script>
+
+  <script>Fluid.plugins.codeWidget();</script>
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/anchor-js/4.3.1/anchor.min.js', function() {
+    window.anchors.options = {
+      placement: CONFIG.anchorjs.placement,
+      visible  : CONFIG.anchorjs.visible
+    };
+    if (CONFIG.anchorjs.icon) {
+      window.anchors.options.icon = CONFIG.anchorjs.icon;
+    }
+    var el = (CONFIG.anchorjs.element || 'h1,h2,h3,h4,h5,h6').split(',');
+    var res = [];
+    for (var item of el) {
+      res.push('.markdown-body > ' + item.trim());
+    }
+    if (CONFIG.anchorjs.placement === 'left') {
+      window.anchors.options.class = 'anchorjs-link-left';
+    }
+    window.anchors.add(res.join(', '));
+
+    Fluid.events.registerRefreshCallback(function() {
+      if ('anchors' in window) {
+        anchors.removeAll();
+        var el = (CONFIG.anchorjs.element || 'h1,h2,h3,h4,h5,h6').split(',');
+        var res = [];
+        for (var item of el) {
+          res.push('.markdown-body > ' + item.trim());
+        }
+        if (CONFIG.anchorjs.placement === 'left') {
+          anchors.options.class = 'anchorjs-link-left';
+        }
+        anchors.add(res.join(', '));
+      }
+    });
+  });
+</script>
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/fancybox/3.5.7/jquery.fancybox.min.js', function() {
+    Fluid.plugins.fancyBox();
+  });
+</script>
+
+
+  <script>Fluid.plugins.imageCaption();</script>
+
+  
+      <script>
+        if (!window.MathJax) {
+          window.MathJax = {
+            tex    : {
+              inlineMath: { '[+]': [['$', '$']] }
+            },
+            options: {
+              renderActions: {
+                insertedScript: [200, () => {
+                  document.querySelectorAll('mjx-container').forEach(node => {
+                    let target = node.parentNode;
+                    if (target.nodeName.toLowerCase() === 'li') {
+                      target.parentNode.classList.add('has-jax');
+                    }
+                  });
+                }, '', false]
+              }
+            }
+          };
+        } else {
+          MathJax.startup.document.state(0);
+          MathJax.texReset();
+          MathJax.typeset();
+          MathJax.typesetPromise();
+        }
+
+        Fluid.events.registerRefreshCallback(function() {
+          if ('MathJax' in window && MathJax.startup.document && typeof MathJax.startup.document.state === 'function') {
+            MathJax.startup.document.state(0);
+            MathJax.texReset();
+            MathJax.typeset();
+            MathJax.typesetPromise();
+          }
+        });
+      </script>
+    
+
+  <script  src="https://lib.baomitu.com/mathjax/3.2.1/es5/tex-mml-chtml.js" ></script>
+
+  <script defer src="/js/leancloud.js" ></script>
+
+  <script  src="/js/local-search.js" ></script>
+
+
+
+
+  
+<script src="//cdn.jsdelivr.net/npm/aplayer/dist/APlayer.min.js"></script>
+<script src="//cdn.jsdelivr.net/gh/metowolf/MetingJS@1.2/dist/Meting.min.js"></script>
+<script src="/js/reward.js"></script>
+
+
+
+<!-- 主题的启动项，将它保持在最底部 -->
+<!-- the boot of the theme, keep it at the bottom -->
+<script  src="/js/boot.js" ></script>
+
+
+  <script type="text/javascript">
+    /*窗口监视*/
+    var originalTitle = document.title;
+    window.onblur = function(){document.title = "明眸如初"};
+    window.onfocus = function(){document.title = originalTitle};
+  </script>
+
+
+  <div id="tooltip-rightmenu" class="tooltip-rightmenu">如需原始右键菜单请按下 <strong>Ctrl+右键</strong></div>
+
+<div id="rightmenu-wrapper" style="">
+  <ul class="list-v rightmenu" id="rightmenu-content">
+	  <li class="navigation menuNavigation-Content">
+		<a class="nav icon-only fix-cursor-default" onclick="history.back()"><i class="iconfont icon-zuojiantou1"></i></a>
+		<a class="nav icon-only fix-cursor-default" onclick="history.forward()"><i class="iconfont icon-youjiantou1"></i></a>
+		<a class="nav icon-only fix-cursor-default" onclick="window.location.reload()"><i class="iconfont icon-shuaxin"></i></a>
+		<a  aria-label="TOP" href="#" role="button"><i class="iconfont icon-xiangshang"></i></a>
+	  </li>
+
+		<hr class="menuLoad-Content" style="display: block;">
+	  <li class="menuLoad-Content" style="display: block;">
+		<a class="vlts-menu fix-cursor-default" target="_self" href="javascript:;" data-toggle="modal" data-target="#modalSearch" aria-label="Search">
+		  <span>
+			  <i class="iconfont icon-sousuo1 rightmenu-icon"></i>
+			  站内搜索
+		  </span>
+		</a>
+	  </li>
+
+	  <li class="menuLoad-Content" style="display: block;">
+		<a class="vlts-menu fix-cursor-default"  href="https://www.zywvvd.com/messagebd/" data-group="link">
+		  <span>
+			  <i class="iconfont icon-yangshi_icon_tongyong_chat rightmenu-icon">  </i>
+			   留言吐槽 
+		   </span>
+		</a>
+	  </li>
+
+
+	  <li class="menuLoad-Content" style="display: block;">
+		<a class="vlts-menu fix-cursor-default" id="help" target="_blank" rel="noopener" href="https://www.foreverblog.cn/go.html" data-group="link">
+		<span>
+			  <i class="iconfont icon-a-BlackHole rightmenu-icon"></i>
+			  虫洞穿梭
+		  </span>
+		</a>
+	  </li>
+
+	<a id="scroll-top-button" aria-label="TOP" href="#" role="button" style="bottom: 20px; right: 52.6364px;">
+        <i class="iconfont icon-xiangshangjiantou" aria-hidden="true"></i>
+      </a>
+
+	<hr class="menuLoad-Content" style="display: block;">
+	
+	  <li class="menuLoad-Content" style="display: block;">
+		<a class="vlts-menu fix-cursor-default" id="destroy-airplane" target="_blank" rel="noopener"  data-group="link">
+		<span>
+			  <i class="iconfont icon-feiji rightmenu-icon"></i>
+			  破坏小飞机
+		  </span>
+		</a>
+	  </li>
+  </ul>
+</div>
+
+<script>
+	var ua = navigator.userAgent;
+	var ipad = ua.match(/(iPad).*OS\s([\d_]+)/),
+		isIphone = !ipad && ua.match(/(iPhone\sOS)\s([\d_]+)/),
+		isAndroid = ua.match(/(Android)\s+([\d.]+)/),
+		isMobile = isIphone || isAndroid;
+
+	if(!isMobile) {
+		// 为按钮添加事件处理器
+		document.getElementById('destroy-airplane').onclick = function() {
+		  console.log('飞机起飞！');
+		  // 定义要执行的JavaScript代码
+		var KICKASSVERSION='2.0';
+		var s = document.createElement('script');
+		s.type='text/javascript';
+		document.body.appendChild(s);
+		s.src='https://uipv4.zywvvd.com:33030/HexoFiles/js/games/airplane/airplane.js';
+		void(0);
+		};
+	}
+</script>
+
+
+
+
+
+<link href="/css/custom.css"type="text/css"rel="stylesheet"/>
+<script src="/vvd_js/right_menu.js" type="text/javascript"></script>
+<link href="/css/right_menu.css"type="text/css"rel="stylesheet"/>
+<script src="/vvd_js/go.js"></script>
+
+
+  <noscript>
+    <div class="noscript-warning">博客在允许 JavaScript 运行的环境下浏览效果更佳</div>
+  </noscript>
+<script src="/live2dw/lib/L2Dwidget.min.js?094cbace49a39548bed64abff5988b05"></script><script>L2Dwidget.init({"pluginRootPath":"live2dw/","pluginJsPath":"lib/","pluginModelPath":"assets/","tagMode":false,"log":false,"model":{"jsonPath":"/live2dw/assets/z16.model.json"},"display":{"position":"left","width":200,"height":400},"mobile":{"show":false},"react":{"opacity":0.9}});</script></body>
+</html>

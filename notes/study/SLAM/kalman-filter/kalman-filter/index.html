@@ -1,0 +1,1760 @@
+
+
+<!DOCTYPE html>
+<html lang="zh-CN" data-default-color-scheme=auto>
+
+
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="baidu-site-verification" content="codeva-rLWafCJGYc" />
+  <link rel="apple-touch-icon" sizes="76x76" href="/image/avatar.png">
+  <link rel="icon" href="/image/avatar.png">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, shrink-to-fit=no">
+  <meta http-equiv="x-ua-compatible" content="ie=edge">
+  
+  <meta name="theme-color" content="#2f4154">
+  <meta name="author" content="Yiwei Zhang">
+  <meta name="keywords" content="人工智能, 深度学习, 个人博客, 机器学习">
+  
+    <meta name="description" content="卡尔曼滤波是非常经典的预测追踪算法，能够在系统存在噪声和干扰的情况下进行系统状态的最优估计，广泛使用在导航、制导、控制相关的领域。">
+<meta property="og:type" content="article">
+<meta property="og:title" content="卡尔曼滤波">
+<meta property="og:url" content="https://www.zywvvd.com/notes/study/SLAM/kalman-filter/kalman-filter/index.html">
+<meta property="og:site_name" content="又见苍岚">
+<meta property="og:description" content="卡尔曼滤波是非常经典的预测追踪算法，能够在系统存在噪声和干扰的情况下进行系统状态的最优估计，广泛使用在导航、制导、控制相关的领域。">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="https://uipv4.zywvvd.com:33030/HexoFiles/vvd_file_mt/vvd_missile.gif">
+<meta property="article:published_time" content="2023-01-30T13:58:20.000Z">
+<meta property="article:modified_time" content="2024-05-07T05:57:50.524Z">
+<meta property="article:author" content="Yiwei Zhang">
+<meta property="article:tag" content="SLAM">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:image" content="https://uipv4.zywvvd.com:33030/HexoFiles/vvd_file_mt/vvd_missile.gif">
+  
+  
+  
+  <title>卡尔曼滤波 - 又见苍岚</title>
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/twitter-bootstrap/4.6.1/css/bootstrap.min.css" />
+
+
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/github-markdown-css/4.0.0/github-markdown.min.css" />
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/hint.css/2.7.0/hint.min.css" />
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/fancybox/3.5.7/jquery.fancybox.min.css" />
+
+
+
+<!-- 主题依赖的图标库，不要自行修改 -->
+<!-- Do not modify the link that theme dependent icons -->
+
+<link rel="stylesheet" href="//at.alicdn.com/t/font_1749284_hj8rtnfg7um.css">
+
+
+
+<link rel="stylesheet" href="//at.alicdn.com/t/font_1736178_lbnruvf0jn.css">
+
+
+<link  rel="stylesheet" href="/css/main.css" />
+
+
+  <link id="highlight-css" rel="stylesheet" href="/css/highlight.css" />
+  
+    <link id="highlight-css-dark" rel="stylesheet" href="/css/highlight-dark.css" />
+  
+
+
+
+  
+<link rel="stylesheet" href="/css/custom.css">
+<link rel="stylesheet" href="/css/reward.css">
+<link rel="stylesheet" href="//cdn.jsdelivr.net/npm/aplayer/dist/APlayer.min.css">
+
+
+
+  <script id="fluid-configs">
+    var Fluid = window.Fluid || {};
+    Fluid.ctx = Object.assign({}, Fluid.ctx)
+    var CONFIG = {"hostname":"www.zywvvd.com","root":"/","version":"1.9.7","typing":{"enable":true,"typeSpeed":90,"cursorChar":"_","loop":false,"scope":["home"]},"anchorjs":{"enable":true,"element":"h1,h2,h3,h4,h5,h6","placement":"left","visible":"hover","icon":""},"progressbar":{"enable":true,"height_px":3,"color":"#29d","options":{"showSpinner":false,"trickleSpeed":100}},"code_language":{"enable":true,"default":"TEXT"},"copy_btn":true,"image_caption":{"enable":true},"image_zoom":{"enable":true,"img_url_replace":["",""]},"toc":{"enable":true,"placement":"right","headingSelector":"h1,h2,h3,h4,h5,h6","collapseDepth":0},"lazyload":{"enable":true,"loading_img":"/img/loading.gif","onlypost":false,"offset_factor":2},"web_analytics":{"enable":true,"follow_dnt":true,"baidu":null,"google":null,"tencent":{"sid":null,"cid":null},"woyaola":null,"cnzz":null,"leancloud":{"app_id":"Cv0XNeBSBdAPAIuVj3PsyM3R-MdYXbMMI","app_key":"4PU1rNlGrqXWzhfW3dgq98oX","server_url":null,"path":"window.location.pathname","ignore_local":false},"gtag":null},"search_path":"/local-search.xml","include_content_in_search":true};
+
+    if (CONFIG.web_analytics.follow_dnt) {
+      var dntVal = navigator.doNotTrack || window.doNotTrack || navigator.msDoNotTrack;
+      Fluid.ctx.dnt = dntVal && (dntVal.startsWith('1') || dntVal.startsWith('yes') || dntVal.startsWith('on'));
+    }
+  </script>
+  <script  src="/js/utils.js" ></script>
+  <script  src="/js/color-schema.js" ></script>
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+    
+  
+
+
+
+  
+<meta name="generator" content="Hexo 7.2.0"><link rel="alternate" href="/atom.xml" title="又见苍岚" type="application/atom+xml">
+</head>
+
+<script>
+// 页面加载完成后隐藏加载动画
+document.addEventListener("readystatechange", function() {
+    const loader = document.getElementById('Loadanimation');
+    if (loader) {
+        // 停留1秒后开始淡出
+        setTimeout(function() {
+            loader.style.transition = 'opacity 1.2s';
+            loader.style.opacity = '0';
+            // 淡出完成后隐藏
+            setTimeout(() => {
+                loader.style.display = 'none';
+            }, 1000); // 等待淡出动画完成
+        }, 700); // 停留0.8秒
+    }
+});
+</script>
+
+
+
+<body>
+  
+<div id="Loadanimation" style="z-index:999999;">
+<div id="Loadanimation-center">
+   <div id="Loadanimation-center-absolute">
+       <div class="xccx_object" id="xccx_four"></div>
+       <div class="xccx_object" id="xccx_three"></div>
+       <div class="xccx_object" id="xccx_two"></div>
+       <div class="xccx_object" id="xccx_one"></div>
+   </div>
+</div>
+</div>
+
+<link href="/css/loading.css"type="text/css"rel="stylesheet"/>
+
+
+
+
+
+
+<div>
+	<div class='real_mask' style="
+		background-color: rgba(0,0,0,0.4);
+		width: 100%;
+		height: 100%;
+		position: fixed;
+		z-index: -777;
+	"></div>
+	<div id="banner_video_insert">
+	</div>	
+	<div id='vvd_banner_img'>
+	</div>
+</div>
+<div id="banner"></div>
+
+
+
+
+
+
+
+  <header>
+    
+
+<div class="header-inner" style="height: 80vh;">
+  <nav id="navbar" class="navbar fixed-top  navbar-expand-lg navbar-dark scrolling-navbar">
+  <div class="container">
+    <a class="navbar-brand" href="/">
+      <strong>CangLan</strong>
+    </a>
+
+    <button id="navbar-toggler-btn" class="navbar-toggler" type="button" data-toggle="collapse"
+            data-target="#navbarSupportedContent"
+            aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
+      <div class="animated-icon"><span></span><span></span><span></span></div>
+    </button>
+
+    <!-- Collapsible content -->
+    <div class="collapse navbar-collapse" id="navbarSupportedContent">
+      <ul class="navbar-nav ml-auto text-center">
+        
+          
+          
+          
+          
+            <li class="nav-item">
+		<div >
+		      <a class="nav-link" href="/" target="_self" data-umami-event="Navigation-Homepage">
+
+		        <i class="iconfont icon-home-fill"></i>
+		        <span>首页</span>
+		      </a>
+		</div>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item dropdown">
+              <a class="nav-link dropdown-toggle" target="_self" href="javascript:;" role="button"
+                 data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                <i class="iconfont icon-shuji1"></i>
+                <span>文章</span>
+              </a>
+              <div class="dropdown-menu" aria-labelledby="navbarDropdown">
+                
+                  
+                  
+                  
+		<div >
+
+                  <a class="dropdown-item" href="/archives/" target="_self" data-umami-event="Navigation-Archive">
+
+                    <i class="iconfont icon-archive-fill"></i>
+                    <span>归档</span>
+                  </a>
+		</div>
+                
+                  
+                  
+                  
+		<div >
+
+                  <a class="dropdown-item" href="/categories/" target="_self" data-umami-event="Navigation-Category">
+
+                    <i class="iconfont icon-category-fill"></i>
+                    <span>分类</span>
+                  </a>
+		</div>
+                
+                  
+                  
+                  
+		<div >
+
+                  <a class="dropdown-item" href="/tags/" target="_self" data-umami-event="Navigation-Tag">
+
+                    <i class="iconfont icon-tags-fill"></i>
+                    <span>标签</span>
+                  </a>
+		</div>
+                
+                  
+                  
+                  
+		<div >
+
+                  <a class="dropdown-item" href="/shuoshuo/" target="_self" data-umami-event="Navigation-Shuoshuo">
+
+                    <i class="iconfont icon-24gf-bubblesDots4"></i>
+                    <span>说说</span>
+                  </a>
+		</div>
+                
+              </div>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item dropdown">
+              <a class="nav-link dropdown-toggle" target="_self" href="javascript:;" role="button"
+                 data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                <i class="iconfont icon-momo"></i>
+                <span>社交</span>
+              </a>
+              <div class="dropdown-menu" aria-labelledby="navbarDropdown">
+                
+                  
+                  
+                  
+		<div >
+
+                  <a class="dropdown-item" href="/links/" target="_self" data-umami-event="Navigation-Friends">
+
+                    <i class="iconfont icon-link-fill"></i>
+                    <span>友链</span>
+                  </a>
+		</div>
+                
+                  
+                  
+                  
+		<div >
+
+                  <a class="dropdown-item" href="/messagebd/" target="_self" data-umami-event="Navigation-MessageBoard">
+
+                    <i class="iconfont icon-comment"></i>
+                    <span>留言板</span>
+                  </a>
+		</div>
+                
+                  
+                  
+                  
+		<div >
+
+                  <a class="dropdown-item" href="/atom.xml" target="_self" data-umami-event="Navigation-RSS">
+
+                    <i class="iconfont icon-dingyue"></i>
+                    <span>RSS订阅</span>
+                  </a>
+		</div>
+                
+                  
+                  
+                  
+		<div >
+
+                  <a class="dropdown-item" href="/reccomments/" target="_self" data-umami-event="Navigation-Recent-Comments">
+
+                    <i class="iconfont icon-icon-pinglunguanli-pinglunliebiao"></i>
+                    <span>近期评论</span>
+                  </a>
+		</div>
+                
+              </div>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item dropdown">
+              <a class="nav-link dropdown-toggle" target="_self" href="javascript:;" role="button"
+                 data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                <i class="iconfont icon-user-fill"></i>
+                <span>个人</span>
+              </a>
+              <div class="dropdown-menu" aria-labelledby="navbarDropdown">
+                
+                  
+                  
+                  
+		<div >
+
+                  <a class="dropdown-item" href="/about/" target="_self" data-umami-event="Navigation-AboutMe">
+
+                    <i class="iconfont icon-guanyuwomen"></i>
+                    <span>关于</span>
+                  </a>
+		</div>
+                
+                  
+                  
+                  
+		<div >
+
+                  <a class="dropdown-item" href="/playlist/" target="_self" data-umami-event="Navigation-Music">
+
+                    <i class="iconfont icon-music"></i>
+                    <span>歌单</span>
+                  </a>
+		</div>
+                
+                  
+                  
+                  
+		<div >
+
+                  <a class="dropdown-item" href="https://uipv4.zywvvd.com:33035" target="_self" data-umami-event="Navigation-Nextcloud">
+
+                    <i class="iconfont icon-xuniyingpan"></i>
+                    <span>网盘</span>
+                  </a>
+		</div>
+                
+                  
+                  
+                  
+		<div >
+
+                  <a class="dropdown-item" href="https://uipv4.zywvvd.com:33036" target="_self" data-umami-event="Navigation-OneDev">
+
+                    <i class="iconfont icon-git"></i>
+                    <span>仓库</span>
+                  </a>
+		</div>
+                
+                  
+                  
+                  
+		<div >
+
+                  <a class="dropdown-item" href="https://uipv4.zywvvd.com:33041" target="_self" data-umami-event="Navigation-Wiki">
+
+                    <i class="iconfont icon-wiki"></i>
+                    <span>百科</span>
+                  </a>
+		</div>
+                
+              </div>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item dropdown">
+              <a class="nav-link dropdown-toggle" target="_self" href="javascript:;" role="button"
+                 data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                <i class="iconfont icon-ic_fly"></i>
+                <span>导航</span>
+              </a>
+              <div class="dropdown-menu" aria-labelledby="navbarDropdown">
+                
+                  
+                  
+                  
+		<div >
+
+                  <a class="dropdown-item" href="/site-map/" target="_self" data-umami-event="Navigation-SiteMap">
+
+                    <i class="iconfont icon-lianjie"></i>
+                    <span>链接</span>
+                  </a>
+		</div>
+                
+                  
+                  
+                  
+		<div >
+
+                  <a class="dropdown-item" href="/nodeppt/hexo/snavigation/" target="_self" data-umami-event="Navigation-Search">
+
+                    <i class="iconfont icon-sousuo"></i>
+                    <span>搜索</span>
+                  </a>
+		</div>
+                
+              </div>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item dropdown">
+              <a class="nav-link dropdown-toggle" target="_self" href="javascript:;" role="button"
+                 data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                <i class="iconfont icon-wangzhan"></i>
+                <span>站点</span>
+              </a>
+              <div class="dropdown-menu" aria-labelledby="navbarDropdown">
+                
+                  
+                  
+                  
+		<div >
+
+                  <a class="dropdown-item" href="https://uipv4.zywvvd.com:33039/share/0zx3o21oIpZTZqwC/%E5%8F%88%E8%A7%81%E8%8B%8D%E5%B2%9A" target="_self" data-umami-event="Navigation-Umami">
+
+                    <i class="iconfont icon-tongji2"></i>
+                    <span>站点分析</span>
+                  </a>
+		</div>
+                
+                  
+                  
+                  
+		<div >
+
+                  <a class="dropdown-item" href="/earth_sta/" target="_self" data-umami-event="Navigation-Globe">
+
+                    <i class="iconfont icon-tongjifenxi-xiangmubiaogetongji"></i>
+                    <span>访问统计</span>
+                  </a>
+		</div>
+                
+                  
+                  
+                  
+		<div >
+
+                  <a class="dropdown-item" href="https://uipv4.zywvvd.com:33034/status/show" target="_self" data-umami-event="Navigation-Monitor">
+
+                    <i class="iconfont icon-jiankong"></i>
+                    <span>站点监控</span>
+                  </a>
+		</div>
+                
+              </div>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item dropdown">
+              <a class="nav-link dropdown-toggle" target="_self" href="javascript:;" role="button"
+                 data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                <i class="iconfont icon-chuansong"></i>
+                <span>传送</span>
+              </a>
+              <div class="dropdown-menu" aria-labelledby="navbarDropdown">
+                
+                  
+                  
+                  
+		<div >
+
+                  <a class="dropdown-item" href="https://www.foreverblog.cn/go.html" target="_self" data-umami-event="Navigation-ForeverBolg">
+
+                    <i class="iconfont icon-a-BlackHole"></i>
+                    <span>十年之约</span>
+                  </a>
+		</div>
+                
+                  
+                  
+                  
+		<div >
+
+                  <a class="dropdown-item" href="https://www.travellings.cn/go.html" target="_self" data-umami-event="Navigation-DriveTo">
+
+                    <i class="iconfont icon-train1"></i>
+                    <span>开往</span>
+                  </a>
+		</div>
+                
+                  
+                  
+                  
+		<div >
+
+                  <a class="dropdown-item" href="https://bf.zzxworld.com/" target="_self" data-umami-event="Navigation-BlogFinder">
+
+                    <i class="iconfont icon-icon-"></i>
+                    <span>BlogFinder</span>
+                  </a>
+		</div>
+                
+                  
+                  
+                  
+		<div >
+
+                  <a class="dropdown-item" href="https://www.perass.com/" target="_self" data-umami-event="Navigation-Bloghome">
+
+                    <i class="iconfont icon-home-fill"></i>
+                    <span>博客之家</span>
+                  </a>
+		</div>
+                
+              </div>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item dropdown">
+              <a class="nav-link dropdown-toggle" target="_self" href="javascript:;" role="button"
+                 data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                <i class="iconfont icon-gongju"></i>
+                <span>工具</span>
+              </a>
+              <div class="dropdown-menu" aria-labelledby="navbarDropdown">
+                
+                  
+                  
+                  
+		<div >
+
+                  <a class="dropdown-item" href="/navigates/calculator" target="_self" data-umami-event="Navigation-Calculator">
+
+                    <i class="iconfont icon-jisuan"></i>
+                    <span>计算器</span>
+                  </a>
+		</div>
+                
+                  
+                  
+                  
+		<div >
+
+                  <a class="dropdown-item" href="/navigates/webgraphviz" target="_self" data-umami-event="Navigation-WebGtaphviz">
+
+                    <i class="iconfont icon-tongyong-huatugongju2"></i>
+                    <span>Graphviz</span>
+                  </a>
+		</div>
+                
+                  
+                  
+                  
+		<div >
+
+                  <a class="dropdown-item" href="/navigates/formular_reco" target="_self" data-umami-event="Navigation-Formular-Reco">
+
+                    <i class="iconfont icon-a-checkformula"></i>
+                    <span>公式识别</span>
+                  </a>
+		</div>
+                
+              </div>
+            </li>
+          
+        
+        
+          <li class="nav-item" id="search-btn">
+            <a class="nav-link" target="_self" href="javascript:;" data-toggle="modal" data-target="#modalSearch" aria-label="Search">
+              <i class="iconfont icon-search"></i>
+            </a>
+          </li>
+          
+        
+        
+          <li class="nav-item" id="color-toggle-btn">
+            <a class="nav-link" target="_self" href="javascript:;" aria-label="Color Toggle">
+              <i class="iconfont icon-dark" id="color-toggle-icon"></i>
+            </a>
+          </li>
+        
+      </ul>
+    </div>
+  </div>
+</nav>
+
+  
+
+<div id="banner" class="banner" parallax=true
+     style="background: url('https://uipv4.zywvvd.com:33030/HexoFiles/new/bg-trans.png') no-repeat center center; background-size: cover;">
+  <div class="full-bg-img">
+    <div class="mask flex-center" style="background-color: rgba(0, 0, 0, 0)">
+      <div class="banner-text text-center fade-in-up">
+        <div class="h2">
+          
+            <span id="subtitle">卡尔曼滤波</span>
+          
+        </div>
+
+        
+          
+  <div class="mt-3">
+    
+      <span class="post-meta mr-2">
+        <i class="iconfont icon-author" aria-hidden="true"></i>
+        Yiwei Zhang
+      </span>
+    
+    
+      <span class="post-meta">
+        <i class="iconfont icon-date-fill" aria-hidden="true"></i>
+        <time datetime="2023-01-30 21:58" pubdate>
+          2023年1月30日 晚上
+        </time>
+      </span>
+    
+  </div>
+
+  <div class="mt-1">
+    
+      <span class="post-meta mr-2">
+        <i class="iconfont icon-chart"></i>
+        
+          <!-- compatible with older versions-->
+          2.9k 字
+        
+      </span>
+    
+
+    
+      <span class="post-meta mr-2">
+        <i class="iconfont icon-clock-fill"></i>
+        
+        
+        
+          <!-- compatible with older versions-->
+          25 分钟
+        
+      </span>
+    
+
+    
+    
+      
+        <span id="vvdpost_container_page_pvuv" style="display: none">
+          <i class="iconfont icon-eye" aria-hidden="true"></i>
+          <span id="vvdpost_value_page_pv">0</span> 次&nbsp&nbsp
+		  <i class="iconfont icon-users" aria-hidden="true"></i>
+		  <span id="vvdpost_value_page_uv">0</span> 人&nbsp&nbsp
+		  <i class="iconfont icon-comment" aria-hidden="true"></i>
+		  <span id="vvdpost_value_page_cn">0</span> 条
+        </span>
+
+    <script>
+    document.addEventListener("DOMContentLoaded", function() {
+	      console.log("PVUV_" + window.location.pathname);
+
+	      // 使用 fetch API 发送 POST 请求
+	      fetch('https://uipv4.zywvvd.com:33037/poststats', { 
+		  method: 'POST',
+		  headers: {
+		      'Content-Type': 'application/json'
+		  },
+		  body: JSON.stringify(window.location.pathname) // 将路径名作为对象发送，以便在服务器端更容易处理
+	      })
+	      .then(response => {
+		  // 检查响应状态
+		  if (!response.ok) {
+		      throw new Error('Network response was not ok ' + response.statusText);
+		  }
+		  return response.json(); // 解析 JSON 响应
+	      })
+	      .then(data => {
+		  // 处理解析后的数据
+		  console.log(data.pv);
+		  var pvCtn = document.querySelector('#vvdpost_container_page_pvuv');
+		  if (pvCtn) {
+		      var pvEle = document.querySelector('#vvdpost_value_page_pv');
+		      var uvEle = document.querySelector('#vvdpost_value_page_uv');
+		      var cnEle = document.querySelector('#vvdpost_value_page_cn');
+		      if (pvEle && uvEle) {
+		          pvEle.innerText = data.pv;
+		          uvEle.innerText = data.uv;
+		          cnEle.innerText = data.cn;
+		          pvCtn.style.display = 'inline';
+		      }
+		  }
+	      })
+	      .catch(error => {
+		  // 处理请求错误
+		  console.error('There has been a problem with your fetch operation:', error);
+	      });
+      });
+  </script>
+      
+    
+  </div>
+
+
+        
+      </div>
+
+      
+        <div class="scroll-down-bar">
+          <i class="iconfont icon-arrowdown"></i>
+        </div>
+      
+    </div>
+  </div>
+</div>
+
+</div>
+
+
+	<script type="text/javascript" src="/vvd_js/jquery.js"></script>
+	<script async src="https://uipv4.zywvvd.com:33039/script.js" data-website-id="dd4a05c6-dde2-4743-9c3a-a79d6bee0778"></script>
+	<div class="banner" id='banner' >
+
+		<div class="full-bg-img" >
+
+			
+				<script>
+					var ua = navigator.userAgent;
+					var ipad = ua.match(/(iPad).*OS\s([\d_]+)/),
+						isIphone = !ipad && ua.match(/(iPhone\sOS)\s([\d_]+)/),
+						isAndroid = ua.match(/(Android)\s+([\d.]+)/),
+						isMobile = isIphone || isAndroid;
+
+					function set_video_attr(id){
+						var height = document.body.clientHeight
+						var width = document.body.clientWidth
+						var video_item = document.getElementById(id);
+
+						if (height / width < 0.56){
+							video_item.setAttribute('width', '100%');
+							video_item.setAttribute('height', 'auto');
+						} else {
+							video_item.setAttribute('height', '100%');
+							video_item.setAttribute('width', 'auto');
+						}
+					}
+
+					fetch('https://uipv4.zywvvd.com:33037/wallpaper-pair')
+					  .then(response => response.json()) // 解析JSON数据
+					  .then(data => {
+						console.log('获取链接成功');
+						video_url = data[0][0]
+						pre_show_image_url = data[0][1]
+
+						banner_obj = document.getElementById("banner")
+						banner_obj.style.cssText = "background: url('" + pre_show_image_url + "') no-repeat;"
+
+						vvd_banner_obj = document.getElementById("vvd_banner_img")
+						vvd_banner_content = "<img id='banner_img_item' src='" + pre_show_image_url + "'style='position: fixed; z-index: -999'>"
+						vvd_banner_obj.innerHTML = vvd_banner_content 
+
+						if (!isMobile) {
+							video_html_res = "<video id='video_item' style='position: fixed; z-index: -888;'  muted='muted' src=" + video_url + " autoplay='autoplay' loop='loop'></video>"
+							document.getElementById("banner_video_insert").innerHTML = video_html_res;
+							set_video_attr('video_item')
+							set_video_attr('banner_img_item')
+						}
+					    
+					  })
+					  .catch((error) => {
+					    console.error('请求失败,尝试本地获取背景图像：', error);
+	    					$.getJSON('/vvd_js/video_url.json', function(data){
+
+							var video_list_length = data.length
+							var seed = Math.random()
+							index = Math.floor(seed * video_list_length)
+
+							video_url = data[index][0]
+							pre_show_image_url = data[index][1]
+
+							banner_obj = document.getElementById("banner")
+							banner_obj.style.cssText = "background: url('" + pre_show_image_url + "') no-repeat;"
+
+							vvd_banner_obj = document.getElementById("vvd_banner_img")
+							vvd_banner_content = "<img id='banner_img_item' src='" + pre_show_image_url + "'style='position: fixed; z-index: -999'>"
+							vvd_banner_obj.innerHTML = vvd_banner_content 
+
+							if (!isMobile) {
+								video_html_res = "<video id='video_item' style='position: fixed; z-index: -888;'  muted='muted' src=" + video_url + " autoplay='autoplay' loop='loop'></video>"
+								document.getElementById("banner_video_insert").innerHTML = video_html_res;
+								set_video_attr('video_item')
+								set_video_attr('banner_img_item')
+							}
+						});
+					  });
+
+
+
+
+
+
+					if (!isMobile){
+						window.onresize = function(){
+							set_video_attr('video_item')
+							set_video_attr('banner_img_item')
+							}
+						}
+				</script>
+
+			
+
+
+			
+			</div>
+		</div>
+    </div>
+
+  </header>
+
+  <main>
+    
+      
+
+
+
+<div class="container-fluid nopadding-x">
+  <div class="row nomargin-x">
+    <div class="side-col d-none d-lg-block col-lg-2">
+      
+
+    </div>
+
+    <div class="col-lg-8 nopadding-x-md">
+      <div class="container nopadding-x-md" id="board-ctn">
+        <div id="board">
+          <article class="post-content mx-auto">
+
+            <!-- <h1 id="seo-header">卡尔曼滤波</h1> -->
+
+            
+              <p id="updated-time" class="note note-info" style="">
+                
+                  
+                    <!-- compatible with older versions-->
+                    本文最后更新于：2024年5月7日 下午
+                  
+                
+              </p>
+            
+            
+              <div class="markdown-body">
+                
+                <blockquote>
+<p>卡尔曼滤波是非常经典的预测追踪算法，能够在系统存在噪声和干扰的情况下进行系统状态的最优估计，广泛使用在导航、制导、控制相关的领域。</p>
+</blockquote>
+<span id="more"></span>
+<h3 id="简介">简介</h3>
+<ul>
+<li>SLAM 过程可以由运动方程和观测方程来描述，考虑一个简单的场景，在离散的时间 $t=0…N$ 的时间内，有一个机器人“小萝卜”，他在这些时间上不断控制自己做着各种各样的动作，每个对应时刻有自己的状态变量 $[x_0, …, x_N]$，在过程中也会产生某种观测变量 $[y_0, …,y_N]$</li>
+<li>在实际数据产生过程中，必定会带有误差，控制系统会有控制误差，观测会产生测量误差，如果误差符合某种分布，那么状态和观测值也是服从某种概率分布的随机变量。</li>
+<li>因此，我们关心的问题就变成：当我们拥有某些运动数据和观测数据之时，如何确定状态量 $x,y$ 的分布。</li>
+</ul>
+<h3 id="问题描述">问题描述</h3>
+<ul>
+<li>考虑在 $k$ 时刻下，“小萝卜” 的状态随机变量用 $x_k$ 表示，这个时刻控制变量用 $u_k$ 表示，控制噪声用 $w_k$ 表示，此时观测到的数据记作 $z_k$，观测噪声为 $v_k$，于是可以写出运动与观测方程：</li>
+</ul>
+
+$$
+ \left\{\begin{array}{l}\boldsymbol{x}_{k}=f\left(\boldsymbol{x}_{k-1}, \boldsymbol{u}_{k}\right)+\boldsymbol{w}_{k} \\ \boldsymbol{z}_{k}=h\left(\boldsymbol{x}_{k}\right)+\boldsymbol{v}_{k}\end{array} \quad k=1, \ldots, N\right. 
+$$
+
+
+<ul>
+<li>我们希望用过去 $0$ 到 $k$ 中的数据来估计现在的状态分布：</li>
+</ul>
+
+$$
+P\left(\boldsymbol{x}_{k} \mid \boldsymbol{x}_{0}, \boldsymbol{u}_{1: k}, \boldsymbol{z}_{1: k}\right)
+$$
+
+
+<ul>
+<li>当我们只关注 $x_k$ 与 $z_k$ 时，根据贝叶斯法则：</li>
+</ul>
+
+$$
+\begin{array}{c}
+P\left(\boldsymbol{x}_{k},z_k \mid \boldsymbol{x}_{0}, \boldsymbol{u}_{1: k}, \boldsymbol{z}_{1: k-1}\right) =P\left(\boldsymbol{x}_{k} \mid \boldsymbol{x}_{0}, \boldsymbol{u}_{1: k}, \boldsymbol{z}_{1: k}\right)·P(z_k)\\
+=  P\left(\boldsymbol{z}_{k} \mid \boldsymbol{x}_{k}\right) P\left(\boldsymbol{x}_{k} \mid \boldsymbol{x}_{0}, \boldsymbol{u}_{1: k}, \boldsymbol{z}_{1: k-1}\right) 
+\end{array}
+$$
+
+
+<ul>
+<li>由于 $P(z_k)$ 是常量，因此有：</li>
+</ul>
+
+$$
+ P\left(\boldsymbol{x}_{k} \mid \boldsymbol{x}_{0}, \boldsymbol{u}_{1: k}, \boldsymbol{z}_{1: k}\right) \propto P\left(\boldsymbol{z}_{k} \mid \boldsymbol{x}_{k}\right) P\left(\boldsymbol{x}_{k} \mid \boldsymbol{x}_{0}, \boldsymbol{u}_{1: k}, \boldsymbol{z}_{1: k-1}\right) 
+$$
+
+
+<ul>
+<li>右边第一项为似然，第二项为先验。</li>
+<li>还有一个假设是 $x_k$ 是基于过去所有的状态估计得到的，那么 $x_k$ 至少会受到 $x_{k-1}$ 的影响，那么以 $ \boldsymbol{x}_{k-1} $ 时刻为条件概率展开:</li>
+</ul>
+
+$$
+ P\left(\boldsymbol{x}_{k} \mid \boldsymbol{x}_{0}, \boldsymbol{u}_{1: k}, \boldsymbol{z}_{1: k-1}\right)=\int P\left(\boldsymbol{x}_{k} \mid \boldsymbol{x}_{k-1}, \boldsymbol{x}_{0}, \boldsymbol{u}_{1: k}, \boldsymbol{z}_{1: k-1}\right) P\left(\boldsymbol{x}_{k-1} \mid \boldsymbol{x}_{0}, \boldsymbol{u}_{1: k}, \boldsymbol{z}_{1: k-1}\right) \mathrm{d} \boldsymbol{x}_{k-1} 
+$$
+
+
+<h3 id="滤波器模型">滤波器模型</h3>
+<ul>
+<li>我们假设这个状态变化具有马尔科夫性，也就是 $k$ 时刻的状态仅与 ${k-1}$ 时刻状态有关，上述积分式的右边第一项：</li>
+</ul>
+
+$$
+P\left(\boldsymbol{x}_{k} \mid \boldsymbol{x}_{k-1}, \boldsymbol{x}_{0}, \boldsymbol{u}_{1: k}, \boldsymbol{z}_{1: k-1}\right)=P\left(\boldsymbol{x}_{k} \mid \boldsymbol{x}_{k-1}, \boldsymbol{u}_{k}\right)
+$$
+
+
+<ul>
+<li>右边第二项：</li>
+</ul>
+
+$$
+P\left(\boldsymbol{x}_{k-1} \mid \boldsymbol{x}_{0}, \boldsymbol{u}_{1: k}, \boldsymbol{z}_{1: k-1}\right)=P\left(\boldsymbol{x}_{k-1} \mid \boldsymbol{x}_{0}, \boldsymbol{u}_{1: k-1}, \boldsymbol{z}_{1: k-1}\right)
+$$
+
+
+<h4 id="线性高斯系统">线性高斯系统</h4>
+<ul>
+<li>我们从形式最简单的线性高斯系统开始，最后得到卡尔曼滤波器。明确了起点和终点之后，我们再来考虑中间的路线。线性高斯系统是指，运动方程和观测方程可以由线性方程来描述：</li>
+</ul>
+
+$$
+ \left\{\begin{array}{l}\boldsymbol{x}_{k}=\boldsymbol{A}_{k} \boldsymbol{x}_{k-1}+\boldsymbol{u}_{k}+\boldsymbol{w}_{k} \\ \boldsymbol{z}_{k}=\boldsymbol{C}_{k} \boldsymbol{x}_{k}+\boldsymbol{v}_{k}\end{array} \quad k=1, \ldots, N\right. 
+$$
+
+
+<ul>
+<li>假设所有状态和噪声均满足高斯分布，噪声零均值：</li>
+</ul>
+
+$$
+ \boldsymbol{w}_{k} \sim N(\mathbf{0}, \boldsymbol{R}) . \quad \boldsymbol{v}_{k} \sim N(\mathbf{0}, \boldsymbol{Q}) 
+$$
+
+
+<ul>
+<li>利用马尔科夫性，假设我们知道了在 $k-1$ 时刻的后验（在 $ k-1 $ 时刻看来) 状态估计 $ \hat{\boldsymbol{x}}_{k-1} $ 及其协方差 $ \hat{\boldsymbol{P}}_{k-1} $, 现在要根据 $ k $ 时刻的输人和观 测数据, 确定 $ \boldsymbol{x}_{k} $ 的后验分布。</li>
+<li>为区分推导中的先验和后验, 我们在记号上做一点区别：以上帽子 $ \hat{\boldsymbol{x}}_{k} $ 表示后验, 以下帽子 $ \check{\boldsymbol{x}}_{k} $ 表示先验分布。</li>
+</ul>
+<h3 id="卡尔曼滤波">卡尔曼滤波</h3>
+<h4 id="预测">预测</h4>
+<ul>
+<li>卡尔曼滤波器的第一步为<strong>预测</strong>, 通过运动方程确定 $ \boldsymbol{x}_{k} $ 的先验分布。这一步是线性的，而高斯分布的线性变换仍是高斯分布。</li>
+<li>而且协方差矩阵具有性质：</li>
+</ul>
+
+$$
+\begin{aligned} \operatorname{Cov}(x) & =\Sigma \\ \operatorname{Cov}(\mathbf{A} x) & =\mathbf{A} \Sigma \mathbf{A}^{T}\end{aligned}
+$$
+
+
+<ul>
+<li>所以有：</li>
+</ul>
+
+$$
+ P\left(\boldsymbol{x}_{k} \mid \boldsymbol{x}_{0}, \boldsymbol{u}_{1: k}, \boldsymbol{z}_{1: k-1}\right)=N\left(\boldsymbol{A}_{k} \hat{\boldsymbol{x}}_{k-1}+\boldsymbol{u}_{k}, \boldsymbol{A}_{k} \hat{\boldsymbol{P}}_{k-1} \boldsymbol{A}_{k}^{\mathrm{T}}+\boldsymbol{R}\right) 
+$$
+
+
+<ul>
+<li>它显示了如何从上一个时刻的状态，根据输入信息（但是有噪声）推断当前时刻的状态分布。这个分布也就是<code>先验</code>。</li>
+</ul>
+
+$$
+\check{\boldsymbol{x}}_{k}=\boldsymbol{A}_{k} \hat{\boldsymbol{x}}_{k-1}+\boldsymbol{u}_{k}, \quad \check{\boldsymbol{P}}_{k}=\boldsymbol{A}_{k} \hat{\boldsymbol{P}}_{k-1} \boldsymbol{A}_{k}^{\mathrm{T}}+\boldsymbol{R}
+$$
+
+
+<ul>
+<li>显然这一步状态的不确定度要变大，因为系统中添加了噪声。</li>
+</ul>
+<h4 id="观测">观测</h4>
+<ul>
+<li>由观测方程，我们可以计算在某个状态下应该产生怎样的观测数据，可以认为这就是<code>似然</code>：</li>
+</ul>
+
+$$
+ P\left(\boldsymbol{z}_{k} \mid \boldsymbol{x}_{k}\right)=N\left(\boldsymbol{C}_{k} \boldsymbol{x}_{k}, \boldsymbol{Q}\right) 
+$$
+
+
+<ul>
+<li>设得到的关于 $x_k$ 的后验概率为：</li>
+</ul>
+
+$$
+\boldsymbol{x}_{k} \sim N\left(\hat{\boldsymbol{x}}_{k}, \hat{\boldsymbol{P}}_{k}\right)
+$$
+
+
+<ul>
+<li>根据上文的贝叶斯公式，这个<code>似然</code>与<code>先验</code>乘积与<code>后验</code>相差一个常数倍</li>
+</ul>
+
+$$
+ N\left(\hat{\boldsymbol{x}}_{k}, \hat{\boldsymbol{P}}_{k}\right)=\eta N\left(\boldsymbol{C}_{k} \boldsymbol{x}_{k}, \boldsymbol{Q}\right) \cdot N\left(\check{\boldsymbol{x}}_{k}, \check{\boldsymbol{P}}_{k}\right) 
+$$
+
+
+<ul>
+<li>这里我们稍微用点讨巧的方法。既然我们已经知道等式两侧都是高斯分布，那就只需比较指数部分，无须理会高斯分布前面的因子部分。指数部分很像是一个二次型的配方，我们来推导一下。首先把指数部分展开，有：</li>
+</ul>
+
+$$
+ \left(\boldsymbol{x}_{k}-\hat{\boldsymbol{x}}_{k}\right)^{\mathrm{T}} \hat{\boldsymbol{P}}_{k}^{-1}\left(\boldsymbol{x}_{k}-\hat{\boldsymbol{x}}_{k}\right)=\left(\boldsymbol{z}_{k}-\boldsymbol{C}_{k} \boldsymbol{x}_{k}\right)^{\mathrm{T}} \boldsymbol{Q}^{-1}\left(\boldsymbol{z}_{k}-\boldsymbol{C}_{k} \boldsymbol{x}_{k}\right)+\left(\boldsymbol{x}_{k}-\check{\boldsymbol{x}}_{k}\right)^{\mathrm{T}} \check{\boldsymbol{P}}_{k}^{-1}\left(\boldsymbol{x}_{k}-\check{\boldsymbol{x}}_{k}\right) 
+$$
+
+
+<ul>
+<li>为了求左侧的 $ \hat{\boldsymbol{x}}_{k} $ 和 $ \hat{\boldsymbol{P}}_{k} $ , 我们把两边展开, 并比较 $ \boldsymbol{x}_{k} $ 的二次和一次系数。对于二次系数, 有：</li>
+</ul>
+
+$$
+ \hat{\boldsymbol{P}}_{k}^{-1}=\boldsymbol{C}_{k}^{\mathrm{T}} \boldsymbol{Q}^{-1} \boldsymbol{C}_{k}+\check{\boldsymbol{P}}_{k}^{-1} 
+$$
+
+
+<ul>
+<li>该式给出了协方差的计算过程。为了便于后面列写式子, 定义一个中间变量:</li>
+</ul>
+
+$$
+ \boldsymbol{K}=\hat{\boldsymbol{P}}_{k} \boldsymbol{C}_{k}^{\mathrm{T}} \boldsymbol{Q}^{-1} 
+$$
+
+
+<ul>
+<li>左右各乘 $ \hat{\boldsymbol{P}}_{k} $, 有：</li>
+</ul>
+
+$$
+ \boldsymbol{I}=\hat{\boldsymbol{P}}_{k} \boldsymbol{C}_{k}^{\mathrm{T}} \boldsymbol{Q}^{-1} \boldsymbol{C}_{k}+\hat{\boldsymbol{P}}_{k} \check{\boldsymbol{P}}_{k}^{-1}=\boldsymbol{K} \boldsymbol{C}_{k}+\hat{\boldsymbol{P}}_{k} \check{\boldsymbol{P}}_{k}^{-1} 
+$$
+
+
+<ul>
+<li>于是有：</li>
+</ul>
+
+$$
+ \hat{\boldsymbol{P}}_{k}=\left(\boldsymbol{I}-\boldsymbol{K} \boldsymbol{C}_{k}\right) \check{\boldsymbol{P}}_{k} 
+$$
+
+
+<ul>
+<li>比较一次项系数：</li>
+</ul>
+
+$$
+\begin{aligned}
+-2 \hat{\boldsymbol{x}}_{k}^{\mathrm{T}} \hat{\boldsymbol{P}}_{k}^{-1} \boldsymbol{x}_{k}&=-2 \boldsymbol{z}_{k}^{\mathrm{T}} \boldsymbol{Q}^{-1} \boldsymbol{C}_{k} \boldsymbol{x}_{k}-2 \check{\boldsymbol{x}}_{k}^{\mathrm{T}} \check{\boldsymbol{P}}_{k}^{-1} \boldsymbol{x}_{k} \\
+  \hat{\boldsymbol{P}}_{k}^{-1} \hat{\boldsymbol{x}}_{k}&=\boldsymbol{C}_{k}^{\mathrm{T}} \boldsymbol{Q}^{-1} \boldsymbol{z}_{k}+\check{\boldsymbol{P}}_{k}^{-1} \check{\boldsymbol{x}}_{k} \\
+    \hat{\boldsymbol{x}}_{k} & =\hat{\boldsymbol{P}}_{k} \boldsymbol{C}_{k}^{\mathrm{T}} \boldsymbol{Q}^{-1} \boldsymbol{z}_{k}+\hat{\boldsymbol{P}}_{k} \check{\boldsymbol{P}}_{k}^{-1} \check{\boldsymbol{x}}_{k} \\  \hat{\boldsymbol{x}}_{k}&=\boldsymbol{K} \boldsymbol{z}_{k}+\left(\boldsymbol{I}-\boldsymbol{K} \boldsymbol{C}_{k}\right)\check{\boldsymbol{x}}_{k} \\
+    \hat{\boldsymbol{x}}_{k}&=\check{\boldsymbol{x}}_{k}+\boldsymbol{K}\left(\boldsymbol{z}_{k}-\boldsymbol{C}_{k} \check{\boldsymbol{x}}_{k}\right)\end{aligned}
+$$
+
+
+<ul>
+<li>于是我们又得到了后验均值的表达。总而言之，上面的两个步骤可以归纳为<code>预测</code>和<code>更新</code>(Update)两个步骤：</li>
+</ul>
+<ol>
+<li>
+<p>预测：</p>
+
+   $$
+    \check{\boldsymbol{x}}_{k}=\boldsymbol{A}_{k} \hat{\boldsymbol{x}}_{k-1}+\boldsymbol{u}_{k}, \quad \check{\boldsymbol{P}}_{k}=\boldsymbol{A}_{k} \hat{\boldsymbol{P}}_{k-1} \boldsymbol{A}_{k}^{\mathrm{T}}+\boldsymbol{R} 
+   $$
+   
+</li>
+<li>
+<p>更新：先计算 $ \boldsymbol{K} $, 它又称为<strong>卡尔曼增益</strong>：</p>
+
+
+$$
+ \boldsymbol{K}=\check{\boldsymbol{P}}_{k} \boldsymbol{C}_{k}^{\mathrm{T}}\left(\boldsymbol{C}_{k} \check{\boldsymbol{P}}_{k} \boldsymbol{C}_{k}^{\mathrm{T}}+\boldsymbol{Q}_{k}\right)^{-1} 
+$$
+
+
+</li>
+<li>
+<p>计算后验概率的分布：</p>
+</li>
+</ol>
+
+$$
+ \begin{array}{l}\hat{\boldsymbol{x}}_{k}=\check{\boldsymbol{x}}_{k}+\boldsymbol{K}\left(\boldsymbol{z}_{k}-\boldsymbol{C}_{k} \check{\boldsymbol{x}}_{k}\right) \\ \hat{\boldsymbol{P}}_{k}=\left(\boldsymbol{I}-\boldsymbol{K} \boldsymbol{C}_{k}\right) \check{\boldsymbol{P}}_{k}\end{array} 
+$$
+
+
+<h4 id="实现代码">实现代码</h4>
+<ul>
+<li>简单写了导弹打飞机的卡尔曼滤波控制过程：</li>
+</ul>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br><span class="line">84</span><br><span class="line">85</span><br><span class="line">86</span><br><span class="line">87</span><br><span class="line">88</span><br><span class="line">89</span><br><span class="line">90</span><br><span class="line">91</span><br><span class="line">92</span><br><span class="line">93</span><br><span class="line">94</span><br><span class="line">95</span><br><span class="line">96</span><br><span class="line">97</span><br><span class="line">98</span><br><span class="line">99</span><br><span class="line">100</span><br><span class="line">101</span><br><span class="line">102</span><br><span class="line">103</span><br><span class="line">104</span><br><span class="line">105</span><br><span class="line">106</span><br><span class="line">107</span><br><span class="line">108</span><br><span class="line">109</span><br><span class="line">110</span><br><span class="line">111</span><br><span class="line">112</span><br><span class="line">113</span><br><span class="line">114</span><br><span class="line">115</span><br><span class="line">116</span><br><span class="line">117</span><br></pre></td><td class="code"><pre><code class="hljs python"><span class="hljs-keyword">import</span> numpy <span class="hljs-keyword">as</span> np<br><span class="hljs-keyword">import</span> matplotlib.pyplot <span class="hljs-keyword">as</span> plt<br><span class="hljs-keyword">import</span> matplotlib.animation <span class="hljs-keyword">as</span> animation<br><span class="hljs-keyword">import</span> cv2<br><br><br><span class="hljs-keyword">def</span> <span class="hljs-title function_">target_simple</span>(<span class="hljs-params">t</span>):<br>    x_t = <span class="hljs-number">100</span><br>    y_t = <span class="hljs-number">100</span> + t<br>    <span class="hljs-keyword">return</span> x_t, y_t<br><br><br><span class="hljs-keyword">def</span> <span class="hljs-title function_">get_u</span>(<span class="hljs-params">target_xy, cur_xy, length</span>):<br>    d_v = np.mat(target_xy).T - cur_xy<br>    mode_d = (np.array(d_v) ** <span class="hljs-number">2</span>).<span class="hljs-built_in">sum</span>() ** <span class="hljs-number">0.5</span><br>    u = d_v / mode_d * length<br>    <span class="hljs-keyword">return</span> u<br><br>d_t = <span class="hljs-number">1</span><br><br><span class="hljs-comment"># 初始数据 x y v_x v_y</span><br>data_init = np.mat([[<span class="hljs-number">0</span>], [<span class="hljs-number">0</span>], [<span class="hljs-number">0</span>], [<span class="hljs-number">0</span>]])<br><br><span class="hljs-comment"># 初始协方差矩阵</span><br>P_init = np.zeros([<span class="hljs-number">4</span>, <span class="hljs-number">4</span>])<br><br><span class="hljs-comment"># 状态转移矩阵</span><br>A = np.mat([<br>    [<span class="hljs-number">1</span>, <span class="hljs-number">0</span>, d_t, <span class="hljs-number">0</span>],<br>    [<span class="hljs-number">0</span>, <span class="hljs-number">1</span>, <span class="hljs-number">0</span>, d_t],<br>    [<span class="hljs-number">0</span>, <span class="hljs-number">0</span>, <span class="hljs-number">1</span>, <span class="hljs-number">0</span>],<br>    [<span class="hljs-number">0</span>, <span class="hljs-number">0</span>, <span class="hljs-number">0</span>, <span class="hljs-number">1</span>]<br>])<br><br><span class="hljs-comment"># 控制输出矩阵</span><br>B = np.mat([<br>    [<span class="hljs-number">0.5</span> * d_t * d_t, <span class="hljs-number">0</span>],<br>    [<span class="hljs-number">0</span>, <span class="hljs-number">0.5</span> * d_t * d_t],<br>    [d_t, <span class="hljs-number">0</span>],<br>    [<span class="hljs-number">0</span>, d_t]<br>])<br><br><span class="hljs-comment"># 控制噪声协方差矩阵</span><br>sigma_r = <span class="hljs-number">0.0</span><br>R = np.mat(np.eye(<span class="hljs-number">4</span>) * (<span class="hljs-number">1</span> - sigma_r) + sigma_r) * <span class="hljs-number">0.1</span><br><br><span class="hljs-comment"># 观测状态转移矩阵</span><br>C = np.eye(<span class="hljs-number">4</span>)<br><br><span class="hljs-comment"># 观测噪声协方差矩阵</span><br>sigma_q = <span class="hljs-number">0.0</span><br>Q = np.mat(np.eye(<span class="hljs-number">4</span>) * (<span class="hljs-number">1</span> - sigma_q) + sigma_q) * <span class="hljs-number">0.1</span><br><br><span class="hljs-comment"># 加速度大小</span><br>u_l = <span class="hljs-number">1</span><br><br>data_list = [data_init]<br>P_list = [P_init]<br>target_pos_list = [target_simple(<span class="hljs-number">0</span>)]<br><br><br><span class="hljs-comment"># 生成地图画布</span><br>fig, ax = plt.subplots(<span class="hljs-number">1</span>, <span class="hljs-number">1</span>)<br>plt.grid(ls=<span class="hljs-string">&#x27;--&#x27;</span>)<br>ax.set_xlim(-<span class="hljs-number">100</span>, <span class="hljs-number">500</span>)<br>ax.set_ylim(-<span class="hljs-number">100</span>, <span class="hljs-number">800</span>)<br><br>line_missile, = plt.plot(data_list[<span class="hljs-number">0</span>][<span class="hljs-number">0</span>],data_list[<span class="hljs-number">0</span>][<span class="hljs-number">1</span>], <span class="hljs-string">&#x27;r-&#x27;</span>)<br>line_fly, = plt.plot(target_pos_list[<span class="hljs-number">0</span>][<span class="hljs-number">0</span>],target_pos_list[<span class="hljs-number">0</span>][<span class="hljs-number">1</span>], <span class="hljs-string">&#x27;b-&#x27;</span>)<br><br>label_data = <span class="hljs-number">200</span><br><br><span class="hljs-keyword">def</span> <span class="hljs-title function_">fly_update</span>(<span class="hljs-params">index</span>):<br>    x_t, y_t = target_simple(index)<br>    target_pos_list.append(target_simple(index))<br>    <br>    cur_u = get_u([x_t, y_t], data_list[index - <span class="hljs-number">1</span>][:<span class="hljs-number">2</span>], u_l)<br>    <br>    x_pre = A * data_list[index - <span class="hljs-number">1</span>] + B * cur_u<br>    p_pre = A * P_list[index - <span class="hljs-number">1</span>] *  A.T + R<br>    <br>    control_noise = np.mat(np.random.multivariate_normal([<span class="hljs-number">0</span>, <span class="hljs-number">0</span>, <span class="hljs-number">0</span>, <span class="hljs-number">0</span>], R, <span class="hljs-number">1</span>).T)<br>    real_x = x_pre + control_noise<br>    <br>    view_noise = np.mat(np.random.multivariate_normal([<span class="hljs-number">0</span>, <span class="hljs-number">0</span>, <span class="hljs-number">0</span>, <span class="hljs-number">0</span>], Q, <span class="hljs-number">1</span>).T)<br>    z_k = C * real_x + view_noise<br>    <br>    K = (p_pre * C) * ((C * p_pre * C.T + Q) ** -<span class="hljs-number">1</span>)<br>    <br>    x_post = x_pre + K * (z_k - C * x_pre)<br>    P_post = (np.mat(np.eye(<span class="hljs-number">4</span>))- K * C) * p_pre<br>    <br>    data_list.append(x_post)<br>    P_list.append(P_post)<br><br>    pos_data = np.array(data_list)[:, :<span class="hljs-number">2</span>, <span class="hljs-number">0</span>]<br>    fly_data = np.array(target_pos_list)[:, :<span class="hljs-number">2</span>]<br>    line_missile, = plt.plot(pos_data[:, <span class="hljs-number">0</span>],pos_data[:, <span class="hljs-number">1</span>], <span class="hljs-string">&#x27;r-&#x27;</span>)<br>    line_fly, = plt.plot(fly_data[:, <span class="hljs-number">0</span>],fly_data[:, <span class="hljs-number">1</span>], <span class="hljs-string">&#x27;b-&#x27;</span>)<br>    <span class="hljs-keyword">return</span> line_missile, line_fly,<br><br><span class="hljs-keyword">def</span> <span class="hljs-title function_">fly_init</span>():<br>    pos_data = np.array(data_list)[:, :<span class="hljs-number">2</span>, <span class="hljs-number">0</span>]<br>    line_missile.set_data(pos_data[:, <span class="hljs-number">0</span>], pos_data[:, <span class="hljs-number">1</span>])<br>    fly_data = np.array(target_pos_list)[:, :<span class="hljs-number">2</span>]<br>    line_fly, = plt.plot(fly_data[:, <span class="hljs-number">0</span>],fly_data[:, <span class="hljs-number">1</span>], <span class="hljs-string">&#x27;b-&#x27;</span>)<br>    <span class="hljs-keyword">return</span> line_missile, line_fly,<br><br><br>fly_anim = animation.FuncAnimation(fig=fig, func=fly_update,<br>                                frames=np.arange(<span class="hljs-number">1</span>, label_data),<br>                                init_func=fly_init, interval=<span class="hljs-number">100</span>, blit=<span class="hljs-literal">True</span>)<br><br><br>fly_anim.save(<span class="hljs-string">&#x27;vvd_missile.gif&#x27;</span>, writer=<span class="hljs-string">&#x27;pillow&#x27;</span>, fps=<span class="hljs-number">10</span>)<br>plt.show()<br><br></code></pre></td></tr></table></figure>
+<ul>
+<li>
+<p>实现效果：</p>
+<blockquote>
+<p>对，控制的方法并不科学，应该是打不着飞机了，提供一个可供参考的实现过程</p>
+</blockquote>
+</li>
+</ul>
+<p><img src="https://uipv4.zywvvd.com:33030/HexoFiles/vvd_file_mt/vvd_missile.gif" srcset="/img/loading.gif" lazyload alt=""></p>
+<h3 id="参考资料">参考资料</h3>
+<ul>
+<li><a target="_blank" rel="noopener" href="https://zhuanlan.zhihu.com/p/444977764">https://zhuanlan.zhihu.com/p/444977764</a></li>
+<li><a target="_blank" rel="noopener" href="https://www.bzarg.com/p/how-a-kalman-filter-works-in-pictures/">https://www.bzarg.com/p/how-a-kalman-filter-works-in-pictures/</a></li>
+<li>视觉SLAM十四讲从理论到实践</li>
+</ul>
+<link rel="stylesheet" href="/css/spoiler.css" type="text/css"><script src="/js/spoiler.js" type="text/javascript" async></script>
+                
+
+
+				<br /><br />
+				<blockquote>
+					<p>文章链接：<br /> 
+					<a style="font-size: 0.85rem" target="_blank" rel="noopener" href="https://www.zywvvd.com/notes/study/SLAM/kalman-filter/kalman-filter/">https://www.zywvvd.com/notes/study/SLAM/kalman-filter/kalman-filter/</a>
+					</p>
+				</blockquote>
+
+
+              </div>
+            
+            <hr/>
+			
+			<!-- 添加打赏模块 -->
+			<div class="reward-container">
+				
+					<button id="rewardBtn" class="reward-btn">
+						 
+							❤ 打赏
+							
+					</button>
+					<p class="tea">“觉得不错的话，给点打赏吧 ୧(๑•̀⌄•́๑)૭”</p>
+					<div id="rewardImgContainer" class="reward-img-container">
+						<div class="singleImgContainer">
+							<img id="wechatImg" class="reward-img" src="https://uipv4.zywvvd.com:33030/HexoFiles/vvd_pc_upload/wechatpay.png" srcset="/img/loading.gif" lazyload alt="微信二维码">
+							<p class="wechatPay">微信支付</p>
+						</div>
+						<div class="singleImgContainer">
+							<img id="alipayImg" class="reward-img" src="https://uipv4.zywvvd.com:33030/HexoFiles/vvd_pc_upload/alipay.png" srcset="/img/loading.gif" lazyload alt="支付宝二维码">
+							<p class="aliPay">支付宝支付</p>
+						</div>
+					</div>
+				
+			</div>
+			
+            <div>
+              <div class="post-metas my-3">
+  
+    <div class="post-meta mr-3 d-flex align-items-center">
+      <i class="iconfont icon-category"></i>
+      
+
+<span class="category-chains">
+  
+  
+    
+      <span class="category-chain">
+        
+  <a href="/categories/SLAM/" class="category-chain-item">SLAM</a>
+  
+  
+
+      </span>
+    
+  
+</span>
+
+    </div>
+  
+  
+    <div class="post-meta">
+      <i class="iconfont icon-tags"></i>
+      
+        <a href="/tags/SLAM/" class="print-no-link">#SLAM</a>
+      
+    </div>
+  
+</div>
+
+
+              
+  
+
+  <div class="license-box my-3">
+    <div class="license-title">
+      <div>卡尔曼滤波</div>
+      <div>https://www.zywvvd.com/notes/study/SLAM/kalman-filter/kalman-filter/</div>
+    </div>
+    <div class="license-meta">
+      
+        <div class="license-meta-item">
+          <div>作者</div>
+          <div>Yiwei Zhang</div>
+        </div>
+      
+      
+        <div class="license-meta-item license-meta-date">
+          <div>发布于</div>
+          <div>2023年1月30日</div>
+        </div>
+      
+      
+      
+        <div class="license-meta-item">
+          <div>许可协议</div>
+          <div>
+            
+              
+              
+                <a class="print-no-link" target="_blank" href="https://creativecommons.org/licenses/by/4.0/">
+                  <span class="hint--top hint--rounded" aria-label="BY - 署名">
+                    <i class="iconfont icon-by"></i>
+                  </span>
+                </a>
+              
+            
+          </div>
+        </div>
+      
+    </div>
+    <div class="license-icon iconfont"></div>
+  </div>
+
+
+
+              
+                <div class="post-prevnext my-3">
+                  <article class="post-prev col-6">
+                    
+                    
+                      <a href="/notes/tools/umami/umami-event-track/umami-event-track/" title="Umami Track Event">
+                        <i class="iconfont icon-arrowleft"></i>
+                        <span class="hidden-mobile">Umami Track Event</span>
+                        <span class="visible-mobile">上一篇</span>
+                      </a>
+                    
+                  </article>
+                  <article class="post-next col-6">
+                    
+                    
+                      <a href="/notes/coding/python/matplotlib/animation/animation/" title="Python 使用 matplotlib.animation 绘制动图">
+                        <span class="hidden-mobile">Python 使用 matplotlib.animation 绘制动图</span>
+                        <span class="visible-mobile">下一篇</span>
+                        <i class="iconfont icon-arrowright"></i>
+                      </a>
+                    
+                  </article>
+                </div>
+              
+            </div>
+
+            
+  
+  
+    <article id="comments" lazyload>
+      
+  <div id="waline"></div>
+  <script type="text/javascript">
+    Fluid.utils.loadComments('#waline', function() {
+      Fluid.utils.createCssLink('https://lib.baomitu.com/waline/2.14.8/waline.min.css')
+      Fluid.utils.createScript('https://lib.baomitu.com/waline/2.14.8/waline.min.js', function() {
+        var options = Object.assign(
+          {"serverURL":"https://uipv4.zywvvd.com:33033/","path":"window.location.pathname","meta":["nick","mail","link"],"requiredMeta":["nick"],"lang":"zh-CN","emoji":["https://cdn.jsdelivr.net/gh/walinejs/emojis/weibo"],"dark":"html[data-user-color-scheme=\"dark\"]","wordLimit":0,"pageSize":10,"reaction":true,"locale":{"placeholder":"山高路远，常来玩吖 ~","reactionTitle":null}},
+          {
+            el: '#waline',
+            path: window.location.pathname
+          }
+        )
+        Waline.init(options);
+        Fluid.utils.waitElementVisible('#waline .vcontent', () => {
+          var imgSelector = '#waline .vcontent img:not(.vemoji)';
+          Fluid.plugins.imageCaption(imgSelector);
+          Fluid.plugins.fancyBox(imgSelector);
+        })
+      });
+    });
+  </script>
+  <noscript>Please enable JavaScript to view the comments</noscript>
+
+
+    </article>
+  
+
+
+          </article>
+        </div>
+      </div>
+    </div>
+
+    <div class="side-col d-none d-lg-block col-lg-2">
+      
+  <aside class="sidebar" style="margin-left: -1rem">
+    <div id="toc">
+  <p class="toc-header">
+    <i class="iconfont icon-list"></i>
+    <span>目录</span>
+  </p>
+  <div class="toc-body" id="toc-body"></div>
+</div>
+
+
+
+  </aside>
+
+
+    </div>
+  </div>
+</div>
+
+
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+  
+  
+
+
+
+
+
+  <script>
+  Fluid.utils.createScript('https://lib.baomitu.com/mermaid/8.14.0/mermaid.min.js', function() {
+    mermaid.initialize({"theme":"default"});
+
+    Fluid.utils.listenDOMLoaded(function() {
+      Fluid.events.registerRefreshCallback(function() {
+        if ('mermaid' in window) {
+          mermaid.init();
+        }
+      });
+    });
+  });
+</script>
+
+
+
+
+
+
+    
+
+    
+      <a id="scroll-top-button" aria-label="TOP" href="#" role="button">
+        <i class="iconfont icon-xiangshangjiantou" aria-hidden="true"></i>
+      </a>
+    
+
+    
+      <div class="modal fade" id="modalSearch" tabindex="-1" role="dialog" aria-labelledby="ModalLabel"
+     aria-hidden="true">
+  <div class="modal-dialog modal-dialog-scrollable modal-lg" role="document">
+    <div class="modal-content">
+      <div class="modal-header text-center">
+        <h4 class="modal-title w-100 font-weight-bold">搜索</h4>
+        <button type="button" id="local-search-close" class="close" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body mx-3">
+        <div class="md-form mb-5">
+          <input type="text" id="local-search-input" class="form-control validate">
+          <label data-error="x" data-success="v" for="local-search-input">关键词</label>
+        </div>
+        <div class="list-group" id="local-search-result"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+    
+
+    
+  </main>
+
+  <footer>
+    <div class="footer-inner">
+  
+    <div class="footer-content">
+       <div class="vvd_footer" style="font-size: 0.85rem;"> <a href="https://hexo.io" target="_blank" rel="nofollow noopener" color="#d7d8d9" data-umami-event="Footer-Hexo"><span class="umami--click--Footer-Hexo">Hexo</span></a> <i class="iconfont icon-love"></i> <a href="https://github.com/fluid-dev/hexo-theme-fluid" target="_blank" rel="nofollow noopener" data-umami-event="Footer-Fluid"><span class="umami--click--Footer-Fluid">Fluid</span></a> <i class="iconfont icon-love"></i> <a href="https://uipv4.zywvvd.com:33039/share/0zx3o21oIpZTZqwC/%E5%8F%88%E8%A7%81%E8%8B%8D%E5%B2%9A" target="_blank" rel="nofollow noopener" data-umami-event="Footer-Umami"><span class="umami--click--Footer-Umami">Umami</span></a> <div style="font-size: 0.85rem;"> <span id="timeDate">载入天数...</span> <span id="times">载入时分秒...</span> <script src="/vvd_js/duration.js"></script> </div> <div style="font-size: 0.85rem;"> <span> 总访问量 <span style="color: #d7d8d9;" id="PVstatic">0</span> 次&nbsp</span> <span> 总访客数 <span style="color: #d7d8d9;" id="UVstatic">0</span> 人&nbsp</span> <span> 当前在线 <span style="color: #d7d8d9;" id="ACTstatic">0</span> 人&nbsp</span> <script src="https://uipv4.zywvvd.com:33037/statistics" defer></script> </div> <div> <span> Copyright © 2020-2025. All Rights Reserved.</span> </div> <div style="font-size: 0.88rem;"> <a target="_blank" rel="noopener" href="https://developer.hitokoto.cn/" id="hitokoto_text"><span style="color: #d7d8d9;"  id="hitokoto"></span></a> <script src="https://uipv4.zywvvd.com:33044/?encode=js&select=%23hitokoto" defer></script> </div> <a href="https://icp.gov.moe/?keyword=20230615" target="_blank">萌ICP备20230615号</a>
+
+
+</div> 
+    </div>
+  
+  
+  
+  
+</div>
+
+  </footer>
+
+  <!-- Scripts -->
+  
+  <script  src="https://lib.baomitu.com/nprogress/0.2.0/nprogress.min.js" ></script>
+  <link  rel="stylesheet" href="https://lib.baomitu.com/nprogress/0.2.0/nprogress.min.css" />
+
+  <script>
+    NProgress.configure({"showSpinner":false,"trickleSpeed":100})
+    NProgress.start()
+    window.addEventListener('load', function() {
+      NProgress.done();
+    })
+  </script>
+
+
+<script  src="https://lib.baomitu.com/jquery/3.6.0/jquery.min.js" ></script>
+<script  src="https://lib.baomitu.com/twitter-bootstrap/4.6.1/js/bootstrap.min.js" ></script>
+<script  src="/js/events.js" ></script>
+<script  src="/js/plugins.js" ></script>
+
+
+
+
+
+  
+    <script  src="/js/img-lazyload.js" ></script>
+  
+
+
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/tocbot/4.18.2/tocbot.min.js', function() {
+    var toc = jQuery('#toc');
+    if (toc.length === 0 || !window.tocbot) { return; }
+    var boardCtn = jQuery('#board-ctn');
+    var boardTop = boardCtn.offset().top;
+
+    window.tocbot.init(Object.assign({
+      tocSelector     : '#toc-body',
+      contentSelector : '.markdown-body',
+      linkClass       : 'tocbot-link',
+      activeLinkClass : 'tocbot-active-link',
+      listClass       : 'tocbot-list',
+      isCollapsedClass: 'tocbot-is-collapsed',
+      collapsibleClass: 'tocbot-is-collapsible',
+      scrollSmooth    : true,
+      includeTitleTags: true,
+      headingsOffset  : -boardTop,
+    }, CONFIG.toc));
+    if (toc.find('.toc-list-item').length > 0) {
+      toc.css('visibility', 'visible');
+    }
+
+    Fluid.events.registerRefreshCallback(function() {
+      if ('tocbot' in window) {
+        tocbot.refresh();
+        var toc = jQuery('#toc');
+        if (toc.length === 0 || !tocbot) {
+          return;
+        }
+        if (toc.find('.toc-list-item').length > 0) {
+          toc.css('visibility', 'visible');
+        }
+      }
+    });
+  });
+</script>
+
+
+  <script src=https://lib.baomitu.com/clipboard.js/2.0.10/clipboard.min.js></script>
+
+  <script>Fluid.plugins.codeWidget();</script>
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/anchor-js/4.3.1/anchor.min.js', function() {
+    window.anchors.options = {
+      placement: CONFIG.anchorjs.placement,
+      visible  : CONFIG.anchorjs.visible
+    };
+    if (CONFIG.anchorjs.icon) {
+      window.anchors.options.icon = CONFIG.anchorjs.icon;
+    }
+    var el = (CONFIG.anchorjs.element || 'h1,h2,h3,h4,h5,h6').split(',');
+    var res = [];
+    for (var item of el) {
+      res.push('.markdown-body > ' + item.trim());
+    }
+    if (CONFIG.anchorjs.placement === 'left') {
+      window.anchors.options.class = 'anchorjs-link-left';
+    }
+    window.anchors.add(res.join(', '));
+
+    Fluid.events.registerRefreshCallback(function() {
+      if ('anchors' in window) {
+        anchors.removeAll();
+        var el = (CONFIG.anchorjs.element || 'h1,h2,h3,h4,h5,h6').split(',');
+        var res = [];
+        for (var item of el) {
+          res.push('.markdown-body > ' + item.trim());
+        }
+        if (CONFIG.anchorjs.placement === 'left') {
+          anchors.options.class = 'anchorjs-link-left';
+        }
+        anchors.add(res.join(', '));
+      }
+    });
+  });
+</script>
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/fancybox/3.5.7/jquery.fancybox.min.js', function() {
+    Fluid.plugins.fancyBox();
+  });
+</script>
+
+
+  <script>Fluid.plugins.imageCaption();</script>
+
+  
+      <script>
+        if (!window.MathJax) {
+          window.MathJax = {
+            tex    : {
+              inlineMath: { '[+]': [['$', '$']] }
+            },
+            options: {
+              renderActions: {
+                insertedScript: [200, () => {
+                  document.querySelectorAll('mjx-container').forEach(node => {
+                    let target = node.parentNode;
+                    if (target.nodeName.toLowerCase() === 'li') {
+                      target.parentNode.classList.add('has-jax');
+                    }
+                  });
+                }, '', false]
+              }
+            }
+          };
+        } else {
+          MathJax.startup.document.state(0);
+          MathJax.texReset();
+          MathJax.typeset();
+          MathJax.typesetPromise();
+        }
+
+        Fluid.events.registerRefreshCallback(function() {
+          if ('MathJax' in window && MathJax.startup.document && typeof MathJax.startup.document.state === 'function') {
+            MathJax.startup.document.state(0);
+            MathJax.texReset();
+            MathJax.typeset();
+            MathJax.typesetPromise();
+          }
+        });
+      </script>
+    
+
+  <script  src="https://lib.baomitu.com/mathjax/3.2.1/es5/tex-mml-chtml.js" ></script>
+
+  <script defer src="/js/leancloud.js" ></script>
+
+  <script  src="/js/local-search.js" ></script>
+
+
+
+
+  
+<script src="//cdn.jsdelivr.net/npm/aplayer/dist/APlayer.min.js"></script>
+<script src="//cdn.jsdelivr.net/gh/metowolf/MetingJS@1.2/dist/Meting.min.js"></script>
+<script src="/js/reward.js"></script>
+
+
+
+<!-- 主题的启动项，将它保持在最底部 -->
+<!-- the boot of the theme, keep it at the bottom -->
+<script  src="/js/boot.js" ></script>
+
+
+  <script type="text/javascript">
+    /*窗口监视*/
+    var originalTitle = document.title;
+    window.onblur = function(){document.title = "明眸如初"};
+    window.onfocus = function(){document.title = originalTitle};
+  </script>
+
+
+  <div id="tooltip-rightmenu" class="tooltip-rightmenu">如需原始右键菜单请按下 <strong>Ctrl+右键</strong></div>
+
+<div id="rightmenu-wrapper" style="">
+  <ul class="list-v rightmenu" id="rightmenu-content">
+	  <li class="navigation menuNavigation-Content">
+		<a class="nav icon-only fix-cursor-default" onclick="history.back()"><i class="iconfont icon-zuojiantou1"></i></a>
+		<a class="nav icon-only fix-cursor-default" onclick="history.forward()"><i class="iconfont icon-youjiantou1"></i></a>
+		<a class="nav icon-only fix-cursor-default" onclick="window.location.reload()"><i class="iconfont icon-shuaxin"></i></a>
+		<a  aria-label="TOP" href="#" role="button"><i class="iconfont icon-xiangshang"></i></a>
+	  </li>
+
+		<hr class="menuLoad-Content" style="display: block;">
+	  <li class="menuLoad-Content" style="display: block;">
+		<a class="vlts-menu fix-cursor-default" target="_self" href="javascript:;" data-toggle="modal" data-target="#modalSearch" aria-label="Search">
+		  <span>
+			  <i class="iconfont icon-sousuo1 rightmenu-icon"></i>
+			  站内搜索
+		  </span>
+		</a>
+	  </li>
+
+	  <li class="menuLoad-Content" style="display: block;">
+		<a class="vlts-menu fix-cursor-default"  href="https://www.zywvvd.com/messagebd/" data-group="link">
+		  <span>
+			  <i class="iconfont icon-yangshi_icon_tongyong_chat rightmenu-icon">  </i>
+			   留言吐槽 
+		   </span>
+		</a>
+	  </li>
+
+
+	  <li class="menuLoad-Content" style="display: block;">
+		<a class="vlts-menu fix-cursor-default" id="help" target="_blank" rel="noopener" href="https://www.foreverblog.cn/go.html" data-group="link">
+		<span>
+			  <i class="iconfont icon-a-BlackHole rightmenu-icon"></i>
+			  虫洞穿梭
+		  </span>
+		</a>
+	  </li>
+
+	<a id="scroll-top-button" aria-label="TOP" href="#" role="button" style="bottom: 20px; right: 52.6364px;">
+        <i class="iconfont icon-xiangshangjiantou" aria-hidden="true"></i>
+      </a>
+
+	<hr class="menuLoad-Content" style="display: block;">
+	
+	  <li class="menuLoad-Content" style="display: block;">
+		<a class="vlts-menu fix-cursor-default" id="destroy-airplane" target="_blank" rel="noopener"  data-group="link">
+		<span>
+			  <i class="iconfont icon-feiji rightmenu-icon"></i>
+			  破坏小飞机
+		  </span>
+		</a>
+	  </li>
+  </ul>
+</div>
+
+<script>
+	var ua = navigator.userAgent;
+	var ipad = ua.match(/(iPad).*OS\s([\d_]+)/),
+		isIphone = !ipad && ua.match(/(iPhone\sOS)\s([\d_]+)/),
+		isAndroid = ua.match(/(Android)\s+([\d.]+)/),
+		isMobile = isIphone || isAndroid;
+
+	if(!isMobile) {
+		// 为按钮添加事件处理器
+		document.getElementById('destroy-airplane').onclick = function() {
+		  console.log('飞机起飞！');
+		  // 定义要执行的JavaScript代码
+		var KICKASSVERSION='2.0';
+		var s = document.createElement('script');
+		s.type='text/javascript';
+		document.body.appendChild(s);
+		s.src='https://uipv4.zywvvd.com:33030/HexoFiles/js/games/airplane/airplane.js';
+		void(0);
+		};
+	}
+</script>
+
+
+
+
+
+<link href="/css/custom.css"type="text/css"rel="stylesheet"/>
+<script src="/vvd_js/right_menu.js" type="text/javascript"></script>
+<link href="/css/right_menu.css"type="text/css"rel="stylesheet"/>
+<script src="/vvd_js/go.js"></script>
+
+
+  <noscript>
+    <div class="noscript-warning">博客在允许 JavaScript 运行的环境下浏览效果更佳</div>
+  </noscript>
+<script src="/live2dw/lib/L2Dwidget.min.js?094cbace49a39548bed64abff5988b05"></script><script>L2Dwidget.init({"pluginRootPath":"live2dw/","pluginJsPath":"lib/","pluginModelPath":"assets/","tagMode":false,"log":false,"model":{"jsonPath":"/live2dw/assets/z16.model.json"},"display":{"position":"left","width":200,"height":400},"mobile":{"show":false},"react":{"opacity":0.9}});</script></body>
+</html>

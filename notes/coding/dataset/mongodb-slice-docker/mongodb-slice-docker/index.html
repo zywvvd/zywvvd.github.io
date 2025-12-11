@@ -1,0 +1,1764 @@
+
+
+<!DOCTYPE html>
+<html lang="zh-CN" data-default-color-scheme=auto>
+
+
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="baidu-site-verification" content="codeva-rLWafCJGYc" />
+  <link rel="apple-touch-icon" sizes="76x76" href="/image/avatar.png">
+  <link rel="icon" href="/image/avatar.png">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, shrink-to-fit=no">
+  <meta http-equiv="x-ua-compatible" content="ie=edge">
+  
+  <meta name="theme-color" content="#2f4154">
+  <meta name="author" content="Yiwei Zhang">
+  <meta name="keywords" content="人工智能, 深度学习, 个人博客, 机器学习">
+  
+    <meta name="description" content="之前我们介绍过 MongoDB 分片和 GridFS 的工作原理，本文用 Docker 进行实战部署，并在 GridFS 上进行分片测试。">
+<meta property="og:type" content="article">
+<meta property="og:title" content="MongoDB 分片实战 GridFS">
+<meta property="og:url" content="https://www.zywvvd.com/notes/coding/dataset/mongodb-slice-docker/mongodb-slice-docker/index.html">
+<meta property="og:site_name" content="又见苍岚">
+<meta property="og:description" content="之前我们介绍过 MongoDB 分片和 GridFS 的工作原理，本文用 Docker 进行实战部署，并在 GridFS 上进行分片测试。">
+<meta property="og:locale" content="zh_CN">
+<meta property="article:published_time" content="2024-10-22T03:30:17.000Z">
+<meta property="article:modified_time" content="2025-02-14T07:59:00.069Z">
+<meta property="article:author" content="Yiwei Zhang">
+<meta property="article:tag" content="Coding">
+<meta property="article:tag" content="Database">
+<meta property="article:tag" content="MongoDB">
+<meta name="twitter:card" content="summary_large_image">
+  
+  
+  
+  <title>MongoDB 分片实战 GridFS - 又见苍岚</title>
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/twitter-bootstrap/4.6.1/css/bootstrap.min.css" />
+
+
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/github-markdown-css/4.0.0/github-markdown.min.css" />
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/hint.css/2.7.0/hint.min.css" />
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/fancybox/3.5.7/jquery.fancybox.min.css" />
+
+
+
+<!-- 主题依赖的图标库，不要自行修改 -->
+<!-- Do not modify the link that theme dependent icons -->
+
+<link rel="stylesheet" href="//at.alicdn.com/t/font_1749284_hj8rtnfg7um.css">
+
+
+
+<link rel="stylesheet" href="//at.alicdn.com/t/font_1736178_lbnruvf0jn.css">
+
+
+<link  rel="stylesheet" href="/css/main.css" />
+
+
+  <link id="highlight-css" rel="stylesheet" href="/css/highlight.css" />
+  
+    <link id="highlight-css-dark" rel="stylesheet" href="/css/highlight-dark.css" />
+  
+
+
+
+  
+<link rel="stylesheet" href="/css/custom.css">
+<link rel="stylesheet" href="/css/reward.css">
+<link rel="stylesheet" href="//cdn.jsdelivr.net/npm/aplayer/dist/APlayer.min.css">
+
+
+
+  <script id="fluid-configs">
+    var Fluid = window.Fluid || {};
+    Fluid.ctx = Object.assign({}, Fluid.ctx)
+    var CONFIG = {"hostname":"www.zywvvd.com","root":"/","version":"1.9.7","typing":{"enable":true,"typeSpeed":90,"cursorChar":"_","loop":false,"scope":["home"]},"anchorjs":{"enable":true,"element":"h1,h2,h3,h4,h5,h6","placement":"left","visible":"hover","icon":""},"progressbar":{"enable":true,"height_px":3,"color":"#29d","options":{"showSpinner":false,"trickleSpeed":100}},"code_language":{"enable":true,"default":"TEXT"},"copy_btn":true,"image_caption":{"enable":true},"image_zoom":{"enable":true,"img_url_replace":["",""]},"toc":{"enable":true,"placement":"right","headingSelector":"h1,h2,h3,h4,h5,h6","collapseDepth":0},"lazyload":{"enable":true,"loading_img":"/img/loading.gif","onlypost":false,"offset_factor":2},"web_analytics":{"enable":true,"follow_dnt":true,"baidu":null,"google":null,"tencent":{"sid":null,"cid":null},"woyaola":null,"cnzz":null,"leancloud":{"app_id":"Cv0XNeBSBdAPAIuVj3PsyM3R-MdYXbMMI","app_key":"4PU1rNlGrqXWzhfW3dgq98oX","server_url":null,"path":"window.location.pathname","ignore_local":false},"gtag":null},"search_path":"/local-search.xml","include_content_in_search":true};
+
+    if (CONFIG.web_analytics.follow_dnt) {
+      var dntVal = navigator.doNotTrack || window.doNotTrack || navigator.msDoNotTrack;
+      Fluid.ctx.dnt = dntVal && (dntVal.startsWith('1') || dntVal.startsWith('yes') || dntVal.startsWith('on'));
+    }
+  </script>
+  <script  src="/js/utils.js" ></script>
+  <script  src="/js/color-schema.js" ></script>
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+    
+  
+
+
+
+  
+<meta name="generator" content="Hexo 7.2.0"><link rel="alternate" href="/atom.xml" title="又见苍岚" type="application/atom+xml">
+</head>
+
+<script>
+// 页面加载完成后隐藏加载动画
+document.addEventListener("readystatechange", function() {
+    const loader = document.getElementById('Loadanimation');
+    if (loader) {
+        // 停留1秒后开始淡出
+        setTimeout(function() {
+            loader.style.transition = 'opacity 1.2s';
+            loader.style.opacity = '0';
+            // 淡出完成后隐藏
+            setTimeout(() => {
+                loader.style.display = 'none';
+            }, 1000); // 等待淡出动画完成
+        }, 700); // 停留0.8秒
+    }
+});
+</script>
+
+
+
+<body>
+  
+<div id="Loadanimation" style="z-index:999999;">
+<div id="Loadanimation-center">
+   <div id="Loadanimation-center-absolute">
+       <div class="xccx_object" id="xccx_four"></div>
+       <div class="xccx_object" id="xccx_three"></div>
+       <div class="xccx_object" id="xccx_two"></div>
+       <div class="xccx_object" id="xccx_one"></div>
+   </div>
+</div>
+</div>
+
+<link href="/css/loading.css"type="text/css"rel="stylesheet"/>
+
+
+
+
+
+
+<div>
+	<div class='real_mask' style="
+		background-color: rgba(0,0,0,0.4);
+		width: 100%;
+		height: 100%;
+		position: fixed;
+		z-index: -777;
+	"></div>
+	<div id="banner_video_insert">
+	</div>	
+	<div id='vvd_banner_img'>
+	</div>
+</div>
+<div id="banner"></div>
+
+
+
+
+
+
+
+  <header>
+    
+
+<div class="header-inner" style="height: 80vh;">
+  <nav id="navbar" class="navbar fixed-top  navbar-expand-lg navbar-dark scrolling-navbar">
+  <div class="container">
+    <a class="navbar-brand" href="/">
+      <strong>CangLan</strong>
+    </a>
+
+    <button id="navbar-toggler-btn" class="navbar-toggler" type="button" data-toggle="collapse"
+            data-target="#navbarSupportedContent"
+            aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
+      <div class="animated-icon"><span></span><span></span><span></span></div>
+    </button>
+
+    <!-- Collapsible content -->
+    <div class="collapse navbar-collapse" id="navbarSupportedContent">
+      <ul class="navbar-nav ml-auto text-center">
+        
+          
+          
+          
+          
+            <li class="nav-item">
+		<div >
+		      <a class="nav-link" href="/" target="_self" data-umami-event="Navigation-Homepage">
+
+		        <i class="iconfont icon-home-fill"></i>
+		        <span>首页</span>
+		      </a>
+		</div>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item dropdown">
+              <a class="nav-link dropdown-toggle" target="_self" href="javascript:;" role="button"
+                 data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                <i class="iconfont icon-shuji1"></i>
+                <span>文章</span>
+              </a>
+              <div class="dropdown-menu" aria-labelledby="navbarDropdown">
+                
+                  
+                  
+                  
+		<div >
+
+                  <a class="dropdown-item" href="/archives/" target="_self" data-umami-event="Navigation-Archive">
+
+                    <i class="iconfont icon-archive-fill"></i>
+                    <span>归档</span>
+                  </a>
+		</div>
+                
+                  
+                  
+                  
+		<div >
+
+                  <a class="dropdown-item" href="/categories/" target="_self" data-umami-event="Navigation-Category">
+
+                    <i class="iconfont icon-category-fill"></i>
+                    <span>分类</span>
+                  </a>
+		</div>
+                
+                  
+                  
+                  
+		<div >
+
+                  <a class="dropdown-item" href="/tags/" target="_self" data-umami-event="Navigation-Tag">
+
+                    <i class="iconfont icon-tags-fill"></i>
+                    <span>标签</span>
+                  </a>
+		</div>
+                
+                  
+                  
+                  
+		<div >
+
+                  <a class="dropdown-item" href="/shuoshuo/" target="_self" data-umami-event="Navigation-Shuoshuo">
+
+                    <i class="iconfont icon-24gf-bubblesDots4"></i>
+                    <span>说说</span>
+                  </a>
+		</div>
+                
+              </div>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item dropdown">
+              <a class="nav-link dropdown-toggle" target="_self" href="javascript:;" role="button"
+                 data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                <i class="iconfont icon-momo"></i>
+                <span>社交</span>
+              </a>
+              <div class="dropdown-menu" aria-labelledby="navbarDropdown">
+                
+                  
+                  
+                  
+		<div >
+
+                  <a class="dropdown-item" href="/links/" target="_self" data-umami-event="Navigation-Friends">
+
+                    <i class="iconfont icon-link-fill"></i>
+                    <span>友链</span>
+                  </a>
+		</div>
+                
+                  
+                  
+                  
+		<div >
+
+                  <a class="dropdown-item" href="/messagebd/" target="_self" data-umami-event="Navigation-MessageBoard">
+
+                    <i class="iconfont icon-comment"></i>
+                    <span>留言板</span>
+                  </a>
+		</div>
+                
+                  
+                  
+                  
+		<div >
+
+                  <a class="dropdown-item" href="/atom.xml" target="_self" data-umami-event="Navigation-RSS">
+
+                    <i class="iconfont icon-dingyue"></i>
+                    <span>RSS订阅</span>
+                  </a>
+		</div>
+                
+                  
+                  
+                  
+		<div >
+
+                  <a class="dropdown-item" href="/reccomments/" target="_self" data-umami-event="Navigation-Recent-Comments">
+
+                    <i class="iconfont icon-icon-pinglunguanli-pinglunliebiao"></i>
+                    <span>近期评论</span>
+                  </a>
+		</div>
+                
+              </div>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item dropdown">
+              <a class="nav-link dropdown-toggle" target="_self" href="javascript:;" role="button"
+                 data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                <i class="iconfont icon-user-fill"></i>
+                <span>个人</span>
+              </a>
+              <div class="dropdown-menu" aria-labelledby="navbarDropdown">
+                
+                  
+                  
+                  
+		<div >
+
+                  <a class="dropdown-item" href="/about/" target="_self" data-umami-event="Navigation-AboutMe">
+
+                    <i class="iconfont icon-guanyuwomen"></i>
+                    <span>关于</span>
+                  </a>
+		</div>
+                
+                  
+                  
+                  
+		<div >
+
+                  <a class="dropdown-item" href="/playlist/" target="_self" data-umami-event="Navigation-Music">
+
+                    <i class="iconfont icon-music"></i>
+                    <span>歌单</span>
+                  </a>
+		</div>
+                
+                  
+                  
+                  
+		<div >
+
+                  <a class="dropdown-item" href="https://uipv4.zywvvd.com:33035" target="_self" data-umami-event="Navigation-Nextcloud">
+
+                    <i class="iconfont icon-xuniyingpan"></i>
+                    <span>网盘</span>
+                  </a>
+		</div>
+                
+                  
+                  
+                  
+		<div >
+
+                  <a class="dropdown-item" href="https://uipv4.zywvvd.com:33036" target="_self" data-umami-event="Navigation-OneDev">
+
+                    <i class="iconfont icon-git"></i>
+                    <span>仓库</span>
+                  </a>
+		</div>
+                
+                  
+                  
+                  
+		<div >
+
+                  <a class="dropdown-item" href="https://uipv4.zywvvd.com:33041" target="_self" data-umami-event="Navigation-Wiki">
+
+                    <i class="iconfont icon-wiki"></i>
+                    <span>百科</span>
+                  </a>
+		</div>
+                
+              </div>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item dropdown">
+              <a class="nav-link dropdown-toggle" target="_self" href="javascript:;" role="button"
+                 data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                <i class="iconfont icon-ic_fly"></i>
+                <span>导航</span>
+              </a>
+              <div class="dropdown-menu" aria-labelledby="navbarDropdown">
+                
+                  
+                  
+                  
+		<div >
+
+                  <a class="dropdown-item" href="/site-map/" target="_self" data-umami-event="Navigation-SiteMap">
+
+                    <i class="iconfont icon-lianjie"></i>
+                    <span>链接</span>
+                  </a>
+		</div>
+                
+                  
+                  
+                  
+		<div >
+
+                  <a class="dropdown-item" href="/nodeppt/hexo/snavigation/" target="_self" data-umami-event="Navigation-Search">
+
+                    <i class="iconfont icon-sousuo"></i>
+                    <span>搜索</span>
+                  </a>
+		</div>
+                
+              </div>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item dropdown">
+              <a class="nav-link dropdown-toggle" target="_self" href="javascript:;" role="button"
+                 data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                <i class="iconfont icon-wangzhan"></i>
+                <span>站点</span>
+              </a>
+              <div class="dropdown-menu" aria-labelledby="navbarDropdown">
+                
+                  
+                  
+                  
+		<div >
+
+                  <a class="dropdown-item" href="https://uipv4.zywvvd.com:33039/share/0zx3o21oIpZTZqwC/%E5%8F%88%E8%A7%81%E8%8B%8D%E5%B2%9A" target="_self" data-umami-event="Navigation-Umami">
+
+                    <i class="iconfont icon-tongji2"></i>
+                    <span>站点分析</span>
+                  </a>
+		</div>
+                
+                  
+                  
+                  
+		<div >
+
+                  <a class="dropdown-item" href="/earth_sta/" target="_self" data-umami-event="Navigation-Globe">
+
+                    <i class="iconfont icon-tongjifenxi-xiangmubiaogetongji"></i>
+                    <span>访问统计</span>
+                  </a>
+		</div>
+                
+                  
+                  
+                  
+		<div >
+
+                  <a class="dropdown-item" href="https://uipv4.zywvvd.com:33034/status/show" target="_self" data-umami-event="Navigation-Monitor">
+
+                    <i class="iconfont icon-jiankong"></i>
+                    <span>站点监控</span>
+                  </a>
+		</div>
+                
+              </div>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item dropdown">
+              <a class="nav-link dropdown-toggle" target="_self" href="javascript:;" role="button"
+                 data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                <i class="iconfont icon-chuansong"></i>
+                <span>传送</span>
+              </a>
+              <div class="dropdown-menu" aria-labelledby="navbarDropdown">
+                
+                  
+                  
+                  
+		<div >
+
+                  <a class="dropdown-item" href="https://www.foreverblog.cn/go.html" target="_self" data-umami-event="Navigation-ForeverBolg">
+
+                    <i class="iconfont icon-a-BlackHole"></i>
+                    <span>十年之约</span>
+                  </a>
+		</div>
+                
+                  
+                  
+                  
+		<div >
+
+                  <a class="dropdown-item" href="https://www.travellings.cn/go.html" target="_self" data-umami-event="Navigation-DriveTo">
+
+                    <i class="iconfont icon-train1"></i>
+                    <span>开往</span>
+                  </a>
+		</div>
+                
+                  
+                  
+                  
+		<div >
+
+                  <a class="dropdown-item" href="https://bf.zzxworld.com/" target="_self" data-umami-event="Navigation-BlogFinder">
+
+                    <i class="iconfont icon-icon-"></i>
+                    <span>BlogFinder</span>
+                  </a>
+		</div>
+                
+                  
+                  
+                  
+		<div >
+
+                  <a class="dropdown-item" href="https://www.perass.com/" target="_self" data-umami-event="Navigation-Bloghome">
+
+                    <i class="iconfont icon-home-fill"></i>
+                    <span>博客之家</span>
+                  </a>
+		</div>
+                
+              </div>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item dropdown">
+              <a class="nav-link dropdown-toggle" target="_self" href="javascript:;" role="button"
+                 data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                <i class="iconfont icon-gongju"></i>
+                <span>工具</span>
+              </a>
+              <div class="dropdown-menu" aria-labelledby="navbarDropdown">
+                
+                  
+                  
+                  
+		<div >
+
+                  <a class="dropdown-item" href="/navigates/calculator" target="_self" data-umami-event="Navigation-Calculator">
+
+                    <i class="iconfont icon-jisuan"></i>
+                    <span>计算器</span>
+                  </a>
+		</div>
+                
+                  
+                  
+                  
+		<div >
+
+                  <a class="dropdown-item" href="/navigates/webgraphviz" target="_self" data-umami-event="Navigation-WebGtaphviz">
+
+                    <i class="iconfont icon-tongyong-huatugongju2"></i>
+                    <span>Graphviz</span>
+                  </a>
+		</div>
+                
+                  
+                  
+                  
+		<div >
+
+                  <a class="dropdown-item" href="/navigates/formular_reco" target="_self" data-umami-event="Navigation-Formular-Reco">
+
+                    <i class="iconfont icon-a-checkformula"></i>
+                    <span>公式识别</span>
+                  </a>
+		</div>
+                
+              </div>
+            </li>
+          
+        
+        
+          <li class="nav-item" id="search-btn">
+            <a class="nav-link" target="_self" href="javascript:;" data-toggle="modal" data-target="#modalSearch" aria-label="Search">
+              <i class="iconfont icon-search"></i>
+            </a>
+          </li>
+          
+        
+        
+          <li class="nav-item" id="color-toggle-btn">
+            <a class="nav-link" target="_self" href="javascript:;" aria-label="Color Toggle">
+              <i class="iconfont icon-dark" id="color-toggle-icon"></i>
+            </a>
+          </li>
+        
+      </ul>
+    </div>
+  </div>
+</nav>
+
+  
+
+<div id="banner" class="banner" parallax=true
+     style="background: url('https://uipv4.zywvvd.com:33030/HexoFiles/new/bg-trans.png') no-repeat center center; background-size: cover;">
+  <div class="full-bg-img">
+    <div class="mask flex-center" style="background-color: rgba(0, 0, 0, 0)">
+      <div class="banner-text text-center fade-in-up">
+        <div class="h2">
+          
+            <span id="subtitle">MongoDB 分片实战 GridFS</span>
+          
+        </div>
+
+        
+          
+  <div class="mt-3">
+    
+      <span class="post-meta mr-2">
+        <i class="iconfont icon-author" aria-hidden="true"></i>
+        Yiwei Zhang
+      </span>
+    
+    
+      <span class="post-meta">
+        <i class="iconfont icon-date-fill" aria-hidden="true"></i>
+        <time datetime="2024-10-22 11:30" pubdate>
+          2024年10月22日 中午
+        </time>
+      </span>
+    
+  </div>
+
+  <div class="mt-1">
+    
+      <span class="post-meta mr-2">
+        <i class="iconfont icon-chart"></i>
+        
+          <!-- compatible with older versions-->
+          3.4k 字
+        
+      </span>
+    
+
+    
+      <span class="post-meta mr-2">
+        <i class="iconfont icon-clock-fill"></i>
+        
+        
+        
+          <!-- compatible with older versions-->
+          29 分钟
+        
+      </span>
+    
+
+    
+    
+      
+        <span id="vvdpost_container_page_pvuv" style="display: none">
+          <i class="iconfont icon-eye" aria-hidden="true"></i>
+          <span id="vvdpost_value_page_pv">0</span> 次&nbsp&nbsp
+		  <i class="iconfont icon-users" aria-hidden="true"></i>
+		  <span id="vvdpost_value_page_uv">0</span> 人&nbsp&nbsp
+		  <i class="iconfont icon-comment" aria-hidden="true"></i>
+		  <span id="vvdpost_value_page_cn">0</span> 条
+        </span>
+
+    <script>
+    document.addEventListener("DOMContentLoaded", function() {
+	      console.log("PVUV_" + window.location.pathname);
+
+	      // 使用 fetch API 发送 POST 请求
+	      fetch('https://uipv4.zywvvd.com:33037/poststats', { 
+		  method: 'POST',
+		  headers: {
+		      'Content-Type': 'application/json'
+		  },
+		  body: JSON.stringify(window.location.pathname) // 将路径名作为对象发送，以便在服务器端更容易处理
+	      })
+	      .then(response => {
+		  // 检查响应状态
+		  if (!response.ok) {
+		      throw new Error('Network response was not ok ' + response.statusText);
+		  }
+		  return response.json(); // 解析 JSON 响应
+	      })
+	      .then(data => {
+		  // 处理解析后的数据
+		  console.log(data.pv);
+		  var pvCtn = document.querySelector('#vvdpost_container_page_pvuv');
+		  if (pvCtn) {
+		      var pvEle = document.querySelector('#vvdpost_value_page_pv');
+		      var uvEle = document.querySelector('#vvdpost_value_page_uv');
+		      var cnEle = document.querySelector('#vvdpost_value_page_cn');
+		      if (pvEle && uvEle) {
+		          pvEle.innerText = data.pv;
+		          uvEle.innerText = data.uv;
+		          cnEle.innerText = data.cn;
+		          pvCtn.style.display = 'inline';
+		      }
+		  }
+	      })
+	      .catch(error => {
+		  // 处理请求错误
+		  console.error('There has been a problem with your fetch operation:', error);
+	      });
+      });
+  </script>
+      
+    
+  </div>
+
+
+        
+      </div>
+
+      
+        <div class="scroll-down-bar">
+          <i class="iconfont icon-arrowdown"></i>
+        </div>
+      
+    </div>
+  </div>
+</div>
+
+</div>
+
+
+	<script type="text/javascript" src="/vvd_js/jquery.js"></script>
+	<script async src="https://uipv4.zywvvd.com:33039/script.js" data-website-id="dd4a05c6-dde2-4743-9c3a-a79d6bee0778"></script>
+	<div class="banner" id='banner' >
+
+		<div class="full-bg-img" >
+
+			
+				<script>
+					var ua = navigator.userAgent;
+					var ipad = ua.match(/(iPad).*OS\s([\d_]+)/),
+						isIphone = !ipad && ua.match(/(iPhone\sOS)\s([\d_]+)/),
+						isAndroid = ua.match(/(Android)\s+([\d.]+)/),
+						isMobile = isIphone || isAndroid;
+
+					function set_video_attr(id){
+						var height = document.body.clientHeight
+						var width = document.body.clientWidth
+						var video_item = document.getElementById(id);
+
+						if (height / width < 0.56){
+							video_item.setAttribute('width', '100%');
+							video_item.setAttribute('height', 'auto');
+						} else {
+							video_item.setAttribute('height', '100%');
+							video_item.setAttribute('width', 'auto');
+						}
+					}
+
+					fetch('https://uipv4.zywvvd.com:33037/wallpaper-pair')
+					  .then(response => response.json()) // 解析JSON数据
+					  .then(data => {
+						console.log('获取链接成功');
+						video_url = data[0][0]
+						pre_show_image_url = data[0][1]
+
+						banner_obj = document.getElementById("banner")
+						banner_obj.style.cssText = "background: url('" + pre_show_image_url + "') no-repeat;"
+
+						vvd_banner_obj = document.getElementById("vvd_banner_img")
+						vvd_banner_content = "<img id='banner_img_item' src='" + pre_show_image_url + "'style='position: fixed; z-index: -999'>"
+						vvd_banner_obj.innerHTML = vvd_banner_content 
+
+						if (!isMobile) {
+							video_html_res = "<video id='video_item' style='position: fixed; z-index: -888;'  muted='muted' src=" + video_url + " autoplay='autoplay' loop='loop'></video>"
+							document.getElementById("banner_video_insert").innerHTML = video_html_res;
+							set_video_attr('video_item')
+							set_video_attr('banner_img_item')
+						}
+					    
+					  })
+					  .catch((error) => {
+					    console.error('请求失败,尝试本地获取背景图像：', error);
+	    					$.getJSON('/vvd_js/video_url.json', function(data){
+
+							var video_list_length = data.length
+							var seed = Math.random()
+							index = Math.floor(seed * video_list_length)
+
+							video_url = data[index][0]
+							pre_show_image_url = data[index][1]
+
+							banner_obj = document.getElementById("banner")
+							banner_obj.style.cssText = "background: url('" + pre_show_image_url + "') no-repeat;"
+
+							vvd_banner_obj = document.getElementById("vvd_banner_img")
+							vvd_banner_content = "<img id='banner_img_item' src='" + pre_show_image_url + "'style='position: fixed; z-index: -999'>"
+							vvd_banner_obj.innerHTML = vvd_banner_content 
+
+							if (!isMobile) {
+								video_html_res = "<video id='video_item' style='position: fixed; z-index: -888;'  muted='muted' src=" + video_url + " autoplay='autoplay' loop='loop'></video>"
+								document.getElementById("banner_video_insert").innerHTML = video_html_res;
+								set_video_attr('video_item')
+								set_video_attr('banner_img_item')
+							}
+						});
+					  });
+
+
+
+
+
+
+					if (!isMobile){
+						window.onresize = function(){
+							set_video_attr('video_item')
+							set_video_attr('banner_img_item')
+							}
+						}
+				</script>
+
+			
+
+
+			
+			</div>
+		</div>
+    </div>
+
+  </header>
+
+  <main>
+    
+      
+
+
+
+<div class="container-fluid nopadding-x">
+  <div class="row nomargin-x">
+    <div class="side-col d-none d-lg-block col-lg-2">
+      
+
+    </div>
+
+    <div class="col-lg-8 nopadding-x-md">
+      <div class="container nopadding-x-md" id="board-ctn">
+        <div id="board">
+          <article class="post-content mx-auto">
+
+            <!-- <h1 id="seo-header">MongoDB 分片实战 GridFS</h1> -->
+
+            
+              <p id="updated-time" class="note note-info" style="">
+                
+                  
+                    <!-- compatible with older versions-->
+                    本文最后更新于：2025年2月14日 下午
+                  
+                
+              </p>
+            
+            
+              <div class="markdown-body">
+                
+                <blockquote>
+<p>之前我们介绍过 <a href="/notes/coding/dataset/mongodb-slice/mongodb-slice/">MongoDB 分片</a>和 <a href="/notes/coding/dataset/mongodb-gridfs/mongodb-gridfs/">GridFS</a> 的工作原理，本文用 Docker 进行实战部署，并在 GridFS 上进行分片测试。</p>
+</blockquote>
+<span id="more"></span>
+<h3 id="基础准备">基础准备</h3>
+<ul>
+<li><a href="/notes/coding/dataset/mongodb-slice/mongodb-slice/">MongoDB 分片</a></li>
+<li><a href="/notes/coding/dataset/mongodb-gridfs/mongodb-gridfs/">MongoDB GridFS</a></li>
+<li><a href="/notes/coding/dataset/mongodb/MongoDB/">Docker 安装 MongoDB</a></li>
+</ul>
+<h3 id="实战目标">实战目标</h3>
+<ol>
+<li>Docker compose 配置化部署 MongoDB 服务
+<ul>
+<li>配置 3 个 config 服务器</li>
+<li>配置 3 个 分片存储服务器</li>
+<li>配置 1 个 路由服务器</li>
+</ul>
+</li>
+<li>脚本启动、初始化</li>
+<li>实现 GridFS 数据分片</li>
+<li>添加 GridFS 数据</li>
+<li>查看分片效果</li>
+</ol>
+<h3 id="环境准备">环境准备</h3>
+<h4 id="环境配置">环境配置</h4>
+<ul>
+<li>安装 Docker</li>
+<li>安装 mongodbsh</li>
+<li>配置 docker compose</li>
+</ul>
+<h4 id="创建-mongo-网络">创建 mongo 网络</h4>
+<p>检查名为<code>mongo</code>的网络是否已经存在</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs bash">docker network <span class="hljs-built_in">ls</span><br></code></pre></td></tr></table></figure>
+<p>如果<code>mongo</code>网络不存在，需要手动创建：</p>
+<figure class="highlight ebnf"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs ebnf"><span class="hljs-attribute">docker network create mongo</span><br></code></pre></td></tr></table></figure>
+<p>在 docker compose 文件中添加网络配置</p>
+<figure class="highlight yaml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><code class="hljs yaml"><span class="hljs-attr">networks:</span><br>  <span class="hljs-attr">mongo:</span><br>    <span class="hljs-attr">external:</span> <span class="hljs-literal">true</span><br></code></pre></td></tr></table></figure>
+<p>重新启动服务</p>
+<figure class="highlight powershell"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs powershell">docker<span class="hljs-literal">-compose</span> <span class="hljs-operator">-f</span> fates<span class="hljs-literal">-mongo-compose</span>.yaml up <span class="hljs-literal">-d</span><br></code></pre></td></tr></table></figure>
+<p><strong>注意事项</strong></p>
+<ul>
+<li>如果你正在使用多个Docker Compose文件或者与其他项目共享网络，确保所有项目都使用相同的网络名称。</li>
+<li>如果你之前已经运行了Docker Compose并且删除了网络，你可能需要先删除旧的容器和卷，然后重新创建网络。</li>
+</ul>
+<h4 id="检查时区文件">检查时区文件</h4>
+<p>构建时间同步的多个 MongoDB 服务需要统一的时区信息，通过共用本机的 <code>/etc/localtime</code>文件实现。</p>
+<p>检查该文件是否存在，如果不存在则需要手动创建符号链接，以 Shanghai 时区为例：</p>
+<figure class="highlight awk"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs awk">sudo ln -sf <span class="hljs-regexp">/usr/</span>share<span class="hljs-regexp">/zoneinfo/</span>Asia<span class="hljs-regexp">/Shanghai /</span>etc/localtime<br></code></pre></td></tr></table></figure>
+<p>更新系统时钟（可选操作）</p>
+<figure class="highlight ada"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs ada">sudo hwclock <span class="hljs-comment">--systohc</span><br></code></pre></td></tr></table></figure>
+<p><strong>验证设置</strong></p>
+<p>验证时区设置是否正确：</p>
+<figure class="highlight ebnf"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs ebnf"><span class="hljs-attribute">timedatectl</span><br></code></pre></td></tr></table></figure>
+<h4 id="创建文件夹">创建文件夹</h4>
+<p>在根目录创建这样的文件夹结构：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><code class="hljs bash">/mongodata<br>├── config1<br>├── config2<br>├── config3<br>├── shard1<br>├── shard2<br>└── shard3<br></code></pre></td></tr></table></figure>
+<p>赋予其他用户读写权限</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs bash">sudo <span class="hljs-built_in">chmod</span> -R 757 /mongodata<br></code></pre></td></tr></table></figure>
+<h3 id="docker-compose-配置">docker-compose 配置</h3>
+<h4 id="服务定义">服务定义</h4>
+<p>在<code>services</code>部分定义不同的MongoDB容器，包括分片（shard）、配置服务器（config）和路由进程（mongos）。</p>
+<h5 id="shard">shard</h5>
+<figure class="highlight yaml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><code class="hljs yaml"><span class="hljs-attr">services:</span><br>  <span class="hljs-attr">shard1:</span><br>    <span class="hljs-attr">image:</span> <span class="hljs-string">mongodb/mongodb-community-server:7.0.12-ubuntu2204</span><br>    <span class="hljs-attr">container_name:</span> <span class="hljs-string">mongo_shard1</span><br>    <span class="hljs-comment"># --shardsvr: 这个参数仅仅只是将默认的27017端口改为27018,如果指定--port参数，可用不需要这个参数</span><br>    <span class="hljs-comment"># --directoryperdb：每个数据库使用单独的文件夹</span><br>    <span class="hljs-comment"># --replSet 副本集</span><br>    <span class="hljs-attr">command:</span> <span class="hljs-string">mongod</span> <span class="hljs-string">--shardsvr</span> <span class="hljs-string">--directoryperdb</span> <span class="hljs-string">--replSet</span> <span class="hljs-string">shard1</span>  <span class="hljs-string">--wiredTigerCacheSizeGB</span> <span class="hljs-number">6</span><br>    <span class="hljs-attr">volumes:</span><br>      <span class="hljs-bullet">-</span> <span class="hljs-string">/etc/localtime:/etc/localtime</span><br>      <span class="hljs-bullet">-</span> <span class="hljs-string">/mongodata/shard1:/data/db</span><br>    <span class="hljs-attr">privileged:</span> <span class="hljs-literal">true</span><br>    <span class="hljs-comment"># mem_limit: 16000000000</span><br>    <span class="hljs-attr">networks:</span><br>      <span class="hljs-bullet">-</span> <span class="hljs-string">mongo</span>  <br></code></pre></td></tr></table></figure>
+<h5 id="config">config</h5>
+<figure class="highlight yaml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><code class="hljs yaml"><span class="hljs-attr">config1:</span><br>  <span class="hljs-attr">image:</span> <span class="hljs-string">mongodb/mongodb-community-server:7.0.12-ubuntu2204</span><br>  <span class="hljs-attr">container_name:</span> <span class="hljs-string">mongo_config1</span><br>  <span class="hljs-comment"># --configsvr: 这个参数仅仅是将默认端口由27017改为27019, 如果指定--port可不添加该参数</span><br>  <span class="hljs-attr">command:</span> <span class="hljs-string">mongod</span> <span class="hljs-string">--configsvr</span> <span class="hljs-string">--directoryperdb</span> <span class="hljs-string">--replSet</span> <span class="hljs-string">fates-mongo-config</span><br>  <span class="hljs-attr">restart:</span> <span class="hljs-string">always</span><br>  <span class="hljs-attr">volumes:</span><br>    <span class="hljs-bullet">-</span> <span class="hljs-string">/etc/localtime:/etc/localtime</span><br>    <span class="hljs-bullet">-</span> <span class="hljs-string">/mongodata/config1:/data/configdb</span><br>  <span class="hljs-attr">networks:</span><br>    <span class="hljs-bullet">-</span> <span class="hljs-string">mongo</span><br></code></pre></td></tr></table></figure>
+<h5 id="mongos">mongos</h5>
+<figure class="highlight yaml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><code class="hljs yaml"><span class="hljs-attr">mongos:</span><br>  <span class="hljs-attr">image:</span> <span class="hljs-string">mongodb/mongodb-community-server:7.0.12-ubuntu2204</span><br>  <span class="hljs-attr">container_name:</span> <span class="hljs-string">mongo_mongos</span><br>  <span class="hljs-attr">command:</span> <span class="hljs-string">mongos</span> <span class="hljs-string">--configdb</span> <span class="hljs-string">fates-mongo-config/config1:27019,config2:27019,config3:27019</span> <span class="hljs-string">--bind_ip</span> <span class="hljs-number">0.0</span><span class="hljs-number">.0</span><span class="hljs-number">.0</span> <span class="hljs-string">--port</span> <span class="hljs-number">27017</span><br>  <span class="hljs-attr">ports:</span><br>   <span class="hljs-bullet">-</span> <span class="hljs-number">27017</span><span class="hljs-string">:27017</span><br><span class="hljs-attr">restart:</span> <span class="hljs-string">always</span><br>  <span class="hljs-attr">volumes:</span><br>    <span class="hljs-bullet">-</span> <span class="hljs-string">/etc/localtime:/etc/localtime</span><br>  <span class="hljs-attr">depends_on:</span><br>    <span class="hljs-bullet">-</span> <span class="hljs-string">config1</span><br>    <span class="hljs-bullet">-</span> <span class="hljs-string">config2</span><br>    <span class="hljs-bullet">-</span> <span class="hljs-string">config3</span><br>  <span class="hljs-attr">networks:</span><br>    <span class="hljs-bullet">-</span> <span class="hljs-string">mongo</span>  <br></code></pre></td></tr></table></figure>
+<h4 id="command-解释">command 解释</h4>
+<figure class="highlight brainfuck"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs brainfuck"><span class="hljs-comment">mongod</span> <span class="hljs-literal">--</span><span class="hljs-comment">shardsvr</span> <span class="hljs-literal">--</span><span class="hljs-comment">directoryperdb</span> <span class="hljs-literal">--</span><span class="hljs-comment">replSet shard1</span> <span class="hljs-literal">--</span><span class="hljs-comment">wiredTigerCacheSizeGB 2</span> <span class="hljs-literal">--</span><span class="hljs-comment">auth</span><br></code></pre></td></tr></table></figure>
+<p>此命令用于启动一个 MongoDB 实例，并为其配置多个关键参数，具体含义如下：</p>
+<hr>
+<p><strong>1. <code>--shardsvr</code></strong></p>
+<ul>
+<li><strong>作用</strong>：指定该实例作为 <strong>分片集群中的一个分片节点</strong>。</li>
+<li><strong>默认端口</strong>：<code>27018</code>（普通 <code>mongod</code> 默认端口为 <code>27017</code>）。</li>
+<li><strong>分片集群角色</strong>：
+<ul>
+<li>分片节点负责存储实际数据，并将数据分布到集群中。</li>
+<li>需与其他分片、配置服务器（<code>config servers</code>）和路由服务器（<code>mongos</code>）协同工作。</li>
+</ul>
+</li>
+</ul>
+<hr>
+<p><strong>2. <code>--directoryperdb</code></strong></p>
+<ul>
+<li><strong>作用</strong>：启用 <strong>每个数据库独立存储目录</strong>。</li>
+<li><strong>文件管理</strong>：
+<ul>
+<li>默认情况下，所有数据库文件存储在统一的 <code>data/db</code> 目录中。</li>
+<li>启用后，每个数据库会有自己的子目录（如 <code>data/db/db1</code>、<code>data/db/db2</code>），便于管理和维护。</li>
+</ul>
+</li>
+</ul>
+<hr>
+<p><strong>3. <code>--replSet shard1</code></strong></p>
+<ul>
+<li><strong>作用</strong>：将该分片节点配置为 <strong>副本集 <code>shard1</code> 的成员</strong>。</li>
+<li><strong>副本集的意义</strong>：
+<ul>
+<li>每个分片通常是一个副本集，以提高数据可用性和容错性。</li>
+<li>副本集需包含多个节点（至少 3 个推荐），通过选举机制实现自动故障转移。</li>
+</ul>
+</li>
+<li><strong>初始化步骤</strong>：
+<ul>
+<li>需在启动后执行 <code>rs.initiate()</code> 和 <code>rs.add()</code> 初始化副本集，添加其他成员。</li>
+</ul>
+</li>
+</ul>
+<hr>
+<p><strong>4. <code>--wiredTigerCacheSizeGB 2</code></strong></p>
+<ul>
+<li><strong>作用</strong>：设置 <strong>WiredTiger 存储引擎的缓存大小为 2GB</strong>。</li>
+<li><strong>缓存机制</strong>：
+<ul>
+<li>WiredTiger 是 MongoDB 默认存储引擎，缓存用于加速数据和索引的访问。</li>
+<li>建议值为系统内存的 50% 以下（例如 64GB 内存可设为 30GB）。</li>
+</ul>
+</li>
+<li><strong>优化意义</strong>：避免占用过多内存影响其他服务，此处限制为 2GB。</li>
+</ul>
+<hr>
+<p><strong>5. <code>--auth</code></strong></p>
+<ul>
+<li><strong>作用</strong>：启用 <strong>访问控制</strong>，强制要求客户端连接时进行身份验证。</li>
+<li><strong>安全要求</strong>：
+<ul>
+<li>需先创建管理员用户（如 <code>admin</code>），再为应用程序创建普通用户。</li>
+<li>用户需分配角色（如 <code>readWrite</code>、<code>dbAdmin</code>）以限制权限。</li>
+</ul>
+</li>
+</ul>
+<h4 id="网络配置">网络配置</h4>
+<figure class="highlight yaml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><code class="hljs yaml"><span class="hljs-attr">networks:</span><br>  <span class="hljs-attr">mongo:</span><br>    <span class="hljs-attr">external:</span> <span class="hljs-literal">true</span><br></code></pre></td></tr></table></figure>
+<h4 id="docker-compose-yml-文件">docker-compose.yml 文件</h4>
+<figure class="highlight yaml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br><span class="line">84</span><br><span class="line">85</span><br><span class="line">86</span><br><span class="line">87</span><br><span class="line">88</span><br></pre></td><td class="code"><pre><code class="hljs yaml"><span class="hljs-attr">services:</span><br>  <span class="hljs-attr">shard1:</span><br>    <span class="hljs-attr">image:</span> <span class="hljs-string">mongodb/mongodb-community-server:7.0.12-ubuntu2204</span><br>    <span class="hljs-attr">container_name:</span> <span class="hljs-string">mongo_shard1</span><br>    <span class="hljs-attr">command:</span> <span class="hljs-string">mongod</span> <span class="hljs-string">--shardsvr</span> <span class="hljs-string">--directoryperdb</span> <span class="hljs-string">--replSet</span> <span class="hljs-string">shard1</span>  <span class="hljs-string">--wiredTigerCacheSizeGB</span> <span class="hljs-number">6</span><br>    <span class="hljs-attr">restart:</span> <span class="hljs-string">always</span><br>    <span class="hljs-attr">volumes:</span><br>      <span class="hljs-bullet">-</span> <span class="hljs-string">/etc/localtime:/etc/localtime</span><br>      <span class="hljs-bullet">-</span> <span class="hljs-string">/mongodata/shard1:/data/db</span><br>    <span class="hljs-attr">privileged:</span> <span class="hljs-literal">true</span><br>    <span class="hljs-attr">networks:</span><br>      <span class="hljs-bullet">-</span> <span class="hljs-string">mongo</span>   <br><br>  <span class="hljs-attr">shard2:</span><br>    <span class="hljs-attr">image:</span> <span class="hljs-string">mongodb/mongodb-community-server:7.0.12-ubuntu2204</span><br>    <span class="hljs-attr">container_name:</span> <span class="hljs-string">mongo_shard2</span><br>    <span class="hljs-attr">command:</span> <span class="hljs-string">mongod</span> <span class="hljs-string">--shardsvr</span> <span class="hljs-string">--directoryperdb</span> <span class="hljs-string">--replSet</span> <span class="hljs-string">shard2</span>  <span class="hljs-string">--wiredTigerCacheSizeGB</span> <span class="hljs-number">6</span><br>    <span class="hljs-attr">restart:</span> <span class="hljs-string">always</span><br>    <span class="hljs-attr">volumes:</span><br>      <span class="hljs-bullet">-</span> <span class="hljs-string">/etc/localtime:/etc/localtime</span><br>      <span class="hljs-bullet">-</span> <span class="hljs-string">/mongodata/shard2:/data/db</span><br>    <span class="hljs-attr">privileged:</span> <span class="hljs-literal">true</span><br>    <span class="hljs-attr">networks:</span><br>      <span class="hljs-bullet">-</span> <span class="hljs-string">mongo</span><br><br>  <span class="hljs-attr">shard3:</span><br>    <span class="hljs-attr">image:</span> <span class="hljs-string">mongodb/mongodb-community-server:7.0.12-ubuntu2204</span><br>    <span class="hljs-attr">container_name:</span> <span class="hljs-string">mongo_shard3</span><br>    <span class="hljs-attr">command:</span> <span class="hljs-string">mongod</span> <span class="hljs-string">--shardsvr</span> <span class="hljs-string">--directoryperdb</span> <span class="hljs-string">--replSet</span> <span class="hljs-string">shard3</span>  <span class="hljs-string">--wiredTigerCacheSizeGB</span> <span class="hljs-number">6</span><br>    <span class="hljs-attr">restart:</span> <span class="hljs-string">always</span><br>    <span class="hljs-attr">volumes:</span><br>      <span class="hljs-bullet">-</span> <span class="hljs-string">/etc/localtime:/etc/localtime</span><br>      <span class="hljs-bullet">-</span> <span class="hljs-string">/mongodata/shard3:/data/db</span><br>    <span class="hljs-attr">privileged:</span> <span class="hljs-literal">true</span><br>    <span class="hljs-attr">networks:</span><br>      <span class="hljs-bullet">-</span> <span class="hljs-string">mongo</span><br><br>  <span class="hljs-attr">config1:</span><br>    <span class="hljs-attr">image:</span> <span class="hljs-string">mongodb/mongodb-community-server:7.0.12-ubuntu2204</span><br>    <span class="hljs-attr">container_name:</span> <span class="hljs-string">mongo_config1</span><br>    <span class="hljs-attr">command:</span> <span class="hljs-string">mongod</span> <span class="hljs-string">--configsvr</span> <span class="hljs-string">--directoryperdb</span> <span class="hljs-string">--replSet</span> <span class="hljs-string">fates-mongo-config</span><br>    <span class="hljs-attr">restart:</span> <span class="hljs-string">always</span><br>    <span class="hljs-attr">volumes:</span><br>      <span class="hljs-bullet">-</span> <span class="hljs-string">/etc/localtime:/etc/localtime</span><br>      <span class="hljs-bullet">-</span> <span class="hljs-string">/mongodata/config1:/data/configdb</span><br>    <span class="hljs-attr">networks:</span><br>      <span class="hljs-bullet">-</span> <span class="hljs-string">mongo</span><br><br>  <span class="hljs-attr">config2:</span><br>    <span class="hljs-attr">image:</span> <span class="hljs-string">mongodb/mongodb-community-server:7.0.12-ubuntu2204</span><br>    <span class="hljs-attr">container_name:</span> <span class="hljs-string">mongo_config2</span><br>    <span class="hljs-attr">restart:</span> <span class="hljs-string">always</span><br>    <span class="hljs-attr">command:</span> <span class="hljs-string">mongod</span> <span class="hljs-string">--configsvr</span> <span class="hljs-string">--directoryperdb</span> <span class="hljs-string">--replSet</span> <span class="hljs-string">fates-mongo-config</span><br>    <span class="hljs-attr">volumes:</span><br>      <span class="hljs-bullet">-</span> <span class="hljs-string">/etc/localtime:/etc/localtime</span><br>      <span class="hljs-bullet">-</span> <span class="hljs-string">/mongodata/config2:/data/configdb</span><br>    <span class="hljs-attr">networks:</span><br>      <span class="hljs-bullet">-</span> <span class="hljs-string">mongo</span><br><br>  <span class="hljs-attr">config3:</span><br>    <span class="hljs-attr">image:</span> <span class="hljs-string">mongodb/mongodb-community-server:7.0.12-ubuntu2204</span><br>    <span class="hljs-attr">container_name:</span> <span class="hljs-string">mongo_config3</span><br>    <span class="hljs-attr">restart:</span> <span class="hljs-string">always</span><br>    <span class="hljs-attr">command:</span> <span class="hljs-string">mongod</span> <span class="hljs-string">--configsvr</span> <span class="hljs-string">--directoryperdb</span> <span class="hljs-string">--replSet</span> <span class="hljs-string">fates-mongo-config</span><br>    <span class="hljs-attr">volumes:</span><br>      <span class="hljs-bullet">-</span> <span class="hljs-string">/etc/localtime:/etc/localtime</span><br>      <span class="hljs-bullet">-</span> <span class="hljs-string">/mongodata/config3:/data/configdb</span><br>    <span class="hljs-attr">networks:</span><br>      <span class="hljs-bullet">-</span> <span class="hljs-string">mongo</span><br><br>  <span class="hljs-attr">mongos:</span><br>    <span class="hljs-attr">image:</span> <span class="hljs-string">mongodb/mongodb-community-server:7.0.12-ubuntu2204</span><br>    <span class="hljs-attr">container_name:</span> <span class="hljs-string">mongo_mongos</span><br>    <span class="hljs-attr">restart:</span> <span class="hljs-string">always</span><br>    <span class="hljs-attr">command:</span> <span class="hljs-string">mongos</span> <span class="hljs-string">--configdb</span> <span class="hljs-string">fates-mongo-config/config1:27019,config2:27019,config3:27019</span> <span class="hljs-string">--bind_ip</span> <span class="hljs-number">0.0</span><span class="hljs-number">.0</span><span class="hljs-number">.0</span> <span class="hljs-string">--port</span> <span class="hljs-number">27017</span><br>    <span class="hljs-attr">ports:</span><br>     <span class="hljs-bullet">-</span> <span class="hljs-number">27017</span><span class="hljs-string">:27017</span><br>    <span class="hljs-attr">volumes:</span><br>      <span class="hljs-bullet">-</span> <span class="hljs-string">/etc/localtime:/etc/localtime</span><br>    <span class="hljs-attr">depends_on:</span><br>      <span class="hljs-bullet">-</span> <span class="hljs-string">config1</span><br>      <span class="hljs-bullet">-</span> <span class="hljs-string">config2</span><br>      <span class="hljs-bullet">-</span> <span class="hljs-string">config3</span><br>    <span class="hljs-attr">networks:</span><br>      <span class="hljs-bullet">-</span> <span class="hljs-string">mongo</span>    <br><span class="hljs-attr">networks:</span><br>  <span class="hljs-attr">mongo:</span><br>    <span class="hljs-attr">external:</span> <span class="hljs-literal">true</span><br></code></pre></td></tr></table></figure>
+<h3 id="构建容器">构建容器</h3>
+<p>用脚本执行，文件 <code>mongo_deploy.sh</code></p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br></pre></td><td class="code"><pre><code class="hljs shell"><span class="hljs-meta prompt_">#</span><span class="language-bash">!/bin/bash</span><br><span class="hljs-meta prompt_"></span><br><span class="hljs-meta prompt_"># </span><span class="language-bash">检查当前用户是否是root</span><br>if [ &quot;$(id -u)&quot; -ne 0 ]; then<br>   echo &quot;此脚本需要以root用户运行，请使用sudo运行此脚本。&quot;<br>   exit 1<br>fi<br><span class="hljs-meta prompt_"></span><br><span class="hljs-meta prompt_"># </span><span class="language-bash">定义一个函数 create_dir_if_not_exists</span><br>create_dir_if_not_exists() &#123;<br>  local dir_path=&quot;$1&quot;<br><span class="hljs-meta prompt_">  # </span><span class="language-bash">检查目录是否存在</span><br>  if [ ! -d &quot;$dir_path&quot; ]; then<br>    # 如果不存在，则创建目录<br>    mkdir -p &quot;$dir_path&quot;<br>    echo &quot;目录 &#x27;$dir_path&#x27; 已创建。&quot;<br>  else<br>    # 如果存在，则打印消息并跳过创建<br>    echo &quot;目录 &#x27;$dir_path&#x27; 已存在，无需创建。&quot;<br>  fi<br>&#125;<br><span class="hljs-meta prompt_"></span><br><span class="hljs-meta prompt_"># </span><span class="language-bash">使用函数创建目录</span><br>create_dir_if_not_exists /mongodata/config1<br>create_dir_if_not_exists /mongodata/config2<br>create_dir_if_not_exists /mongodata/config3<br><br>create_dir_if_not_exists /mongodata/shard1<br>create_dir_if_not_exists /mongodata/shard2<br>create_dir_if_not_exists /mongodata/shard3<br><span class="hljs-meta prompt_"></span><br><span class="hljs-meta prompt_"># </span><span class="language-bash">其他用户写权限</span><br>echo &quot;修改文件夹权限。&quot;<br>chmod -R 757 /mongodata<br><span class="hljs-meta prompt_"></span><br><span class="hljs-meta prompt_"></span><br><span class="hljs-meta prompt_"># </span><span class="language-bash">启动容器</span><br>docker-compose -f docker-compose.yml up -d<br><br>echo &quot;睡眠30s，等待mongodb所有容器构建完成&quot;<br>sleep 30s<br><br><br>docker-compose -f docker-compose.yml exec config1 bash -c &quot;echo &#x27;rs.initiate(&#123;_id: \&quot;fates-mongo-config\&quot;,configsvr: true, members: [&#123; _id : 0, host : \&quot;config1:27019\&quot; &#125;,&#123; _id : 1, host : \&quot;config2:27019\&quot; &#125;, &#123; _id : 2, host : \&quot;config3:27019\&quot; &#125;]&#125;)&#x27; | mongosh --port 27019&quot;<br><br>docker-compose -f docker-compose.yml exec shard1 bash -c &quot;echo &#x27;rs.initiate(&#123;_id: \&quot;shard1\&quot;,members: [&#123; _id : 0, host : \&quot;shard1:27018\&quot; &#125;]&#125;)&#x27; | mongosh --port 27018&quot;<br>docker-compose -f docker-compose.yml exec shard2 bash -c &quot;echo &#x27;rs.initiate(&#123;_id: \&quot;shard2\&quot;,members: [&#123; _id : 0, host : \&quot;shard2:27018\&quot; &#125;]&#125;)&#x27; | mongosh --port 27018&quot;<br>docker-compose -f docker-compose.yml exec shard3 bash -c &quot;echo &#x27;rs.initiate(&#123;_id: \&quot;shard3\&quot;,members: [&#123; _id : 0, host : \&quot;shard3:27018\&quot; &#125;]&#125;)&#x27; | mongosh --port 27018&quot;<br><br>sleep 5s<br><br>docker-compose -f docker-compose.yml exec mongos bash -c &quot;echo &#x27;sh.addShard(\&quot;shard1/shard1:27018\&quot;)&#x27; | mongosh&quot;<br>sleep 1s<br>docker-compose -f docker-compose.yml exec mongos bash -c &quot;echo &#x27;sh.addShard(\&quot;shard2/shard2:27018\&quot;)&#x27; | mongosh&quot;<br>sleep 1s<br>docker-compose -f docker-compose.yml exec mongos bash -c &quot;echo &#x27;sh.addShard(\&quot;shard3/shard3:27018\&quot;)&#x27; | mongosh&quot;<br><br>sleep 1s<br></code></pre></td></tr></table></figure>
+<p>执行脚本</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><code class="hljs shell">chmod +x mongo_deploy.sh<br>sudo ./mongo_deploy.sh<br></code></pre></td></tr></table></figure>
+<h3 id="GridFS-分片">GridFS 分片</h3>
+<p>以 <code>vvd</code> 数据库为例</p>
+<p>mongosh 进入 mongos 容器的 mongodb</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br></pre></td><td class="code"><pre><code class="hljs shell"><span class="hljs-meta prompt_">&gt; </span><span class="language-bash">mongosh</span><br>Current Mongosh Log ID:	67177c2e4b6a404e86838725<br>Connecting to:		mongodb://127.0.0.1:27017/?directConnection=true&amp;serverSelectionTimeoutMS=2000&amp;appName=mongosh+2.2.15<br>Using MongoDB:		7.0.12<br>Using Mongosh:		2.2.15<br>mongosh 2.3.2 is available for download: https://www.mongodb.com/try/download/shell<br><br>For mongosh info see: https://docs.mongodb.com/mongodb-shell/<br><br>------<br>   The server generated these startup warnings when booting<br>   2024-10-22T18:13:59.284+08:00: Access control is not enabled for the database. Read and write access to data and configuration is unrestricted<br>------<br><br>[direct: mongos] test&gt; use vvd<br>switched to db vvd<br>[direct: mongos] vvd&gt; <br></code></pre></td></tr></table></figure>
+<p>启用分片，让当前库支持分片</p>
+<figure class="highlight stata"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs stata"><span class="hljs-keyword">sh</span>.enableSharding(<span class="hljs-string">&quot;vvd&quot;</span>)<br></code></pre></td></tr></table></figure>
+<p>给 <code>fs.chunks</code> 集合分片</p>
+<blockquote>
+<p>可选创建索引 <code>db.fs.chunks.createIndex( &#123; files_id : 1 , n : 1 &#125; )</code></p>
+</blockquote>
+<figure class="highlight php"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs php">sh.<span class="hljs-title function_ invoke__">shardCollection</span>(<span class="hljs-string">&#x27;vvd.fs.chunks&#x27;</span>,&#123;<span class="hljs-attr">files_id</span>:<span class="hljs-string">&#x27;hashed&#x27;</span>, <span class="hljs-attr">n</span>:<span class="hljs-number">1</span>&#125;)<br></code></pre></td></tr></table></figure>
+<h3 id="添加-GridFS-数据">添加 GridFS 数据</h3>
+<p>需要进入到 mongos 里，我是这么干的：</p>
+<figure class="highlight applescript"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs applescript">docker exec -<span class="hljs-keyword">it</span> mongo_mongos bash<br></code></pre></td></tr></table></figure>
+<p>之后为了找一个测试文件，我进到 <code>/var/log</code>中，把 <code>faillog</code> 文件当作测试文件</p>
+<blockquote>
+<figure class="highlight applescript"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs applescript">mongofiles -d myDatabase -c myGridFSBucket <span class="hljs-keyword">put</span> /path/<span class="hljs-keyword">to</span>/your/<span class="hljs-built_in">file</span>.txt<br></code></pre></td></tr></table></figure>
+<p>这里<code>-d</code>指定数据库，<code>-c</code>指定GridFS存储桶（如果未指定，默认为<code>fs</code>）。</p>
+</blockquote>
+<figure class="highlight maxima"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><code class="hljs maxima">cd /<span class="hljs-built_in">var</span>/<span class="hljs-built_in">log</span><br>mongofiles -d vvd <span class="hljs-built_in">put</span> faillog<br></code></pre></td></tr></table></figure>
+<p>多执行几遍，权当测试文件</p>
+<h3 id="查看分片状态">查看分片状态</h3>
+<p>回到刚刚的 mongosh，这时在 vvd 数据库中查看 collections 可以看到 <code>fs.chunks</code> 和 <code>fs.files</code>集合，表明 GridFS 数据添加成功：</p>
+<figure class="highlight dos"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><code class="hljs dos">[direct: mongos] vvd&gt; show collections<br><span class="hljs-built_in">fs</span>.chunks<br><span class="hljs-built_in">fs</span>.files<br></code></pre></td></tr></table></figure>
+<p>查看数据：</p>
+<figure class="highlight 1c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br></pre></td><td class="code"><pre><code class="hljs 1c">[direct: mongos] vvd&gt; db.fs.files.find()<br>[<br>  &#123;<br>    _id: ObjectId(&#x27;<span class="hljs-number">6717</span>7fa<span class="hljs-number">370974</span>ed1e<span class="hljs-number">8520</span>d0b&#x27;),<br>    length: Long(&#x27;<span class="hljs-number">3264</span>&#x27;),<br>    chunkSize: <span class="hljs-number">261120</span>,<br>    uploadDate: ISODate(&#x27;<span class="hljs-number">2024-10-22</span>T10:34:11.711Z&#x27;),<br>    filename: &#x27;faillog&#x27;,<br>    metadata: &#123;&#125;<br>  &#125;,<br>  &#123;<br>    _id: ObjectId(&#x27;<span class="hljs-number">6717</span>7ff87f90b296fcac0d30&#x27;),<br>    length: Long(&#x27;<span class="hljs-number">3264</span>&#x27;),<br>    chunkSize: <span class="hljs-number">261120</span>,<br>    uploadDate: ISODate(&#x27;<span class="hljs-number">2024-10-22</span>T10:35:36.665Z&#x27;),<br>    filename: &#x27;faillog&#x27;,<br>    metadata: &#123;&#125;<br>  &#125;,<br>...<br></code></pre></td></tr></table></figure>
+<p>查看分片状态：</p>
+<figure class="highlight yaml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br></pre></td><td class="code"><pre><code class="hljs yaml">[<span class="hljs-attr">direct:</span> <span class="hljs-string">mongos</span>] <span class="hljs-string">vvd&gt;</span> <span class="hljs-string">sh.status()</span><br><span class="hljs-string">shardingVersion</span><br>&#123; <span class="hljs-attr">_id:</span> <span class="hljs-number">1</span>, <span class="hljs-attr">clusterId:</span> <span class="hljs-string">ObjectId(&#x27;67177b0f7478e63cb9a618a5&#x27;)</span> &#125;<br><span class="hljs-meta">---</span><br><span class="hljs-string">shards</span><br>[<br>  &#123;<br>    <span class="hljs-attr">_id:</span> <span class="hljs-string">&#x27;shard1&#x27;</span>,<br>    <span class="hljs-attr">host:</span> <span class="hljs-string">&#x27;shard1/shard1:27018&#x27;</span>,<br>    <span class="hljs-attr">state:</span> <span class="hljs-number">1</span>,<br>    <span class="hljs-attr">topologyTime:</span> <span class="hljs-string">Timestamp(</span>&#123; <span class="hljs-attr">t:</span> <span class="hljs-number">1729592126</span>, <span class="hljs-attr">i:</span> <span class="hljs-number">2</span> &#125;<span class="hljs-string">)</span><br>  &#125;,<br>  &#123;<br>    <span class="hljs-attr">_id:</span> <span class="hljs-string">&#x27;shard2&#x27;</span>,<br>    <span class="hljs-attr">host:</span> <span class="hljs-string">&#x27;shard2/shard2:27018&#x27;</span>,<br>    <span class="hljs-attr">state:</span> <span class="hljs-number">1</span>,<br>    <span class="hljs-attr">topologyTime:</span> <span class="hljs-string">Timestamp(</span>&#123; <span class="hljs-attr">t:</span> <span class="hljs-number">1729593951</span>, <span class="hljs-attr">i:</span> <span class="hljs-number">2</span> &#125;<span class="hljs-string">)</span><br>  &#125;,<br>  &#123;<br>    <span class="hljs-attr">_id:</span> <span class="hljs-string">&#x27;shard3&#x27;</span>,<br>    <span class="hljs-attr">host:</span> <span class="hljs-string">&#x27;shard3/shard3:27018&#x27;</span>,<br>    <span class="hljs-attr">state:</span> <span class="hljs-number">1</span>,<br>    <span class="hljs-attr">topologyTime:</span> <span class="hljs-string">Timestamp(</span>&#123; <span class="hljs-attr">t:</span> <span class="hljs-number">1729593958</span>, <span class="hljs-attr">i:</span> <span class="hljs-number">2</span> &#125;<span class="hljs-string">)</span><br>  &#125;<br>]<br><span class="hljs-meta">---</span><br><span class="hljs-string">active</span> <span class="hljs-string">mongoses</span><br>[ &#123; <span class="hljs-attr">&#x27;7.0.12&#x27;:</span> <span class="hljs-number">1</span> &#125; ]<br><span class="hljs-meta">---</span><br><span class="hljs-string">autosplit</span><br>&#123; <span class="hljs-attr">&#x27;Currently enabled&#x27;:</span> <span class="hljs-string">&#x27;yes&#x27;</span> &#125;<br><span class="hljs-meta">---</span><br><span class="hljs-string">balancer</span><br>&#123;<br>  <span class="hljs-attr">&#x27;Currently enabled&#x27;:</span> <span class="hljs-string">&#x27;yes&#x27;</span>,<br>  <span class="hljs-attr">&#x27;Failed balancer rounds in last 5 attempts&#x27;:</span> <span class="hljs-number">0</span>,<br>  <span class="hljs-attr">&#x27;Currently running&#x27;:</span> <span class="hljs-string">&#x27;no&#x27;</span>,<br>  <span class="hljs-attr">&#x27;Migration Results for the last 24 hours&#x27;:</span> <span class="hljs-string">&#x27;No recent migrations&#x27;</span><br>&#125;<br><span class="hljs-meta">---</span><br><span class="hljs-string">databases</span><br>[<br>  &#123;<br>	&#123;<br>    <span class="hljs-attr">database:</span> &#123;<br>      <span class="hljs-attr">_id:</span> <span class="hljs-string">&#x27;vvd&#x27;</span>,<br>      <span class="hljs-attr">primary:</span> <span class="hljs-string">&#x27;shard3&#x27;</span>,<br>      <span class="hljs-attr">partitioned:</span> <span class="hljs-literal">false</span>,<br>      <span class="hljs-attr">version:</span> &#123;<br>        <span class="hljs-attr">uuid:</span> <span class="hljs-string">UUID(&#x27;5ffbe210-fe2a-4b96-8b98-f568eab7fbec&#x27;)</span>,<br>        <span class="hljs-attr">timestamp:</span> <span class="hljs-string">Timestamp(</span>&#123; <span class="hljs-attr">t:</span> <span class="hljs-number">1729594145</span>, <span class="hljs-attr">i:</span> <span class="hljs-number">1</span> &#125;<span class="hljs-string">)</span>,<br>        <span class="hljs-attr">lastMod:</span> <span class="hljs-number">1</span><br>      &#125;<br>    &#125;,<br>    <span class="hljs-attr">collections:</span> &#123;<br>      <span class="hljs-attr">&#x27;vvd.fs.chunks&#x27;:</span> &#123;<br>        <span class="hljs-attr">shardKey:</span> &#123; <span class="hljs-attr">files_id:</span> <span class="hljs-string">&#x27;hashed&#x27;</span>, <span class="hljs-attr">n:</span> <span class="hljs-number">1</span> &#125;,<br>        <span class="hljs-attr">unique:</span> <span class="hljs-literal">false</span>,<br>        <span class="hljs-attr">balancing:</span> <span class="hljs-literal">true</span>,<br>        <span class="hljs-attr">chunkMetadata:</span> [<br>          &#123; <span class="hljs-attr">shard:</span> <span class="hljs-string">&#x27;shard1&#x27;</span>, <span class="hljs-attr">nChunks:</span> <span class="hljs-number">2</span> &#125;,<br>          &#123; <span class="hljs-attr">shard:</span> <span class="hljs-string">&#x27;shard2&#x27;</span>, <span class="hljs-attr">nChunks:</span> <span class="hljs-number">2</span> &#125;,<br>          &#123; <span class="hljs-attr">shard:</span> <span class="hljs-string">&#x27;shard3&#x27;</span>, <span class="hljs-attr">nChunks:</span> <span class="hljs-number">2</span> &#125;<br>        ],<br>        <span class="hljs-attr">chunks:</span> [<br>          &#123; <span class="hljs-attr">min:</span> &#123; <span class="hljs-attr">files_id:</span> <span class="hljs-string">MinKey()</span>, <span class="hljs-attr">n:</span> <span class="hljs-string">MinKey()</span> &#125;, <span class="hljs-attr">max:</span> &#123; <span class="hljs-attr">files_id:</span> <span class="hljs-string">Long(&#x27;-6148914691236517204&#x27;)</span>, <span class="hljs-attr">n:</span> <span class="hljs-string">MinKey()</span> &#125;, <span class="hljs-attr">&#x27;on shard&#x27;:</span> <span class="hljs-string">&#x27;shard3&#x27;</span>, <span class="hljs-attr">&#x27;last modified&#x27;:</span> <span class="hljs-string">Timestamp(</span>&#123; <span class="hljs-attr">t:</span> <span class="hljs-number">1</span>, <span class="hljs-attr">i:</span> <span class="hljs-number">0</span> &#125;<span class="hljs-string">)</span> &#125;,<br>          &#123; <span class="hljs-attr">min:</span> &#123; <span class="hljs-attr">files_id:</span> <span class="hljs-string">Long(&#x27;-6148914691236517204&#x27;)</span>, <span class="hljs-attr">n:</span> <span class="hljs-string">MinKey()</span> &#125;, <span class="hljs-attr">max:</span> &#123; <span class="hljs-attr">files_id:</span> <span class="hljs-string">Long(&#x27;-3074457345618258602&#x27;)</span>, <span class="hljs-attr">n:</span> <span class="hljs-string">MinKey()</span> &#125;, <span class="hljs-attr">&#x27;on shard&#x27;:</span> <span class="hljs-string">&#x27;shard3&#x27;</span>, <span class="hljs-attr">&#x27;last modified&#x27;:</span> <span class="hljs-string">Timestamp(</span>&#123; <span class="hljs-attr">t:</span> <span class="hljs-number">1</span>, <span class="hljs-attr">i:</span> <span class="hljs-number">1</span> &#125;<span class="hljs-string">)</span> &#125;,<br>          &#123; <span class="hljs-attr">min:</span> &#123; <span class="hljs-attr">files_id:</span> <span class="hljs-string">Long(&#x27;-3074457345618258602&#x27;)</span>, <span class="hljs-attr">n:</span> <span class="hljs-string">MinKey()</span> &#125;, <span class="hljs-attr">max:</span> &#123; <span class="hljs-attr">files_id:</span> <span class="hljs-string">Long(&#x27;0&#x27;)</span>, <span class="hljs-attr">n:</span> <span class="hljs-string">MinKey()</span> &#125;, <span class="hljs-attr">&#x27;on shard&#x27;:</span> <span class="hljs-string">&#x27;shard1&#x27;</span>, <span class="hljs-attr">&#x27;last modified&#x27;:</span> <span class="hljs-string">Timestamp(</span>&#123; <span class="hljs-attr">t:</span> <span class="hljs-number">1</span>, <span class="hljs-attr">i:</span> <span class="hljs-number">2</span> &#125;<span class="hljs-string">)</span> &#125;,<br>          &#123; <span class="hljs-attr">min:</span> &#123; <span class="hljs-attr">files_id:</span> <span class="hljs-string">Long(&#x27;0&#x27;)</span>, <span class="hljs-attr">n:</span> <span class="hljs-string">MinKey()</span> &#125;, <span class="hljs-attr">max:</span> &#123; <span class="hljs-attr">files_id:</span> <span class="hljs-string">Long(&#x27;3074457345618258602&#x27;)</span>, <span class="hljs-attr">n:</span> <span class="hljs-string">MinKey()</span> &#125;, <span class="hljs-attr">&#x27;on shard&#x27;:</span> <span class="hljs-string">&#x27;shard1&#x27;</span>, <span class="hljs-attr">&#x27;last modified&#x27;:</span> <span class="hljs-string">Timestamp(</span>&#123; <span class="hljs-attr">t:</span> <span class="hljs-number">1</span>, <span class="hljs-attr">i:</span> <span class="hljs-number">3</span> &#125;<span class="hljs-string">)</span> &#125;,<br>          &#123; <span class="hljs-attr">min:</span> &#123; <span class="hljs-attr">files_id:</span> <span class="hljs-string">Long(&#x27;3074457345618258602&#x27;)</span>, <span class="hljs-attr">n:</span> <span class="hljs-string">MinKey()</span> &#125;, <span class="hljs-attr">max:</span> &#123; <span class="hljs-attr">files_id:</span> <span class="hljs-string">Long(&#x27;6148914691236517204&#x27;)</span>, <span class="hljs-attr">n:</span> <span class="hljs-string">MinKey()</span> &#125;, <span class="hljs-attr">&#x27;on shard&#x27;:</span> <span class="hljs-string">&#x27;shard2&#x27;</span>, <span class="hljs-attr">&#x27;last modified&#x27;:</span> <span class="hljs-string">Timestamp(</span>&#123; <span class="hljs-attr">t:</span> <span class="hljs-number">1</span>, <span class="hljs-attr">i:</span> <span class="hljs-number">4</span> &#125;<span class="hljs-string">)</span> &#125;,<br>          &#123; <span class="hljs-attr">min:</span> &#123; <span class="hljs-attr">files_id:</span> <span class="hljs-string">Long(&#x27;6148914691236517204&#x27;)</span>, <span class="hljs-attr">n:</span> <span class="hljs-string">MinKey()</span> &#125;, <span class="hljs-attr">max:</span> &#123; <span class="hljs-attr">files_id:</span> <span class="hljs-string">MaxKey()</span>, <span class="hljs-attr">n:</span> <span class="hljs-string">MaxKey()</span> &#125;, <span class="hljs-attr">&#x27;on shard&#x27;:</span> <span class="hljs-string">&#x27;shard2&#x27;</span>, <span class="hljs-attr">&#x27;last modified&#x27;:</span> <span class="hljs-string">Timestamp(</span>&#123; <span class="hljs-attr">t:</span> <span class="hljs-number">1</span>, <span class="hljs-attr">i:</span> <span class="hljs-number">5</span> &#125;<span class="hljs-string">)</span> &#125;<br>        ],<br>        <span class="hljs-attr">tags:</span> []<br>      &#125;<br>    &#125;<br>  &#125;<br>]<br><br></code></pre></td></tr></table></figure>
+<p>可以看到添加的数据被分配到三个 mongodb 中。</p>
+<p>GridFS 分片成功！</p>
+<h3 id="用户管理">用户管理</h3>
+<p>之后需要手动进行用户管理：</p>
+<ol>
+<li>连接到 MongoDB</li>
+</ol>
+<figure class="highlight nginx"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs nginx"><span class="hljs-attribute">mongosh</span> mongodb://host:27017 <br></code></pre></td></tr></table></figure>
+<ol start="2">
+<li>创建 root 用户</li>
+</ol>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><code class="hljs mongosh">use admin<br>db.createUser(<br>    &#123;<br>        user:&quot;root&quot;,<br>        pwd:&quot;passwd&quot;,<br>        roles:[&quot;root&quot;]<br>    &#125;<br>)<br></code></pre></td></tr></table></figure>
+<ol start="3">
+<li>核心数据库管理者，我们的 mongodb 数据库命名为 <code>test_db</code></li>
+</ol>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><code class="hljs mongosh">db.createUser(&#123;<br>    user:&quot;manager&quot;,<br>    pwd:&quot;passwd&quot;,<br>    customData:&#123;<br>        name:&#x27;vvd&#x27;,<br>        email:&#x27;zywvvd@mail.ustc.edu.cn&#x27;,<br>        age:33,<br>    &#125;,<br>    roles:[<br>        &#123;role:&quot;readWrite&quot;,db:&quot;test_db&quot;&#125;,<br>        &#x27;read&#x27;// 对其他数据库有只读权限，对 test_db 是读写权限<br>    ]<br>&#125;)<br></code></pre></td></tr></table></figure>
+<ol start="4">
+<li>数据读取者，对 <code>test_db</code> 仅有只读权限：</li>
+</ol>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><code class="hljs mongosh">db.createUser(&#123;<br>    user:&quot;filereader&quot;,<br>    pwd:&quot;passwd&quot;,<br>    customData:&#123;<br>        name:&#x27;reader&#x27;,<br>        email:&#x27;reader@test.cn&#x27;,<br>        age:18,<br>    &#125;,<br>    roles:[<br>        &#123;role:&quot;read&quot;,db:&quot;test_db&quot;&#125;<br>    ]<br>&#125;)<br></code></pre></td></tr></table></figure>
+<ol start="5">
+<li>
+<p>开启访问控制</p>
+<blockquote>
+<p>mongodb 默认关闭访问控制，需要在创建用户后手动开启</p>
+</blockquote>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs shell">docker exec -it mongo_mongos bash<br></code></pre></td></tr></table></figure>
+<p>在 mongos 容器中执行命令：</p>
+<figure class="highlight ada"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs ada">mongod <span class="hljs-comment">--auth</span><br></code></pre></td></tr></table></figure>
+</li>
+</ol>
+<h3 id="迁移">迁移</h3>
+<p>尝试了将本机 /mongodata 文件夹完整移动到服务器，并启动同样配置的分片服务，可以成功迁移数据库。</p>
+<blockquote>
+<p>可能存在其他未知风险。</p>
+</blockquote>
+<h3 id="问题排查">问题排查</h3>
+<ul>
+<li>
+<p>如果 容器启动后瞬间 Down 掉，可以通过 <code>docker logs &lt;container_id_or_name&gt;</code> 查看问题原因，我遇到的大多都是磁盘映射的权限问题，</p>
+<blockquote>
+<p>听说 777 大法百毒不侵</p>
+</blockquote>
+</li>
+<li>
+<p>如果 Mongodb 报很多奇怪的错误可以排查是不是版本有问题，6.0 以后mongo 会变成 mongosh</p>
+</li>
+<li>
+<p>MongoDB 删除集合中的数据后不会立刻让出磁盘空间，需要调用：</p>
+<figure class="highlight php"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><code class="hljs php"><span class="hljs-comment"># 4.2 版本之前</span><br>db.<span class="hljs-title function_ invoke__">repairDatabase</span>();<br><span class="hljs-comment"># 4.2 版本之后</span><br>db.<span class="hljs-title function_ invoke__">runCommand</span>(&#123; <span class="hljs-attr">compact</span>: <span class="hljs-string">&#x27;yourCollectionName&#x27;</span> &#125;);<br></code></pre></td></tr></table></figure>
+<p>如果是分片数据集，则需要进入分片 mongo 中运行命令</p>
+<p>删除集合也可以解决问题。</p>
+</li>
+</ul>
+<h3 id="构建初始用户">构建初始用户</h3>
+<p><a target="_blank" rel="noopener" href="https://github.com/docker-library/mongo/issues/475">https://github.com/docker-library/mongo/issues/475</a></p>
+<ul>
+<li>
+<p>生成 <code>replica.key</code></p>
+<blockquote>
+<p><a target="_blank" rel="noopener" href="https://www.mongodb.com/zh-cn/docs/manual/tutorial/enforce-keyfile-access-control-in-existing-replica-set/">https://www.mongodb.com/zh-cn/docs/manual/tutorial/enforce-keyfile-access-control-in-existing-replica-set/</a></p>
+</blockquote>
+</li>
+</ul>
+<figure class="highlight pgsql"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs pgsql">openssl rand -base64 <span class="hljs-number">756</span> &gt; <span class="hljs-keyword">replica</span>.key<br></code></pre></td></tr></table></figure>
+<ul>
+<li>构建带有该 key 的容器</li>
+</ul>
+<figure class="highlight pgsql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><code class="hljs pgsql"><span class="hljs-keyword">FROM</span> mongodb/mongodb-community-<span class="hljs-keyword">server</span>:<span class="hljs-number">7.0</span><span class="hljs-number">.12</span>-ubuntu2204<br><span class="hljs-keyword">USER</span> root<br><span class="hljs-keyword">COPY</span> <span class="hljs-keyword">replica</span>.key /data/db/<span class="hljs-keyword">replica</span>.key<br>RUN chown <span class="hljs-number">101</span>:<span class="hljs-number">101</span> /data/db/<span class="hljs-keyword">replica</span>.key<br>RUN chmod <span class="hljs-number">400</span> /data/db/<span class="hljs-keyword">replica</span>.key<br>ENV MONGO_INITDB_DATABASE=<span class="hljs-keyword">admin</span><br>ENV MONGO_INITDB_ROOT_USERNAM=root<br>ENV MONGO_INITDB_ROOT_PASSWORD=root<br></code></pre></td></tr></table></figure>
+<ul>
+<li>构建镜像：</li>
+</ul>
+<figure class="highlight apache"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs apache"><span class="hljs-attribute">docker</span> build --no-cache -t mongo:<span class="hljs-number">1</span>.<span class="hljs-number">0</span>.<span class="hljs-number">1</span> .<br></code></pre></td></tr></table></figure>
+<ul>
+<li>docker-compose.yml</li>
+</ul>
+<figure class="highlight yml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br><span class="line">84</span><br><span class="line">85</span><br><span class="line">86</span><br><span class="line">87</span><br><span class="line">88</span><br><span class="line">89</span><br><span class="line">90</span><br><span class="line">91</span><br><span class="line">92</span><br></pre></td><td class="code"><pre><code class="hljs yml"><span class="hljs-attr">services:</span><br>  <span class="hljs-attr">shard1:</span><br>    <span class="hljs-attr">image:</span> <span class="hljs-string">mongo:1.0.1</span><br>    <span class="hljs-attr">container_name:</span> <span class="hljs-string">mongo_shard1</span><br>    <span class="hljs-attr">restart:</span> <span class="hljs-string">always</span><br>    <span class="hljs-attr">entrypoint:</span><br>      <span class="hljs-bullet">-</span> <span class="hljs-string">bash</span><br>      <span class="hljs-bullet">-</span> <span class="hljs-string">-c</span><br>      <span class="hljs-bullet">-</span> <span class="hljs-string">|</span><br><span class="hljs-string">          if [ ! -f /data/db/replica.key ]; then</span><br><span class="hljs-string">            echo &quot;错误：密钥文件 /data/db/replica.key 不存在！&quot;</span><br><span class="hljs-string">            exit 1</span><br><span class="hljs-string">          fi</span><br><span class="hljs-string">          chmod 400 /data/db/replica.key</span><br><span class="hljs-string">          chown 101:101 /data/db/replica.key</span><br><span class="hljs-string">          mongod --shardsvr --directoryperdb --replSet shard1 --wiredTigerCacheSizeGB 6 --keyFile /data/db/replica.key --bind_ip_all</span><br><span class="hljs-string"></span>    <span class="hljs-attr">volumes:</span><br>      <span class="hljs-bullet">-</span> <span class="hljs-string">/etc/localtime:/etc/localtime</span><br>      <span class="hljs-bullet">-</span> <span class="hljs-string">/data/mongo/shard1/db:/data/db</span><br>      <span class="hljs-bullet">-</span> <span class="hljs-string">/data/mongo/shard1/configdb:/data/configdb</span><br>      <span class="hljs-bullet">-</span> <span class="hljs-string">/data/mongo/shard1/share:/share</span><br>    <span class="hljs-attr">privileged:</span> <span class="hljs-literal">true</span><br>    <span class="hljs-attr">networks:</span><br>      <span class="hljs-bullet">-</span> <span class="hljs-string">mongo</span>   <br><br>  <span class="hljs-attr">shard2:</span><br>    <span class="hljs-attr">image:</span> <span class="hljs-string">mongo:1.0.1</span><br>    <span class="hljs-attr">container_name:</span> <span class="hljs-string">mongo_shard2</span><br>    <span class="hljs-attr">restart:</span> <span class="hljs-string">always</span><br>    <span class="hljs-attr">entrypoint:</span><br>      <span class="hljs-bullet">-</span> <span class="hljs-string">bash</span><br>      <span class="hljs-bullet">-</span> <span class="hljs-string">-c</span><br>      <span class="hljs-bullet">-</span> <span class="hljs-string">|</span><br><span class="hljs-string">          if [ ! -f /data/db/replica.key ]; then</span><br><span class="hljs-string">            echo &quot;错误：密钥文件 /data/db/replica.key 不存在！&quot;</span><br><span class="hljs-string">            exit 1</span><br><span class="hljs-string">          fi</span><br><span class="hljs-string">          chmod 400 /data/db/replica.key</span><br><span class="hljs-string">          chown 101:101 /data/db/replica.key</span><br><span class="hljs-string">          mongod --shardsvr --directoryperdb --replSet shard2 --wiredTigerCacheSizeGB 6 --keyFile /data/db/replica.key --bind_ip_all</span><br><span class="hljs-string"></span>    <span class="hljs-attr">volumes:</span><br>      <span class="hljs-bullet">-</span> <span class="hljs-string">/etc/localtime:/etc/localtime</span><br>      <span class="hljs-bullet">-</span> <span class="hljs-string">/data/mongo/shard2/db:/data/db</span><br>      <span class="hljs-bullet">-</span> <span class="hljs-string">/data/mongo/shard2/configdb:/data/configdb</span><br>      <span class="hljs-bullet">-</span> <span class="hljs-string">/data/mongo/shard2/share:/share</span><br>    <span class="hljs-attr">privileged:</span> <span class="hljs-literal">true</span><br>    <span class="hljs-attr">networks:</span><br>      <span class="hljs-bullet">-</span> <span class="hljs-string">mongo</span><br><br>  <span class="hljs-attr">config1:</span><br>    <span class="hljs-attr">image:</span> <span class="hljs-string">mongo:1.0.1</span><br>    <span class="hljs-attr">container_name:</span> <span class="hljs-string">mongo_config1</span><br>    <span class="hljs-attr">restart:</span> <span class="hljs-string">always</span><br>    <span class="hljs-attr">entrypoint:</span><br>      <span class="hljs-bullet">-</span> <span class="hljs-string">bash</span><br>      <span class="hljs-bullet">-</span> <span class="hljs-string">-c</span><br>      <span class="hljs-bullet">-</span> <span class="hljs-string">|</span><br><span class="hljs-string">          if [ ! -f /data/db/replica.key ]; then</span><br><span class="hljs-string">            echo &quot;错误：密钥文件 /data/db/replica.key 不存在！&quot;</span><br><span class="hljs-string">            exit 1</span><br><span class="hljs-string">          fi</span><br><span class="hljs-string">          chmod 400 /data/db/replica.key</span><br><span class="hljs-string">          chown 101:101 /data/db/replica.key</span><br><span class="hljs-string">          mongod --configsvr --directoryperdb --replSet fates-mongo-config  --keyFile /data/db/replica.key --bind_ip_all</span><br><span class="hljs-string"></span>    <span class="hljs-attr">volumes:</span><br>      <span class="hljs-bullet">-</span> <span class="hljs-string">/etc/localtime:/etc/localtime</span><br>      <span class="hljs-bullet">-</span> <span class="hljs-string">/data/mongo/config1/db:/data/db</span><br>      <span class="hljs-bullet">-</span> <span class="hljs-string">/data/mongo/config1/configdb:/data/configdb</span><br>      <span class="hljs-bullet">-</span> <span class="hljs-string">/data/mongo/config1/share:/share</span><br>    <span class="hljs-attr">networks:</span><br>      <span class="hljs-bullet">-</span> <span class="hljs-string">mongo</span><br><br>  <span class="hljs-attr">mongos:</span><br>    <span class="hljs-attr">image:</span> <span class="hljs-string">mongo:1.0.1</span><br>    <span class="hljs-attr">container_name:</span> <span class="hljs-string">mongo_mongos</span><br>    <span class="hljs-attr">restart:</span> <span class="hljs-string">always</span><br>    <span class="hljs-attr">command:</span> <span class="hljs-string">mongos</span> <span class="hljs-string">--configdb</span> <span class="hljs-string">fates-mongo-config/config1:27019,config2:27019</span> <span class="hljs-string">--bind_ip</span> <span class="hljs-number">0.0</span><span class="hljs-number">.0</span><span class="hljs-number">.0</span> <span class="hljs-string">--port</span> <span class="hljs-number">27017</span><br>    <span class="hljs-attr">ports:</span><br>     <span class="hljs-bullet">-</span> <span class="hljs-number">27010</span><span class="hljs-number">-27017</span><span class="hljs-string">:27010-27017</span><br>    <span class="hljs-attr">volumes:</span><br>      <span class="hljs-bullet">-</span> <span class="hljs-string">/etc/localtime:/etc/localtime</span><br>      <span class="hljs-bullet">-</span> <span class="hljs-string">/data/mongo/mongos/db:/data/db</span><br>      <span class="hljs-bullet">-</span> <span class="hljs-string">/data/mongo/mongos/configdb:/data/configdb</span><br>      <span class="hljs-bullet">-</span> <span class="hljs-string">/data/mongo/mongos/share:/share</span><br>    <span class="hljs-attr">depends_on:</span><br>      <span class="hljs-bullet">-</span> <span class="hljs-string">config1</span><br>    <span class="hljs-attr">networks:</span><br>      <span class="hljs-bullet">-</span> <span class="hljs-string">mongo</span><br><br><span class="hljs-attr">networks:</span><br>  <span class="hljs-attr">mongo:</span><br>    <span class="hljs-attr">external:</span> <span class="hljs-literal">true</span><br></code></pre></td></tr></table></figure>
+<p>可以建立不崩溃的容器，但是没有成功创建默认用户。</p>
+<h3 id="参考资料">参考资料</h3>
+<ul>
+<li><a target="_blank" rel="noopener" href="https://jelly.jd.com/article/621370d8263c2201bb85b050">https://jelly.jd.com/article/621370d8263c2201bb85b050</a></li>
+<li><a target="_blank" rel="noopener" href="https://www.mongodb.com/zh-cn/docs/manual/tutorial/add-member-to-shard/">https://www.mongodb.com/zh-cn/docs/manual/tutorial/add-member-to-shard/</a></li>
+<li><a target="_blank" rel="noopener" href="https://blog.csdn.net/weixin_30239339/article/details/95011903">https://blog.csdn.net/weixin_30239339/article/details/95011903</a></li>
+<li><a target="_blank" rel="noopener" href="https://www.cnblogs.com/realcp1018/p/8652572.html">https://www.cnblogs.com/realcp1018/p/8652572.html</a></li>
+<li><a href="https://www.zywvvd.com/notes/coding/dataset/mongodb/MongoDB/">https://www.zywvvd.com/notes/coding/dataset/mongodb/MongoDB/</a></li>
+<li><a href="https://www.zywvvd.com/notes/coding/dataset/mongodb-gridfs/mongodb-gridfs/">https://www.zywvvd.com/notes/coding/dataset/mongodb-gridfs/mongodb-gridfs/</a></li>
+<li><a href="https://www.zywvvd.com/notes/coding/dataset/mongodb-slice/mongodb-slice/">https://www.zywvvd.com/notes/coding/dataset/mongodb-slice/mongodb-slice/</a></li>
+<li><a target="_blank" rel="noopener" href="https://github.com/docker-library/mongo/issues/475">https://github.com/docker-library/mongo/issues/475</a></li>
+</ul>
+<link rel="stylesheet" href="/css/spoiler.css" type="text/css"><script src="/js/spoiler.js" type="text/javascript" async></script>
+                
+
+
+				<br /><br />
+				<blockquote>
+					<p>文章链接：<br /> 
+					<a style="font-size: 0.85rem" target="_blank" rel="noopener" href="https://www.zywvvd.com/notes/coding/dataset/mongodb-slice-docker/mongodb-slice-docker/">https://www.zywvvd.com/notes/coding/dataset/mongodb-slice-docker/mongodb-slice-docker/</a>
+					</p>
+				</blockquote>
+
+
+              </div>
+            
+            <hr/>
+			
+			<!-- 添加打赏模块 -->
+			<div class="reward-container">
+				
+					<button id="rewardBtn" class="reward-btn">
+						 
+							❤ 打赏
+							
+					</button>
+					<p class="tea">“觉得不错的话，给点打赏吧 ୧(๑•̀⌄•́๑)૭”</p>
+					<div id="rewardImgContainer" class="reward-img-container">
+						<div class="singleImgContainer">
+							<img id="wechatImg" class="reward-img" src="https://uipv4.zywvvd.com:33030/HexoFiles/vvd_pc_upload/wechatpay.png" srcset="/img/loading.gif" lazyload alt="微信二维码">
+							<p class="wechatPay">微信支付</p>
+						</div>
+						<div class="singleImgContainer">
+							<img id="alipayImg" class="reward-img" src="https://uipv4.zywvvd.com:33030/HexoFiles/vvd_pc_upload/alipay.png" srcset="/img/loading.gif" lazyload alt="支付宝二维码">
+							<p class="aliPay">支付宝支付</p>
+						</div>
+					</div>
+				
+			</div>
+			
+            <div>
+              <div class="post-metas my-3">
+  
+    <div class="post-meta mr-3 d-flex align-items-center">
+      <i class="iconfont icon-category"></i>
+      
+
+<span class="category-chains">
+  
+  
+    
+      <span class="category-chain">
+        
+  <a href="/categories/Coding/" class="category-chain-item">Coding</a>
+  
+  
+    <span>></span>
+    
+  <a href="/categories/Coding/Database/" class="category-chain-item">Database</a>
+  
+  
+    <span>></span>
+    
+  <a href="/categories/Coding/Database/MongoDB/" class="category-chain-item">MongoDB</a>
+  
+  
+
+  
+
+  
+
+      </span>
+    
+  
+</span>
+
+    </div>
+  
+  
+    <div class="post-meta">
+      <i class="iconfont icon-tags"></i>
+      
+        <a href="/tags/Coding/" class="print-no-link">#Coding</a>
+      
+        <a href="/tags/Database/" class="print-no-link">#Database</a>
+      
+        <a href="/tags/MongoDB/" class="print-no-link">#MongoDB</a>
+      
+    </div>
+  
+</div>
+
+
+              
+  
+
+  <div class="license-box my-3">
+    <div class="license-title">
+      <div>MongoDB 分片实战 GridFS</div>
+      <div>https://www.zywvvd.com/notes/coding/dataset/mongodb-slice-docker/mongodb-slice-docker/</div>
+    </div>
+    <div class="license-meta">
+      
+        <div class="license-meta-item">
+          <div>作者</div>
+          <div>Yiwei Zhang</div>
+        </div>
+      
+      
+        <div class="license-meta-item license-meta-date">
+          <div>发布于</div>
+          <div>2024年10月22日</div>
+        </div>
+      
+      
+      
+        <div class="license-meta-item">
+          <div>许可协议</div>
+          <div>
+            
+              
+              
+                <a class="print-no-link" target="_blank" href="https://creativecommons.org/licenses/by/4.0/">
+                  <span class="hint--top hint--rounded" aria-label="BY - 署名">
+                    <i class="iconfont icon-by"></i>
+                  </span>
+                </a>
+              
+            
+          </div>
+        </div>
+      
+    </div>
+    <div class="license-icon iconfont"></div>
+  </div>
+
+
+
+              
+                <div class="post-prevnext my-3">
+                  <article class="post-prev col-6">
+                    
+                    
+                      <a href="/notes/coding/dataset/mysql/mysql-deploy/mysql-deploy/" title="MySQL Docker 自动部署实战">
+                        <i class="iconfont icon-arrowleft"></i>
+                        <span class="hidden-mobile">MySQL Docker 自动部署实战</span>
+                        <span class="visible-mobile">上一篇</span>
+                      </a>
+                    
+                  </article>
+                  <article class="post-next col-6">
+                    
+                    
+                      <a href="/notes/study/camera-imaging/camera-models/camera-models/" title="相机模型">
+                        <span class="hidden-mobile">相机模型</span>
+                        <span class="visible-mobile">下一篇</span>
+                        <i class="iconfont icon-arrowright"></i>
+                      </a>
+                    
+                  </article>
+                </div>
+              
+            </div>
+
+            
+  
+  
+    <article id="comments" lazyload>
+      
+  <div id="waline"></div>
+  <script type="text/javascript">
+    Fluid.utils.loadComments('#waline', function() {
+      Fluid.utils.createCssLink('https://lib.baomitu.com/waline/2.14.8/waline.min.css')
+      Fluid.utils.createScript('https://lib.baomitu.com/waline/2.14.8/waline.min.js', function() {
+        var options = Object.assign(
+          {"serverURL":"https://uipv4.zywvvd.com:33033/","path":"window.location.pathname","meta":["nick","mail","link"],"requiredMeta":["nick"],"lang":"zh-CN","emoji":["https://cdn.jsdelivr.net/gh/walinejs/emojis/weibo"],"dark":"html[data-user-color-scheme=\"dark\"]","wordLimit":0,"pageSize":10,"reaction":true,"locale":{"placeholder":"山高路远，常来玩吖 ~","reactionTitle":null}},
+          {
+            el: '#waline',
+            path: window.location.pathname
+          }
+        )
+        Waline.init(options);
+        Fluid.utils.waitElementVisible('#waline .vcontent', () => {
+          var imgSelector = '#waline .vcontent img:not(.vemoji)';
+          Fluid.plugins.imageCaption(imgSelector);
+          Fluid.plugins.fancyBox(imgSelector);
+        })
+      });
+    });
+  </script>
+  <noscript>Please enable JavaScript to view the comments</noscript>
+
+
+    </article>
+  
+
+
+          </article>
+        </div>
+      </div>
+    </div>
+
+    <div class="side-col d-none d-lg-block col-lg-2">
+      
+  <aside class="sidebar" style="margin-left: -1rem">
+    <div id="toc">
+  <p class="toc-header">
+    <i class="iconfont icon-list"></i>
+    <span>目录</span>
+  </p>
+  <div class="toc-body" id="toc-body"></div>
+</div>
+
+
+
+  </aside>
+
+
+    </div>
+  </div>
+</div>
+
+
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+  
+  
+
+
+
+
+
+  <script>
+  Fluid.utils.createScript('https://lib.baomitu.com/mermaid/8.14.0/mermaid.min.js', function() {
+    mermaid.initialize({"theme":"default"});
+
+    Fluid.utils.listenDOMLoaded(function() {
+      Fluid.events.registerRefreshCallback(function() {
+        if ('mermaid' in window) {
+          mermaid.init();
+        }
+      });
+    });
+  });
+</script>
+
+
+
+
+
+
+    
+
+    
+      <a id="scroll-top-button" aria-label="TOP" href="#" role="button">
+        <i class="iconfont icon-xiangshangjiantou" aria-hidden="true"></i>
+      </a>
+    
+
+    
+      <div class="modal fade" id="modalSearch" tabindex="-1" role="dialog" aria-labelledby="ModalLabel"
+     aria-hidden="true">
+  <div class="modal-dialog modal-dialog-scrollable modal-lg" role="document">
+    <div class="modal-content">
+      <div class="modal-header text-center">
+        <h4 class="modal-title w-100 font-weight-bold">搜索</h4>
+        <button type="button" id="local-search-close" class="close" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body mx-3">
+        <div class="md-form mb-5">
+          <input type="text" id="local-search-input" class="form-control validate">
+          <label data-error="x" data-success="v" for="local-search-input">关键词</label>
+        </div>
+        <div class="list-group" id="local-search-result"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+    
+
+    
+  </main>
+
+  <footer>
+    <div class="footer-inner">
+  
+    <div class="footer-content">
+       <div class="vvd_footer" style="font-size: 0.85rem;"> <a href="https://hexo.io" target="_blank" rel="nofollow noopener" color="#d7d8d9" data-umami-event="Footer-Hexo"><span class="umami--click--Footer-Hexo">Hexo</span></a> <i class="iconfont icon-love"></i> <a href="https://github.com/fluid-dev/hexo-theme-fluid" target="_blank" rel="nofollow noopener" data-umami-event="Footer-Fluid"><span class="umami--click--Footer-Fluid">Fluid</span></a> <i class="iconfont icon-love"></i> <a href="https://uipv4.zywvvd.com:33039/share/0zx3o21oIpZTZqwC/%E5%8F%88%E8%A7%81%E8%8B%8D%E5%B2%9A" target="_blank" rel="nofollow noopener" data-umami-event="Footer-Umami"><span class="umami--click--Footer-Umami">Umami</span></a> <div style="font-size: 0.85rem;"> <span id="timeDate">载入天数...</span> <span id="times">载入时分秒...</span> <script src="/vvd_js/duration.js"></script> </div> <div style="font-size: 0.85rem;"> <span> 总访问量 <span style="color: #d7d8d9;" id="PVstatic">0</span> 次&nbsp</span> <span> 总访客数 <span style="color: #d7d8d9;" id="UVstatic">0</span> 人&nbsp</span> <span> 当前在线 <span style="color: #d7d8d9;" id="ACTstatic">0</span> 人&nbsp</span> <script src="https://uipv4.zywvvd.com:33037/statistics" defer></script> </div> <div> <span> Copyright © 2020-2025. All Rights Reserved.</span> </div> <div style="font-size: 0.88rem;"> <a target="_blank" rel="noopener" href="https://developer.hitokoto.cn/" id="hitokoto_text"><span style="color: #d7d8d9;"  id="hitokoto"></span></a> <script src="https://uipv4.zywvvd.com:33044/?encode=js&select=%23hitokoto" defer></script> </div> <a href="https://icp.gov.moe/?keyword=20230615" target="_blank">萌ICP备20230615号</a>
+
+
+</div> 
+    </div>
+  
+  
+  
+  
+</div>
+
+  </footer>
+
+  <!-- Scripts -->
+  
+  <script  src="https://lib.baomitu.com/nprogress/0.2.0/nprogress.min.js" ></script>
+  <link  rel="stylesheet" href="https://lib.baomitu.com/nprogress/0.2.0/nprogress.min.css" />
+
+  <script>
+    NProgress.configure({"showSpinner":false,"trickleSpeed":100})
+    NProgress.start()
+    window.addEventListener('load', function() {
+      NProgress.done();
+    })
+  </script>
+
+
+<script  src="https://lib.baomitu.com/jquery/3.6.0/jquery.min.js" ></script>
+<script  src="https://lib.baomitu.com/twitter-bootstrap/4.6.1/js/bootstrap.min.js" ></script>
+<script  src="/js/events.js" ></script>
+<script  src="/js/plugins.js" ></script>
+
+
+
+
+
+  
+    <script  src="/js/img-lazyload.js" ></script>
+  
+
+
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/tocbot/4.18.2/tocbot.min.js', function() {
+    var toc = jQuery('#toc');
+    if (toc.length === 0 || !window.tocbot) { return; }
+    var boardCtn = jQuery('#board-ctn');
+    var boardTop = boardCtn.offset().top;
+
+    window.tocbot.init(Object.assign({
+      tocSelector     : '#toc-body',
+      contentSelector : '.markdown-body',
+      linkClass       : 'tocbot-link',
+      activeLinkClass : 'tocbot-active-link',
+      listClass       : 'tocbot-list',
+      isCollapsedClass: 'tocbot-is-collapsed',
+      collapsibleClass: 'tocbot-is-collapsible',
+      scrollSmooth    : true,
+      includeTitleTags: true,
+      headingsOffset  : -boardTop,
+    }, CONFIG.toc));
+    if (toc.find('.toc-list-item').length > 0) {
+      toc.css('visibility', 'visible');
+    }
+
+    Fluid.events.registerRefreshCallback(function() {
+      if ('tocbot' in window) {
+        tocbot.refresh();
+        var toc = jQuery('#toc');
+        if (toc.length === 0 || !tocbot) {
+          return;
+        }
+        if (toc.find('.toc-list-item').length > 0) {
+          toc.css('visibility', 'visible');
+        }
+      }
+    });
+  });
+</script>
+
+
+  <script src=https://lib.baomitu.com/clipboard.js/2.0.10/clipboard.min.js></script>
+
+  <script>Fluid.plugins.codeWidget();</script>
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/anchor-js/4.3.1/anchor.min.js', function() {
+    window.anchors.options = {
+      placement: CONFIG.anchorjs.placement,
+      visible  : CONFIG.anchorjs.visible
+    };
+    if (CONFIG.anchorjs.icon) {
+      window.anchors.options.icon = CONFIG.anchorjs.icon;
+    }
+    var el = (CONFIG.anchorjs.element || 'h1,h2,h3,h4,h5,h6').split(',');
+    var res = [];
+    for (var item of el) {
+      res.push('.markdown-body > ' + item.trim());
+    }
+    if (CONFIG.anchorjs.placement === 'left') {
+      window.anchors.options.class = 'anchorjs-link-left';
+    }
+    window.anchors.add(res.join(', '));
+
+    Fluid.events.registerRefreshCallback(function() {
+      if ('anchors' in window) {
+        anchors.removeAll();
+        var el = (CONFIG.anchorjs.element || 'h1,h2,h3,h4,h5,h6').split(',');
+        var res = [];
+        for (var item of el) {
+          res.push('.markdown-body > ' + item.trim());
+        }
+        if (CONFIG.anchorjs.placement === 'left') {
+          anchors.options.class = 'anchorjs-link-left';
+        }
+        anchors.add(res.join(', '));
+      }
+    });
+  });
+</script>
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/fancybox/3.5.7/jquery.fancybox.min.js', function() {
+    Fluid.plugins.fancyBox();
+  });
+</script>
+
+
+  <script>Fluid.plugins.imageCaption();</script>
+
+  
+      <script>
+        if (!window.MathJax) {
+          window.MathJax = {
+            tex    : {
+              inlineMath: { '[+]': [['$', '$']] }
+            },
+            options: {
+              renderActions: {
+                insertedScript: [200, () => {
+                  document.querySelectorAll('mjx-container').forEach(node => {
+                    let target = node.parentNode;
+                    if (target.nodeName.toLowerCase() === 'li') {
+                      target.parentNode.classList.add('has-jax');
+                    }
+                  });
+                }, '', false]
+              }
+            }
+          };
+        } else {
+          MathJax.startup.document.state(0);
+          MathJax.texReset();
+          MathJax.typeset();
+          MathJax.typesetPromise();
+        }
+
+        Fluid.events.registerRefreshCallback(function() {
+          if ('MathJax' in window && MathJax.startup.document && typeof MathJax.startup.document.state === 'function') {
+            MathJax.startup.document.state(0);
+            MathJax.texReset();
+            MathJax.typeset();
+            MathJax.typesetPromise();
+          }
+        });
+      </script>
+    
+
+  <script  src="https://lib.baomitu.com/mathjax/3.2.1/es5/tex-mml-chtml.js" ></script>
+
+  <script defer src="/js/leancloud.js" ></script>
+
+  <script  src="/js/local-search.js" ></script>
+
+
+
+
+  
+<script src="//cdn.jsdelivr.net/npm/aplayer/dist/APlayer.min.js"></script>
+<script src="//cdn.jsdelivr.net/gh/metowolf/MetingJS@1.2/dist/Meting.min.js"></script>
+<script src="/js/reward.js"></script>
+
+
+
+<!-- 主题的启动项，将它保持在最底部 -->
+<!-- the boot of the theme, keep it at the bottom -->
+<script  src="/js/boot.js" ></script>
+
+
+  <script type="text/javascript">
+    /*窗口监视*/
+    var originalTitle = document.title;
+    window.onblur = function(){document.title = "明眸如初"};
+    window.onfocus = function(){document.title = originalTitle};
+  </script>
+
+
+  <div id="tooltip-rightmenu" class="tooltip-rightmenu">如需原始右键菜单请按下 <strong>Ctrl+右键</strong></div>
+
+<div id="rightmenu-wrapper" style="">
+  <ul class="list-v rightmenu" id="rightmenu-content">
+	  <li class="navigation menuNavigation-Content">
+		<a class="nav icon-only fix-cursor-default" onclick="history.back()"><i class="iconfont icon-zuojiantou1"></i></a>
+		<a class="nav icon-only fix-cursor-default" onclick="history.forward()"><i class="iconfont icon-youjiantou1"></i></a>
+		<a class="nav icon-only fix-cursor-default" onclick="window.location.reload()"><i class="iconfont icon-shuaxin"></i></a>
+		<a  aria-label="TOP" href="#" role="button"><i class="iconfont icon-xiangshang"></i></a>
+	  </li>
+
+		<hr class="menuLoad-Content" style="display: block;">
+	  <li class="menuLoad-Content" style="display: block;">
+		<a class="vlts-menu fix-cursor-default" target="_self" href="javascript:;" data-toggle="modal" data-target="#modalSearch" aria-label="Search">
+		  <span>
+			  <i class="iconfont icon-sousuo1 rightmenu-icon"></i>
+			  站内搜索
+		  </span>
+		</a>
+	  </li>
+
+	  <li class="menuLoad-Content" style="display: block;">
+		<a class="vlts-menu fix-cursor-default"  href="https://www.zywvvd.com/messagebd/" data-group="link">
+		  <span>
+			  <i class="iconfont icon-yangshi_icon_tongyong_chat rightmenu-icon">  </i>
+			   留言吐槽 
+		   </span>
+		</a>
+	  </li>
+
+
+	  <li class="menuLoad-Content" style="display: block;">
+		<a class="vlts-menu fix-cursor-default" id="help" target="_blank" rel="noopener" href="https://www.foreverblog.cn/go.html" data-group="link">
+		<span>
+			  <i class="iconfont icon-a-BlackHole rightmenu-icon"></i>
+			  虫洞穿梭
+		  </span>
+		</a>
+	  </li>
+
+	<a id="scroll-top-button" aria-label="TOP" href="#" role="button" style="bottom: 20px; right: 52.6364px;">
+        <i class="iconfont icon-xiangshangjiantou" aria-hidden="true"></i>
+      </a>
+
+	<hr class="menuLoad-Content" style="display: block;">
+	
+	  <li class="menuLoad-Content" style="display: block;">
+		<a class="vlts-menu fix-cursor-default" id="destroy-airplane" target="_blank" rel="noopener"  data-group="link">
+		<span>
+			  <i class="iconfont icon-feiji rightmenu-icon"></i>
+			  破坏小飞机
+		  </span>
+		</a>
+	  </li>
+  </ul>
+</div>
+
+<script>
+	var ua = navigator.userAgent;
+	var ipad = ua.match(/(iPad).*OS\s([\d_]+)/),
+		isIphone = !ipad && ua.match(/(iPhone\sOS)\s([\d_]+)/),
+		isAndroid = ua.match(/(Android)\s+([\d.]+)/),
+		isMobile = isIphone || isAndroid;
+
+	if(!isMobile) {
+		// 为按钮添加事件处理器
+		document.getElementById('destroy-airplane').onclick = function() {
+		  console.log('飞机起飞！');
+		  // 定义要执行的JavaScript代码
+		var KICKASSVERSION='2.0';
+		var s = document.createElement('script');
+		s.type='text/javascript';
+		document.body.appendChild(s);
+		s.src='https://uipv4.zywvvd.com:33030/HexoFiles/js/games/airplane/airplane.js';
+		void(0);
+		};
+	}
+</script>
+
+
+
+
+
+<link href="/css/custom.css"type="text/css"rel="stylesheet"/>
+<script src="/vvd_js/right_menu.js" type="text/javascript"></script>
+<link href="/css/right_menu.css"type="text/css"rel="stylesheet"/>
+<script src="/vvd_js/go.js"></script>
+
+
+  <noscript>
+    <div class="noscript-warning">博客在允许 JavaScript 运行的环境下浏览效果更佳</div>
+  </noscript>
+<script src="/live2dw/lib/L2Dwidget.min.js?094cbace49a39548bed64abff5988b05"></script><script>L2Dwidget.init({"pluginRootPath":"live2dw/","pluginJsPath":"lib/","pluginModelPath":"assets/","tagMode":false,"log":false,"model":{"jsonPath":"/live2dw/assets/z16.model.json"},"display":{"position":"left","width":200,"height":400},"mobile":{"show":false},"react":{"opacity":0.9}});</script></body>
+</html>
