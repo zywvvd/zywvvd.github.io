@@ -1,0 +1,1521 @@
+
+
+<!DOCTYPE html>
+<html lang="zh-CN" data-default-color-scheme=auto>
+
+
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="baidu-site-verification" content="codeva-rLWafCJGYc" />
+  <link rel="apple-touch-icon" sizes="76x76" href="/image/avatar.png">
+  <link rel="icon" href="/image/avatar.png">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, shrink-to-fit=no">
+  <meta http-equiv="x-ua-compatible" content="ie=edge">
+  
+  <meta name="theme-color" content="#2f4154">
+  <meta name="author" content="Yiwei Zhang">
+  <meta name="keywords" content="人工智能, 深度学习, 个人博客, 机器学习">
+  
+    <meta name="description" content="Python 包功能多时按需加载很实用，本文记录 __getattr__ 实现类似功能的方法。">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Python __getattr__ 懒加载">
+<meta property="og:url" content="https://www.zywvvd.com/notes/coding/python/python-getarrt-lazy-import/python-getarrt-lazy-import/index.html">
+<meta property="og:site_name" content="又见苍岚">
+<meta property="og:description" content="Python 包功能多时按需加载很实用，本文记录 __getattr__ 实现类似功能的方法。">
+<meta property="og:locale" content="zh_CN">
+<meta property="article:published_time" content="2025-12-18T03:05:46.000Z">
+<meta property="article:modified_time" content="2025-12-18T03:21:49.924Z">
+<meta property="article:author" content="Yiwei Zhang">
+<meta property="article:tag" content="Coding">
+<meta property="article:tag" content="Python">
+<meta name="twitter:card" content="summary_large_image">
+  
+  
+  
+  <title>Python __getattr__ 懒加载 - 又见苍岚</title>
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/twitter-bootstrap/4.6.1/css/bootstrap.min.css" />
+
+
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/github-markdown-css/4.0.0/github-markdown.min.css" />
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/hint.css/2.7.0/hint.min.css" />
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/fancybox/3.5.7/jquery.fancybox.min.css" />
+
+
+
+<!-- 主题依赖的图标库，不要自行修改 -->
+<!-- Do not modify the link that theme dependent icons -->
+
+<link rel="stylesheet" href="//at.alicdn.com/t/font_1749284_hj8rtnfg7um.css">
+
+
+
+<link rel="stylesheet" href="//at.alicdn.com/t/font_1736178_lbnruvf0jn.css">
+
+
+<link  rel="stylesheet" href="/css/main.css" />
+
+
+  <link id="highlight-css" rel="stylesheet" href="/css/highlight.css" />
+  
+    <link id="highlight-css-dark" rel="stylesheet" href="/css/highlight-dark.css" />
+  
+
+
+
+  
+<link rel="stylesheet" href="/css/custom.css">
+<link rel="stylesheet" href="/css/reward.css">
+<link rel="stylesheet" href="//cdn.jsdelivr.net/npm/aplayer/dist/APlayer.min.css">
+
+
+
+  <script id="fluid-configs">
+    var Fluid = window.Fluid || {};
+    Fluid.ctx = Object.assign({}, Fluid.ctx)
+    var CONFIG = {"hostname":"www.zywvvd.com","root":"/","version":"1.9.7","typing":{"enable":true,"typeSpeed":90,"cursorChar":"_","loop":false,"scope":["home"]},"anchorjs":{"enable":true,"element":"h1,h2,h3,h4,h5,h6","placement":"left","visible":"hover","icon":""},"progressbar":{"enable":true,"height_px":3,"color":"#29d","options":{"showSpinner":false,"trickleSpeed":100}},"code_language":{"enable":true,"default":"TEXT"},"copy_btn":true,"image_caption":{"enable":true},"image_zoom":{"enable":true,"img_url_replace":["",""]},"toc":{"enable":true,"placement":"right","headingSelector":"h1,h2,h3,h4,h5,h6","collapseDepth":0},"lazyload":{"enable":true,"loading_img":"/img/loading.gif","onlypost":false,"offset_factor":2},"web_analytics":{"enable":true,"follow_dnt":true,"baidu":null,"google":null,"tencent":{"sid":null,"cid":null},"woyaola":null,"cnzz":null,"leancloud":{"app_id":"Cv0XNeBSBdAPAIuVj3PsyM3R-MdYXbMMI","app_key":"4PU1rNlGrqXWzhfW3dgq98oX","server_url":null,"path":"window.location.pathname","ignore_local":false},"gtag":null},"search_path":"/local-search.xml","include_content_in_search":true};
+
+    if (CONFIG.web_analytics.follow_dnt) {
+      var dntVal = navigator.doNotTrack || window.doNotTrack || navigator.msDoNotTrack;
+      Fluid.ctx.dnt = dntVal && (dntVal.startsWith('1') || dntVal.startsWith('yes') || dntVal.startsWith('on'));
+    }
+  </script>
+  <script  src="/js/utils.js" ></script>
+  <script  src="/js/color-schema.js" ></script>
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+    
+  
+
+
+
+  
+<meta name="generator" content="Hexo 7.2.0"><link rel="alternate" href="/atom.xml" title="又见苍岚" type="application/atom+xml">
+</head>
+
+<script>
+// 页面加载完成后隐藏加载动画
+document.addEventListener("readystatechange", function() {
+    const loader = document.getElementById('Loadanimation');
+    if (loader) {
+        // 停留1秒后开始淡出
+        setTimeout(function() {
+            loader.style.transition = 'opacity 1.2s';
+            loader.style.opacity = '0';
+            // 淡出完成后隐藏
+            setTimeout(() => {
+                loader.style.display = 'none';
+            }, 1000); // 等待淡出动画完成
+        }, 700); // 停留0.8秒
+    }
+});
+</script>
+
+
+
+<body>
+  
+<div id="Loadanimation" style="z-index:999999;">
+<div id="Loadanimation-center">
+   <div id="Loadanimation-center-absolute">
+       <div class="xccx_object" id="xccx_four"></div>
+       <div class="xccx_object" id="xccx_three"></div>
+       <div class="xccx_object" id="xccx_two"></div>
+       <div class="xccx_object" id="xccx_one"></div>
+   </div>
+</div>
+</div>
+
+<link href="/css/loading.css"type="text/css"rel="stylesheet"/>
+
+
+
+
+
+
+<div>
+	<div class='real_mask' style="
+		background-color: rgba(0,0,0,0.4);
+		width: 100%;
+		height: 100%;
+		position: fixed;
+		z-index: -777;
+	"></div>
+	<div id="banner_video_insert">
+	</div>	
+	<div id='vvd_banner_img'>
+	</div>
+</div>
+<div id="banner"></div>
+
+
+
+
+
+
+
+  <header>
+    
+
+<div class="header-inner" style="height: 80vh;">
+  <nav id="navbar" class="navbar fixed-top  navbar-expand-lg navbar-dark scrolling-navbar">
+  <div class="container">
+    <a class="navbar-brand" href="/">
+      <strong>CangLan</strong>
+    </a>
+
+    <button id="navbar-toggler-btn" class="navbar-toggler" type="button" data-toggle="collapse"
+            data-target="#navbarSupportedContent"
+            aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
+      <div class="animated-icon"><span></span><span></span><span></span></div>
+    </button>
+
+    <!-- Collapsible content -->
+    <div class="collapse navbar-collapse" id="navbarSupportedContent">
+      <ul class="navbar-nav ml-auto text-center">
+        
+          
+          
+          
+          
+            <li class="nav-item">
+		<div >
+		      <a class="nav-link" href="/" target="_self" data-umami-event="Navigation-Homepage">
+
+		        <i class="iconfont icon-home-fill"></i>
+		        <span>首页</span>
+		      </a>
+		</div>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item dropdown">
+              <a class="nav-link dropdown-toggle" target="_self" href="javascript:;" role="button"
+                 data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                <i class="iconfont icon-shuji1"></i>
+                <span>文章</span>
+              </a>
+              <div class="dropdown-menu" aria-labelledby="navbarDropdown">
+                
+                  
+                  
+                  
+		<div >
+
+                  <a class="dropdown-item" href="/archives/" target="_self" data-umami-event="Navigation-Archive">
+
+                    <i class="iconfont icon-archive-fill"></i>
+                    <span>归档</span>
+                  </a>
+		</div>
+                
+                  
+                  
+                  
+		<div >
+
+                  <a class="dropdown-item" href="/categories/" target="_self" data-umami-event="Navigation-Category">
+
+                    <i class="iconfont icon-category-fill"></i>
+                    <span>分类</span>
+                  </a>
+		</div>
+                
+                  
+                  
+                  
+		<div >
+
+                  <a class="dropdown-item" href="/tags/" target="_self" data-umami-event="Navigation-Tag">
+
+                    <i class="iconfont icon-tags-fill"></i>
+                    <span>标签</span>
+                  </a>
+		</div>
+                
+                  
+                  
+                  
+		<div >
+
+                  <a class="dropdown-item" href="/shuoshuo/" target="_self" data-umami-event="Navigation-Shuoshuo">
+
+                    <i class="iconfont icon-24gf-bubblesDots4"></i>
+                    <span>说说</span>
+                  </a>
+		</div>
+                
+              </div>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item dropdown">
+              <a class="nav-link dropdown-toggle" target="_self" href="javascript:;" role="button"
+                 data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                <i class="iconfont icon-momo"></i>
+                <span>社交</span>
+              </a>
+              <div class="dropdown-menu" aria-labelledby="navbarDropdown">
+                
+                  
+                  
+                  
+		<div >
+
+                  <a class="dropdown-item" href="/links/" target="_self" data-umami-event="Navigation-Friends">
+
+                    <i class="iconfont icon-link-fill"></i>
+                    <span>友链</span>
+                  </a>
+		</div>
+                
+                  
+                  
+                  
+		<div >
+
+                  <a class="dropdown-item" href="/messagebd/" target="_self" data-umami-event="Navigation-MessageBoard">
+
+                    <i class="iconfont icon-comment"></i>
+                    <span>留言板</span>
+                  </a>
+		</div>
+                
+                  
+                  
+                  
+		<div >
+
+                  <a class="dropdown-item" href="/atom.xml" target="_self" data-umami-event="Navigation-RSS">
+
+                    <i class="iconfont icon-dingyue"></i>
+                    <span>RSS订阅</span>
+                  </a>
+		</div>
+                
+                  
+                  
+                  
+		<div >
+
+                  <a class="dropdown-item" href="/reccomments/" target="_self" data-umami-event="Navigation-Recent-Comments">
+
+                    <i class="iconfont icon-icon-pinglunguanli-pinglunliebiao"></i>
+                    <span>近期评论</span>
+                  </a>
+		</div>
+                
+              </div>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item dropdown">
+              <a class="nav-link dropdown-toggle" target="_self" href="javascript:;" role="button"
+                 data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                <i class="iconfont icon-user-fill"></i>
+                <span>个人</span>
+              </a>
+              <div class="dropdown-menu" aria-labelledby="navbarDropdown">
+                
+                  
+                  
+                  
+		<div >
+
+                  <a class="dropdown-item" href="/about/" target="_self" data-umami-event="Navigation-AboutMe">
+
+                    <i class="iconfont icon-guanyuwomen"></i>
+                    <span>关于</span>
+                  </a>
+		</div>
+                
+                  
+                  
+                  
+		<div >
+
+                  <a class="dropdown-item" href="/playlist/" target="_self" data-umami-event="Navigation-Music">
+
+                    <i class="iconfont icon-music"></i>
+                    <span>歌单</span>
+                  </a>
+		</div>
+                
+                  
+                  
+                  
+		<div >
+
+                  <a class="dropdown-item" href="https://uipv4.zywvvd.com:33035" target="_self" data-umami-event="Navigation-Nextcloud">
+
+                    <i class="iconfont icon-xuniyingpan"></i>
+                    <span>网盘</span>
+                  </a>
+		</div>
+                
+                  
+                  
+                  
+		<div >
+
+                  <a class="dropdown-item" href="https://uipv4.zywvvd.com:33036" target="_self" data-umami-event="Navigation-OneDev">
+
+                    <i class="iconfont icon-git"></i>
+                    <span>仓库</span>
+                  </a>
+		</div>
+                
+                  
+                  
+                  
+		<div >
+
+                  <a class="dropdown-item" href="https://uipv4.zywvvd.com:33041" target="_self" data-umami-event="Navigation-Wiki">
+
+                    <i class="iconfont icon-wiki"></i>
+                    <span>百科</span>
+                  </a>
+		</div>
+                
+              </div>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item dropdown">
+              <a class="nav-link dropdown-toggle" target="_self" href="javascript:;" role="button"
+                 data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                <i class="iconfont icon-ic_fly"></i>
+                <span>导航</span>
+              </a>
+              <div class="dropdown-menu" aria-labelledby="navbarDropdown">
+                
+                  
+                  
+                  
+		<div >
+
+                  <a class="dropdown-item" href="/site-map/" target="_self" data-umami-event="Navigation-SiteMap">
+
+                    <i class="iconfont icon-lianjie"></i>
+                    <span>链接</span>
+                  </a>
+		</div>
+                
+                  
+                  
+                  
+		<div >
+
+                  <a class="dropdown-item" href="/nodeppt/hexo/snavigation/" target="_self" data-umami-event="Navigation-Search">
+
+                    <i class="iconfont icon-sousuo"></i>
+                    <span>搜索</span>
+                  </a>
+		</div>
+                
+              </div>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item dropdown">
+              <a class="nav-link dropdown-toggle" target="_self" href="javascript:;" role="button"
+                 data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                <i class="iconfont icon-wangzhan"></i>
+                <span>站点</span>
+              </a>
+              <div class="dropdown-menu" aria-labelledby="navbarDropdown">
+                
+                  
+                  
+                  
+		<div >
+
+                  <a class="dropdown-item" href="https://uipv4.zywvvd.com:33039/share/0zx3o21oIpZTZqwC/%E5%8F%88%E8%A7%81%E8%8B%8D%E5%B2%9A" target="_self" data-umami-event="Navigation-Umami">
+
+                    <i class="iconfont icon-tongji2"></i>
+                    <span>站点分析</span>
+                  </a>
+		</div>
+                
+                  
+                  
+                  
+		<div >
+
+                  <a class="dropdown-item" href="/earth_sta/" target="_self" data-umami-event="Navigation-Globe">
+
+                    <i class="iconfont icon-tongjifenxi-xiangmubiaogetongji"></i>
+                    <span>访问统计</span>
+                  </a>
+		</div>
+                
+                  
+                  
+                  
+		<div >
+
+                  <a class="dropdown-item" href="https://uipv4.zywvvd.com:33034/status/show" target="_self" data-umami-event="Navigation-Monitor">
+
+                    <i class="iconfont icon-jiankong"></i>
+                    <span>站点监控</span>
+                  </a>
+		</div>
+                
+              </div>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item dropdown">
+              <a class="nav-link dropdown-toggle" target="_self" href="javascript:;" role="button"
+                 data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                <i class="iconfont icon-chuansong"></i>
+                <span>传送</span>
+              </a>
+              <div class="dropdown-menu" aria-labelledby="navbarDropdown">
+                
+                  
+                  
+                  
+		<div >
+
+                  <a class="dropdown-item" href="https://www.foreverblog.cn/go.html" target="_self" data-umami-event="Navigation-ForeverBolg">
+
+                    <i class="iconfont icon-a-BlackHole"></i>
+                    <span>十年之约</span>
+                  </a>
+		</div>
+                
+                  
+                  
+                  
+		<div >
+
+                  <a class="dropdown-item" href="https://www.travellings.cn/go.html" target="_self" data-umami-event="Navigation-DriveTo">
+
+                    <i class="iconfont icon-train1"></i>
+                    <span>开往</span>
+                  </a>
+		</div>
+                
+                  
+                  
+                  
+		<div >
+
+                  <a class="dropdown-item" href="https://bf.zzxworld.com/" target="_self" data-umami-event="Navigation-BlogFinder">
+
+                    <i class="iconfont icon-icon-"></i>
+                    <span>BlogFinder</span>
+                  </a>
+		</div>
+                
+                  
+                  
+                  
+		<div >
+
+                  <a class="dropdown-item" href="https://www.perass.com/" target="_self" data-umami-event="Navigation-Bloghome">
+
+                    <i class="iconfont icon-home-fill"></i>
+                    <span>博客之家</span>
+                  </a>
+		</div>
+                
+              </div>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item dropdown">
+              <a class="nav-link dropdown-toggle" target="_self" href="javascript:;" role="button"
+                 data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                <i class="iconfont icon-gongju"></i>
+                <span>工具</span>
+              </a>
+              <div class="dropdown-menu" aria-labelledby="navbarDropdown">
+                
+                  
+                  
+                  
+		<div >
+
+                  <a class="dropdown-item" href="/navigates/calculator" target="_self" data-umami-event="Navigation-Calculator">
+
+                    <i class="iconfont icon-jisuan"></i>
+                    <span>计算器</span>
+                  </a>
+		</div>
+                
+                  
+                  
+                  
+		<div >
+
+                  <a class="dropdown-item" href="/navigates/webgraphviz" target="_self" data-umami-event="Navigation-WebGtaphviz">
+
+                    <i class="iconfont icon-tongyong-huatugongju2"></i>
+                    <span>Graphviz</span>
+                  </a>
+		</div>
+                
+                  
+                  
+                  
+		<div >
+
+                  <a class="dropdown-item" href="/navigates/formular_reco" target="_self" data-umami-event="Navigation-Formular-Reco">
+
+                    <i class="iconfont icon-a-checkformula"></i>
+                    <span>公式识别</span>
+                  </a>
+		</div>
+                
+              </div>
+            </li>
+          
+        
+        
+          <li class="nav-item" id="search-btn">
+            <a class="nav-link" target="_self" href="javascript:;" data-toggle="modal" data-target="#modalSearch" aria-label="Search">
+              <i class="iconfont icon-search"></i>
+            </a>
+          </li>
+          
+        
+        
+          <li class="nav-item" id="color-toggle-btn">
+            <a class="nav-link" target="_self" href="javascript:;" aria-label="Color Toggle">
+              <i class="iconfont icon-dark" id="color-toggle-icon"></i>
+            </a>
+          </li>
+        
+      </ul>
+    </div>
+  </div>
+</nav>
+
+  
+
+<div id="banner" class="banner" parallax=true
+     style="background: url('https://uipv4.zywvvd.com:33030/HexoFiles/new/bg-trans.png') no-repeat center center; background-size: cover;">
+  <div class="full-bg-img">
+    <div class="mask flex-center" style="background-color: rgba(0, 0, 0, 0)">
+      <div class="banner-text text-center fade-in-up">
+        <div class="h2">
+          
+            <span id="subtitle">Python __getattr__ 懒加载</span>
+          
+        </div>
+
+        
+          
+  <div class="mt-3">
+    
+      <span class="post-meta mr-2">
+        <i class="iconfont icon-author" aria-hidden="true"></i>
+        Yiwei Zhang
+      </span>
+    
+    
+      <span class="post-meta">
+        <i class="iconfont icon-date-fill" aria-hidden="true"></i>
+        <time datetime="2025-12-18 11:05" pubdate>
+          2025年12月18日 上午
+        </time>
+      </span>
+    
+  </div>
+
+  <div class="mt-1">
+    
+      <span class="post-meta mr-2">
+        <i class="iconfont icon-chart"></i>
+        
+          <!-- compatible with older versions-->
+          994 字
+        
+      </span>
+    
+
+    
+      <span class="post-meta mr-2">
+        <i class="iconfont icon-clock-fill"></i>
+        
+        
+        
+          <!-- compatible with older versions-->
+          9 分钟
+        
+      </span>
+    
+
+    
+    
+      
+        <span id="vvdpost_container_page_pvuv" style="display: none">
+          <i class="iconfont icon-eye" aria-hidden="true"></i>
+          <span id="vvdpost_value_page_pv">0</span> 次&nbsp&nbsp
+		  <i class="iconfont icon-users" aria-hidden="true"></i>
+		  <span id="vvdpost_value_page_uv">0</span> 人&nbsp&nbsp
+		  <i class="iconfont icon-comment" aria-hidden="true"></i>
+		  <span id="vvdpost_value_page_cn">0</span> 条
+        </span>
+
+    <script>
+    document.addEventListener("DOMContentLoaded", function() {
+	      console.log("PVUV_" + window.location.pathname);
+
+	      // 使用 fetch API 发送 POST 请求
+	      fetch('https://uipv4.zywvvd.com:33037/poststats', { 
+		  method: 'POST',
+		  headers: {
+		      'Content-Type': 'application/json'
+		  },
+		  body: JSON.stringify(window.location.pathname) // 将路径名作为对象发送，以便在服务器端更容易处理
+	      })
+	      .then(response => {
+		  // 检查响应状态
+		  if (!response.ok) {
+		      throw new Error('Network response was not ok ' + response.statusText);
+		  }
+		  return response.json(); // 解析 JSON 响应
+	      })
+	      .then(data => {
+		  // 处理解析后的数据
+		  console.log(data.pv);
+		  var pvCtn = document.querySelector('#vvdpost_container_page_pvuv');
+		  if (pvCtn) {
+		      var pvEle = document.querySelector('#vvdpost_value_page_pv');
+		      var uvEle = document.querySelector('#vvdpost_value_page_uv');
+		      var cnEle = document.querySelector('#vvdpost_value_page_cn');
+		      if (pvEle && uvEle) {
+		          pvEle.innerText = data.pv;
+		          uvEle.innerText = data.uv;
+		          cnEle.innerText = data.cn;
+		          pvCtn.style.display = 'inline';
+		      }
+		  }
+	      })
+	      .catch(error => {
+		  // 处理请求错误
+		  console.error('There has been a problem with your fetch operation:', error);
+	      });
+      });
+  </script>
+      
+    
+  </div>
+
+
+        
+      </div>
+
+      
+        <div class="scroll-down-bar">
+          <i class="iconfont icon-arrowdown"></i>
+        </div>
+      
+    </div>
+  </div>
+</div>
+
+</div>
+
+
+	<script type="text/javascript" src="/vvd_js/jquery.js"></script>
+	<script async src="https://uipv4.zywvvd.com:33039/script.js" data-website-id="dd4a05c6-dde2-4743-9c3a-a79d6bee0778"></script>
+	<div class="banner" id='banner' >
+
+		<div class="full-bg-img" >
+
+			
+				<script>
+					var ua = navigator.userAgent;
+					var ipad = ua.match(/(iPad).*OS\s([\d_]+)/),
+						isIphone = !ipad && ua.match(/(iPhone\sOS)\s([\d_]+)/),
+						isAndroid = ua.match(/(Android)\s+([\d.]+)/),
+						isMobile = isIphone || isAndroid;
+
+					function set_video_attr(id){
+						var height = document.body.clientHeight
+						var width = document.body.clientWidth
+						var video_item = document.getElementById(id);
+
+						if (height / width < 0.56){
+							video_item.setAttribute('width', '100%');
+							video_item.setAttribute('height', 'auto');
+						} else {
+							video_item.setAttribute('height', '100%');
+							video_item.setAttribute('width', 'auto');
+						}
+					}
+
+					fetch('https://uipv4.zywvvd.com:33037/wallpaper-pair')
+					  .then(response => response.json()) // 解析JSON数据
+					  .then(data => {
+						console.log('获取链接成功');
+						video_url = data[0][0]
+						pre_show_image_url = data[0][1]
+
+						banner_obj = document.getElementById("banner")
+						banner_obj.style.cssText = "background: url('" + pre_show_image_url + "') no-repeat;"
+
+						vvd_banner_obj = document.getElementById("vvd_banner_img")
+						vvd_banner_content = "<img id='banner_img_item' src='" + pre_show_image_url + "'style='position: fixed; z-index: -999'>"
+						vvd_banner_obj.innerHTML = vvd_banner_content 
+
+						if (!isMobile) {
+							video_html_res = "<video id='video_item' style='position: fixed; z-index: -888;'  muted='muted' src=" + video_url + " autoplay='autoplay' loop='loop'></video>"
+							document.getElementById("banner_video_insert").innerHTML = video_html_res;
+							set_video_attr('video_item')
+							set_video_attr('banner_img_item')
+						}
+					    
+					  })
+					  .catch((error) => {
+					    console.error('请求失败,尝试本地获取背景图像：', error);
+	    					$.getJSON('/vvd_js/video_url.json', function(data){
+
+							var video_list_length = data.length
+							var seed = Math.random()
+							index = Math.floor(seed * video_list_length)
+
+							video_url = data[index][0]
+							pre_show_image_url = data[index][1]
+
+							banner_obj = document.getElementById("banner")
+							banner_obj.style.cssText = "background: url('" + pre_show_image_url + "') no-repeat;"
+
+							vvd_banner_obj = document.getElementById("vvd_banner_img")
+							vvd_banner_content = "<img id='banner_img_item' src='" + pre_show_image_url + "'style='position: fixed; z-index: -999'>"
+							vvd_banner_obj.innerHTML = vvd_banner_content 
+
+							if (!isMobile) {
+								video_html_res = "<video id='video_item' style='position: fixed; z-index: -888;'  muted='muted' src=" + video_url + " autoplay='autoplay' loop='loop'></video>"
+								document.getElementById("banner_video_insert").innerHTML = video_html_res;
+								set_video_attr('video_item')
+								set_video_attr('banner_img_item')
+							}
+						});
+					  });
+
+
+
+
+
+
+					if (!isMobile){
+						window.onresize = function(){
+							set_video_attr('video_item')
+							set_video_attr('banner_img_item')
+							}
+						}
+				</script>
+
+			
+
+
+			
+			</div>
+		</div>
+    </div>
+
+  </header>
+
+  <main>
+    
+      
+
+
+
+<div class="container-fluid nopadding-x">
+  <div class="row nomargin-x">
+    <div class="side-col d-none d-lg-block col-lg-2">
+      
+
+    </div>
+
+    <div class="col-lg-8 nopadding-x-md">
+      <div class="container nopadding-x-md" id="board-ctn">
+        <div id="board">
+          <article class="post-content mx-auto">
+
+            <!-- <h1 id="seo-header">Python __getattr__ 懒加载</h1> -->
+
+            
+              <p id="updated-time" class="note note-info" style="">
+                
+                  
+                    <!-- compatible with older versions-->
+                    本文最后更新于：2025年12月18日 上午
+                  
+                
+              </p>
+            
+            
+              <div class="markdown-body">
+                
+                <blockquote>
+<p>Python 包功能多时按需加载很实用，本文记录 <code>__getattr__</code> 实现类似功能的方法。</p>
+</blockquote>
+<span id="more"></span>
+<h3 id="原理解析">原理解析</h3>
+<p><code>__getattr__</code> 可以实现包的懒加载，它的核心思想是：当用户在模块中访问一个<strong>尚未定义</strong>的属性时，Python 会调用 <code>__getattr__(name)</code> 方法。我们可以在这里拦截请求，动态导入对应的模块。</p>
+<ul>
+<li>举例说明</li>
+</ul>
+<p>以我的 vvdutils 库为例，这个库中包含了 <code>MongoGridFSConnection</code> 模块，用户可以调用  <code>from vvdutils import MongoGridFSConnection</code> 引用该功能，如果用 <code>__getattr__</code> 的视角来看这个过程是这样的：</p>
+<ol>
+<li>用户执行 <code>from vvdutils import MongoGridFSConnection</code>。</li>
+<li>如果 <code>MongoGridFSConnection</code> 不在 <code>vvdutils</code> 模块的全局变量中，Python 触发 <code>__getattr__(‘MongoGridFSConnection’)</code>。</li>
+<li>我们在 <code>__getattr__</code> 中根据预设的映射表，找到 <code>MongoGridFSConnection</code> 实际位于 <code>vvdutils.mongofs.connect</code> 模块。</li>
+<li>动态导入 <code>vvdutils.mongofs.connect</code> 模块，并从中取出 <code>MongoGridFSConnection</code> 类。</li>
+<li>将这个类<strong>缓存</strong>到 <code>vvdutils</code> 模块的全局变量中，然后返回给用户。</li>
+<li>下次再访问 <code>MongoGridFSConnection</code> 时，因为已在全局变量中，会直接返回，无需再次导入。</li>
+</ol>
+<h3 id="改造示例">改造示例</h3>
+<h4 id="示例说明">示例说明</h4>
+<p>模块结构：</p>
+<figure class="highlight asciidoc"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><code class="hljs asciidoc">database<br>├── <span class="hljs-emphasis">__init__</span>.py<br>├── mongofs<br>└── mysql<br></code></pre></td></tr></table></figure>
+<p>其中 <code>__init__.py</code> 改造前为：</p>
+<figure class="highlight angelscript"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><code class="hljs angelscript"><span class="hljs-keyword">from</span> .mongofs <span class="hljs-keyword">import</span> *<br><span class="hljs-keyword">from</span> .mysql <span class="hljs-keyword">import</span> *<br></code></pre></td></tr></table></figure>
+<p>该行为会导致每次导入库后会自动导入：</p>
+<figure class="highlight pgsql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><code class="hljs pgsql"><span class="hljs-keyword">from</span> .mysql.<span class="hljs-keyword">connect</span> <span class="hljs-keyword">import</span> MysqlConnection<br><span class="hljs-keyword">from</span> .mongofs.<span class="hljs-keyword">connect</span> <span class="hljs-keyword">import</span> MongoGridFSConnection<br></code></pre></td></tr></table></figure>
+<h4 id="getattr-懒加载改造"><code>__getattr__</code> 懒加载改造</h4>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br></pre></td><td class="code"><pre><code class="hljs python"><span class="hljs-comment"># ./__init__.py</span><br><span class="hljs-string">&quot;&quot;&quot;</span><br><span class="hljs-string">vvdutils 主模块。</span><br><span class="hljs-string">数据库连接类已启用懒加载，仅在首次访问时导入。</span><br><span class="hljs-string">&quot;&quot;&quot;</span><br><br><span class="hljs-comment"># 1. 定义公开的接口，这有助于工具进行代码分析、自动补全和生成文档。</span><br><span class="hljs-comment"># 这里列出所有你希望用户从包顶级直接访问的类名。</span><br>__all__ = [<br>    <span class="hljs-string">&#x27;MongoGridFSConnection&#x27;</span>,  <span class="hljs-comment"># 对应 mongofs.connect.MongoGridFSConnection</span><br>    <span class="hljs-string">&#x27;MysqlConnection&#x27;</span>,        <span class="hljs-comment"># 对应 mysql.connect.MysqlConnection</span><br>    <span class="hljs-comment"># 未来可以轻松地在这里添加新的类名，例如：</span><br>    <span class="hljs-comment"># &#x27;RedisConnection&#x27;,</span><br>    <span class="hljs-comment"># &#x27;PostgresConnection&#x27;,</span><br>]<br><br><span class="hljs-comment"># 2. 核心：定义懒加载映射表。</span><br><span class="hljs-comment"># 格式：&#x27;对外暴露的属性名&#x27;: (&#x27;模块路径&#x27;, &#x27;实际类名&#x27;)</span><br><span class="hljs-comment"># 模块路径相对于当前包（vvdutils），使用点号分隔。</span><br>_LAZY_IMPORTS = &#123;<br>    <span class="hljs-string">&#x27;MongoGridFSConnection&#x27;</span>: (<span class="hljs-string">&#x27;mongofs.connect&#x27;</span>, <span class="hljs-string">&#x27;MongoGridFSConnection&#x27;</span>),<br>    <span class="hljs-string">&#x27;MysqlConnection&#x27;</span>: (<span class="hljs-string">&#x27;mysql.connect&#x27;</span>, <span class="hljs-string">&#x27;MysqlConnection&#x27;</span>),<br>    <span class="hljs-comment"># 未来添加新模块时，只需在此增加一行映射即可。</span><br>    <span class="hljs-comment"># &#x27;RedisConnection&#x27;: (&#x27;redis.connect&#x27;, &#x27;RedisConnection&#x27;),</span><br>&#125;<br><br><span class="hljs-comment"># 3. 实现 __getattr__ 函数</span><br><span class="hljs-keyword">def</span> <span class="hljs-title function_">__getattr__</span>(<span class="hljs-params">name: <span class="hljs-built_in">str</span></span>):<br>    <span class="hljs-string">&quot;&quot;&quot;</span><br><span class="hljs-string">    当试图访问本模块中不存在的属性时被调用。</span><br><span class="hljs-string">    用于实现类（尤其是重量级数据库连接类）的懒加载。</span><br><span class="hljs-string">    &quot;&quot;&quot;</span><br>    <span class="hljs-keyword">if</span> name <span class="hljs-keyword">in</span> _LAZY_IMPORTS:<br>        <span class="hljs-comment"># 根据映射表获取模块路径和类名</span><br>        module_path, class_name = _LAZY_IMPORTS[name]<br>        <br>        <span class="hljs-comment"># 动态导入模块。__import__ 返回顶级模块，getattr 逐级深入获取子模块。</span><br>        <span class="hljs-comment"># level=0 表示绝对导入。</span><br>        module = <span class="hljs-built_in">__import__</span>(module_path, fromlist=[class_name], level=<span class="hljs-number">0</span>)<br>        <br>        <span class="hljs-comment"># 从模块中获取我们需要的具体类</span><br>        klass = <span class="hljs-built_in">getattr</span>(module, class_name)<br>        <br>        <span class="hljs-comment"># 【关键】将获取到的类缓存到本模块的全局变量中。</span><br>        <span class="hljs-comment"># 这样后续再次访问该属性时，Python会直接找到它，不会再触发 __getattr__。</span><br>        <span class="hljs-built_in">globals</span>()[name] = klass<br>        <br>        <span class="hljs-keyword">return</span> klass<br>    <br>    <span class="hljs-comment"># 如果请求的属性名不在我们的懒加载映射表中，则抛出标准的 AttributeError。</span><br>    <span class="hljs-keyword">raise</span> AttributeError(<span class="hljs-string">f&quot;module &#x27;<span class="hljs-subst">&#123;__name__&#125;</span>&#x27; has no attribute &#x27;<span class="hljs-subst">&#123;name&#125;</span>&#x27;&quot;</span>)<br><br><span class="hljs-comment"># 4. 实现 __dir__ 函数</span><br><span class="hljs-keyword">def</span> <span class="hljs-title function_">__dir__</span>():<br>    <span class="hljs-string">&quot;&quot;&quot;</span><br><span class="hljs-string">    返回模块中可用的属性名列表。</span><br><span class="hljs-string">    这对于 IDE 的自动补全和交互式环境（如 IPython）的 tab 补全至关重要。</span><br><span class="hljs-string">    &quot;&quot;&quot;</span><br>    <span class="hljs-comment"># 合并：内置属性、已加载的属性、以及我们声明支持懒加载但尚未加载的属性。</span><br>    attrs = <span class="hljs-built_in">set</span>(<span class="hljs-built_in">globals</span>().keys())  <span class="hljs-comment"># 当前已存在于全局作用域中的名称</span><br>    attrs.update(_LAZY_IMPORTS.keys())  <span class="hljs-comment"># 加上所有我们声明支持懒加载的名称</span><br>    attrs.update([<span class="hljs-string">&#x27;__all__&#x27;</span>, <span class="hljs-string">&#x27;__doc__&#x27;</span>, <span class="hljs-string">&#x27;__getattr__&#x27;</span>, <span class="hljs-string">&#x27;__dir__&#x27;</span>])  <span class="hljs-comment"># 确保特殊方法也在列表中</span><br>    <span class="hljs-keyword">return</span> <span class="hljs-built_in">sorted</span>(attrs)<br><br><span class="hljs-comment"># 【可选但推荐】初始化提示</span><br><span class="hljs-comment"># 可以在这里导入一些轻量级的工具模块，它们不影响启动速度。</span><br><span class="hljs-comment"># 例如，如果你的 `utils` 模块很轻量，可以正常导入：</span><br><span class="hljs-comment"># from . import utils</span><br><br><span class="hljs-comment"># 注意：我们在这里并没有导入 mongofs 或 mysql，它们将在被访问时按需加载。</span><br></code></pre></td></tr></table></figure>
+<h3 id="参考资料">参考资料</h3>
+<ul>
+<li></li>
+</ul>
+<link rel="stylesheet" href="/css/spoiler.css" type="text/css"><script src="/js/spoiler.js" type="text/javascript" async></script>
+                
+
+
+				<br /><br />
+				<blockquote>
+					<p>文章链接：<br /> 
+					<a style="font-size: 0.85rem" target="_blank" rel="noopener" href="https://www.zywvvd.com/notes/coding/python/python-getarrt-lazy-import/python-getarrt-lazy-import/">https://www.zywvvd.com/notes/coding/python/python-getarrt-lazy-import/python-getarrt-lazy-import/</a>
+					</p>
+				</blockquote>
+
+
+              </div>
+            
+            <hr/>
+			
+			<!-- 添加打赏模块 -->
+			<div class="reward-container">
+				
+					<button id="rewardBtn" class="reward-btn">
+						 
+							❤ 打赏
+							
+					</button>
+					<p class="tea">“觉得不错的话，给点打赏吧 ୧(๑•̀⌄•́๑)૭”</p>
+					<div id="rewardImgContainer" class="reward-img-container">
+						<div class="singleImgContainer">
+							<img id="wechatImg" class="reward-img" src="https://uipv4.zywvvd.com:33030/HexoFiles/vvd_pc_upload/wechatpay.png" srcset="/img/loading.gif" lazyload alt="微信二维码">
+							<p class="wechatPay">微信支付</p>
+						</div>
+						<div class="singleImgContainer">
+							<img id="alipayImg" class="reward-img" src="https://uipv4.zywvvd.com:33030/HexoFiles/vvd_pc_upload/alipay.png" srcset="/img/loading.gif" lazyload alt="支付宝二维码">
+							<p class="aliPay">支付宝支付</p>
+						</div>
+					</div>
+				
+			</div>
+			
+            <div>
+              <div class="post-metas my-3">
+  
+    <div class="post-meta mr-3 d-flex align-items-center">
+      <i class="iconfont icon-category"></i>
+      
+
+<span class="category-chains">
+  
+  
+    
+      <span class="category-chain">
+        
+  <a href="/categories/Coding/" class="category-chain-item">Coding</a>
+  
+  
+    <span>></span>
+    
+  <a href="/categories/Coding/Python/" class="category-chain-item">Python</a>
+  
+  
+
+  
+
+      </span>
+    
+  
+</span>
+
+    </div>
+  
+  
+    <div class="post-meta">
+      <i class="iconfont icon-tags"></i>
+      
+        <a href="/tags/Coding/" class="print-no-link">#Coding</a>
+      
+        <a href="/tags/Python/" class="print-no-link">#Python</a>
+      
+    </div>
+  
+</div>
+
+
+              
+  
+
+  <div class="license-box my-3">
+    <div class="license-title">
+      <div>Python __getattr__ 懒加载</div>
+      <div>https://www.zywvvd.com/notes/coding/python/python-getarrt-lazy-import/python-getarrt-lazy-import/</div>
+    </div>
+    <div class="license-meta">
+      
+        <div class="license-meta-item">
+          <div>作者</div>
+          <div>Yiwei Zhang</div>
+        </div>
+      
+      
+        <div class="license-meta-item license-meta-date">
+          <div>发布于</div>
+          <div>2025年12月18日</div>
+        </div>
+      
+      
+      
+        <div class="license-meta-item">
+          <div>许可协议</div>
+          <div>
+            
+              
+              
+                <a class="print-no-link" target="_blank" href="https://creativecommons.org/licenses/by/4.0/">
+                  <span class="hint--top hint--rounded" aria-label="BY - 署名">
+                    <i class="iconfont icon-by"></i>
+                  </span>
+                </a>
+              
+            
+          </div>
+        </div>
+      
+    </div>
+    <div class="license-icon iconfont"></div>
+  </div>
+
+
+
+              
+                <div class="post-prevnext my-3">
+                  <article class="post-prev col-6">
+                    
+                    
+                  </article>
+                  <article class="post-next col-6">
+                    
+                    
+                      <a href="/notes/coding/python/python-typedict/python-typedict/" title="Python TypedDict">
+                        <span class="hidden-mobile">Python TypedDict</span>
+                        <span class="visible-mobile">下一篇</span>
+                        <i class="iconfont icon-arrowright"></i>
+                      </a>
+                    
+                  </article>
+                </div>
+              
+            </div>
+
+            
+  
+  
+    <article id="comments" lazyload>
+      
+  <div id="waline"></div>
+  <script type="text/javascript">
+    Fluid.utils.loadComments('#waline', function() {
+      Fluid.utils.createCssLink('https://lib.baomitu.com/waline/2.14.8/waline.min.css')
+      Fluid.utils.createScript('https://lib.baomitu.com/waline/2.14.8/waline.min.js', function() {
+        var options = Object.assign(
+          {"serverURL":"https://uipv4.zywvvd.com:33033/","path":"window.location.pathname","meta":["nick","mail","link"],"requiredMeta":["nick"],"lang":"zh-CN","emoji":["https://cdn.jsdelivr.net/gh/walinejs/emojis/weibo"],"dark":"html[data-user-color-scheme=\"dark\"]","wordLimit":0,"pageSize":10,"reaction":true,"locale":{"placeholder":"山高路远，常来玩吖 ~","reactionTitle":null}},
+          {
+            el: '#waline',
+            path: window.location.pathname
+          }
+        )
+        Waline.init(options);
+        Fluid.utils.waitElementVisible('#waline .vcontent', () => {
+          var imgSelector = '#waline .vcontent img:not(.vemoji)';
+          Fluid.plugins.imageCaption(imgSelector);
+          Fluid.plugins.fancyBox(imgSelector);
+        })
+      });
+    });
+  </script>
+  <noscript>Please enable JavaScript to view the comments</noscript>
+
+
+    </article>
+  
+
+
+          </article>
+        </div>
+      </div>
+    </div>
+
+    <div class="side-col d-none d-lg-block col-lg-2">
+      
+  <aside class="sidebar" style="margin-left: -1rem">
+    <div id="toc">
+  <p class="toc-header">
+    <i class="iconfont icon-list"></i>
+    <span>目录</span>
+  </p>
+  <div class="toc-body" id="toc-body"></div>
+</div>
+
+
+
+  </aside>
+
+
+    </div>
+  </div>
+</div>
+
+
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+  
+  
+
+
+
+
+
+  <script>
+  Fluid.utils.createScript('https://lib.baomitu.com/mermaid/8.14.0/mermaid.min.js', function() {
+    mermaid.initialize({"theme":"default"});
+
+    Fluid.utils.listenDOMLoaded(function() {
+      Fluid.events.registerRefreshCallback(function() {
+        if ('mermaid' in window) {
+          mermaid.init();
+        }
+      });
+    });
+  });
+</script>
+
+
+
+
+
+
+    
+
+    
+      <a id="scroll-top-button" aria-label="TOP" href="#" role="button">
+        <i class="iconfont icon-xiangshangjiantou" aria-hidden="true"></i>
+      </a>
+    
+
+    
+      <div class="modal fade" id="modalSearch" tabindex="-1" role="dialog" aria-labelledby="ModalLabel"
+     aria-hidden="true">
+  <div class="modal-dialog modal-dialog-scrollable modal-lg" role="document">
+    <div class="modal-content">
+      <div class="modal-header text-center">
+        <h4 class="modal-title w-100 font-weight-bold">搜索</h4>
+        <button type="button" id="local-search-close" class="close" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body mx-3">
+        <div class="md-form mb-5">
+          <input type="text" id="local-search-input" class="form-control validate">
+          <label data-error="x" data-success="v" for="local-search-input">关键词</label>
+        </div>
+        <div class="list-group" id="local-search-result"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+    
+
+    
+  </main>
+
+  <footer>
+    <div class="footer-inner">
+  
+    <div class="footer-content">
+       <div class="vvd_footer" style="font-size: 0.85rem;"> <a href="https://hexo.io" target="_blank" rel="nofollow noopener" color="#d7d8d9" data-umami-event="Footer-Hexo"><span class="umami--click--Footer-Hexo">Hexo</span></a> <i class="iconfont icon-love"></i> <a href="https://github.com/fluid-dev/hexo-theme-fluid" target="_blank" rel="nofollow noopener" data-umami-event="Footer-Fluid"><span class="umami--click--Footer-Fluid">Fluid</span></a> <i class="iconfont icon-love"></i> <a href="https://uipv4.zywvvd.com:33039/share/0zx3o21oIpZTZqwC/%E5%8F%88%E8%A7%81%E8%8B%8D%E5%B2%9A" target="_blank" rel="nofollow noopener" data-umami-event="Footer-Umami"><span class="umami--click--Footer-Umami">Umami</span></a> <div style="font-size: 0.85rem;"> <span id="timeDate">载入天数...</span> <span id="times">载入时分秒...</span> <script src="/vvd_js/duration.js"></script> </div> <div style="font-size: 0.85rem;"> <span> 总访问量 <span style="color: #d7d8d9;" id="PVstatic">0</span> 次&nbsp</span> <span> 总访客数 <span style="color: #d7d8d9;" id="UVstatic">0</span> 人&nbsp</span> <span> 当前在线 <span style="color: #d7d8d9;" id="ACTstatic">0</span> 人&nbsp</span> <script src="https://uipv4.zywvvd.com:33037/statistics" defer></script> </div> <div> <span> Copyright © 2020-2025. All Rights Reserved.</span> </div> <div style="font-size: 0.88rem;"> <a target="_blank" rel="noopener" href="https://developer.hitokoto.cn/" id="hitokoto_text"><span style="color: #d7d8d9;"  id="hitokoto"></span></a> <script src="https://uipv4.zywvvd.com:33044/?encode=js&select=%23hitokoto" defer></script> </div> <a href="https://icp.gov.moe/?keyword=20230615" target="_blank">萌ICP备20230615号</a>
+
+
+</div> 
+    </div>
+  
+  
+  
+  
+</div>
+
+  </footer>
+
+  <!-- Scripts -->
+  
+  <script  src="https://lib.baomitu.com/nprogress/0.2.0/nprogress.min.js" ></script>
+  <link  rel="stylesheet" href="https://lib.baomitu.com/nprogress/0.2.0/nprogress.min.css" />
+
+  <script>
+    NProgress.configure({"showSpinner":false,"trickleSpeed":100})
+    NProgress.start()
+    window.addEventListener('load', function() {
+      NProgress.done();
+    })
+  </script>
+
+
+<script  src="https://lib.baomitu.com/jquery/3.6.0/jquery.min.js" ></script>
+<script  src="https://lib.baomitu.com/twitter-bootstrap/4.6.1/js/bootstrap.min.js" ></script>
+<script  src="/js/events.js" ></script>
+<script  src="/js/plugins.js" ></script>
+
+
+
+
+
+  
+    <script  src="/js/img-lazyload.js" ></script>
+  
+
+
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/tocbot/4.18.2/tocbot.min.js', function() {
+    var toc = jQuery('#toc');
+    if (toc.length === 0 || !window.tocbot) { return; }
+    var boardCtn = jQuery('#board-ctn');
+    var boardTop = boardCtn.offset().top;
+
+    window.tocbot.init(Object.assign({
+      tocSelector     : '#toc-body',
+      contentSelector : '.markdown-body',
+      linkClass       : 'tocbot-link',
+      activeLinkClass : 'tocbot-active-link',
+      listClass       : 'tocbot-list',
+      isCollapsedClass: 'tocbot-is-collapsed',
+      collapsibleClass: 'tocbot-is-collapsible',
+      scrollSmooth    : true,
+      includeTitleTags: true,
+      headingsOffset  : -boardTop,
+    }, CONFIG.toc));
+    if (toc.find('.toc-list-item').length > 0) {
+      toc.css('visibility', 'visible');
+    }
+
+    Fluid.events.registerRefreshCallback(function() {
+      if ('tocbot' in window) {
+        tocbot.refresh();
+        var toc = jQuery('#toc');
+        if (toc.length === 0 || !tocbot) {
+          return;
+        }
+        if (toc.find('.toc-list-item').length > 0) {
+          toc.css('visibility', 'visible');
+        }
+      }
+    });
+  });
+</script>
+
+
+  <script src=https://lib.baomitu.com/clipboard.js/2.0.10/clipboard.min.js></script>
+
+  <script>Fluid.plugins.codeWidget();</script>
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/anchor-js/4.3.1/anchor.min.js', function() {
+    window.anchors.options = {
+      placement: CONFIG.anchorjs.placement,
+      visible  : CONFIG.anchorjs.visible
+    };
+    if (CONFIG.anchorjs.icon) {
+      window.anchors.options.icon = CONFIG.anchorjs.icon;
+    }
+    var el = (CONFIG.anchorjs.element || 'h1,h2,h3,h4,h5,h6').split(',');
+    var res = [];
+    for (var item of el) {
+      res.push('.markdown-body > ' + item.trim());
+    }
+    if (CONFIG.anchorjs.placement === 'left') {
+      window.anchors.options.class = 'anchorjs-link-left';
+    }
+    window.anchors.add(res.join(', '));
+
+    Fluid.events.registerRefreshCallback(function() {
+      if ('anchors' in window) {
+        anchors.removeAll();
+        var el = (CONFIG.anchorjs.element || 'h1,h2,h3,h4,h5,h6').split(',');
+        var res = [];
+        for (var item of el) {
+          res.push('.markdown-body > ' + item.trim());
+        }
+        if (CONFIG.anchorjs.placement === 'left') {
+          anchors.options.class = 'anchorjs-link-left';
+        }
+        anchors.add(res.join(', '));
+      }
+    });
+  });
+</script>
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/fancybox/3.5.7/jquery.fancybox.min.js', function() {
+    Fluid.plugins.fancyBox();
+  });
+</script>
+
+
+  <script>Fluid.plugins.imageCaption();</script>
+
+  
+      <script>
+        if (!window.MathJax) {
+          window.MathJax = {
+            tex    : {
+              inlineMath: { '[+]': [['$', '$']] }
+            },
+            options: {
+              renderActions: {
+                insertedScript: [200, () => {
+                  document.querySelectorAll('mjx-container').forEach(node => {
+                    let target = node.parentNode;
+                    if (target.nodeName.toLowerCase() === 'li') {
+                      target.parentNode.classList.add('has-jax');
+                    }
+                  });
+                }, '', false]
+              }
+            }
+          };
+        } else {
+          MathJax.startup.document.state(0);
+          MathJax.texReset();
+          MathJax.typeset();
+          MathJax.typesetPromise();
+        }
+
+        Fluid.events.registerRefreshCallback(function() {
+          if ('MathJax' in window && MathJax.startup.document && typeof MathJax.startup.document.state === 'function') {
+            MathJax.startup.document.state(0);
+            MathJax.texReset();
+            MathJax.typeset();
+            MathJax.typesetPromise();
+          }
+        });
+      </script>
+    
+
+  <script  src="https://lib.baomitu.com/mathjax/3.2.1/es5/tex-mml-chtml.js" ></script>
+
+  <script defer src="/js/leancloud.js" ></script>
+
+  <script  src="/js/local-search.js" ></script>
+
+
+
+
+  
+<script src="//cdn.jsdelivr.net/npm/aplayer/dist/APlayer.min.js"></script>
+<script src="//cdn.jsdelivr.net/gh/metowolf/MetingJS@1.2/dist/Meting.min.js"></script>
+<script src="/js/reward.js"></script>
+
+
+
+<!-- 主题的启动项，将它保持在最底部 -->
+<!-- the boot of the theme, keep it at the bottom -->
+<script  src="/js/boot.js" ></script>
+
+
+  <script type="text/javascript">
+    /*窗口监视*/
+    var originalTitle = document.title;
+    window.onblur = function(){document.title = "明眸如初"};
+    window.onfocus = function(){document.title = originalTitle};
+  </script>
+
+
+  <div id="tooltip-rightmenu" class="tooltip-rightmenu">如需原始右键菜单请按下 <strong>Ctrl+右键</strong></div>
+
+<div id="rightmenu-wrapper" style="">
+  <ul class="list-v rightmenu" id="rightmenu-content">
+	  <li class="navigation menuNavigation-Content">
+		<a class="nav icon-only fix-cursor-default" onclick="history.back()"><i class="iconfont icon-zuojiantou1"></i></a>
+		<a class="nav icon-only fix-cursor-default" onclick="history.forward()"><i class="iconfont icon-youjiantou1"></i></a>
+		<a class="nav icon-only fix-cursor-default" onclick="window.location.reload()"><i class="iconfont icon-shuaxin"></i></a>
+		<a  aria-label="TOP" href="#" role="button"><i class="iconfont icon-xiangshang"></i></a>
+	  </li>
+
+		<hr class="menuLoad-Content" style="display: block;">
+	  <li class="menuLoad-Content" style="display: block;">
+		<a class="vlts-menu fix-cursor-default" target="_self" href="javascript:;" data-toggle="modal" data-target="#modalSearch" aria-label="Search">
+		  <span>
+			  <i class="iconfont icon-sousuo1 rightmenu-icon"></i>
+			  站内搜索
+		  </span>
+		</a>
+	  </li>
+
+	  <li class="menuLoad-Content" style="display: block;">
+		<a class="vlts-menu fix-cursor-default"  href="https://www.zywvvd.com/messagebd/" data-group="link">
+		  <span>
+			  <i class="iconfont icon-yangshi_icon_tongyong_chat rightmenu-icon">  </i>
+			   留言吐槽 
+		   </span>
+		</a>
+	  </li>
+
+
+	  <li class="menuLoad-Content" style="display: block;">
+		<a class="vlts-menu fix-cursor-default" id="help" target="_blank" rel="noopener" href="https://www.foreverblog.cn/go.html" data-group="link">
+		<span>
+			  <i class="iconfont icon-a-BlackHole rightmenu-icon"></i>
+			  虫洞穿梭
+		  </span>
+		</a>
+	  </li>
+
+	<a id="scroll-top-button" aria-label="TOP" href="#" role="button" style="bottom: 20px; right: 52.6364px;">
+        <i class="iconfont icon-xiangshangjiantou" aria-hidden="true"></i>
+      </a>
+
+	<hr class="menuLoad-Content" style="display: block;">
+	
+	  <li class="menuLoad-Content" style="display: block;">
+		<a class="vlts-menu fix-cursor-default" id="destroy-airplane" target="_blank" rel="noopener"  data-group="link">
+		<span>
+			  <i class="iconfont icon-feiji rightmenu-icon"></i>
+			  破坏小飞机
+		  </span>
+		</a>
+	  </li>
+  </ul>
+</div>
+
+<script>
+	var ua = navigator.userAgent;
+	var ipad = ua.match(/(iPad).*OS\s([\d_]+)/),
+		isIphone = !ipad && ua.match(/(iPhone\sOS)\s([\d_]+)/),
+		isAndroid = ua.match(/(Android)\s+([\d.]+)/),
+		isMobile = isIphone || isAndroid;
+
+	if(!isMobile) {
+		// 为按钮添加事件处理器
+		document.getElementById('destroy-airplane').onclick = function() {
+		  console.log('飞机起飞！');
+		  // 定义要执行的JavaScript代码
+		var KICKASSVERSION='2.0';
+		var s = document.createElement('script');
+		s.type='text/javascript';
+		document.body.appendChild(s);
+		s.src='https://uipv4.zywvvd.com:33030/HexoFiles/js/games/airplane/airplane.js';
+		void(0);
+		};
+	}
+</script>
+
+
+
+
+
+<link href="/css/custom.css"type="text/css"rel="stylesheet"/>
+<script src="/vvd_js/right_menu.js" type="text/javascript"></script>
+<link href="/css/right_menu.css"type="text/css"rel="stylesheet"/>
+<script src="/vvd_js/go.js"></script>
+
+
+  <noscript>
+    <div class="noscript-warning">博客在允许 JavaScript 运行的环境下浏览效果更佳</div>
+  </noscript>
+<script src="/live2dw/lib/L2Dwidget.min.js?094cbace49a39548bed64abff5988b05"></script><script>L2Dwidget.init({"pluginRootPath":"live2dw/","pluginJsPath":"lib/","pluginModelPath":"assets/","tagMode":false,"log":false,"model":{"jsonPath":"/live2dw/assets/z16.model.json"},"display":{"position":"left","width":200,"height":400},"mobile":{"show":false},"react":{"opacity":0.9}});</script></body>
+</html>
