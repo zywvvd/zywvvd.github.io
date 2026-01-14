@@ -28,7 +28,7 @@
 <meta property="og:image" content="https://uipv4.zywvvd.com:33030/HexoFiles/vvd_image_files/202601141708835.png">
 <meta property="og:image" content="https://uipv4.zywvvd.com:33030/HexoFiles/vvd_image_files/202601141725458.png">
 <meta property="article:published_time" content="2026-01-14T08:30:32.000Z">
-<meta property="article:modified_time" content="2026-01-14T09:27:02.470Z">
+<meta property="article:modified_time" content="2026-01-14T11:45:09.950Z">
 <meta property="article:author" content="Yiwei Zhang">
 <meta property="article:tag" content="LLM">
 <meta name="twitter:card" content="summary_large_image">
@@ -677,7 +677,7 @@ document.addEventListener("readystatechange", function() {
         <i class="iconfont icon-chart"></i>
         
           <!-- compatible with older versions-->
-          1.1k 字
+          2.7k 字
         
       </span>
     
@@ -689,7 +689,7 @@ document.addEventListener("readystatechange", function() {
         
         
           <!-- compatible with older versions-->
-          10 分钟
+          23 分钟
         
       </span>
     
@@ -892,7 +892,7 @@ document.addEventListener("readystatechange", function() {
                 
                   
                     <!-- compatible with older versions-->
-                    本文最后更新于：2026年1月14日 下午
+                    本文最后更新于：2026年1月14日 晚上
                   
                 
               </p>
@@ -997,11 +997,119 @@ document.addEventListener("readystatechange", function() {
 </blockquote>
 <p>可以用自然语言进行交流编程：</p>
 <p><img src="https://uipv4.zywvvd.com:33030/HexoFiles/vvd_image_files/202601141725458.png" srcset="/img/loading.gif" lazyload alt=""></p>
+<h4 id="初始化">初始化</h4>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs bash">/init<br></code></pre></td></tr></table></figure>
+<p>每一次打开一个项目，都运行一下： <code>/init</code> 命令。</p>
+<p>Claude Code 会扫描代码库，自动生成一个 <a target="_blank" rel="noopener" href="http://CLAUDE.md">CLAUDE.md</a> 文件。里面包含：</p>
+<ul>
+<li>怎么 build、怎么 test</li>
+<li>记录关键目录是干什么的</li>
+<li>总结代码规范和风格</li>
+<li>记录重要的架构决策</li>
+</ul>
+<p>对于较大复杂的项目，你还可以建一个 .claude/rules/ 目录，用于放不同模块的专门规则。</p>
+<p>比如 API 目录下的规则文件，只在处理 API 代码时生效。甚至可以用 YAML 前缀指定路径条件。</p>
+<figure class="highlight yaml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><code class="hljs yaml"><span class="hljs-meta">---  </span><br><span class="hljs-string">paths:src/api/**/*.ts</span><br><span class="hljs-meta">---</span><br><span class="hljs-comment"># API Development Rules  </span><br><span class="hljs-string">-AllAPIendpointsmustincludeinputvalidation</span>  <br></code></pre></td></tr></table></figure>
+<p>这个目录下的每个 <code>.md</code> 文件都会自动加载为项目记忆，与你的 <code>CLAUDE.md</code> 并存，作为具体模块的补充。</p>
+<h4 id="随时更新项目记忆">随时更新项目记忆</h4>
+<p>可以直接告诉 Claude ：“更新 <a target="_blank" rel="noopener" href="http://claude.md">claude.md</a>，记住这个项目用 bun 不用 npm。”Claude 会自己把这条写进去。</p>
+<h4 id="瞬间引用上下文">瞬间引用上下文</h4>
+<p>当你需要 AI 重点参考某个模块时，直接输入 @xxx，是给 Claude 添加上下文的最快方式。比如</p>
+<ul>
+<li>@src/auth.ts - 把单个文件引入上下文</li>
+<li>@src/components/ - 参考整个目录</li>
+<li>@mcp:github - 启用或禁用 MCP 服务器</li>
+</ul>
+<p>它支持模糊匹配（类似 IDE 的全局搜索），能瞬间锁定 auth.ts 或整个 components/ 目录。</p>
+<h4 id="即时执行-Bash-命令">即时执行 Bash 命令</h4>
+<blockquote>
+<p>! 前缀</p>
+</blockquote>
+<p>不要浪费 token 去问&quot;你能运行 git status 吗？&quot;。</p>
+<p>直接输入 <code>!</code> 加上你的 bash 命令：</p>
+<figure class="highlight diff"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><code class="hljs diff"><span class="hljs-addition">! git status  </span><br><span class="hljs-addition">! npm test  </span><br><span class="hljs-addition">! ls -la src/  </span><br></code></pre></td></tr></table></figure>
+<p><code>!</code> 前缀会立即执行 bash 命令，命令运行结果就会直接回传给 Claude 作为上下文。</p>
+<h4 id="双击-Esc-回滚-随时撤销">双击 Esc 回滚 -随时撤销</h4>
+<p>若是 AI 改错了，按两次 Esc 就能回到之前的状态。</p>
+<p>你可以选只回退对话、只回退代码、或者都回退。但注意 Bash 命令执行不可撤销。</p>
+<p>比手动 git revert 快很多。</p>
+<h4 id="Ctrl-R-反向搜索历史提示词">Ctrl + R - 反向搜索历史提示词</h4>
+<p>有些复杂的 Prompt（提示词）很难记，想找回昨天写的那条时：</p>
+<p>先按 Ctrl+R 搜索之前用过的 prompt；再按 Ctrl+R 循环查找就能找到写过的 prompt ，不用重复输入。</p>
+<h4 id="Ctrl-S-提示词暂存">Ctrl + S - 提示词暂存</h4>
+<p>提示词写到一半，想先问别的？按 Ctrl+S 暂存当前内容，稍后自动恢复。就像 git stash，但是给 prompt 用的。</p>
+<h4 id="Prompt-建议-AI-自动预测下一步">Prompt 建议 - AI 自动预测下一步</h4>
+<p>完成一个任务后，Claude 会灰色显示建议的下一步操作。</p>
+<p>按 Tab 接受并编辑，按 Enter 直接运行。可以在 /config 里开关。</p>
+<h4 id="–continue-resume-断点续传">–continue / --resume - 断点续传</h4>
+<p>笔记本没电了，终端关了，没事。</p>
+<figure class="highlight dsconfig"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><code class="hljs dsconfig"><span class="hljs-string">claude</span> <span class="hljs-built_in">--continue</span>    <span class="hljs-comment"># 继续上次的对话  </span><br><span class="hljs-string">claude</span> <span class="hljs-built_in">--resume</span>      <span class="hljs-comment"># 选择要恢复的会话  </span><br></code></pre></td></tr></table></figure>
+<p>会话默认会保存 30 天。也可以在配置里改 cleanupPeriodDays，设成 0 立刻清理，或者设成 365 保留一年。</p>
+<h4 id="rename-给会话命名">/rename - 给会话命名</h4>
+<p>你的 git 分支有名字，你的 Claude 会话也该有。</p>
+<p>/resume 界面还支持分组、预览、键盘快捷键。</p>
+<figure class="highlight jboss-cli"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><code class="hljs jboss-cli"><span class="hljs-string">/rename</span> api-migration       <span class="hljs-comment"># 命名当前会话  </span><br><span class="hljs-string">/resume</span> api-migration       <span class="hljs-comment"># 按名字恢复  </span><br>claude <span class="hljs-params">--resume</span> api-migration  <span class="hljs-comment"># 命令行也行  </span><br></code></pre></td></tr></table></figure>
+<h4 id="–teleport-云端同步">–teleport - 云端同步</h4>
+<p>如果在 Claude Code Web 端 <a target="_blank" rel="noopener" href="http://claude.ai/code">claude.ai/code</a> 启动了一个会话，想让它在终端或者手机端继续。</p>
+<h4 id="export-导出操作记录">/export - 导出操作记录</h4>
+<p>把整个对话导出成 Markdown，包含所有 prompt、AI 回复、工具调用、执行结果。</p>
+<h4 id="vim-Vim-模式">/vim - Vim 模式</h4>
+<p>输入 /vim 开启完整的 Vim 风格编辑功能。支持 h j k l、ciw、dd、w b、A 等 vim 命令。</p>
+<p>再输入 /vim 关闭。</p>
+<h4 id="statusline-自定义状态栏">/statusline - 自定义状态栏</h4>
+<p>对话过程中，你可能想知道现在在哪条 Git 分支、Token 耗了多少，以前得退出去看。</p>
+<p>其实，输入/statusline，配置底部状态栏就会显示：</p>
+<ul>
+<li>git 分支和状态</li>
+<li>当前模型</li>
+<li>token 用量</li>
+<li>上下文百分比</li>
+<li>自定义脚本输出</li>
+</ul>
+<h4 id="context-看-Token-花哪了">/context - 看 Token 花哪了</h4>
+<p>聊着聊着 AI 突然变傻了（忘了前面的设定），多半是上下文爆了。</p>
+<p>用法：输入：/context，显示当前对话各部分占用了多少 Token：</p>
+<p>上下文快满的时候，看一眼就知道该删什么。</p>
+<h4 id="stats-使用统计">/stats - 使用统计</h4>
+<p>查看使用模式、最爱模型、使用连续天数等。</p>
+<p>官方戏称“橙色是新的绿色”，类似 GitHub 贡献图。你的 AI 使用记录也有图表了。</p>
+<h4 id="usage-查看额度">/usage - 查看额度</h4>
+<p>查看当前用量和剩余额度，带可视化进度条。</p>
+<p>/extra-usage 可以购买额外容量。</p>
+<p>知道自己还能用多少，心里有底。</p>
+<h4 id="ultrathink-深度思考模式">ultrathink - 深度思考模式</h4>
+<p>很多开发者抱怨 AI 写代码“不动脑子”。其实是因为你没开启它的“深度思考”开关。</p>
+<p>在 prompt 里加 ultrathink 关键词，Claude 会在回复前分配最多 32K tokens 用于内部推理。</p>
+<p>这就适合架构设计、难缠 bug、性能优化。其成本是普通对话的 3-5 倍，但输出质量明显更好。</p>
+<h4 id="Plan-Mode-先规划再动手">Plan Mode - 先规划再动手</h4>
+<p>这个简单，按两次 Shift + Tab 进入 Plan Mode。</p>
+<p>Claude 会先读项目代码，分析架构和依赖，起草实现方案，等你批准了才开始写代码。</p>
+<h4 id="Extended-Thinking-API-看见思考过程">Extended Thinking (API) - 看见思考过程</h4>
+<p>这个是 API 功能，不在 CLI 里。</p>
+<p>调用 Claude API 时，开启 thinking: {type: “enabled”, budget_tokens: 5000}，AI 会在 thinking blocks 里显示推理过程。</p>
+<p>对于调试复杂逻辑或者理解 AI 的决策很有用。</p>
+<h4 id="sandbox-沙盒模式">/sandbox - 沙盒模式</h4>
+<p>有时候，AI 想跑个 ls 都要你点确认，一下午光点鼠标了。</p>
+<p>这时候就要提前设置允许的操作范围，比如允许 npm install、允许 npm test、禁止 rm -rf；支持通配符，mcp__server__* 可以允许所有 MCP 服务器。</p>
+<p>好处是不用每次都点允许，但危险操作会自动拦截。</p>
+<h4 id="YOLO-Mode-跳过所有权限">YOLO Mode - 跳过所有权限</h4>
+<figure class="highlight ada"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs ada">claude <span class="hljs-comment">--dangerously-skip-permissions  </span><br></code></pre></td></tr></table></figure>
+<p>跳过所有权限确认。适合隔离环境、可信操作、你知道自己在干什么的场景。</p>
+<h4 id="Headless-Mode-非交互运行">Headless Mode - 非交互运行</h4>
+<p>当你想批量分析 100 个 commit 的变更时，输入</p>
+<figure class="highlight nginx"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs nginx"><span class="hljs-attribute">claude</span> -p <span class="hljs-string">&quot;简述这些更改&quot;</span>  <br></code></pre></td></tr></table></figure>
+<p>通过 -p 参数，Claude 的输出会直接流向标准输出。这意味着你可以把它写进 Shell 脚本，甚至塞进 GitHub Actions 流程里。</p>
+<figure class="highlight 1c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><code class="hljs 1c">git diff <span class="hljs-string">| claude -p &quot;</span>Explain these changes<span class="hljs-string">&quot;  </span><br>claude -p <span class="hljs-string">&quot;List all functions&quot;</span> <span class="hljs-string">| grep &quot;</span>async<span class="hljs-string">&quot;  </span><br></code></pre></td></tr></table></figure>
+<p>AI 进入你的脚本和自动化流程。</p>
+<h4 id="Commands-可复用提示词">Commands - 可复用提示词</h4>
+<p>把常用 prompt 保存成 .md 文件，自动变成 slash 命令。</p>
+<p>创建一个 /daily-standup 命令运行你的晨会流程，或者 /explain $ARGUMENTS 支持参数传递。</p>
 <h3 id="参考资料">参考资料</h3>
 <ul>
 <li><a target="_blank" rel="noopener" href="https://www.claude.com/product/claude-code">https://www.claude.com/product/claude-code</a></li>
 <li><a target="_blank" rel="noopener" href="https://docs.bigmodel.cn/cn/coding-plan/tool/claude">https://docs.bigmodel.cn/cn/coding-plan/tool/claude</a></li>
 <li><a target="_blank" rel="noopener" href="https://code.claude.com/docs/zh-CN/quickstart">https://code.claude.com/docs/zh-CN/quickstart</a></li>
+<li>Anthropic 社区负责人连更31条Claude Code技巧！</li>
 </ul>
 <link rel="stylesheet" href="/css/spoiler.css" type="text/css"><script src="/js/spoiler.js" type="text/javascript" async></script>
                 
