@@ -1,0 +1,1881 @@
+
+
+<!DOCTYPE html>
+<html lang="zh-CN" data-default-color-scheme=auto>
+
+
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="baidu-site-verification" content="codeva-rLWafCJGYc" />
+  <link rel="apple-touch-icon" sizes="76x76" href="/image/avatar.png">
+  <link rel="icon" href="/image/avatar.png">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, shrink-to-fit=no">
+  <meta http-equiv="x-ua-compatible" content="ie=edge">
+  
+  <meta name="theme-color" content="#2f4154">
+  <meta name="author" content="Yiwei Zhang">
+  <meta name="keywords" content="人工智能, 深度学习, 个人博客, 机器学习">
+  
+    <meta name="description" content="CBS(Conflict-Based Search)是解决多智能体路径规划(MAPF)问题的经典算法，通过高层搜索和低层搜索的两层架构，高效地找到无冲突的最优路径。本文详细介绍 CBS 算法原理、流程及其变种。">
+<meta property="og:type" content="article">
+<meta property="og:title" content="CBS(Conflict-Based Search)算法详解">
+<meta property="og:url" content="https://www.zywvvd.com/notes/study/algorithm/graph/cbs-algorithm/cbs-algorithm/index.html">
+<meta property="og:site_name" content="又见苍岚">
+<meta property="og:description" content="CBS(Conflict-Based Search)是解决多智能体路径规划(MAPF)问题的经典算法，通过高层搜索和低层搜索的两层架构，高效地找到无冲突的最优路径。本文详细介绍 CBS 算法原理、流程及其变种。">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="https://uipv4.zywvvd.com:33030/HexoFiles/vvd_image_files/202512101322289.png">
+<meta property="og:image" content="https://uipv4.zywvvd.com:33030/HexoFiles/vvd_image_files/202512100905286.png">
+<meta property="og:image" content="https://uipv4.zywvvd.com:33030/HexoFiles/vvd_image_files/202512101322289.png">
+<meta property="og:image" content="https://uipv4.zywvvd.com:33030/HexoFiles/vvd_image_files/202512101322289.png">
+<meta property="og:image" content="https://uipv4.zywvvd.com:33030/HexoFiles/vvd_image_files/202512101313202.png">
+<meta property="article:published_time" content="2026-03-10T08:50:00.000Z">
+<meta property="article:modified_time" content="2026-03-10T13:06:29.420Z">
+<meta property="article:author" content="Yiwei Zhang">
+<meta property="article:tag" content="Algorithm">
+<meta property="article:tag" content="PathPlan">
+<meta property="article:tag" content="MAPF">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:image" content="https://uipv4.zywvvd.com:33030/HexoFiles/vvd_image_files/202512101322289.png">
+  
+  
+  
+  <title>CBS(Conflict-Based Search)算法详解 - 又见苍岚</title>
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/twitter-bootstrap/4.6.1/css/bootstrap.min.css" />
+
+
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/github-markdown-css/4.0.0/github-markdown.min.css" />
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/hint.css/2.7.0/hint.min.css" />
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/fancybox/3.5.7/jquery.fancybox.min.css" />
+
+
+
+<!-- 主题依赖的图标库，不要自行修改 -->
+<!-- Do not modify the link that theme dependent icons -->
+
+<link rel="stylesheet" href="//at.alicdn.com/t/font_1749284_hj8rtnfg7um.css">
+
+
+
+<link rel="stylesheet" href="//at.alicdn.com/t/font_1736178_lbnruvf0jn.css">
+
+
+<link  rel="stylesheet" href="/css/main.css" />
+
+
+  <link id="highlight-css" rel="stylesheet" href="/css/highlight.css" />
+  
+    <link id="highlight-css-dark" rel="stylesheet" href="/css/highlight-dark.css" />
+  
+
+
+
+  
+<link rel="stylesheet" href="/css/custom.css">
+<link rel="stylesheet" href="/css/reward.css">
+<link rel="stylesheet" href="//cdn.jsdelivr.net/npm/aplayer/dist/APlayer.min.css">
+
+
+
+  <script id="fluid-configs">
+    var Fluid = window.Fluid || {};
+    Fluid.ctx = Object.assign({}, Fluid.ctx)
+    var CONFIG = {"hostname":"www.zywvvd.com","root":"/","version":"1.9.7","typing":{"enable":true,"typeSpeed":90,"cursorChar":"_","loop":false,"scope":["home"]},"anchorjs":{"enable":true,"element":"h1,h2,h3,h4,h5,h6","placement":"left","visible":"hover","icon":""},"progressbar":{"enable":true,"height_px":3,"color":"#29d","options":{"showSpinner":false,"trickleSpeed":100}},"code_language":{"enable":true,"default":"TEXT"},"copy_btn":true,"image_caption":{"enable":true},"image_zoom":{"enable":true,"img_url_replace":["",""]},"toc":{"enable":true,"placement":"right","headingSelector":"h1,h2,h3,h4,h5,h6","collapseDepth":0},"lazyload":{"enable":true,"loading_img":"/img/loading.gif","onlypost":false,"offset_factor":2},"web_analytics":{"enable":true,"follow_dnt":true,"baidu":null,"google":null,"tencent":{"sid":null,"cid":null},"woyaola":null,"cnzz":null,"leancloud":{"app_id":"Cv0XNeBSBdAPAIuVj3PsyM3R-MdYXbMMI","app_key":"4PU1rNlGrqXWzhfW3dgq98oX","server_url":null,"path":"window.location.pathname","ignore_local":false},"gtag":null},"search_path":"/local-search.xml","include_content_in_search":true};
+
+    if (CONFIG.web_analytics.follow_dnt) {
+      var dntVal = navigator.doNotTrack || window.doNotTrack || navigator.msDoNotTrack;
+      Fluid.ctx.dnt = dntVal && (dntVal.startsWith('1') || dntVal.startsWith('yes') || dntVal.startsWith('on'));
+    }
+  </script>
+  <script  src="/js/utils.js" ></script>
+  <script  src="/js/color-schema.js" ></script>
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+    
+  
+
+
+
+  
+<meta name="generator" content="Hexo 7.2.0"><link rel="alternate" href="/atom.xml" title="又见苍岚" type="application/atom+xml">
+</head>
+
+<script>
+// 页面加载完成后隐藏加载动画
+document.addEventListener("readystatechange", function() {
+    const loader = document.getElementById('Loadanimation');
+    if (loader) {
+        // 停留1秒后开始淡出
+        setTimeout(function() {
+            loader.style.transition = 'opacity 1.2s';
+            loader.style.opacity = '0';
+            // 淡出完成后隐藏
+            setTimeout(() => {
+                loader.style.display = 'none';
+            }, 1000); // 等待淡出动画完成
+        }, 700); // 停留0.8秒
+    }
+});
+</script>
+
+
+
+<body>
+  
+<div id="Loadanimation" style="z-index:999999;">
+<div id="Loadanimation-center">
+   <div id="Loadanimation-center-absolute">
+       <div class="xccx_object" id="xccx_four"></div>
+       <div class="xccx_object" id="xccx_three"></div>
+       <div class="xccx_object" id="xccx_two"></div>
+       <div class="xccx_object" id="xccx_one"></div>
+   </div>
+</div>
+</div>
+
+<link href="/css/loading.css"type="text/css"rel="stylesheet"/>
+
+
+
+
+
+
+<div>
+	<div class='real_mask' style="
+		background-color: rgba(0,0,0,0.4);
+		width: 100%;
+		height: 100%;
+		position: fixed;
+		z-index: -777;
+	"></div>
+	<div id="banner_video_insert">
+	</div>	
+	<div id='vvd_banner_img'>
+	</div>
+</div>
+<div id="banner"></div>
+
+
+
+
+
+
+
+  <header>
+    
+
+<div class="header-inner" style="height: 80vh;">
+  <nav id="navbar" class="navbar fixed-top  navbar-expand-lg navbar-dark scrolling-navbar">
+  <div class="container">
+    <a class="navbar-brand" href="/">
+      <strong>CangLan</strong>
+    </a>
+
+    <button id="navbar-toggler-btn" class="navbar-toggler" type="button" data-toggle="collapse"
+            data-target="#navbarSupportedContent"
+            aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
+      <div class="animated-icon"><span></span><span></span><span></span></div>
+    </button>
+
+    <!-- Collapsible content -->
+    <div class="collapse navbar-collapse" id="navbarSupportedContent">
+      <ul class="navbar-nav ml-auto text-center">
+        
+          
+          
+          
+          
+            <li class="nav-item">
+		<div >
+		      <a class="nav-link" href="/" target="_self" data-umami-event="Navigation-Homepage">
+
+		        <i class="iconfont icon-home-fill"></i>
+		        <span>首页</span>
+		      </a>
+		</div>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item dropdown">
+              <a class="nav-link dropdown-toggle" target="_self" href="javascript:;" role="button"
+                 data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                <i class="iconfont icon-shuji1"></i>
+                <span>文章</span>
+              </a>
+              <div class="dropdown-menu" aria-labelledby="navbarDropdown">
+                
+                  
+                  
+                  
+		<div >
+
+                  <a class="dropdown-item" href="/archives/" target="_self" data-umami-event="Navigation-Archive">
+
+                    <i class="iconfont icon-archive-fill"></i>
+                    <span>归档</span>
+                  </a>
+		</div>
+                
+                  
+                  
+                  
+		<div >
+
+                  <a class="dropdown-item" href="/categories/" target="_self" data-umami-event="Navigation-Category">
+
+                    <i class="iconfont icon-category-fill"></i>
+                    <span>分类</span>
+                  </a>
+		</div>
+                
+                  
+                  
+                  
+		<div >
+
+                  <a class="dropdown-item" href="/tags/" target="_self" data-umami-event="Navigation-Tag">
+
+                    <i class="iconfont icon-tags-fill"></i>
+                    <span>标签</span>
+                  </a>
+		</div>
+                
+                  
+                  
+                  
+		<div >
+
+                  <a class="dropdown-item" href="/shuoshuo/" target="_self" data-umami-event="Navigation-Shuoshuo">
+
+                    <i class="iconfont icon-24gf-bubblesDots4"></i>
+                    <span>说说</span>
+                  </a>
+		</div>
+                
+              </div>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item dropdown">
+              <a class="nav-link dropdown-toggle" target="_self" href="javascript:;" role="button"
+                 data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                <i class="iconfont icon-momo"></i>
+                <span>社交</span>
+              </a>
+              <div class="dropdown-menu" aria-labelledby="navbarDropdown">
+                
+                  
+                  
+                  
+		<div >
+
+                  <a class="dropdown-item" href="/links/" target="_self" data-umami-event="Navigation-Friends">
+
+                    <i class="iconfont icon-link-fill"></i>
+                    <span>友链</span>
+                  </a>
+		</div>
+                
+                  
+                  
+                  
+		<div >
+
+                  <a class="dropdown-item" href="/messagebd/" target="_self" data-umami-event="Navigation-MessageBoard">
+
+                    <i class="iconfont icon-comment"></i>
+                    <span>留言板</span>
+                  </a>
+		</div>
+                
+                  
+                  
+                  
+		<div >
+
+                  <a class="dropdown-item" href="/atom.xml" target="_self" data-umami-event="Navigation-RSS">
+
+                    <i class="iconfont icon-dingyue"></i>
+                    <span>RSS订阅</span>
+                  </a>
+		</div>
+                
+                  
+                  
+                  
+		<div >
+
+                  <a class="dropdown-item" href="/reccomments/" target="_self" data-umami-event="Navigation-Recent-Comments">
+
+                    <i class="iconfont icon-icon-pinglunguanli-pinglunliebiao"></i>
+                    <span>近期评论</span>
+                  </a>
+		</div>
+                
+              </div>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item dropdown">
+              <a class="nav-link dropdown-toggle" target="_self" href="javascript:;" role="button"
+                 data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                <i class="iconfont icon-user-fill"></i>
+                <span>个人</span>
+              </a>
+              <div class="dropdown-menu" aria-labelledby="navbarDropdown">
+                
+                  
+                  
+                  
+		<div >
+
+                  <a class="dropdown-item" href="/about/" target="_self" data-umami-event="Navigation-AboutMe">
+
+                    <i class="iconfont icon-guanyuwomen"></i>
+                    <span>关于</span>
+                  </a>
+		</div>
+                
+                  
+                  
+                  
+		<div >
+
+                  <a class="dropdown-item" href="/playlist/" target="_self" data-umami-event="Navigation-Music">
+
+                    <i class="iconfont icon-music"></i>
+                    <span>歌单</span>
+                  </a>
+		</div>
+                
+                  
+                  
+                  
+		<div >
+
+                  <a class="dropdown-item" href="https://uipv4.zywvvd.com:33035" target="_self" data-umami-event="Navigation-Nextcloud">
+
+                    <i class="iconfont icon-xuniyingpan"></i>
+                    <span>网盘</span>
+                  </a>
+		</div>
+                
+                  
+                  
+                  
+		<div >
+
+                  <a class="dropdown-item" href="https://uipv4.zywvvd.com:33036" target="_self" data-umami-event="Navigation-OneDev">
+
+                    <i class="iconfont icon-git"></i>
+                    <span>仓库</span>
+                  </a>
+		</div>
+                
+                  
+                  
+                  
+		<div >
+
+                  <a class="dropdown-item" href="https://uipv4.zywvvd.com:33041" target="_self" data-umami-event="Navigation-Wiki">
+
+                    <i class="iconfont icon-wiki"></i>
+                    <span>百科</span>
+                  </a>
+		</div>
+                
+              </div>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item dropdown">
+              <a class="nav-link dropdown-toggle" target="_self" href="javascript:;" role="button"
+                 data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                <i class="iconfont icon-ic_fly"></i>
+                <span>导航</span>
+              </a>
+              <div class="dropdown-menu" aria-labelledby="navbarDropdown">
+                
+                  
+                  
+                  
+		<div >
+
+                  <a class="dropdown-item" href="/site-map/" target="_self" data-umami-event="Navigation-SiteMap">
+
+                    <i class="iconfont icon-lianjie"></i>
+                    <span>链接</span>
+                  </a>
+		</div>
+                
+                  
+                  
+                  
+		<div >
+
+                  <a class="dropdown-item" href="/nodeppt/hexo/snavigation/" target="_self" data-umami-event="Navigation-Search">
+
+                    <i class="iconfont icon-sousuo"></i>
+                    <span>搜索</span>
+                  </a>
+		</div>
+                
+              </div>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item dropdown">
+              <a class="nav-link dropdown-toggle" target="_self" href="javascript:;" role="button"
+                 data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                <i class="iconfont icon-wangzhan"></i>
+                <span>站点</span>
+              </a>
+              <div class="dropdown-menu" aria-labelledby="navbarDropdown">
+                
+                  
+                  
+                  
+		<div >
+
+                  <a class="dropdown-item" href="https://uipv4.zywvvd.com:33039/share/0zx3o21oIpZTZqwC/%E5%8F%88%E8%A7%81%E8%8B%8D%E5%B2%9A" target="_self" data-umami-event="Navigation-Umami">
+
+                    <i class="iconfont icon-tongji2"></i>
+                    <span>站点分析</span>
+                  </a>
+		</div>
+                
+                  
+                  
+                  
+		<div >
+
+                  <a class="dropdown-item" href="/earth_sta/" target="_self" data-umami-event="Navigation-Globe">
+
+                    <i class="iconfont icon-tongjifenxi-xiangmubiaogetongji"></i>
+                    <span>访问统计</span>
+                  </a>
+		</div>
+                
+                  
+                  
+                  
+		<div >
+
+                  <a class="dropdown-item" href="https://uipv4.zywvvd.com:33034/status/show" target="_self" data-umami-event="Navigation-Monitor">
+
+                    <i class="iconfont icon-jiankong"></i>
+                    <span>站点监控</span>
+                  </a>
+		</div>
+                
+              </div>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item dropdown">
+              <a class="nav-link dropdown-toggle" target="_self" href="javascript:;" role="button"
+                 data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                <i class="iconfont icon-chuansong"></i>
+                <span>传送</span>
+              </a>
+              <div class="dropdown-menu" aria-labelledby="navbarDropdown">
+                
+                  
+                  
+                  
+		<div >
+
+                  <a class="dropdown-item" href="https://www.foreverblog.cn/go.html" target="_self" data-umami-event="Navigation-ForeverBolg">
+
+                    <i class="iconfont icon-a-BlackHole"></i>
+                    <span>十年之约</span>
+                  </a>
+		</div>
+                
+                  
+                  
+                  
+		<div >
+
+                  <a class="dropdown-item" href="https://www.travellings.cn/go.html" target="_self" data-umami-event="Navigation-DriveTo">
+
+                    <i class="iconfont icon-train1"></i>
+                    <span>开往</span>
+                  </a>
+		</div>
+                
+                  
+                  
+                  
+		<div >
+
+                  <a class="dropdown-item" href="https://bf.zzxworld.com/" target="_self" data-umami-event="Navigation-BlogFinder">
+
+                    <i class="iconfont icon-icon-"></i>
+                    <span>BlogFinder</span>
+                  </a>
+		</div>
+                
+                  
+                  
+                  
+		<div >
+
+                  <a class="dropdown-item" href="https://www.perass.com/" target="_self" data-umami-event="Navigation-Bloghome">
+
+                    <i class="iconfont icon-home-fill"></i>
+                    <span>博客之家</span>
+                  </a>
+		</div>
+                
+              </div>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item dropdown">
+              <a class="nav-link dropdown-toggle" target="_self" href="javascript:;" role="button"
+                 data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                <i class="iconfont icon-gongju"></i>
+                <span>工具</span>
+              </a>
+              <div class="dropdown-menu" aria-labelledby="navbarDropdown">
+                
+                  
+                  
+                  
+		<div >
+
+                  <a class="dropdown-item" href="/navigates/calculator" target="_self" data-umami-event="Navigation-Calculator">
+
+                    <i class="iconfont icon-jisuan"></i>
+                    <span>计算器</span>
+                  </a>
+		</div>
+                
+                  
+                  
+                  
+		<div >
+
+                  <a class="dropdown-item" href="/navigates/webgraphviz" target="_self" data-umami-event="Navigation-WebGtaphviz">
+
+                    <i class="iconfont icon-tongyong-huatugongju2"></i>
+                    <span>Graphviz</span>
+                  </a>
+		</div>
+                
+                  
+                  
+                  
+		<div >
+
+                  <a class="dropdown-item" href="/navigates/formular_reco" target="_self" data-umami-event="Navigation-Formular-Reco">
+
+                    <i class="iconfont icon-a-checkformula"></i>
+                    <span>公式识别</span>
+                  </a>
+		</div>
+                
+              </div>
+            </li>
+          
+        
+        
+          <li class="nav-item" id="search-btn">
+            <a class="nav-link" target="_self" href="javascript:;" data-toggle="modal" data-target="#modalSearch" aria-label="Search">
+              <i class="iconfont icon-search"></i>
+            </a>
+          </li>
+          
+        
+        
+          <li class="nav-item" id="color-toggle-btn">
+            <a class="nav-link" target="_self" href="javascript:;" aria-label="Color Toggle">
+              <i class="iconfont icon-dark" id="color-toggle-icon"></i>
+            </a>
+          </li>
+        
+      </ul>
+    </div>
+  </div>
+</nav>
+
+  
+
+<div id="banner" class="banner" parallax=true
+     style="background: url('https://uipv4.zywvvd.com:33030/HexoFiles/new/bg-trans.png') no-repeat center center; background-size: cover;">
+  <div class="full-bg-img">
+    <div class="mask flex-center" style="background-color: rgba(0, 0, 0, 0)">
+      <div class="banner-text text-center fade-in-up">
+        <div class="h2">
+          
+            <span id="subtitle">CBS(Conflict-Based Search)算法详解</span>
+          
+        </div>
+
+        
+          
+  <div class="mt-3">
+    
+      <span class="post-meta mr-2">
+        <i class="iconfont icon-author" aria-hidden="true"></i>
+        Yiwei Zhang
+      </span>
+    
+    
+      <span class="post-meta">
+        <i class="iconfont icon-date-fill" aria-hidden="true"></i>
+        <time datetime="2026-03-10 16:50" pubdate>
+          2026年3月10日 下午
+        </time>
+      </span>
+    
+  </div>
+
+  <div class="mt-1">
+    
+      <span class="post-meta mr-2">
+        <i class="iconfont icon-chart"></i>
+        
+          <!-- compatible with older versions-->
+          3.1k 字
+        
+      </span>
+    
+
+    
+      <span class="post-meta mr-2">
+        <i class="iconfont icon-clock-fill"></i>
+        
+        
+        
+          <!-- compatible with older versions-->
+          26 分钟
+        
+      </span>
+    
+
+    
+    
+      
+        <span id="vvdpost_container_page_pvuv" style="display: none">
+          <i class="iconfont icon-eye" aria-hidden="true"></i>
+          <span id="vvdpost_value_page_pv">0</span> 次&nbsp&nbsp
+		  <i class="iconfont icon-users" aria-hidden="true"></i>
+		  <span id="vvdpost_value_page_uv">0</span> 人&nbsp&nbsp
+		  <i class="iconfont icon-comment" aria-hidden="true"></i>
+		  <span id="vvdpost_value_page_cn">0</span> 条
+        </span>
+
+    <script>
+    document.addEventListener("DOMContentLoaded", function() {
+	      console.log("PVUV_" + window.location.pathname);
+
+	      // 使用 fetch API 发送 POST 请求
+	      fetch('https://uipv4.zywvvd.com:33037/poststats', { 
+		  method: 'POST',
+		  headers: {
+		      'Content-Type': 'application/json'
+		  },
+		  body: JSON.stringify(window.location.pathname) // 将路径名作为对象发送，以便在服务器端更容易处理
+	      })
+	      .then(response => {
+		  // 检查响应状态
+		  if (!response.ok) {
+		      throw new Error('Network response was not ok ' + response.statusText);
+		  }
+		  return response.json(); // 解析 JSON 响应
+	      })
+	      .then(data => {
+		  // 处理解析后的数据
+		  console.log(data.pv);
+		  var pvCtn = document.querySelector('#vvdpost_container_page_pvuv');
+		  if (pvCtn) {
+		      var pvEle = document.querySelector('#vvdpost_value_page_pv');
+		      var uvEle = document.querySelector('#vvdpost_value_page_uv');
+		      var cnEle = document.querySelector('#vvdpost_value_page_cn');
+		      if (pvEle && uvEle) {
+		          pvEle.innerText = data.pv;
+		          uvEle.innerText = data.uv;
+		          cnEle.innerText = data.cn;
+		          pvCtn.style.display = 'inline';
+		      }
+		  }
+	      })
+	      .catch(error => {
+		  // 处理请求错误
+		  console.error('There has been a problem with your fetch operation:', error);
+	      });
+      });
+  </script>
+      
+    
+  </div>
+
+
+        
+      </div>
+
+      
+        <div class="scroll-down-bar">
+          <i class="iconfont icon-arrowdown"></i>
+        </div>
+      
+    </div>
+  </div>
+</div>
+
+</div>
+
+
+	<script type="text/javascript" src="/vvd_js/jquery.js"></script>
+	<script async src="https://uipv4.zywvvd.com:33039/script.js" data-website-id="dd4a05c6-dde2-4743-9c3a-a79d6bee0778"></script>
+	<div class="banner" id='banner' >
+
+		<div class="full-bg-img" >
+
+			
+				<script>
+					var ua = navigator.userAgent;
+					var ipad = ua.match(/(iPad).*OS\s([\d_]+)/),
+						isIphone = !ipad && ua.match(/(iPhone\sOS)\s([\d_]+)/),
+						isAndroid = ua.match(/(Android)\s+([\d.]+)/),
+						isMobile = isIphone || isAndroid;
+
+					function set_video_attr(id){
+						var height = document.body.clientHeight
+						var width = document.body.clientWidth
+						var video_item = document.getElementById(id);
+
+						if (height / width < 0.56){
+							video_item.setAttribute('width', '100%');
+							video_item.setAttribute('height', 'auto');
+						} else {
+							video_item.setAttribute('height', '100%');
+							video_item.setAttribute('width', 'auto');
+						}
+					}
+
+					fetch('https://uipv4.zywvvd.com:33037/wallpaper-pair')
+					  .then(response => response.json()) // 解析JSON数据
+					  .then(data => {
+						console.log('获取链接成功');
+						video_url = data[0][0]
+						pre_show_image_url = data[0][1]
+
+						banner_obj = document.getElementById("banner")
+						banner_obj.style.cssText = "background: url('" + pre_show_image_url + "') no-repeat;"
+
+						vvd_banner_obj = document.getElementById("vvd_banner_img")
+						vvd_banner_content = "<img id='banner_img_item' src='" + pre_show_image_url + "'style='position: fixed; z-index: -999'>"
+						vvd_banner_obj.innerHTML = vvd_banner_content 
+
+						if (!isMobile) {
+							video_html_res = "<video id='video_item' style='position: fixed; z-index: -888;'  muted='muted' src=" + video_url + " autoplay='autoplay' loop='loop'></video>"
+							document.getElementById("banner_video_insert").innerHTML = video_html_res;
+							set_video_attr('video_item')
+							set_video_attr('banner_img_item')
+						}
+					    
+					  })
+					  .catch((error) => {
+					    console.error('请求失败,尝试本地获取背景图像：', error);
+	    					$.getJSON('/vvd_js/video_url.json', function(data){
+
+							var video_list_length = data.length
+							var seed = Math.random()
+							index = Math.floor(seed * video_list_length)
+
+							video_url = data[index][0]
+							pre_show_image_url = data[index][1]
+
+							banner_obj = document.getElementById("banner")
+							banner_obj.style.cssText = "background: url('" + pre_show_image_url + "') no-repeat;"
+
+							vvd_banner_obj = document.getElementById("vvd_banner_img")
+							vvd_banner_content = "<img id='banner_img_item' src='" + pre_show_image_url + "'style='position: fixed; z-index: -999'>"
+							vvd_banner_obj.innerHTML = vvd_banner_content 
+
+							if (!isMobile) {
+								video_html_res = "<video id='video_item' style='position: fixed; z-index: -888;'  muted='muted' src=" + video_url + " autoplay='autoplay' loop='loop'></video>"
+								document.getElementById("banner_video_insert").innerHTML = video_html_res;
+								set_video_attr('video_item')
+								set_video_attr('banner_img_item')
+							}
+						});
+					  });
+
+
+
+
+
+
+					if (!isMobile){
+						window.onresize = function(){
+							set_video_attr('video_item')
+							set_video_attr('banner_img_item')
+							}
+						}
+				</script>
+
+			
+
+
+			
+			</div>
+		</div>
+    </div>
+
+  </header>
+
+  <main>
+    
+      
+
+
+
+<div class="container-fluid nopadding-x">
+  <div class="row nomargin-x">
+    <div class="side-col d-none d-lg-block col-lg-2">
+      
+
+    </div>
+
+    <div class="col-lg-8 nopadding-x-md">
+      <div class="container nopadding-x-md" id="board-ctn">
+        <div id="board">
+          <article class="post-content mx-auto">
+
+            <!-- <h1 id="seo-header">CBS(Conflict-Based Search)算法详解</h1> -->
+
+            
+              <p id="updated-time" class="note note-info" style="">
+                
+                  
+                    <!-- compatible with older versions-->
+                    本文最后更新于：2026年3月10日 晚上
+                  
+                
+              </p>
+            
+            
+              <div class="markdown-body">
+                
+                <blockquote>
+<p>CBS(Conflict-Based Search)是解决多智能体路径规划(MAPF)问题的经典算法，通过<strong>高层搜索</strong>和<strong>低层搜索</strong>的两层架构，高效地找到无冲突的最优路径。本文详细介绍 CBS 算法原理、流程及其变种。</p>
+</blockquote>
+<span id="more"></span>
+<h3 id="简介">简介</h3>
+<p>CBS（Conflict-Based Search）是由 Ariel Felner 等人在 2012 年提出的一种 MAPF 算法。它的核心思想是将 MAPF 问题分解为两个层次的搜索：</p>
+<ol>
+<li><strong>低层搜索</strong>：为每个智能体单独规划路径（忽略其他智能体）</li>
+<li><strong>高层搜索</strong>：检测冲突并通过添加约束来消解冲突</li>
+</ol>
+<p>CBS 是目前解决 MAPF 问题<strong>速度和质量最好</strong>的算法之一，许多后续的改进算法都是在 CBS 基础上发展而来的。</p>
+<p><img src="https://uipv4.zywvvd.com:33030/HexoFiles/vvd_image_files/202512101322289.png" srcset="/img/loading.gif" lazyload alt=""></p>
+<blockquote>
+<p>CBS 算法在集中式规划算法中的位置</p>
+</blockquote>
+<hr>
+<h3 id="基本概念">基本概念</h3>
+<h4 id="MAPF-问题回顾">MAPF 问题回顾</h4>
+<p>MAPF 问题的输入：</p>
+<ul>
+<li>图 $G = (V, E)$：表示环境的拓扑结构</li>
+<li>$k$ 个智能体：每个智能体 $a_i$ 有起点 $s_i$ 和终点 $t_i$</li>
+</ul>
+<p>目标：为每个智能体找到一条从起点到终点的路径，使得：</p>
+<ul>
+<li>所有智能体的路径<strong>无冲突</strong></li>
+<li>最小化某个目标函数（如总路径长度、最大完成时间等）</li>
+</ul>
+<h4 id="冲突类型">冲突类型</h4>
+<p>CBS 中定义了两种基本冲突类型：</p>
+<table>
+<thead>
+<tr>
+<th>冲突类型</th>
+<th>描述</th>
+<th>示例</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>顶点冲突</strong></td>
+<td>两个智能体在同一时刻占据同一节点</td>
+<td>时刻 $t$，$a_1$ 和 $a_2$ 都在节点 $v$</td>
+</tr>
+<tr>
+<td><strong>边冲突</strong></td>
+<td>两个智能体在同一时刻沿同一条边相向移动</td>
+<td>时刻 $t$，$a_1$ 从 $u$ 到 $v$，$a_2$ 从 $v$ 到 $u$</td>
+</tr>
+</tbody>
+</table>
+<p><img src="https://uipv4.zywvvd.com:33030/HexoFiles/vvd_image_files/202512100905286.png" srcset="/img/loading.gif" lazyload alt=""></p>
+<blockquote>
+<p>图中展示了 MAPF 问题中的常见冲突类型</p>
+</blockquote>
+<p><strong>冲突的数学表示</strong>：</p>
+<ul>
+<li>顶点冲突：$(a_i, a_j, v, t)$ 表示智能体 $a_i$ 和 $a_j$ 在时刻 $t$ 同时占据节点 $v$</li>
+<li>边冲突：$(a_i, a_j, u, v, t)$ 表示智能体 $a_i$ 和 $a_j$ 在时刻 $t$ 发生边冲突</li>
+</ul>
+<h4 id="约束">约束</h4>
+<p>约束用于限制某个智能体的行为，是 CBS 解决冲突的核心机制：</p>
+<table>
+<thead>
+<tr>
+<th>约束类型</th>
+<th>描述</th>
+<th>表示</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>顶点约束</strong></td>
+<td>禁止智能体在特定时刻访问特定节点</td>
+<td>$(a_i, v, t)$</td>
+</tr>
+<tr>
+<td><strong>边约束</strong></td>
+<td>禁止智能体在特定时刻 traversing 特定边</td>
+<td>$(a_i, u, v, t)$</td>
+</tr>
+</tbody>
+</table>
+<h4 id="约束树（Constraint-Tree）">约束树（Constraint Tree）</h4>
+<p>CBS 在高层维护一棵<strong>约束树</strong>（CT），树的每个节点包含：</p>
+<ol>
+<li><strong>约束集合</strong>：从根节点到当前节点的路径上积累的所有约束</li>
+<li><strong>解</strong>：满足当前约束集的所有智能体路径</li>
+<li><strong>代价</strong>：当前解的总代价（通常用 $SIC$ 即 Sum of Individual Costs）</li>
+</ol>
+<p>约束树是一棵<strong>二叉树</strong>，每次检测到冲突时，将当前节点分裂为两个子节点。</p>
+<p><img src="https://uipv4.zywvvd.com:33030/HexoFiles/vvd_image_files/202512101322289.png" srcset="/img/loading.gif" lazyload alt=""></p>
+<blockquote>
+<p>CBS 算法中约束树的结构示意图</p>
+</blockquote>
+<hr>
+<h3 id="CBS-算法流程">CBS 算法流程</h3>
+<h4 id="高层搜索">高层搜索</h4>
+<p>高层搜索负责检测冲突并管理约束树：</p>
+<figure class="highlight mathematica"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br></pre></td><td class="code"><pre><code class="hljs mathematica"><span class="hljs-variable">CBS</span><span class="hljs-operator">-</span><span class="hljs-variable">High</span><span class="hljs-operator">-</span><span class="hljs-built_in">Level</span><span class="hljs-punctuation">(</span><span class="hljs-punctuation">)</span><span class="hljs-operator">:</span><br>  <span class="hljs-number">1.</span> 创建根节点 <span class="hljs-variable">ROOT</span>：<br>     <span class="hljs-operator">-</span> <span class="hljs-variable">constraints</span> <span class="hljs-operator">=</span> <span class="hljs-punctuation">&#123;</span><span class="hljs-punctuation">&#125;</span> <span class="hljs-punctuation">(</span>空约束集<span class="hljs-punctuation">)</span><br>     <span class="hljs-operator">-</span> <span class="hljs-variable">solution</span> <span class="hljs-operator">=</span> 为每个智能体计算无约束的最短路径<br>     <span class="hljs-operator">-</span> <span class="hljs-variable">cost</span> <span class="hljs-operator">=</span> <span class="hljs-variable">SIC</span><span class="hljs-punctuation">(</span><span class="hljs-variable">solution</span><span class="hljs-punctuation">)</span><br>  <br>  <span class="hljs-number">2.</span> 将 <span class="hljs-variable">ROOT</span> 加入 <span class="hljs-variable">OPEN</span> 列表（优先队列，按 <span class="hljs-variable">cost</span> 排序）<br>  <br>  <span class="hljs-number">3.</span> <span class="hljs-variable">while</span> <span class="hljs-variable">OPEN</span> 非空<span class="hljs-operator">:</span><br>       <span class="hljs-variable">a</span><span class="hljs-operator">.</span> 从 <span class="hljs-variable">OPEN</span> 中取出 <span class="hljs-variable">cost</span> 最小的节点 <span class="hljs-built_in">N</span><br>       <br>       <span class="hljs-variable">b</span><span class="hljs-operator">.</span> 验证 <span class="hljs-built_in">N</span><span class="hljs-operator">.</span><span class="hljs-variable">solution</span>，检测第一个冲突：<br>          <span class="hljs-operator">-</span> 若无冲突：返回 <span class="hljs-built_in">N</span><span class="hljs-operator">.</span><span class="hljs-variable">solution</span>（找到最优解）<br>          <span class="hljs-operator">-</span> 若有冲突 <span class="hljs-variable">conflict</span> <span class="hljs-operator">=</span> <span class="hljs-punctuation">(</span><span class="hljs-type">a_i</span><span class="hljs-operator">,</span> <span class="hljs-type">a_j</span><span class="hljs-operator">,</span> <span class="hljs-operator">...</span><span class="hljs-punctuation">)</span>：继续<br>       <br>       <span class="hljs-variable">c</span><span class="hljs-operator">.</span> 对冲突中的每个智能体，创建一个子节点：<br>          <span class="hljs-variable">for</span> <span class="hljs-variable">each</span> <span class="hljs-variable">agent</span> <span class="hljs-variable">a</span> <span class="hljs-variable">in</span> <span class="hljs-punctuation">&#123;</span><span class="hljs-type">a_i</span><span class="hljs-operator">,</span> <span class="hljs-type">a_j</span><span class="hljs-punctuation">&#125;</span><span class="hljs-operator">:</span><br>            <span class="hljs-variable">i</span><span class="hljs-operator">.</span> 创建新节点 <span class="hljs-built_in">N</span><span class="hljs-operator">&#x27;</span><br>            <span class="hljs-variable">ii</span><span class="hljs-operator">.</span> <span class="hljs-built_in">N</span><span class="hljs-operator">&#x27;.</span><span class="hljs-variable">constraints</span> <span class="hljs-operator">=</span> <span class="hljs-built_in">N</span><span class="hljs-operator">.</span><span class="hljs-variable">constraints</span> <span class="hljs-operator">+</span> 新约束<br>                <span class="hljs-punctuation">(</span>对 <span class="hljs-type">a_i</span> 添加约束，禁止其在冲突时刻访问冲突位置<span class="hljs-punctuation">)</span><br>            <span class="hljs-variable">iii</span><span class="hljs-operator">.</span> <span class="hljs-built_in">N</span><span class="hljs-operator">&#x27;.</span><span class="hljs-variable">solution</span> <span class="hljs-operator">=</span> <span class="hljs-built_in">N</span><span class="hljs-operator">.</span><span class="hljs-variable">solution</span><br>            <span class="hljs-variable">iv</span><span class="hljs-operator">.</span> 对智能体 <span class="hljs-variable">a</span> 重新规划路径（满足新约束）<br>            <span class="hljs-variable">v</span><span class="hljs-operator">.</span> 若规划成功：<br>               <span class="hljs-operator">-</span> 更新 <span class="hljs-built_in">N</span><span class="hljs-operator">&#x27;.</span><span class="hljs-variable">solution</span> 中 <span class="hljs-variable">a</span> 的路径<br>               <span class="hljs-operator">-</span> <span class="hljs-built_in">N</span><span class="hljs-operator">&#x27;.</span><span class="hljs-variable">cost</span> <span class="hljs-operator">=</span> <span class="hljs-variable">SIC</span><span class="hljs-punctuation">(</span><span class="hljs-built_in">N</span><span class="hljs-operator">&#x27;.</span><span class="hljs-variable">solution</span><span class="hljs-punctuation">)</span><br>               <span class="hljs-operator">-</span> 将 <span class="hljs-built_in">N</span><span class="hljs-operator">&#x27;</span> 加入 <span class="hljs-variable">OPEN</span><br></code></pre></td></tr></table></figure>
+<h4 id="低层搜索">低层搜索</h4>
+<p>低层搜索为单个智能体规划满足约束的路径，通常使用 <strong>带约束的 A*</strong> 算法：</p>
+<figure class="highlight pgsql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br></pre></td><td class="code"><pre><code class="hljs pgsql">CBS-Low-<span class="hljs-keyword">Level</span>(agent a, constraints C, goal g):<br>  <span class="hljs-number">1.</span> 初始化：<br>     - <span class="hljs-keyword">OPEN</span> = &#123;<span class="hljs-keyword">start</span>&#125;<br>     - g(<span class="hljs-keyword">start</span>) = <span class="hljs-number">0</span><br>     - f(<span class="hljs-keyword">start</span>) = h(<span class="hljs-keyword">start</span>, goal)<br>  <br>  <span class="hljs-number">2.</span> <span class="hljs-keyword">while</span> <span class="hljs-keyword">OPEN</span> 非空:<br>       a. 取出 f 值最小的节点 n<br>       <br>       b. 若 n 是目标：返回路径<br>       <br>       c. <span class="hljs-keyword">for</span> <span class="hljs-keyword">each</span> 邻居 n<span class="hljs-string">&#x27;:</span><br><span class="hljs-string">           i. 计算新代价 g_new = g(n) + cost(n, n&#x27;</span>)<br>           <br>           ii. 检查约束：<br>               - 顶点约束：若 (a, n<span class="hljs-string">&#x27;, t) 在 C 中，跳过</span><br><span class="hljs-string">               - 边约束：若 (a, n, n&#x27;</span>, t<span class="hljs-number">-1</span>) 在 C 中，跳过<br>           <br>           iii. 若 g_new &lt; g(n<span class="hljs-string">&#x27;)：</span><br><span class="hljs-string">                - 更新 g(n&#x27;</span>) = g_new<br>                - 更新 f(n<span class="hljs-string">&#x27;) = g_new + h(n&#x27;</span>, goal)<br>                - 将 n<span class="hljs-string">&#x27; 加入 OPEN</span><br><span class="hljs-string">  </span><br><span class="hljs-string">  3. 返回失败（无可行路径）</span><br></code></pre></td></tr></table></figure>
+<h4 id="完整算法示例">完整算法示例</h4>
+<p>考虑一个简单的例子：2 个智能体在 2x3 网格中：</p>
+<figure class="highlight gcode"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><code class="hljs gcode">初始状态：<br>  a<span class="hljs-number">1</span> 在 <span class="hljs-comment">(0,0)</span>，目标 <span class="hljs-comment">(0,2)</span><br>  a<span class="hljs-number">2</span> 在 <span class="hljs-comment">(1,0)</span>，目标 <span class="hljs-comment">(1,2)</span><br><br>网格：<br>  a<span class="hljs-number">1</span>  .  <span class="hljs-name">g1</span><br>  a<span class="hljs-number">2</span>  .  <span class="hljs-name">g2</span><br></code></pre></td></tr></table></figure>
+<p><strong>第 1 轮（根节点）</strong>：</p>
+<ol>
+<li>低层搜索：
+<ul>
+<li>a1 的路径：(0,0) → (0,1) → (0,2)</li>
+<li>a2 的路径：(1,0) → (1,1) → (1,2)</li>
+</ul>
+</li>
+<li>高层验证：无冲突</li>
+<li>返回解</li>
+</ol>
+<p><strong>带冲突的例子</strong>：</p>
+<figure class="highlight gcode"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><code class="hljs gcode">初始状态：<br>  a<span class="hljs-number">1</span> 在 <span class="hljs-comment">(0,0)</span>，目标 <span class="hljs-comment">(1,1)</span><br>  a<span class="hljs-number">2</span> 在 <span class="hljs-comment">(1,0)</span>，目标 <span class="hljs-comment">(0,1)</span><br><br>无约束路径：<br>  a<span class="hljs-number">1</span>: <span class="hljs-comment">(0,0)</span> → <span class="hljs-comment">(0,1)</span> → <span class="hljs-comment">(1,1)</span><br>  a<span class="hljs-number">2</span>: <span class="hljs-comment">(1,0)</span> → <span class="hljs-comment">(0,0)</span> → <span class="hljs-comment">(0,1)</span>  ← 与 a<span class="hljs-number">1</span> 在 <span class="hljs-comment">(0,1)</span> 有顶点冲突<br></code></pre></td></tr></table></figure>
+<p><strong>CBS 处理过程</strong>：</p>
+<figure class="highlight gcode"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br></pre></td><td class="code"><pre><code class="hljs gcode">根节点 ROOT：<br>  - 约束：&#123;&#125;<br>  - 解：a<span class="hljs-number">1</span>: <span class="hljs-comment">(0,0)</span>→<span class="hljs-comment">(0,1)</span>→<span class="hljs-comment">(1,1)</span>, a<span class="hljs-number">2</span>: <span class="hljs-comment">(1,0)</span>→<span class="hljs-comment">(0,0)</span>→<span class="hljs-comment">(0,1)</span><br>  - 冲突：<span class="hljs-comment">(a1, a2, (0,1)</span>, t=<span class="hljs-number">1</span>)<br><br>分裂为两个子节点：<br><br>节点 A（约束 a<span class="hljs-number">1</span>）：<br>  - 约束：&#123;<span class="hljs-comment">(a1, (0,1)</span>, t=<span class="hljs-number">1</span>)&#125;<br>  - a<span class="hljs-number">1</span> 重规划：<span class="hljs-comment">(0,0)</span> → <span class="hljs-comment">(1,0)</span> → <span class="hljs-comment">(1,1)</span><br>  - 解：a<span class="hljs-number">1</span>: <span class="hljs-comment">(0,0)</span>→<span class="hljs-comment">(1,0)</span>→<span class="hljs-comment">(1,1)</span>, a<span class="hljs-number">2</span>: <span class="hljs-comment">(1,0)</span>→<span class="hljs-comment">(0,0)</span>→<span class="hljs-comment">(0,1)</span><br>  - 无冲突，返回此解<br><br>节点 B（约束 a<span class="hljs-number">2</span>）：<br>  - 约束：&#123;<span class="hljs-comment">(a2, (0,1)</span>, t=<span class="hljs-number">1</span>)&#125;<br>  - a<span class="hljs-number">2</span> 重规划：<span class="hljs-comment">(1,0)</span> → <span class="hljs-comment">(1,1)</span> → <span class="hljs-comment">(0,1)</span><br>  - 解：a<span class="hljs-number">1</span>: <span class="hljs-comment">(0,0)</span>→<span class="hljs-comment">(0,1)</span>→<span class="hljs-comment">(1,1)</span>, a<span class="hljs-number">2</span>: <span class="hljs-comment">(1,0)</span>→<span class="hljs-comment">(1,1)</span>→<span class="hljs-comment">(0,1)</span><br>  - 无冲突，也可作为解<br></code></pre></td></tr></table></figure>
+<hr>
+<h3 id="最优性证明">最优性证明</h3>
+<p>CBS 保证找到<strong>最优解</strong>（最小化 SIC）。</p>
+<p><strong>证明思路</strong>：</p>
+<ol>
+<li>
+<p><strong>完备性</strong>：CBS 最终会探索所有可能的约束组合。如果解存在，CBS 必然能找到。</p>
+</li>
+<li>
+<p><strong>最优性</strong>：</p>
+<ul>
+<li>OPEN 列表按 cost 排序，总是先扩展代价最小的节点</li>
+<li>当找到无冲突解时，该解的代价不超过 OPEN 中任何其他节点</li>
+<li>由于约束只增加不减少，子节点的代价不会比父节点小</li>
+<li>因此第一个找到的无冲突解就是最优解</li>
+</ul>
+</li>
+</ol>
+<p><strong>关键性质</strong>：</p>
+<ul>
+<li>每个冲突分裂为两个子节点，分别约束冲突的两个智能体</li>
+<li>这种分裂保证了至少有一个子节点能找到解（如果解存在）</li>
+<li>约束树的深度最多为冲突数量</li>
+</ul>
+<hr>
+<h3 id="时间复杂度分析">时间复杂度分析</h3>
+<p>设：</p>
+<ul>
+<li>$N$：节点数量</li>
+<li>$E$：边数量</li>
+<li>$k$：智能体数量</li>
+<li>$C$：冲突数量</li>
+</ul>
+<p><strong>低层搜索复杂度</strong>：$O(N \log N)$（单次 A*）</p>
+<p><strong>高层搜索复杂度</strong>：</p>
+<ul>
+<li>最坏情况：约束树大小为 $O(2^C)$</li>
+<li>每个节点需要 $O(k)$ 次低层搜索</li>
+<li>总复杂度：$O(k \cdot N \log N \cdot 2^C)$</li>
+</ul>
+<p><strong>空间复杂度</strong>：$O(k \cdot N \cdot 2^C)$</p>
+<blockquote>
+<p><strong>实际性能</strong>：CBS 在实践中通常比最坏情况好得多，因为：</p>
+<ol>
+<li>大多数冲突可以通过简单的约束解决</li>
+<li>好的启发式可以快速找到解</li>
+<li>许多约束树分支会提前终止</li>
+</ol>
+</blockquote>
+<hr>
+<h3 id="CBS-变种算法">CBS 变种算法</h3>
+<p>CBS 的成功催生了许多改进算法，以下是主要变种：</p>
+<p><img src="https://uipv4.zywvvd.com:33030/HexoFiles/vvd_image_files/202512101322289.png" srcset="/img/loading.gif" lazyload alt=""></p>
+<blockquote>
+<p>CBS 及其变种算法在 MAPF 集中式规划算法中的位置</p>
+</blockquote>
+<h4 id="ICBS（Improved-CBS）">ICBS（Improved CBS）</h4>
+<p><strong>改进点</strong>：优化冲突选择策略</p>
+<p><strong>核心思想</strong>：不是随机选择冲突，而是优先选择&quot;更容易解决&quot;的冲突。</p>
+<p><strong>冲突优先级</strong>：</p>
+<ol>
+<li>优先选择涉及路径较短的智能体的冲突</li>
+<li>优先选择发生时间较早的冲突</li>
+</ol>
+<p><strong>优势</strong>：减少约束树的规模，提高搜索效率</p>
+<h4 id="CBSH（CBS-with-Heuristics）">CBSH（CBS with Heuristics）</h4>
+<p><strong>改进点</strong>：为高层搜索添加启发式</p>
+<p><strong>核心思想</strong>：估计从当前节点到目标（无冲突解）的距离。</p>
+<p><strong>启发式函数</strong>：</p>
+<ul>
+<li>基于冲突图计算下界</li>
+<li>使用 CG（Conflict Graph）或 DG（Dependency Graph）</li>
+</ul>
+<p><strong>公式</strong>：<br>
+$$<br>
+h(N) = \text{MVC}(CG(N))<br>
+$$</p>
+<p>其中 $CG(N)$ 是节点 $N$ 的冲突图，MVC 是最小顶点覆盖。</p>
+<p><strong>优势</strong>：更好地指导搜索方向，减少不必要的节点扩展</p>
+<h4 id="ECBS（Enhanced-CBS）">ECBS（Enhanced CBS）</h4>
+<p><strong>改进点</strong>：允许次优解以换取速度</p>
+<p><strong>核心思想</strong>：引入<strong>有界次优性</strong>（Bounded Suboptimality）</p>
+<p><strong>机制</strong>：</p>
+<ul>
+<li>使用膨胀因子 $w \geq 1$</li>
+<li>低层搜索使用 $f = g + w \cdot h$</li>
+<li>高层搜索的 OPEN 列表也使用加权排序</li>
+</ul>
+<p><strong>保证</strong>：<br>
+$$<br>
+\text{cost(solution)} \leq w \cdot \text{cost(optimal)}<br>
+$$</p>
+<p><strong>优势</strong>：在需要快速响应的场景中，可以在可接受的误差范围内大幅提高速度</p>
+<h4 id="CBS-with-Disjoint-Splitting">CBS with Disjoint Splitting</h4>
+<p><strong>改进点</strong>：改进约束分裂方式</p>
+<p><strong>传统分裂</strong>：冲突 $(a_1, a_2, v, t)$ 分裂为：</p>
+<ul>
+<li>节点 A：约束 $(a_1, v, t)$</li>
+<li>节点 B：约束 $(a_2, v, t)$</li>
+</ul>
+<p><strong>Disjoint 分裂</strong>：</p>
+<ul>
+<li>节点 A：约束 $(a_1, v, t)$</li>
+<li>节点 B：约束 $a_2$ <strong>不能</strong>在时刻 $t$ 访问 $v$（正面约束 vs 负面约束）</li>
+</ul>
+<p><strong>优势</strong>：两个子节点的搜索空间互补，避免重复搜索</p>
+<h4 id="CBS-with-Bypasses">CBS with Bypasses</h4>
+<p><strong>改进点</strong>：在分裂前尝试&quot;绕行&quot;</p>
+<p><strong>核心思想</strong>：当检测到冲突时，先尝试为冲突智能体找到一条代价相同但避开冲突的&quot;绕行路径&quot;。</p>
+<p><strong>流程</strong>：</p>
+<ol>
+<li>检测到冲突 $(a_1, a_2, v, t)$</li>
+<li>尝试为 $a_1$ 找到绕行路径（代价相同，避开 $(v, t)$）</li>
+<li>若找到，更新解，不分裂节点</li>
+<li>若找不到，按传统方式分裂</li>
+</ol>
+<p><strong>优势</strong>：减少约束树的深度</p>
+<hr>
+<h3 id="算法对比">算法对比</h3>
+<table>
+<thead>
+<tr>
+<th>算法</th>
+<th style="text-align:center">最优性</th>
+<th style="text-align:center">速度</th>
+<th>适用场景</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>CBS</td>
+<td style="text-align:center">✓</td>
+<td style="text-align:center">中</td>
+<td>通用</td>
+</tr>
+<tr>
+<td>ICBS</td>
+<td style="text-align:center">✓</td>
+<td style="text-align:center">快</td>
+<td>冲突较多的场景</td>
+</tr>
+<tr>
+<td>CBSH</td>
+<td style="text-align:center">✓</td>
+<td style="text-align:center">快</td>
+<td>大规模问题</td>
+</tr>
+<tr>
+<td>ECBS</td>
+<td style="text-align:center">次优</td>
+<td style="text-align:center">很快</td>
+<td>实时系统</td>
+</tr>
+<tr>
+<td>CBS-Disjoint</td>
+<td style="text-align:center">✓</td>
+<td style="text-align:center">快</td>
+<td>冲突密集场景</td>
+</tr>
+<tr>
+<td>CBS-Bypass</td>
+<td style="text-align:center">✓</td>
+<td style="text-align:center">快</td>
+<td>存在等价路径的场景</td>
+</tr>
+</tbody>
+</table>
+<hr>
+<h3 id="代码实现">代码实现</h3>
+<h4 id="Python-伪代码实现">Python 伪代码实现</h4>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br><span class="line">84</span><br><span class="line">85</span><br><span class="line">86</span><br><span class="line">87</span><br><span class="line">88</span><br><span class="line">89</span><br><span class="line">90</span><br><span class="line">91</span><br><span class="line">92</span><br><span class="line">93</span><br><span class="line">94</span><br><span class="line">95</span><br><span class="line">96</span><br><span class="line">97</span><br><span class="line">98</span><br><span class="line">99</span><br><span class="line">100</span><br><span class="line">101</span><br><span class="line">102</span><br><span class="line">103</span><br><span class="line">104</span><br><span class="line">105</span><br><span class="line">106</span><br><span class="line">107</span><br><span class="line">108</span><br><span class="line">109</span><br><span class="line">110</span><br><span class="line">111</span><br><span class="line">112</span><br><span class="line">113</span><br><span class="line">114</span><br><span class="line">115</span><br><span class="line">116</span><br><span class="line">117</span><br><span class="line">118</span><br><span class="line">119</span><br><span class="line">120</span><br><span class="line">121</span><br><span class="line">122</span><br><span class="line">123</span><br><span class="line">124</span><br><span class="line">125</span><br><span class="line">126</span><br></pre></td><td class="code"><pre><code class="hljs python"><span class="hljs-keyword">from</span> heapq <span class="hljs-keyword">import</span> heappush, heappop<br><span class="hljs-keyword">from</span> typing <span class="hljs-keyword">import</span> <span class="hljs-type">Dict</span>, <span class="hljs-type">List</span>, <span class="hljs-type">Set</span>, <span class="hljs-type">Tuple</span><br><br><span class="hljs-keyword">class</span> <span class="hljs-title class_">Constraint</span>:<br>    <span class="hljs-string">&quot;&quot;&quot;约束类&quot;&quot;&quot;</span><br>    <span class="hljs-keyword">def</span> <span class="hljs-title function_">__init__</span>(<span class="hljs-params">self, agent: <span class="hljs-built_in">int</span>, location: <span class="hljs-type">Tuple</span>, time: <span class="hljs-built_in">int</span></span>):<br>        self.agent = agent<br>        self.location = location<br>        self.time = time<br><br><span class="hljs-keyword">class</span> <span class="hljs-title class_">Conflict</span>:<br>    <span class="hljs-string">&quot;&quot;&quot;冲突类&quot;&quot;&quot;</span><br>    <span class="hljs-keyword">def</span> <span class="hljs-title function_">__init__</span>(<span class="hljs-params">self, agent1: <span class="hljs-built_in">int</span>, agent2: <span class="hljs-built_in">int</span>, location: <span class="hljs-type">Tuple</span>, time: <span class="hljs-built_in">int</span></span>):<br>        self.agent1 = agent1<br>        self.agent2 = agent2<br>        self.location = location<br>        self.time = <span class="hljs-built_in">int</span><br><br><span class="hljs-keyword">class</span> <span class="hljs-title class_">CTNode</span>:<br>    <span class="hljs-string">&quot;&quot;&quot;约束树节点&quot;&quot;&quot;</span><br>    <span class="hljs-keyword">def</span> <span class="hljs-title function_">__init__</span>(<span class="hljs-params">self</span>):<br>        self.constraints: <span class="hljs-type">Set</span>[Constraint] = <span class="hljs-built_in">set</span>()<br>        self.solution: <span class="hljs-type">Dict</span>[<span class="hljs-built_in">int</span>, <span class="hljs-type">List</span>] = &#123;&#125;  <span class="hljs-comment"># agent -&gt; path</span><br>        self.cost: <span class="hljs-built_in">float</span> = <span class="hljs-built_in">float</span>(<span class="hljs-string">&#x27;inf&#x27;</span>)<br>    <br>    <span class="hljs-keyword">def</span> <span class="hljs-title function_">__lt__</span>(<span class="hljs-params">self, other</span>):<br>        <span class="hljs-keyword">return</span> self.cost &lt; other.cost<br><br><span class="hljs-keyword">def</span> <span class="hljs-title function_">cbs</span>(<span class="hljs-params">agents: <span class="hljs-type">List</span>, starts: <span class="hljs-type">Dict</span>, goals: <span class="hljs-type">Dict</span>, graph</span>) -&gt; <span class="hljs-type">Dict</span>:<br>    <span class="hljs-string">&quot;&quot;&quot;CBS 主算法&quot;&quot;&quot;</span><br>    <span class="hljs-comment"># 1. 初始化根节点</span><br>    root = CTNode()<br>    <span class="hljs-keyword">for</span> agent <span class="hljs-keyword">in</span> agents:<br>        root.solution[agent] = astar_constrained(<br>            starts[agent], goals[agent], graph, root.constraints, agent<br>        )<br>    root.cost = compute_sic(root.solution)<br>    <br>    <span class="hljs-comment"># 2. 初始化 OPEN 列表</span><br>    open_list = []<br>    heappush(open_list, root)<br>    <br>    <span class="hljs-comment"># 3. 主循环</span><br>    <span class="hljs-keyword">while</span> open_list:<br>        node = heappop(open_list)<br>        <br>        <span class="hljs-comment"># 4. 检测冲突</span><br>        conflict = find_first_conflict(node.solution)<br>        <br>        <span class="hljs-keyword">if</span> conflict <span class="hljs-keyword">is</span> <span class="hljs-literal">None</span>:<br>            <span class="hljs-keyword">return</span> node.solution  <span class="hljs-comment"># 找到无冲突解</span><br>        <br>        <span class="hljs-comment"># 5. 分裂节点</span><br>        <span class="hljs-keyword">for</span> agent <span class="hljs-keyword">in</span> [conflict.agent1, conflict.agent2]:<br>            <span class="hljs-comment"># 创建新约束</span><br>            new_constraint = Constraint(<br>                agent, conflict.location, conflict.time<br>            )<br>            <br>            <span class="hljs-comment"># 创建子节点</span><br>            child = CTNode()<br>            child.constraints = node.constraints | &#123;new_constraint&#125;<br>            child.solution = node.solution.copy()<br>            <br>            <span class="hljs-comment"># 重新规划受影响智能体的路径</span><br>            new_path = astar_constrained(<br>                starts[agent], goals[agent], graph, <br>                child.constraints, agent<br>            )<br>            <br>            <span class="hljs-keyword">if</span> new_path <span class="hljs-keyword">is</span> <span class="hljs-keyword">not</span> <span class="hljs-literal">None</span>:<br>                child.solution[agent] = new_path<br>                child.cost = compute_sic(child.solution)<br>                heappush(open_list, child)<br>    <br>    <span class="hljs-keyword">return</span> <span class="hljs-literal">None</span>  <span class="hljs-comment"># 无解</span><br><br><span class="hljs-keyword">def</span> <span class="hljs-title function_">astar_constrained</span>(<span class="hljs-params">start, goal, graph, constraints, agent</span>):<br>    <span class="hljs-string">&quot;&quot;&quot;带约束的 A* 搜索&quot;&quot;&quot;</span><br>    open_list = [(heuristic(start, goal), <span class="hljs-number">0</span>, start, [])]<br>    closed = <span class="hljs-built_in">set</span>()<br>    <br>    <span class="hljs-keyword">while</span> open_list:<br>        f, g, current, path = heappop(open_list)<br>        <br>        <span class="hljs-keyword">if</span> current == goal:<br>            <span class="hljs-keyword">return</span> path + [current]<br>        <br>        state = (current, <span class="hljs-built_in">len</span>(path))<br>        <span class="hljs-keyword">if</span> state <span class="hljs-keyword">in</span> closed:<br>            <span class="hljs-keyword">continue</span><br>        closed.add(state)<br>        <br>        <span class="hljs-keyword">for</span> neighbor <span class="hljs-keyword">in</span> graph.neighbors(current):<br>            <span class="hljs-comment"># 检查约束</span><br>            <span class="hljs-keyword">if</span> is_constrained(agent, neighbor, <span class="hljs-built_in">len</span>(path) + <span class="hljs-number">1</span>, constraints):<br>                <span class="hljs-keyword">continue</span><br>            <br>            new_g = g + graph.cost(current, neighbor)<br>            new_f = new_g + heuristic(neighbor, goal)<br>            heappush(open_list, (new_f, new_g, neighbor, path + [current]))<br>    <br>    <span class="hljs-keyword">return</span> <span class="hljs-literal">None</span><br><br><span class="hljs-keyword">def</span> <span class="hljs-title function_">find_first_conflict</span>(<span class="hljs-params">solution: <span class="hljs-type">Dict</span></span>) -&gt; Conflict:<br>    <span class="hljs-string">&quot;&quot;&quot;检测第一个冲突&quot;&quot;&quot;</span><br>    <span class="hljs-comment"># 获取最大路径长度</span><br>    max_time = <span class="hljs-built_in">max</span>(<span class="hljs-built_in">len</span>(path) <span class="hljs-keyword">for</span> path <span class="hljs-keyword">in</span> solution.values())<br>    <br>    <span class="hljs-keyword">for</span> t <span class="hljs-keyword">in</span> <span class="hljs-built_in">range</span>(max_time):<br>        <span class="hljs-comment"># 检测顶点冲突</span><br>        positions = &#123;&#125;<br>        <span class="hljs-keyword">for</span> agent, path <span class="hljs-keyword">in</span> solution.items():<br>            pos = path[<span class="hljs-built_in">min</span>(t, <span class="hljs-built_in">len</span>(path) - <span class="hljs-number">1</span>)]  <span class="hljs-comment"># 终点等待</span><br>            <span class="hljs-keyword">if</span> pos <span class="hljs-keyword">in</span> positions:<br>                <span class="hljs-keyword">return</span> Conflict(agent, positions[pos], pos, t)<br>            positions[pos] = agent<br>        <br>        <span class="hljs-comment"># 检测边冲突</span><br>        <span class="hljs-comment"># ... (略)</span><br>    <br>    <span class="hljs-keyword">return</span> <span class="hljs-literal">None</span><br><br><span class="hljs-keyword">def</span> <span class="hljs-title function_">compute_sic</span>(<span class="hljs-params">solution: <span class="hljs-type">Dict</span></span>) -&gt; <span class="hljs-built_in">float</span>:<br>    <span class="hljs-string">&quot;&quot;&quot;计算 Sum of Individual Costs&quot;&quot;&quot;</span><br>    <span class="hljs-keyword">return</span> <span class="hljs-built_in">sum</span>(<span class="hljs-built_in">len</span>(path) - <span class="hljs-number">1</span> <span class="hljs-keyword">for</span> path <span class="hljs-keyword">in</span> solution.values())<br></code></pre></td></tr></table></figure>
+<hr>
+<h3 id="实际应用">实际应用</h3>
+<p>CBS 算法在以下场景中有广泛应用：</p>
+<ol>
+<li><strong>自动化仓库</strong>：多台 AGV（自动导引车）协同搬运货物</li>
+<li><strong>机器人导航</strong>：多机器人在同一环境中协同工作</li>
+<li><strong>无人机编队</strong>：多架无人机避免碰撞</li>
+<li><strong>游戏 AI</strong>：多角色 NPC 协同移动</li>
+<li><strong>交通调度</strong>：多车辆在交叉路口协调通行</li>
+</ol>
+<hr>
+<h3 id="与其他-MAPF-算法的对比">与其他 MAPF 算法的对比</h3>
+<p><img src="https://uipv4.zywvvd.com:33030/HexoFiles/vvd_image_files/202512101313202.png" srcset="/img/loading.gif" lazyload alt=""></p>
+<blockquote>
+<p>集中式 MAPF 算法的分类与 CBS 在其中的位置</p>
+</blockquote>
+<table>
+<thead>
+<tr>
+<th>算法</th>
+<th>类型</th>
+<th style="text-align:center">最优性</th>
+<th>复杂度</th>
+<th>适用规模</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>A* + OD</td>
+<td>集中式</td>
+<td style="text-align:center">✓</td>
+<td>指数级</td>
+<td>小规模</td>
+</tr>
+<tr>
+<td><strong>CBS</strong></td>
+<td>集中式</td>
+<td style="text-align:center">✓</td>
+<td>指数级</td>
+<td>中等规模</td>
+</tr>
+<tr>
+<td>ICTS</td>
+<td>集中式</td>
+<td style="text-align:center">✓</td>
+<td>指数级</td>
+<td>中等规模</td>
+</tr>
+<tr>
+<td>M*</td>
+<td>集中式</td>
+<td style="text-align:center">✓</td>
+<td>指数级</td>
+<td>小规模</td>
+</tr>
+<tr>
+<td>优先级规划</td>
+<td>分解式</td>
+<td style="text-align:center">✗</td>
+<td>多项式</td>
+<td>大规模</td>
+</tr>
+<tr>
+<td>ORCA</td>
+<td>分布式</td>
+<td style="text-align:center">✗</td>
+<td>多项式</td>
+<td>大规模</td>
+</tr>
+</tbody>
+</table>
+<hr>
+<h3 id="参考资料">参考资料</h3>
+<h4 id="经典论文">经典论文</h4>
+<ul>
+<li><a target="_blank" rel="noopener" href="https://www.aaai.org/ocs/index.php/AAAI/AAAI12/paper/view/5059">CBS: Conflict-Based Search For Optimal Multi-Agent Pathfinding</a> - 原始 CBS 论文</li>
+<li><a target="_blank" rel="noopener" href="https://www.aaai.org/ocs/index.php/SOCS/SOCS16/paper/view/12961">Improved CBS (ICBS)</a> - 改进的 CBS</li>
+<li><a target="_blank" rel="noopener" href="https://www.aaai.org/ocs/index.php/ICAPS/ICAPS18/paper/view/17739">CBSH: CBS with Heuristics</a> - 带启发式的 CBS</li>
+<li><a target="_blank" rel="noopener" href="https://www.aaai.org/ocs/index.php/AAAI/AAAI14/paper/view/8662">ECBS: Bounded Suboptimal CBS</a> - 有界次优 CBS</li>
+</ul>
+<h4 id="代码仓库">代码仓库</h4>
+<ul>
+<li><a target="_blank" rel="noopener" href="https://github.com/whoenig/libMultiRobotPlanning">libMultiRobotPlanning</a>：C++ 实现的 MAPF 算法库</li>
+<li><a target="_blank" rel="noopener" href="https://github.com/zhm-real/PathPlanning">Python MAPF</a>：Python 实现的路径规划算法</li>
+</ul>
+<h4 id="相关笔记">相关笔记</h4>
+<ul>
+<li><a href="/notes/study/algorithm/graph/mapf-summary/mapf-summary/">多机器人路径规划问题(MAPF)简介</a></li>
+<li><a href="/notes/study/algorithm/graph/astar-variants/astar-variants/">A* 算法及其变种详解</a></li>
+<li><a href="/notes/study/algorithm/graph/astar/astar/">A-Star 算法详解</a></li>
+</ul>
+<link rel="stylesheet" href="/css/spoiler.css" type="text/css"><script src="/js/spoiler.js" type="text/javascript" async></script>
+                
+
+
+				<br /><br />
+				<blockquote>
+					<p>文章链接：<br /> 
+					<a style="font-size: 0.85rem" target="_blank" rel="noopener" href="https://www.zywvvd.com/notes/study/algorithm/graph/cbs-algorithm/cbs-algorithm/">https://www.zywvvd.com/notes/study/algorithm/graph/cbs-algorithm/cbs-algorithm/</a>
+					</p>
+				</blockquote>
+
+
+              </div>
+            
+            <hr/>
+			
+			<!-- 添加打赏模块 -->
+			<div class="reward-container">
+				
+					<button id="rewardBtn" class="reward-btn">
+						 
+							❤ 打赏
+							
+					</button>
+					<p class="tea">“觉得不错的话，给点打赏吧 ୧(๑•̀⌄•́๑)૭”</p>
+					<div id="rewardImgContainer" class="reward-img-container">
+						<div class="singleImgContainer">
+							<img id="wechatImg" class="reward-img" src="https://uipv4.zywvvd.com:33030/HexoFiles/vvd_pc_upload/wechatpay.png" srcset="/img/loading.gif" lazyload alt="微信二维码">
+							<p class="wechatPay">微信支付</p>
+						</div>
+						<div class="singleImgContainer">
+							<img id="alipayImg" class="reward-img" src="https://uipv4.zywvvd.com:33030/HexoFiles/vvd_pc_upload/alipay.png" srcset="/img/loading.gif" lazyload alt="支付宝二维码">
+							<p class="aliPay">支付宝支付</p>
+						</div>
+					</div>
+				
+			</div>
+			
+            <div>
+              <div class="post-metas my-3">
+  
+    <div class="post-meta mr-3 d-flex align-items-center">
+      <i class="iconfont icon-category"></i>
+      
+
+<span class="category-chains">
+  
+  
+    
+      <span class="category-chain">
+        
+  <a href="/categories/Algorithm/" class="category-chain-item">Algorithm</a>
+  
+  
+    <span>></span>
+    
+  <a href="/categories/Algorithm/PathPlan/" class="category-chain-item">PathPlan</a>
+  
+  
+
+  
+
+      </span>
+    
+  
+</span>
+
+    </div>
+  
+  
+    <div class="post-meta">
+      <i class="iconfont icon-tags"></i>
+      
+        <a href="/tags/Algorithm/" class="print-no-link">#Algorithm</a>
+      
+        <a href="/tags/PathPlan/" class="print-no-link">#PathPlan</a>
+      
+        <a href="/tags/MAPF/" class="print-no-link">#MAPF</a>
+      
+    </div>
+  
+</div>
+
+
+              
+  
+
+  <div class="license-box my-3">
+    <div class="license-title">
+      <div>CBS(Conflict-Based Search)算法详解</div>
+      <div>https://www.zywvvd.com/notes/study/algorithm/graph/cbs-algorithm/cbs-algorithm/</div>
+    </div>
+    <div class="license-meta">
+      
+        <div class="license-meta-item">
+          <div>作者</div>
+          <div>Yiwei Zhang</div>
+        </div>
+      
+      
+        <div class="license-meta-item license-meta-date">
+          <div>发布于</div>
+          <div>2026年3月10日</div>
+        </div>
+      
+      
+      
+        <div class="license-meta-item">
+          <div>许可协议</div>
+          <div>
+            
+              
+              
+                <a class="print-no-link" target="_blank" href="https://creativecommons.org/licenses/by/4.0/">
+                  <span class="hint--top hint--rounded" aria-label="BY - 署名">
+                    <i class="iconfont icon-by"></i>
+                  </span>
+                </a>
+              
+            
+          </div>
+        </div>
+      
+    </div>
+    <div class="license-icon iconfont"></div>
+  </div>
+
+
+
+              
+                <div class="post-prevnext my-3">
+                  <article class="post-prev col-6">
+                    
+                    
+                  </article>
+                  <article class="post-next col-6">
+                    
+                    
+                      <a href="/notes/study/algorithm/graph/astar-variants/astar-variants/" title="A* 算法及其变种详解">
+                        <span class="hidden-mobile">A* 算法及其变种详解</span>
+                        <span class="visible-mobile">下一篇</span>
+                        <i class="iconfont icon-arrowright"></i>
+                      </a>
+                    
+                  </article>
+                </div>
+              
+            </div>
+
+            
+  
+  
+    <article id="comments" lazyload>
+      
+  <div id="waline"></div>
+  <script type="text/javascript">
+    Fluid.utils.loadComments('#waline', function() {
+      Fluid.utils.createCssLink('https://lib.baomitu.com/waline/2.14.8/waline.min.css')
+      Fluid.utils.createScript('https://lib.baomitu.com/waline/2.14.8/waline.min.js', function() {
+        var options = Object.assign(
+          {"serverURL":"https://uipv4.zywvvd.com:33033/","path":"window.location.pathname","meta":["nick","mail","link"],"requiredMeta":["nick"],"lang":"zh-CN","emoji":["https://cdn.jsdelivr.net/gh/walinejs/emojis/weibo"],"dark":"html[data-user-color-scheme=\"dark\"]","wordLimit":0,"pageSize":10,"reaction":true,"locale":{"placeholder":"山高路远，常来玩吖 ~","reactionTitle":null}},
+          {
+            el: '#waline',
+            path: window.location.pathname
+          }
+        )
+        Waline.init(options);
+        Fluid.utils.waitElementVisible('#waline .vcontent', () => {
+          var imgSelector = '#waline .vcontent img:not(.vemoji)';
+          Fluid.plugins.imageCaption(imgSelector);
+          Fluid.plugins.fancyBox(imgSelector);
+        })
+      });
+    });
+  </script>
+  <noscript>Please enable JavaScript to view the comments</noscript>
+
+
+    </article>
+  
+
+
+          </article>
+        </div>
+      </div>
+    </div>
+
+    <div class="side-col d-none d-lg-block col-lg-2">
+      
+  <aside class="sidebar" style="margin-left: -1rem">
+    <div id="toc">
+  <p class="toc-header">
+    <i class="iconfont icon-list"></i>
+    <span>目录</span>
+  </p>
+  <div class="toc-body" id="toc-body"></div>
+</div>
+
+
+
+  </aside>
+
+
+    </div>
+  </div>
+</div>
+
+
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+  
+  
+
+
+
+
+
+  <script>
+  Fluid.utils.createScript('https://lib.baomitu.com/mermaid/8.14.0/mermaid.min.js', function() {
+    mermaid.initialize({"theme":"default"});
+
+    Fluid.utils.listenDOMLoaded(function() {
+      Fluid.events.registerRefreshCallback(function() {
+        if ('mermaid' in window) {
+          mermaid.init();
+        }
+      });
+    });
+  });
+</script>
+
+
+
+
+
+
+    
+
+    
+      <a id="scroll-top-button" aria-label="TOP" href="#" role="button">
+        <i class="iconfont icon-xiangshangjiantou" aria-hidden="true"></i>
+      </a>
+    
+
+    
+      <div class="modal fade" id="modalSearch" tabindex="-1" role="dialog" aria-labelledby="ModalLabel"
+     aria-hidden="true">
+  <div class="modal-dialog modal-dialog-scrollable modal-lg" role="document">
+    <div class="modal-content">
+      <div class="modal-header text-center">
+        <h4 class="modal-title w-100 font-weight-bold">搜索</h4>
+        <button type="button" id="local-search-close" class="close" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body mx-3">
+        <div class="md-form mb-5">
+          <input type="text" id="local-search-input" class="form-control validate">
+          <label data-error="x" data-success="v" for="local-search-input">关键词</label>
+        </div>
+        <div class="list-group" id="local-search-result"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+    
+
+    
+  </main>
+
+  <footer>
+    <div class="footer-inner">
+  
+    <div class="footer-content">
+       <div class="vvd_footer" style="font-size: 0.85rem;"> <a href="https://hexo.io" target="_blank" rel="nofollow noopener" color="#d7d8d9" data-umami-event="Footer-Hexo"><span class="umami--click--Footer-Hexo">Hexo</span></a> <i class="iconfont icon-love"></i> <a href="https://github.com/fluid-dev/hexo-theme-fluid" target="_blank" rel="nofollow noopener" data-umami-event="Footer-Fluid"><span class="umami--click--Footer-Fluid">Fluid</span></a> <i class="iconfont icon-love"></i> <a href="https://uipv4.zywvvd.com:33039/share/0zx3o21oIpZTZqwC/%E5%8F%88%E8%A7%81%E8%8B%8D%E5%B2%9A" target="_blank" rel="nofollow noopener" data-umami-event="Footer-Umami"><span class="umami--click--Footer-Umami">Umami</span></a> <div style="font-size: 0.85rem;"> <span id="timeDate">载入天数...</span> <span id="times">载入时分秒...</span> <script src="/vvd_js/duration.js"></script> </div> <div style="font-size: 0.85rem;"> <span> 总访问量 <span style="color: #d7d8d9;" id="PVstatic">0</span> 次&nbsp</span> <span> 总访客数 <span style="color: #d7d8d9;" id="UVstatic">0</span> 人&nbsp</span> <span> 当前在线 <span style="color: #d7d8d9;" id="ACTstatic">0</span> 人&nbsp</span> <script src="https://uipv4.zywvvd.com:33037/statistics" defer></script> </div> <div> <span> Copyright © 2020-2025. All Rights Reserved.</span> </div> <div style="font-size: 0.88rem;"> <a target="_blank" rel="noopener" href="https://developer.hitokoto.cn/" id="hitokoto_text"><span style="color: #d7d8d9;"  id="hitokoto"></span></a> <script src="https://uipv4.zywvvd.com:33044/?encode=js&select=%23hitokoto" defer></script> </div> <a href="https://icp.gov.moe/?keyword=20230615" target="_blank">萌ICP备20230615号</a>
+
+
+</div> 
+    </div>
+  
+  
+  
+  
+</div>
+
+  </footer>
+
+  <!-- Scripts -->
+  
+  <script  src="https://lib.baomitu.com/nprogress/0.2.0/nprogress.min.js" ></script>
+  <link  rel="stylesheet" href="https://lib.baomitu.com/nprogress/0.2.0/nprogress.min.css" />
+
+  <script>
+    NProgress.configure({"showSpinner":false,"trickleSpeed":100})
+    NProgress.start()
+    window.addEventListener('load', function() {
+      NProgress.done();
+    })
+  </script>
+
+
+<script  src="https://lib.baomitu.com/jquery/3.6.0/jquery.min.js" ></script>
+<script  src="https://lib.baomitu.com/twitter-bootstrap/4.6.1/js/bootstrap.min.js" ></script>
+<script  src="/js/events.js" ></script>
+<script  src="/js/plugins.js" ></script>
+
+
+
+
+
+  
+    <script  src="/js/img-lazyload.js" ></script>
+  
+
+
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/tocbot/4.18.2/tocbot.min.js', function() {
+    var toc = jQuery('#toc');
+    if (toc.length === 0 || !window.tocbot) { return; }
+    var boardCtn = jQuery('#board-ctn');
+    var boardTop = boardCtn.offset().top;
+
+    window.tocbot.init(Object.assign({
+      tocSelector     : '#toc-body',
+      contentSelector : '.markdown-body',
+      linkClass       : 'tocbot-link',
+      activeLinkClass : 'tocbot-active-link',
+      listClass       : 'tocbot-list',
+      isCollapsedClass: 'tocbot-is-collapsed',
+      collapsibleClass: 'tocbot-is-collapsible',
+      scrollSmooth    : true,
+      includeTitleTags: true,
+      headingsOffset  : -boardTop,
+    }, CONFIG.toc));
+    if (toc.find('.toc-list-item').length > 0) {
+      toc.css('visibility', 'visible');
+    }
+
+    Fluid.events.registerRefreshCallback(function() {
+      if ('tocbot' in window) {
+        tocbot.refresh();
+        var toc = jQuery('#toc');
+        if (toc.length === 0 || !tocbot) {
+          return;
+        }
+        if (toc.find('.toc-list-item').length > 0) {
+          toc.css('visibility', 'visible');
+        }
+      }
+    });
+  });
+</script>
+
+
+  <script src=https://lib.baomitu.com/clipboard.js/2.0.10/clipboard.min.js></script>
+
+  <script>Fluid.plugins.codeWidget();</script>
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/anchor-js/4.3.1/anchor.min.js', function() {
+    window.anchors.options = {
+      placement: CONFIG.anchorjs.placement,
+      visible  : CONFIG.anchorjs.visible
+    };
+    if (CONFIG.anchorjs.icon) {
+      window.anchors.options.icon = CONFIG.anchorjs.icon;
+    }
+    var el = (CONFIG.anchorjs.element || 'h1,h2,h3,h4,h5,h6').split(',');
+    var res = [];
+    for (var item of el) {
+      res.push('.markdown-body > ' + item.trim());
+    }
+    if (CONFIG.anchorjs.placement === 'left') {
+      window.anchors.options.class = 'anchorjs-link-left';
+    }
+    window.anchors.add(res.join(', '));
+
+    Fluid.events.registerRefreshCallback(function() {
+      if ('anchors' in window) {
+        anchors.removeAll();
+        var el = (CONFIG.anchorjs.element || 'h1,h2,h3,h4,h5,h6').split(',');
+        var res = [];
+        for (var item of el) {
+          res.push('.markdown-body > ' + item.trim());
+        }
+        if (CONFIG.anchorjs.placement === 'left') {
+          anchors.options.class = 'anchorjs-link-left';
+        }
+        anchors.add(res.join(', '));
+      }
+    });
+  });
+</script>
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/fancybox/3.5.7/jquery.fancybox.min.js', function() {
+    Fluid.plugins.fancyBox();
+  });
+</script>
+
+
+  <script>Fluid.plugins.imageCaption();</script>
+
+  
+      <script>
+        if (!window.MathJax) {
+          window.MathJax = {
+            tex    : {
+              inlineMath: { '[+]': [['$', '$']] }
+            },
+            options: {
+              renderActions: {
+                insertedScript: [200, () => {
+                  document.querySelectorAll('mjx-container').forEach(node => {
+                    let target = node.parentNode;
+                    if (target.nodeName.toLowerCase() === 'li') {
+                      target.parentNode.classList.add('has-jax');
+                    }
+                  });
+                }, '', false]
+              }
+            }
+          };
+        } else {
+          MathJax.startup.document.state(0);
+          MathJax.texReset();
+          MathJax.typeset();
+          MathJax.typesetPromise();
+        }
+
+        Fluid.events.registerRefreshCallback(function() {
+          if ('MathJax' in window && MathJax.startup.document && typeof MathJax.startup.document.state === 'function') {
+            MathJax.startup.document.state(0);
+            MathJax.texReset();
+            MathJax.typeset();
+            MathJax.typesetPromise();
+          }
+        });
+      </script>
+    
+
+  <script  src="https://lib.baomitu.com/mathjax/3.2.1/es5/tex-mml-chtml.js" ></script>
+
+  <script defer src="/js/leancloud.js" ></script>
+
+  <script  src="/js/local-search.js" ></script>
+
+
+
+
+  
+<script src="//cdn.jsdelivr.net/npm/aplayer/dist/APlayer.min.js"></script>
+<script src="//cdn.jsdelivr.net/gh/metowolf/MetingJS@1.2/dist/Meting.min.js"></script>
+<script src="/js/reward.js"></script>
+
+
+
+<!-- 主题的启动项，将它保持在最底部 -->
+<!-- the boot of the theme, keep it at the bottom -->
+<script  src="/js/boot.js" ></script>
+
+
+  <script type="text/javascript">
+    /*窗口监视*/
+    var originalTitle = document.title;
+    window.onblur = function(){document.title = "明眸如初"};
+    window.onfocus = function(){document.title = originalTitle};
+  </script>
+
+
+  <div id="tooltip-rightmenu" class="tooltip-rightmenu">如需原始右键菜单请按下 <strong>Ctrl+右键</strong></div>
+
+<div id="rightmenu-wrapper" style="">
+  <ul class="list-v rightmenu" id="rightmenu-content">
+	  <li class="navigation menuNavigation-Content">
+		<a class="nav icon-only fix-cursor-default" onclick="history.back()"><i class="iconfont icon-zuojiantou1"></i></a>
+		<a class="nav icon-only fix-cursor-default" onclick="history.forward()"><i class="iconfont icon-youjiantou1"></i></a>
+		<a class="nav icon-only fix-cursor-default" onclick="window.location.reload()"><i class="iconfont icon-shuaxin"></i></a>
+		<a  aria-label="TOP" href="#" role="button"><i class="iconfont icon-xiangshang"></i></a>
+	  </li>
+
+		<hr class="menuLoad-Content" style="display: block;">
+	  <li class="menuLoad-Content" style="display: block;">
+		<a class="vlts-menu fix-cursor-default" target="_self" href="javascript:;" data-toggle="modal" data-target="#modalSearch" aria-label="Search">
+		  <span>
+			  <i class="iconfont icon-sousuo1 rightmenu-icon"></i>
+			  站内搜索
+		  </span>
+		</a>
+	  </li>
+
+	  <li class="menuLoad-Content" style="display: block;">
+		<a class="vlts-menu fix-cursor-default"  href="https://www.zywvvd.com/messagebd/" data-group="link">
+		  <span>
+			  <i class="iconfont icon-yangshi_icon_tongyong_chat rightmenu-icon">  </i>
+			   留言吐槽 
+		   </span>
+		</a>
+	  </li>
+
+
+	  <li class="menuLoad-Content" style="display: block;">
+		<a class="vlts-menu fix-cursor-default" id="help" target="_blank" rel="noopener" href="https://www.foreverblog.cn/go.html" data-group="link">
+		<span>
+			  <i class="iconfont icon-a-BlackHole rightmenu-icon"></i>
+			  虫洞穿梭
+		  </span>
+		</a>
+	  </li>
+
+	<a id="scroll-top-button" aria-label="TOP" href="#" role="button" style="bottom: 20px; right: 52.6364px;">
+        <i class="iconfont icon-xiangshangjiantou" aria-hidden="true"></i>
+      </a>
+
+	<hr class="menuLoad-Content" style="display: block;">
+	
+	  <li class="menuLoad-Content" style="display: block;">
+		<a class="vlts-menu fix-cursor-default" id="destroy-airplane" target="_blank" rel="noopener"  data-group="link">
+		<span>
+			  <i class="iconfont icon-feiji rightmenu-icon"></i>
+			  破坏小飞机
+		  </span>
+		</a>
+	  </li>
+  </ul>
+</div>
+
+<script>
+	var ua = navigator.userAgent;
+	var ipad = ua.match(/(iPad).*OS\s([\d_]+)/),
+		isIphone = !ipad && ua.match(/(iPhone\sOS)\s([\d_]+)/),
+		isAndroid = ua.match(/(Android)\s+([\d.]+)/),
+		isMobile = isIphone || isAndroid;
+
+	if(!isMobile) {
+		// 为按钮添加事件处理器
+		document.getElementById('destroy-airplane').onclick = function() {
+		  console.log('飞机起飞！');
+		  // 定义要执行的JavaScript代码
+		var KICKASSVERSION='2.0';
+		var s = document.createElement('script');
+		s.type='text/javascript';
+		document.body.appendChild(s);
+		s.src='https://uipv4.zywvvd.com:33030/HexoFiles/js/games/airplane/airplane.js';
+		void(0);
+		};
+	}
+</script>
+
+
+
+
+
+<link href="/css/custom.css"type="text/css"rel="stylesheet"/>
+<script src="/vvd_js/right_menu.js" type="text/javascript"></script>
+<link href="/css/right_menu.css"type="text/css"rel="stylesheet"/>
+<script src="/vvd_js/go.js"></script>
+
+
+  <noscript>
+    <div class="noscript-warning">博客在允许 JavaScript 运行的环境下浏览效果更佳</div>
+  </noscript>
+<script src="/live2dw/lib/L2Dwidget.min.js?094cbace49a39548bed64abff5988b05"></script><script>L2Dwidget.init({"pluginRootPath":"live2dw/","pluginJsPath":"lib/","pluginModelPath":"assets/","tagMode":false,"log":false,"model":{"jsonPath":"/live2dw/assets/z16.model.json"},"display":{"position":"left","width":200,"height":400},"mobile":{"show":false},"react":{"opacity":0.9}});</script></body>
+</html>
