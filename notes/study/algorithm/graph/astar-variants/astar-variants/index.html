@@ -1,0 +1,2445 @@
+
+
+<!DOCTYPE html>
+<html lang="zh-CN" data-default-color-scheme=auto>
+
+
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="baidu-site-verification" content="codeva-rLWafCJGYc" />
+  <link rel="apple-touch-icon" sizes="76x76" href="/image/avatar.png">
+  <link rel="icon" href="/image/avatar.png">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, shrink-to-fit=no">
+  <meta http-equiv="x-ua-compatible" content="ie=edge">
+  
+  <meta name="theme-color" content="#2f4154">
+  <meta name="author" content="Yiwei Zhang">
+  <meta name="keywords" content="人工智能, 深度学习, 个人博客, 机器学习">
+  
+    <meta name="description" content="A*算法是路径规划领域的经典算法，在实际应用中衍生出多种变种以适应不同场景。本文系统梳理 A* 算法及其主要变种，包括适用于动态环境的 D*、D* Lite、LPA*，以及实时规划的 ARA*、LRTA*、RTAA* 等。">
+<meta property="og:type" content="article">
+<meta property="og:title" content="A* 算法及其变种详解">
+<meta property="og:url" content="https://www.zywvvd.com/notes/study/algorithm/graph/astar-variants/astar-variants/index.html">
+<meta property="og:site_name" content="又见苍岚">
+<meta property="og:description" content="A*算法是路径规划领域的经典算法，在实际应用中衍生出多种变种以适应不同场景。本文系统梳理 A* 算法及其主要变种，包括适用于动态环境的 D*、D* Lite、LPA*，以及实时规划的 ARA*、LRTA*、RTAA* 等。">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="https://uipv4.zywvvd.com:33030/HexoFiles/vvd_image_files/202603101409676.gif">
+<meta property="og:image" content="https://uipv4.zywvvd.com:33030/HexoFiles/vvd_image_files/Bi-Astar.gif">
+<meta property="og:image" content="https://uipv4.zywvvd.com:33030/HexoFiles/vvd_image_files/ara_star.gif">
+<meta property="og:image" content="https://uipv4.zywvvd.com:33030/HexoFiles/vvd_image_files/lrta_star.gif">
+<meta property="og:image" content="https://uipv4.zywvvd.com:33030/HexoFiles/vvd_image_files/rtaa_star.gif">
+<meta property="og:image" content="https://uipv4.zywvvd.com:33030/HexoFiles/vvd_image_files/lpastar.gif">
+<meta property="og:image" content="https://uipv4.zywvvd.com:33030/HexoFiles/vvd_image_files/d_star.gif">
+<meta property="og:image" content="https://uipv4.zywvvd.com:33030/HexoFiles/vvd_image_files/adstar_small.gif">
+<meta property="article:published_time" content="2026-03-10T04:00:00.000Z">
+<meta property="article:modified_time" content="2026-03-10T07:12:18.274Z">
+<meta property="article:author" content="Yiwei Zhang">
+<meta property="article:tag" content="Algorithm">
+<meta property="article:tag" content="PathPlan">
+<meta property="article:tag" content="A*">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:image" content="https://uipv4.zywvvd.com:33030/HexoFiles/vvd_image_files/202603101409676.gif">
+  
+  
+  
+  <title>A* 算法及其变种详解 - 又见苍岚</title>
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/twitter-bootstrap/4.6.1/css/bootstrap.min.css" />
+
+
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/github-markdown-css/4.0.0/github-markdown.min.css" />
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/hint.css/2.7.0/hint.min.css" />
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/fancybox/3.5.7/jquery.fancybox.min.css" />
+
+
+
+<!-- 主题依赖的图标库，不要自行修改 -->
+<!-- Do not modify the link that theme dependent icons -->
+
+<link rel="stylesheet" href="//at.alicdn.com/t/font_1749284_hj8rtnfg7um.css">
+
+
+
+<link rel="stylesheet" href="//at.alicdn.com/t/font_1736178_lbnruvf0jn.css">
+
+
+<link  rel="stylesheet" href="/css/main.css" />
+
+
+  <link id="highlight-css" rel="stylesheet" href="/css/highlight.css" />
+  
+    <link id="highlight-css-dark" rel="stylesheet" href="/css/highlight-dark.css" />
+  
+
+
+
+  
+<link rel="stylesheet" href="/css/custom.css">
+<link rel="stylesheet" href="/css/reward.css">
+<link rel="stylesheet" href="//cdn.jsdelivr.net/npm/aplayer/dist/APlayer.min.css">
+
+
+
+  <script id="fluid-configs">
+    var Fluid = window.Fluid || {};
+    Fluid.ctx = Object.assign({}, Fluid.ctx)
+    var CONFIG = {"hostname":"www.zywvvd.com","root":"/","version":"1.9.7","typing":{"enable":true,"typeSpeed":90,"cursorChar":"_","loop":false,"scope":["home"]},"anchorjs":{"enable":true,"element":"h1,h2,h3,h4,h5,h6","placement":"left","visible":"hover","icon":""},"progressbar":{"enable":true,"height_px":3,"color":"#29d","options":{"showSpinner":false,"trickleSpeed":100}},"code_language":{"enable":true,"default":"TEXT"},"copy_btn":true,"image_caption":{"enable":true},"image_zoom":{"enable":true,"img_url_replace":["",""]},"toc":{"enable":true,"placement":"right","headingSelector":"h1,h2,h3,h4,h5,h6","collapseDepth":0},"lazyload":{"enable":true,"loading_img":"/img/loading.gif","onlypost":false,"offset_factor":2},"web_analytics":{"enable":true,"follow_dnt":true,"baidu":null,"google":null,"tencent":{"sid":null,"cid":null},"woyaola":null,"cnzz":null,"leancloud":{"app_id":"Cv0XNeBSBdAPAIuVj3PsyM3R-MdYXbMMI","app_key":"4PU1rNlGrqXWzhfW3dgq98oX","server_url":null,"path":"window.location.pathname","ignore_local":false},"gtag":null},"search_path":"/local-search.xml","include_content_in_search":true};
+
+    if (CONFIG.web_analytics.follow_dnt) {
+      var dntVal = navigator.doNotTrack || window.doNotTrack || navigator.msDoNotTrack;
+      Fluid.ctx.dnt = dntVal && (dntVal.startsWith('1') || dntVal.startsWith('yes') || dntVal.startsWith('on'));
+    }
+  </script>
+  <script  src="/js/utils.js" ></script>
+  <script  src="/js/color-schema.js" ></script>
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+    
+  
+
+
+
+  
+<meta name="generator" content="Hexo 7.2.0"><link rel="alternate" href="/atom.xml" title="又见苍岚" type="application/atom+xml">
+</head>
+
+<script>
+// 页面加载完成后隐藏加载动画
+document.addEventListener("readystatechange", function() {
+    const loader = document.getElementById('Loadanimation');
+    if (loader) {
+        // 停留1秒后开始淡出
+        setTimeout(function() {
+            loader.style.transition = 'opacity 1.2s';
+            loader.style.opacity = '0';
+            // 淡出完成后隐藏
+            setTimeout(() => {
+                loader.style.display = 'none';
+            }, 1000); // 等待淡出动画完成
+        }, 700); // 停留0.8秒
+    }
+});
+</script>
+
+
+
+<body>
+  
+<div id="Loadanimation" style="z-index:999999;">
+<div id="Loadanimation-center">
+   <div id="Loadanimation-center-absolute">
+       <div class="xccx_object" id="xccx_four"></div>
+       <div class="xccx_object" id="xccx_three"></div>
+       <div class="xccx_object" id="xccx_two"></div>
+       <div class="xccx_object" id="xccx_one"></div>
+   </div>
+</div>
+</div>
+
+<link href="/css/loading.css"type="text/css"rel="stylesheet"/>
+
+
+
+
+
+
+<div>
+	<div class='real_mask' style="
+		background-color: rgba(0,0,0,0.4);
+		width: 100%;
+		height: 100%;
+		position: fixed;
+		z-index: -777;
+	"></div>
+	<div id="banner_video_insert">
+	</div>	
+	<div id='vvd_banner_img'>
+	</div>
+</div>
+<div id="banner"></div>
+
+
+
+
+
+
+
+  <header>
+    
+
+<div class="header-inner" style="height: 80vh;">
+  <nav id="navbar" class="navbar fixed-top  navbar-expand-lg navbar-dark scrolling-navbar">
+  <div class="container">
+    <a class="navbar-brand" href="/">
+      <strong>CangLan</strong>
+    </a>
+
+    <button id="navbar-toggler-btn" class="navbar-toggler" type="button" data-toggle="collapse"
+            data-target="#navbarSupportedContent"
+            aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
+      <div class="animated-icon"><span></span><span></span><span></span></div>
+    </button>
+
+    <!-- Collapsible content -->
+    <div class="collapse navbar-collapse" id="navbarSupportedContent">
+      <ul class="navbar-nav ml-auto text-center">
+        
+          
+          
+          
+          
+            <li class="nav-item">
+		<div >
+		      <a class="nav-link" href="/" target="_self" data-umami-event="Navigation-Homepage">
+
+		        <i class="iconfont icon-home-fill"></i>
+		        <span>首页</span>
+		      </a>
+		</div>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item dropdown">
+              <a class="nav-link dropdown-toggle" target="_self" href="javascript:;" role="button"
+                 data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                <i class="iconfont icon-shuji1"></i>
+                <span>文章</span>
+              </a>
+              <div class="dropdown-menu" aria-labelledby="navbarDropdown">
+                
+                  
+                  
+                  
+		<div >
+
+                  <a class="dropdown-item" href="/archives/" target="_self" data-umami-event="Navigation-Archive">
+
+                    <i class="iconfont icon-archive-fill"></i>
+                    <span>归档</span>
+                  </a>
+		</div>
+                
+                  
+                  
+                  
+		<div >
+
+                  <a class="dropdown-item" href="/categories/" target="_self" data-umami-event="Navigation-Category">
+
+                    <i class="iconfont icon-category-fill"></i>
+                    <span>分类</span>
+                  </a>
+		</div>
+                
+                  
+                  
+                  
+		<div >
+
+                  <a class="dropdown-item" href="/tags/" target="_self" data-umami-event="Navigation-Tag">
+
+                    <i class="iconfont icon-tags-fill"></i>
+                    <span>标签</span>
+                  </a>
+		</div>
+                
+                  
+                  
+                  
+		<div >
+
+                  <a class="dropdown-item" href="/shuoshuo/" target="_self" data-umami-event="Navigation-Shuoshuo">
+
+                    <i class="iconfont icon-24gf-bubblesDots4"></i>
+                    <span>说说</span>
+                  </a>
+		</div>
+                
+              </div>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item dropdown">
+              <a class="nav-link dropdown-toggle" target="_self" href="javascript:;" role="button"
+                 data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                <i class="iconfont icon-momo"></i>
+                <span>社交</span>
+              </a>
+              <div class="dropdown-menu" aria-labelledby="navbarDropdown">
+                
+                  
+                  
+                  
+		<div >
+
+                  <a class="dropdown-item" href="/links/" target="_self" data-umami-event="Navigation-Friends">
+
+                    <i class="iconfont icon-link-fill"></i>
+                    <span>友链</span>
+                  </a>
+		</div>
+                
+                  
+                  
+                  
+		<div >
+
+                  <a class="dropdown-item" href="/messagebd/" target="_self" data-umami-event="Navigation-MessageBoard">
+
+                    <i class="iconfont icon-comment"></i>
+                    <span>留言板</span>
+                  </a>
+		</div>
+                
+                  
+                  
+                  
+		<div >
+
+                  <a class="dropdown-item" href="/atom.xml" target="_self" data-umami-event="Navigation-RSS">
+
+                    <i class="iconfont icon-dingyue"></i>
+                    <span>RSS订阅</span>
+                  </a>
+		</div>
+                
+                  
+                  
+                  
+		<div >
+
+                  <a class="dropdown-item" href="/reccomments/" target="_self" data-umami-event="Navigation-Recent-Comments">
+
+                    <i class="iconfont icon-icon-pinglunguanli-pinglunliebiao"></i>
+                    <span>近期评论</span>
+                  </a>
+		</div>
+                
+              </div>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item dropdown">
+              <a class="nav-link dropdown-toggle" target="_self" href="javascript:;" role="button"
+                 data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                <i class="iconfont icon-user-fill"></i>
+                <span>个人</span>
+              </a>
+              <div class="dropdown-menu" aria-labelledby="navbarDropdown">
+                
+                  
+                  
+                  
+		<div >
+
+                  <a class="dropdown-item" href="/about/" target="_self" data-umami-event="Navigation-AboutMe">
+
+                    <i class="iconfont icon-guanyuwomen"></i>
+                    <span>关于</span>
+                  </a>
+		</div>
+                
+                  
+                  
+                  
+		<div >
+
+                  <a class="dropdown-item" href="/playlist/" target="_self" data-umami-event="Navigation-Music">
+
+                    <i class="iconfont icon-music"></i>
+                    <span>歌单</span>
+                  </a>
+		</div>
+                
+                  
+                  
+                  
+		<div >
+
+                  <a class="dropdown-item" href="https://uipv4.zywvvd.com:33035" target="_self" data-umami-event="Navigation-Nextcloud">
+
+                    <i class="iconfont icon-xuniyingpan"></i>
+                    <span>网盘</span>
+                  </a>
+		</div>
+                
+                  
+                  
+                  
+		<div >
+
+                  <a class="dropdown-item" href="https://uipv4.zywvvd.com:33036" target="_self" data-umami-event="Navigation-OneDev">
+
+                    <i class="iconfont icon-git"></i>
+                    <span>仓库</span>
+                  </a>
+		</div>
+                
+                  
+                  
+                  
+		<div >
+
+                  <a class="dropdown-item" href="https://uipv4.zywvvd.com:33041" target="_self" data-umami-event="Navigation-Wiki">
+
+                    <i class="iconfont icon-wiki"></i>
+                    <span>百科</span>
+                  </a>
+		</div>
+                
+              </div>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item dropdown">
+              <a class="nav-link dropdown-toggle" target="_self" href="javascript:;" role="button"
+                 data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                <i class="iconfont icon-ic_fly"></i>
+                <span>导航</span>
+              </a>
+              <div class="dropdown-menu" aria-labelledby="navbarDropdown">
+                
+                  
+                  
+                  
+		<div >
+
+                  <a class="dropdown-item" href="/site-map/" target="_self" data-umami-event="Navigation-SiteMap">
+
+                    <i class="iconfont icon-lianjie"></i>
+                    <span>链接</span>
+                  </a>
+		</div>
+                
+                  
+                  
+                  
+		<div >
+
+                  <a class="dropdown-item" href="/nodeppt/hexo/snavigation/" target="_self" data-umami-event="Navigation-Search">
+
+                    <i class="iconfont icon-sousuo"></i>
+                    <span>搜索</span>
+                  </a>
+		</div>
+                
+              </div>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item dropdown">
+              <a class="nav-link dropdown-toggle" target="_self" href="javascript:;" role="button"
+                 data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                <i class="iconfont icon-wangzhan"></i>
+                <span>站点</span>
+              </a>
+              <div class="dropdown-menu" aria-labelledby="navbarDropdown">
+                
+                  
+                  
+                  
+		<div >
+
+                  <a class="dropdown-item" href="https://uipv4.zywvvd.com:33039/share/0zx3o21oIpZTZqwC/%E5%8F%88%E8%A7%81%E8%8B%8D%E5%B2%9A" target="_self" data-umami-event="Navigation-Umami">
+
+                    <i class="iconfont icon-tongji2"></i>
+                    <span>站点分析</span>
+                  </a>
+		</div>
+                
+                  
+                  
+                  
+		<div >
+
+                  <a class="dropdown-item" href="/earth_sta/" target="_self" data-umami-event="Navigation-Globe">
+
+                    <i class="iconfont icon-tongjifenxi-xiangmubiaogetongji"></i>
+                    <span>访问统计</span>
+                  </a>
+		</div>
+                
+                  
+                  
+                  
+		<div >
+
+                  <a class="dropdown-item" href="https://uipv4.zywvvd.com:33034/status/show" target="_self" data-umami-event="Navigation-Monitor">
+
+                    <i class="iconfont icon-jiankong"></i>
+                    <span>站点监控</span>
+                  </a>
+		</div>
+                
+              </div>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item dropdown">
+              <a class="nav-link dropdown-toggle" target="_self" href="javascript:;" role="button"
+                 data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                <i class="iconfont icon-chuansong"></i>
+                <span>传送</span>
+              </a>
+              <div class="dropdown-menu" aria-labelledby="navbarDropdown">
+                
+                  
+                  
+                  
+		<div >
+
+                  <a class="dropdown-item" href="https://www.foreverblog.cn/go.html" target="_self" data-umami-event="Navigation-ForeverBolg">
+
+                    <i class="iconfont icon-a-BlackHole"></i>
+                    <span>十年之约</span>
+                  </a>
+		</div>
+                
+                  
+                  
+                  
+		<div >
+
+                  <a class="dropdown-item" href="https://www.travellings.cn/go.html" target="_self" data-umami-event="Navigation-DriveTo">
+
+                    <i class="iconfont icon-train1"></i>
+                    <span>开往</span>
+                  </a>
+		</div>
+                
+                  
+                  
+                  
+		<div >
+
+                  <a class="dropdown-item" href="https://bf.zzxworld.com/" target="_self" data-umami-event="Navigation-BlogFinder">
+
+                    <i class="iconfont icon-icon-"></i>
+                    <span>BlogFinder</span>
+                  </a>
+		</div>
+                
+                  
+                  
+                  
+		<div >
+
+                  <a class="dropdown-item" href="https://www.perass.com/" target="_self" data-umami-event="Navigation-Bloghome">
+
+                    <i class="iconfont icon-home-fill"></i>
+                    <span>博客之家</span>
+                  </a>
+		</div>
+                
+              </div>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item dropdown">
+              <a class="nav-link dropdown-toggle" target="_self" href="javascript:;" role="button"
+                 data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                <i class="iconfont icon-gongju"></i>
+                <span>工具</span>
+              </a>
+              <div class="dropdown-menu" aria-labelledby="navbarDropdown">
+                
+                  
+                  
+                  
+		<div >
+
+                  <a class="dropdown-item" href="/navigates/calculator" target="_self" data-umami-event="Navigation-Calculator">
+
+                    <i class="iconfont icon-jisuan"></i>
+                    <span>计算器</span>
+                  </a>
+		</div>
+                
+                  
+                  
+                  
+		<div >
+
+                  <a class="dropdown-item" href="/navigates/webgraphviz" target="_self" data-umami-event="Navigation-WebGtaphviz">
+
+                    <i class="iconfont icon-tongyong-huatugongju2"></i>
+                    <span>Graphviz</span>
+                  </a>
+		</div>
+                
+                  
+                  
+                  
+		<div >
+
+                  <a class="dropdown-item" href="/navigates/formular_reco" target="_self" data-umami-event="Navigation-Formular-Reco">
+
+                    <i class="iconfont icon-a-checkformula"></i>
+                    <span>公式识别</span>
+                  </a>
+		</div>
+                
+              </div>
+            </li>
+          
+        
+        
+          <li class="nav-item" id="search-btn">
+            <a class="nav-link" target="_self" href="javascript:;" data-toggle="modal" data-target="#modalSearch" aria-label="Search">
+              <i class="iconfont icon-search"></i>
+            </a>
+          </li>
+          
+        
+        
+          <li class="nav-item" id="color-toggle-btn">
+            <a class="nav-link" target="_self" href="javascript:;" aria-label="Color Toggle">
+              <i class="iconfont icon-dark" id="color-toggle-icon"></i>
+            </a>
+          </li>
+        
+      </ul>
+    </div>
+  </div>
+</nav>
+
+  
+
+<div id="banner" class="banner" parallax=true
+     style="background: url('https://uipv4.zywvvd.com:33030/HexoFiles/new/bg-trans.png') no-repeat center center; background-size: cover;">
+  <div class="full-bg-img">
+    <div class="mask flex-center" style="background-color: rgba(0, 0, 0, 0)">
+      <div class="banner-text text-center fade-in-up">
+        <div class="h2">
+          
+            <span id="subtitle">A* 算法及其变种详解</span>
+          
+        </div>
+
+        
+          
+  <div class="mt-3">
+    
+      <span class="post-meta mr-2">
+        <i class="iconfont icon-author" aria-hidden="true"></i>
+        Yiwei Zhang
+      </span>
+    
+    
+      <span class="post-meta">
+        <i class="iconfont icon-date-fill" aria-hidden="true"></i>
+        <time datetime="2026-03-10 12:00" pubdate>
+          2026年3月10日 中午
+        </time>
+      </span>
+    
+  </div>
+
+  <div class="mt-1">
+    
+      <span class="post-meta mr-2">
+        <i class="iconfont icon-chart"></i>
+        
+          <!-- compatible with older versions-->
+          6.5k 字
+        
+      </span>
+    
+
+    
+      <span class="post-meta mr-2">
+        <i class="iconfont icon-clock-fill"></i>
+        
+        
+        
+          <!-- compatible with older versions-->
+          55 分钟
+        
+      </span>
+    
+
+    
+    
+      
+        <span id="vvdpost_container_page_pvuv" style="display: none">
+          <i class="iconfont icon-eye" aria-hidden="true"></i>
+          <span id="vvdpost_value_page_pv">0</span> 次&nbsp&nbsp
+		  <i class="iconfont icon-users" aria-hidden="true"></i>
+		  <span id="vvdpost_value_page_uv">0</span> 人&nbsp&nbsp
+		  <i class="iconfont icon-comment" aria-hidden="true"></i>
+		  <span id="vvdpost_value_page_cn">0</span> 条
+        </span>
+
+    <script>
+    document.addEventListener("DOMContentLoaded", function() {
+	      console.log("PVUV_" + window.location.pathname);
+
+	      // 使用 fetch API 发送 POST 请求
+	      fetch('https://uipv4.zywvvd.com:33037/poststats', { 
+		  method: 'POST',
+		  headers: {
+		      'Content-Type': 'application/json'
+		  },
+		  body: JSON.stringify(window.location.pathname) // 将路径名作为对象发送，以便在服务器端更容易处理
+	      })
+	      .then(response => {
+		  // 检查响应状态
+		  if (!response.ok) {
+		      throw new Error('Network response was not ok ' + response.statusText);
+		  }
+		  return response.json(); // 解析 JSON 响应
+	      })
+	      .then(data => {
+		  // 处理解析后的数据
+		  console.log(data.pv);
+		  var pvCtn = document.querySelector('#vvdpost_container_page_pvuv');
+		  if (pvCtn) {
+		      var pvEle = document.querySelector('#vvdpost_value_page_pv');
+		      var uvEle = document.querySelector('#vvdpost_value_page_uv');
+		      var cnEle = document.querySelector('#vvdpost_value_page_cn');
+		      if (pvEle && uvEle) {
+		          pvEle.innerText = data.pv;
+		          uvEle.innerText = data.uv;
+		          cnEle.innerText = data.cn;
+		          pvCtn.style.display = 'inline';
+		      }
+		  }
+	      })
+	      .catch(error => {
+		  // 处理请求错误
+		  console.error('There has been a problem with your fetch operation:', error);
+	      });
+      });
+  </script>
+      
+    
+  </div>
+
+
+        
+      </div>
+
+      
+        <div class="scroll-down-bar">
+          <i class="iconfont icon-arrowdown"></i>
+        </div>
+      
+    </div>
+  </div>
+</div>
+
+</div>
+
+
+	<script type="text/javascript" src="/vvd_js/jquery.js"></script>
+	<script async src="https://uipv4.zywvvd.com:33039/script.js" data-website-id="dd4a05c6-dde2-4743-9c3a-a79d6bee0778"></script>
+	<div class="banner" id='banner' >
+
+		<div class="full-bg-img" >
+
+			
+				<script>
+					var ua = navigator.userAgent;
+					var ipad = ua.match(/(iPad).*OS\s([\d_]+)/),
+						isIphone = !ipad && ua.match(/(iPhone\sOS)\s([\d_]+)/),
+						isAndroid = ua.match(/(Android)\s+([\d.]+)/),
+						isMobile = isIphone || isAndroid;
+
+					function set_video_attr(id){
+						var height = document.body.clientHeight
+						var width = document.body.clientWidth
+						var video_item = document.getElementById(id);
+
+						if (height / width < 0.56){
+							video_item.setAttribute('width', '100%');
+							video_item.setAttribute('height', 'auto');
+						} else {
+							video_item.setAttribute('height', '100%');
+							video_item.setAttribute('width', 'auto');
+						}
+					}
+
+					fetch('https://uipv4.zywvvd.com:33037/wallpaper-pair')
+					  .then(response => response.json()) // 解析JSON数据
+					  .then(data => {
+						console.log('获取链接成功');
+						video_url = data[0][0]
+						pre_show_image_url = data[0][1]
+
+						banner_obj = document.getElementById("banner")
+						banner_obj.style.cssText = "background: url('" + pre_show_image_url + "') no-repeat;"
+
+						vvd_banner_obj = document.getElementById("vvd_banner_img")
+						vvd_banner_content = "<img id='banner_img_item' src='" + pre_show_image_url + "'style='position: fixed; z-index: -999'>"
+						vvd_banner_obj.innerHTML = vvd_banner_content 
+
+						if (!isMobile) {
+							video_html_res = "<video id='video_item' style='position: fixed; z-index: -888;'  muted='muted' src=" + video_url + " autoplay='autoplay' loop='loop'></video>"
+							document.getElementById("banner_video_insert").innerHTML = video_html_res;
+							set_video_attr('video_item')
+							set_video_attr('banner_img_item')
+						}
+					    
+					  })
+					  .catch((error) => {
+					    console.error('请求失败,尝试本地获取背景图像：', error);
+	    					$.getJSON('/vvd_js/video_url.json', function(data){
+
+							var video_list_length = data.length
+							var seed = Math.random()
+							index = Math.floor(seed * video_list_length)
+
+							video_url = data[index][0]
+							pre_show_image_url = data[index][1]
+
+							banner_obj = document.getElementById("banner")
+							banner_obj.style.cssText = "background: url('" + pre_show_image_url + "') no-repeat;"
+
+							vvd_banner_obj = document.getElementById("vvd_banner_img")
+							vvd_banner_content = "<img id='banner_img_item' src='" + pre_show_image_url + "'style='position: fixed; z-index: -999'>"
+							vvd_banner_obj.innerHTML = vvd_banner_content 
+
+							if (!isMobile) {
+								video_html_res = "<video id='video_item' style='position: fixed; z-index: -888;'  muted='muted' src=" + video_url + " autoplay='autoplay' loop='loop'></video>"
+								document.getElementById("banner_video_insert").innerHTML = video_html_res;
+								set_video_attr('video_item')
+								set_video_attr('banner_img_item')
+							}
+						});
+					  });
+
+
+
+
+
+
+					if (!isMobile){
+						window.onresize = function(){
+							set_video_attr('video_item')
+							set_video_attr('banner_img_item')
+							}
+						}
+				</script>
+
+			
+
+
+			
+			</div>
+		</div>
+    </div>
+
+  </header>
+
+  <main>
+    
+      
+
+
+
+<div class="container-fluid nopadding-x">
+  <div class="row nomargin-x">
+    <div class="side-col d-none d-lg-block col-lg-2">
+      
+
+    </div>
+
+    <div class="col-lg-8 nopadding-x-md">
+      <div class="container nopadding-x-md" id="board-ctn">
+        <div id="board">
+          <article class="post-content mx-auto">
+
+            <!-- <h1 id="seo-header">A* 算法及其变种详解</h1> -->
+
+            
+              <p id="updated-time" class="note note-info" style="">
+                
+                  
+                    <!-- compatible with older versions-->
+                    本文最后更新于：2026年3月10日 下午
+                  
+                
+              </p>
+            
+            
+              <div class="markdown-body">
+                
+                <blockquote>
+<p><code>A*</code>算法是路径规划领域的经典算法，在实际应用中衍生出多种变种以适应不同场景。本文系统梳理 <code>A*</code> 算法及其主要变种，包括适用于动态环境的 <code>D*</code>、<code>D* Lite</code>、<code>LPA*</code>，以及实时规划的 <code>ARA*</code>、<code>LRTA*</code>、<code>RTAA*</code> 等。</p>
+</blockquote>
+<span id="more"></span>
+<h3 id="概述">概述</h3>
+<p><code>A*</code> 算法家族可以按照应用场景分为以下几类：</p>
+<table>
+<thead>
+<tr>
+<th>类别</th>
+<th>算法</th>
+<th>特点</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>静态环境</strong></td>
+<td>A*、Bidirectional A*</td>
+<td>环境已知且不变</td>
+</tr>
+<tr>
+<td><strong>动态环境</strong></td>
+<td>D*、D* Lite、LPA*、Anytime D*</td>
+<td>环境可能变化，支持增量更新</td>
+</tr>
+<tr>
+<td><strong>实时规划</strong></td>
+<td>ARA*、LRTA*、RTAA*</td>
+<td>时间受限，需要在截止前返回可行解</td>
+</tr>
+<tr>
+<td><strong>双向搜索</strong></td>
+<td>Bidirectional A*</td>
+<td>从起点和终点同时搜索</td>
+</tr>
+</tbody>
+</table>
+<hr>
+<h3 id="A-算法基础">A* 算法基础</h3>
+<p><code>A*</code>算法是一种<strong>启发式搜索算法</strong>，用于在图形或网络中找到最短路径。它结合了Dijkstra算法的广度优先搜索和启发式函数的评估，以提高搜索效率。</p>
+<h4 id="基本概念">基本概念</h4>
+<ul>
+<li>
+<p><strong>评估函数</strong>：<code>A*</code>算法的核心是评估函数 $f(n) = g(n) + h(n)$，其中：</p>
+<ol>
+<li><strong>g(n)</strong>：从起点到当前节点 n 的<strong>实际路径代价</strong>，这个值是确定的，通过路径累加得到。</li>
+<li><strong>h(n)</strong>：从当前节点 n 到目标节点的<strong>估计代价</strong>（启发式函数），这是一个预测值。</li>
+<li><strong>f(n)</strong>：从起点经过节点 n 到达目标节点的<strong>总估计代价</strong>。</li>
+</ol>
+</li>
+<li>
+<p><strong>启发式函数的设计原则</strong>：</p>
+<ol>
+<li><strong>可采纳性（Admissible）</strong>：启发式函数 $h(n)$ 必须<strong>不高估</strong>从节点 n 到目标的实际代价，即 $h(n) \leq h^<em>(n)$，其中 $h^</em>(n)$ 是真实的最短距离。只有满足可采纳性，<code>A*</code> 才能保证找到最优解。</li>
+<li><strong>一致性（Consistent）</strong>：对于所有节点 n 和其后继节点 n’，满足 $h(n) \leq c(n, n’) + h(n’)$，其中 $c(n, n’)$ 是从 n 到 n’ 的实际代价。一致性保证了 <code>A*</code> 在扩展节点时一旦找到目标就可以立即停止。</li>
+</ol>
+</li>
+<li>
+<p><strong>开放列表（Open List）</strong>：存储待扩展的节点，通常使用<strong>优先队列</strong>（最小堆）实现，按照 f(n) 值从小到大排序。</p>
+</li>
+<li>
+<p><strong>封闭列表（Closed List）</strong>：存储已经扩展过的节点，避免重复处理。通常使用哈希集合实现。</p>
+</li>
+<li>
+<p><strong>最优性保证</strong>：当启发式函数满足可采纳性时，<code>A*</code> 算法保证能找到从起点到目标的最短路径。这是因为 <code>A*</code> 总是优先扩展 f(n) 最小的节点，而可采纳的启发式保证了 f(n) 不会低估真实代价。</p>
+</li>
+</ul>
+<h4 id="常用启发式函数">常用启发式函数</h4>
+<p>对于网格形式的图，有以下这些启发函数可以使用：</p>
+<ul>
+<li>
+<p>若图形中只允许朝上下左右四个方向移动，使用<strong>曼哈顿距离</strong>：<br>
+$$<br>
+h(n) = |x_n - x_{goal}| + |y_n - y_{goal}|<br>
+$$</p>
+</li>
+<li>
+<p>若图形中允许朝八个方向移动（包括对角线），使用<strong>对角距离</strong>（切比雪夫距离）：<br>
+$$<br>
+h(n) = \max(|x_n - x_{goal}|, |y_n - y_{goal}|)<br>
+$$</p>
+</li>
+<li>
+<p>若图形中允许朝任何方向移动，使用<strong>欧几里得距离</strong>：<br>
+$$<br>
+h(n) = \sqrt{(x_n - x_{goal})^2 + (y_n - y_{goal})^2}<br>
+$$</p>
+</li>
+</ul>
+<h4 id="基本流程">基本流程</h4>
+<ol>
+<li>
+<p><strong>初始化</strong>：</p>
+<ul>
+<li>创建开放列表（优先队列）和封闭列表（哈希集合）。</li>
+<li>将起点加入开放列表，设置 g(start) = 0，f(start) = h(start)。</li>
+</ul>
+</li>
+<li>
+<p><strong>主循环</strong>：重复以下步骤直到找到目标或开放列表为空：</p>
+<ul>
+<li>从开放列表中取出 <strong>f(n) 值最小</strong>的节点 n。</li>
+<li>若 <strong>n 是目标节点</strong>，则通过回溯父节点指针重建路径，算法结束。</li>
+<li>将 n 从开放列表移除，加入封闭列表。</li>
+<li><strong>扩展节点 n</strong>：遍历 n 的所有相邻节点 m：
+<ul>
+<li>若 m 在封闭列表中，跳过该节点。</li>
+<li>计算 m 的新 g 值：g_new = g(n) + c(n, m)，其中 c(n, m) 是从 n 到 m 的边代价。</li>
+<li>若 m 不在开放列表中，或 g_new &lt; g(m)：
+<ul>
+<li>更新 g(m) = g_new</li>
+<li>更新 f(m) = g(m) + h(m)</li>
+<li>设置 m 的父节点为 n</li>
+<li>若 m 不在开放列表中，将其加入</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+<li>
+<p><strong>结束条件</strong>：</p>
+<ul>
+<li>若开放列表为空且未找到目标，说明不存在从起点到目标的路径。</li>
+<li>若找到目标，返回重建的路径。</li>
+</ul>
+</li>
+</ol>
+<blockquote>
+<p><strong>时间复杂度</strong>：最坏情况下为 $O(b^d)$，其中 b 是分支因子（每个节点的平均邻居数），d 是解的深度。使用好的启发式函数可以大幅减少实际搜索的节点数。</p>
+</blockquote>
+<blockquote>
+<p><strong>空间复杂度</strong>：$O(b^d)$，需要存储所有已访问和待访问的节点。</p>
+</blockquote>
+<h4 id="算法演示">算法演示</h4>
+<p><img src="https://uipv4.zywvvd.com:33030/HexoFiles/vvd_image_files/202603101409676.gif" srcset="/img/loading.gif" lazyload alt=""></p>
+<hr>
+<h3 id="Bidirectional-A-（双向-A-）">Bidirectional A*（双向 A*）</h3>
+<p>双向 A* 算法同时从起点和终点进行搜索，当两个搜索方向的&quot;前沿&quot;相遇时，合并得到完整路径。</p>
+<h4 id="基本概念-2">基本概念</h4>
+<ul>
+<li>
+<p><strong>双向搜索思想</strong>：同时从起点向终点搜索（前向搜索）和从终点向起点搜索（后向搜索）。当两个搜索方向扩展到同一个节点时，就可以合并两条路径得到完整解。</p>
+</li>
+<li>
+<p><strong>搜索空间减少</strong>：单向搜索的搜索空间约为 $O(b^d)$，而双向搜索理论上可以将搜索空间减少到 $O(2b^{d/2})$，其中 b 是分支因子，d 是解的深度。当 d 较大时，这种减少是显著的。</p>
+</li>
+<li>
+<p><strong>相遇条件</strong>：当某个节点同时被前向搜索和后向搜索扩展时，或者当一个方向的搜索扩展到另一个方向已经访问过的节点时，可以认为两个搜索&quot;相遇&quot;了。</p>
+</li>
+<li>
+<p><strong>启发式函数</strong>：</p>
+<ul>
+<li>前向搜索：$f_{forward}(n) = g_{forward}(n) + h(n, goal)$</li>
+<li>后向搜索：$f_{backward}(n) = g_{backward}(n) + h(n, start)$</li>
+</ul>
+</li>
+<li>
+<p><strong>路径合并</strong>：当两个搜索相遇时，完整路径代价为 $g_{forward}(n) + g_{backward}(n)$，需要在所有相遇节点中选择代价最小的。</p>
+</li>
+</ul>
+<h4 id="基本流程-2">基本流程</h4>
+<ol>
+<li>
+<p><strong>初始化</strong>：</p>
+<ul>
+<li>创建两个开放列表 Open_forward 和 Open_backward。</li>
+<li>创建两个封闭列表 Closed_forward 和 Closed_backward。</li>
+<li>将起点加入 Open_forward，g_forward(start) = 0。</li>
+<li>将终点加入 Open_backward，g_backward(goal) = 0。</li>
+</ul>
+</li>
+<li>
+<p><strong>交替扩展</strong>：重复以下步骤直到两个搜索相遇：</p>
+<ul>
+<li>选择 f 值较小的那个方向的开放列表进行扩展（保持两个方向的搜索进度大致平衡）。</li>
+<li>从选定的开放列表中取出 f 值最小的节点 n。</li>
+<li>若 n 同时在另一个方向的封闭列表中，说明两个搜索相遇，跳转到步骤 4。</li>
+<li>扩展 n 的相邻节点，更新 g 值和 f 值，将新节点加入对应的开放列表。</li>
+<li>将 n 移入对应的封闭列表。</li>
+</ul>
+</li>
+<li>
+<p><strong>检查相遇</strong>：每次扩展后检查当前节点是否在另一个方向的已访问集合中。</p>
+</li>
+<li>
+<p><strong>路径重建</strong>：</p>
+<ul>
+<li>找到所有同时被两个方向访问的节点。</li>
+<li>对于每个这样的节点 n，计算总路径代价：cost = g_forward(n) + g_backward(n)。</li>
+<li>选择代价最小的节点作为相遇点。</li>
+<li>合并前向路径和后向路径得到完整路径。</li>
+</ul>
+</li>
+</ol>
+<blockquote>
+<p><strong>注意</strong>：双向搜索的效率取决于两个搜索方向能否在搜索空间的&quot;中间&quot;相遇。如果相遇点靠近起点或终点，效率提升有限。</p>
+</blockquote>
+<h4 id="算法演示-2">算法演示</h4>
+<p><img src="https://uipv4.zywvvd.com:33030/HexoFiles/vvd_image_files/Bi-Astar.gif" srcset="/img/loading.gif" lazyload alt=""></p>
+<hr>
+<h3 id="ARA-（Anytime-Repairing-A-）">ARA*（Anytime Repairing A*）</h3>
+<p>ARA* 是一种<strong>任意时间算法</strong>，可以在有限时间内返回一个可行解（可能不是最优），然后随着时间增加逐步优化解的质量，最终收敛到最优解。</p>
+<h4 id="基本概念-3">基本概念</h4>
+<ul>
+<li>
+<p><strong>任意时间特性</strong>：ARA* 可以在任何时刻被中断并返回当前找到的解。时间越充裕，解的质量越好。这对于实时系统非常重要，因为系统可能无法等待最优解的计算完成。</p>
+</li>
+<li>
+<p><strong>膨胀因子（Inflation Factor）</strong>：ARA* 引入一个膨胀因子 $\epsilon \geq 1$，将评估函数修改为：<br>
+$$<br>
+f(n) = g(n) + \epsilon \cdot h(n)<br>
+$$<br>
+当 $\epsilon &gt; 1$ 时，启发式函数被放大，算法会<strong>更激进地</strong>朝目标方向搜索，速度更快但可能错过最优解。</p>
+</li>
+<li>
+<p><strong>加权 A</strong>*：当 $\epsilon &gt; 1$ 时，算法称为加权 A*（Weighted A*）。它找到的解的代价最多是最优解的 $\epsilon$ 倍，即 $cost \leq \epsilon \cdot cost_{optimal}$。</p>
+</li>
+<li>
+<p><strong>增量式优化</strong>：ARA* 不是每次从头开始搜索，而是复用上一轮搜索的结果。当减小 $\epsilon$ 后，只需要更新受影响的节点，而不是重新计算所有节点。</p>
+</li>
+<li>
+<p><strong>膨胀因子序列</strong>：通常使用递减序列，如 $\epsilon = {3.0, 2.0, 1.5, 1.0}$。当 $\epsilon = 1.0$ 时，算法退化为标准 A*，保证找到最优解。</p>
+</li>
+</ul>
+<h4 id="基本流程-3">基本流程</h4>
+<ol>
+<li>
+<p><strong>初始化</strong>：</p>
+<ul>
+<li>设置初始膨胀因子 $\epsilon = \epsilon_0$（如 3.0）。</li>
+<li>初始化开放列表和封闭列表。</li>
+<li>将起点加入开放列表，g(start) = 0，f(start) = $\epsilon \cdot h(start)$。</li>
+</ul>
+</li>
+<li>
+<p><strong>加权搜索阶段</strong>：</p>
+<ul>
+<li>执行类似 A* 的搜索，但使用 $f(n) = g(n) + \epsilon \cdot h(n)$ 作为评估函数。</li>
+<li>当找到目标时，记录当前解的路径和代价。</li>
+<li>当前解的代价最多是最优解的 $\epsilon$ 倍。</li>
+</ul>
+</li>
+<li>
+<p><strong>减小膨胀因子</strong>：</p>
+<ul>
+<li>将 $\epsilon$ 减小到下一个值（如从 3.0 减到 2.0）。</li>
+<li>若 $\epsilon = 1.0$，跳转到步骤 5（最优搜索）。</li>
+</ul>
+</li>
+<li>
+<p><strong>增量式更新</strong>：</p>
+<ul>
+<li>对于封闭列表中的所有节点，重新计算 $f(n) = g(n) + \epsilon \cdot h(n)$。</li>
+<li>将 f 值发生变化的节点重新加入开放列表。</li>
+<li>返回步骤 2，继续搜索。</li>
+</ul>
+</li>
+<li>
+<p><strong>最优搜索</strong>：</p>
+<ul>
+<li>当 $\epsilon = 1.0$ 时，算法等价于标准 A*。</li>
+<li>搜索完成后得到的解是<strong>最优解</strong>。</li>
+</ul>
+</li>
+<li>
+<p><strong>终止条件</strong>：</p>
+<ul>
+<li>可以在任何时刻终止算法，返回当前找到的最佳解。</li>
+<li>当 $\epsilon = 1.0$ 的搜索完成时，得到最优解。</li>
+</ul>
+</li>
+</ol>
+<blockquote>
+<p><strong>优势</strong>：ARA* 非常适合实时系统。例如，机器人导航时，可以先快速得到一条可行路径让机器人开始移动，然后在移动过程中不断优化路径。</p>
+</blockquote>
+<blockquote>
+<p><strong>解的质量保证</strong>：在膨胀因子为 $\epsilon$ 时找到的解，其代价满足 $cost \leq \epsilon \cdot cost_{optimal}$。</p>
+</blockquote>
+<h4 id="算法演示-3">算法演示</h4>
+<p><img src="https://uipv4.zywvvd.com:33030/HexoFiles/vvd_image_files/ara_star.gif" srcset="/img/loading.gif" lazyload alt=""></p>
+<hr>
+<h3 id="LRTA-（Learning-Real-time-A-）">LRTA*（Learning Real-time A*）</h3>
+<p>LRTA* 是一种<strong>实时启发式搜索算法</strong>，每次只扩展一个节点并立即执行移动。它通过&quot;学习&quot;不断改进启发式函数的估计值，在多次迭代后收敛到最优解。</p>
+<h4 id="基本概念-4">基本概念</h4>
+<ul>
+<li>
+<p><strong>实时性</strong>：LRTA* 的关键特点是<strong>每次决策的时间是恒定的</strong>，与问题规模无关。这使得它非常适合实时系统，如游戏 AI 或在线机器人导航。</p>
+</li>
+<li>
+<p><strong>边走边学</strong>：LRTA* 不是先规划完整路径再执行，而是<strong>边搜索边移动</strong>。每次选择一个邻居节点移动过去，然后更新当前状态的知识。</p>
+</li>
+<li>
+<p><strong>启发式值表（H值）</strong>：LRTA* 为每个状态维护一个启发式值 H(s)，初始时等于初始启发式函数 h(s)。随着搜索进行，H(s) 会不断更新，越来越接近真实的最短距离。</p>
+</li>
+<li>
+<p><strong>学习更新规则</strong>：当从状态 s 移动到 s’ 后，更新 H(s) 为：<br>
+$$<br>
+H(s) \leftarrow \max\left{H(s), \min_{s’’ \in neighbors(s)}[c(s, s’‘) + H(s’')]\right}<br>
+$$<br>
+这个更新的含义是：H(s) 应该至少等于&quot;从 s 到最近邻居的代价 + 该邻居的 H 值&quot;。</p>
+</li>
+<li>
+<p><strong>收敛性</strong>：在有限状态空间中，如果 LRTA* 反复从起点到目标执行搜索，H 值会收敛到真实的最短距离，最终行为等价于最优策略。</p>
+</li>
+</ul>
+<h4 id="基本流程-4">基本流程</h4>
+<ol>
+<li>
+<p><strong>初始化</strong>：</p>
+<ul>
+<li>为所有状态 s 初始化启发式值 H(s) = h(s)，其中 h(s) 是初始启发式函数（如曼哈顿距离）。</li>
+<li>设置当前状态为起点。</li>
+</ul>
+</li>
+<li>
+<p><strong>单步决策</strong>：重复以下步骤直到到达目标：</p>
+<ul>
+<li>计算当前状态 s 的所有邻居的 f 值：<br>
+$$<br>
+f(s’) = c(s, s’) + H(s’)<br>
+$$<br>
+其中 c(s, s’) 是从 s 到 s’ 的边代价。</li>
+<li>选择 f 值最小的邻居 s_best。</li>
+<li>执行移动：从 s 移动到 s_best。</li>
+</ul>
+</li>
+<li>
+<p><strong>学习更新</strong>：</p>
+<ul>
+<li>更新当前状态（移动前的状态 s）的 H 值：<br>
+$$<br>
+H(s) \leftarrow \max\left{H(s), \min_{s’’ \in neighbors(s)}[c(s, s’‘) + H(s’')]\right}<br>
+$$</li>
+<li>这个更新确保 H(s) 不会低于从 s 出发的最优一步代价。</li>
+</ul>
+</li>
+<li>
+<p><strong>更新当前状态</strong>：</p>
+<ul>
+<li>将当前位置更新为 s_best。</li>
+<li>若 s_best 是目标，算法结束；否则返回步骤 2。</li>
+</ul>
+</li>
+<li>
+<p><strong>多轮迭代</strong>（可选）：</p>
+<ul>
+<li>若需要更优的解，可以从起点重新开始，使用更新后的 H 值。</li>
+<li>经过足够多轮迭代后，H 值会收敛到真实最短距离。</li>
+</ul>
+</li>
+</ol>
+<blockquote>
+<p><strong>时间复杂度</strong>：每步决策的时间为 O(d)，其中 d 是每个节点的平均邻居数，与总状态数无关。</p>
+</blockquote>
+<blockquote>
+<p><strong>适用场景</strong>：LRTA* 特别适合<strong>状态空间巨大但需要实时响应</strong>的场景，如视频游戏中的 NPC 导航、大规模地图上的在线路径规划。</p>
+</blockquote>
+<h4 id="算法演示-4">算法演示</h4>
+<p><img src="https://uipv4.zywvvd.com:33030/HexoFiles/vvd_image_files/lrta_star.gif" srcset="/img/loading.gif" lazyload alt=""></p>
+<hr>
+<h3 id="RTAA-（Real-time-Adaptive-A-）">RTAA*（Real-time Adaptive A*）</h3>
+<p>RTAA* 是 LRTA* 的改进版本，主要的改进在于<strong>一次更新多个节点的启发式值</strong>，从而加速学习过程。</p>
+<h4 id="基本概念-5">基本概念</h4>
+<ul>
+<li>
+<p><em><em>与 LRTA</em> 的关系</em>*：RTAA* 继承了 LRTA* 的实时特性，每次决策时间恒定。但 RTAA* 的学习效率更高，收敛到最优解所需的迭代次数更少。</p>
+</li>
+<li>
+<p><strong>多节点更新</strong>：LRTA* 每次只更新当前状态的一个 H 值，而 RTAA* 会更新<strong>整个当前搜索局部区域</strong>内所有节点的 H 值。</p>
+</li>
+<li>
+<p><strong>局部搜索</strong>：RTAA* 每次不是只扩展一个节点，而是进行一个<strong>深度受限的局部搜索</strong>，得到一个局部最优路径，然后执行该路径的第一步。</p>
+</li>
+<li>
+<p><strong>更新范围</strong>：在一次更新中，RTAA* 会更新局部搜索范围内所有已访问节点的 H 值，使用它们到目标的实际距离（通过局部搜索得到）来更新。</p>
+</li>
+</ul>
+<h4 id="基本流程-5">基本流程</h4>
+<ol>
+<li>
+<p><strong>初始化</strong>：</p>
+<ul>
+<li>为所有状态初始化 H(s) = h(s)。</li>
+<li>设置当前状态为起点。</li>
+</ul>
+</li>
+<li>
+<p><strong>局部搜索</strong>：</p>
+<ul>
+<li>从当前状态 s 开始，执行深度受限的 A* 搜索（限制扩展节点数或搜索深度）。</li>
+<li>搜索目标可以是全局目标，也可以是局部目标。</li>
+<li>得到一条从 s 到局部目标的路径。</li>
+</ul>
+</li>
+<li>
+<p><strong>执行一步</strong>：</p>
+<ul>
+<li>执行局部路径的第一步，从 s 移动到 s_next。</li>
+</ul>
+</li>
+<li>
+<p><strong>批量更新 H 值</strong>：</p>
+<ul>
+<li>对于局部搜索中访问的所有节点 s_visited：<br>
+$$<br>
+H(s_{visited}) \leftarrow g_{goal} - g(s_{visited})<br>
+$$<br>
+其中 $g_{goal}$ 是局部搜索得到的目标节点的 g 值，$g(s_{visited})$ 是该节点的 g 值。</li>
+<li>这个更新利用了局部搜索得到的实际距离信息，比 LRTA* 的更新更准确。</li>
+</ul>
+</li>
+<li>
+<p><strong>继续搜索</strong>：</p>
+<ul>
+<li>更新当前状态为 s_next。</li>
+<li>若到达目标，算法结束；否则返回步骤 2。</li>
+</ul>
+</li>
+</ol>
+<blockquote>
+<p><strong>优势</strong>：RTAA* 的学习速度比 LRTA* 快，因为每次更新多个节点的 H 值，信息的传播更迅速。</p>
+</blockquote>
+<h4 id="算法演示-5">算法演示</h4>
+<p><img src="https://uipv4.zywvvd.com:33030/HexoFiles/vvd_image_files/rtaa_star.gif" srcset="/img/loading.gif" lazyload alt=""></p>
+<hr>
+<h3 id="LPA-（Lifelong-Planning-A-）">LPA*（Lifelong Planning A*）</h3>
+<p>LPA* 是一种<strong>增量式搜索算法</strong>，专门用于解决<strong>连续路径规划问题</strong>。当环境的边代价发生变化时，LPA* 可以高效地更新路径，而不需要从头开始重新搜索。</p>
+<h4 id="基本概念-6">基本概念</h4>
+<ul>
+<li>
+<p><strong>增量式搜索</strong>：LPA* 不是每次环境变化后从头搜索，而是<strong>复用之前的搜索结果</strong>，只更新受变化影响的部分。这大大提高了重复规划的效率。</p>
+</li>
+<li>
+<p><strong>两个 g 值</strong>：LPA* 为每个节点维护两个代价值：</p>
+<ol>
+<li><strong>g(s)</strong>：从起点到节点 s 的当前最优已知代价。</li>
+<li><strong>rhs(s)</strong>（Right-Hand Side）：s 的&quot;前瞻值&quot;，定义为：<br>
+$$<br>
+rhs(s) = \begin{cases}<br>
+0 &amp; \text{if } s = start \<br>
+\min_{s’ \in pred(s)}[g(s’) + c(s’, s)] &amp; \text{otherwise}<br>
+\end{cases}<br>
+$$<br>
+rhs(s) 表示&quot;如果选择最优前驱，从起点到 s 的代价是多少&quot;。</li>
+</ol>
+</li>
+<li>
+<p><strong>节点状态</strong>：</p>
+<ol>
+<li><strong>一致（Consistent）</strong>：g(s) = rhs(s)，表示当前 g 值是最优的。</li>
+<li><strong>过一致（Overconsistent）</strong>：g(s) &gt; rhs(s)，表示 g(s) 太大，需要减小。</li>
+<li><strong>欠一致（Underconsistent）</strong>：g(s) &lt; rhs(s)，表示 g(s) 太小，需要增大。</li>
+</ol>
+</li>
+<li>
+<p><strong>优先队列的键值</strong>：LPA* 使用一个特殊的键值来排序优先队列：<br>
+$$<br>
+Key(s) = [\min(g(s), rhs(s)) + h(s); \min(g(s), rhs(s))]<br>
+$$<br>
+键值是一个二元组，首先比较第一个元素，相同时比较第二个元素。</p>
+</li>
+<li>
+<p><em><em>与 A</em> 的关系</em>*：LPA* 可以看作是 A* 的增量式扩展。当环境不变化时，LPA* 的行为与 A* 相同。当环境变化时，LPA* 只需要更新受影响的节点。</p>
+</li>
+</ul>
+<h4 id="基本流程-6">基本流程</h4>
+<ol>
+<li>
+<p><strong>初始化</strong>：</p>
+<ul>
+<li>对所有节点 s：g(s) = ∞, rhs(s) = ∞。</li>
+<li>rhs(start) = 0。</li>
+<li>将 start 加入优先队列，Key(start) = [h(start); 0]。</li>
+</ul>
+</li>
+<li>
+<p><strong>计算最短路径</strong>：</p>
+<ul>
+<li>当优先队列非空且目标不一致（g(goal) ≠ rhs(goal)）或队列顶部键值小于目标的键值：
+<ul>
+<li>取出键值最小的节点 u。</li>
+<li><strong>更新节点</strong>：
+<ul>
+<li>若 g(u) &gt; rhs(u)（过一致）：设置 g(u) = rhs(u)，更新 u 的所有后继的 rhs 值。</li>
+<li>若 g(u) &lt; rhs(u)（欠一致）：设置 g(u) = ∞，更新 u 和 u 的所有后继的 rhs 值。</li>
+</ul>
+</li>
+<li>对于每个 rhs 值改变的节点，若其不一致，将其加入优先队列。</li>
+</ul>
+</li>
+</ul>
+</li>
+<li>
+<p><strong>处理环境变化</strong>：</p>
+<ul>
+<li>当边 (u, v) 的代价发生变化：
+<ul>
+<li>更新边代价 c(u, v)。</li>
+<li>更新 rhs(v) = min(rhs(v), g(u) + c(u, v))（若 v 不是起点）。</li>
+<li>若 rhs(v) 改变，根据 v 的一致性状态决定是否加入优先队列。</li>
+</ul>
+</li>
+<li>返回步骤 2，重新计算最短路径。</li>
+</ul>
+</li>
+<li>
+<p><strong>提取路径</strong>：</p>
+<ul>
+<li>从目标开始，依次选择使 g(s’) + c(s’, s) 最小的前驱 s’，回溯到起点。</li>
+</ul>
+</li>
+</ol>
+<blockquote>
+<p><strong>适用场景</strong>：LPA* 适用于<strong>起点固定，目标可能变化</strong>的连续规划问题。例如，游戏中的 NPC 从固定位置出发，玩家位置不断变化。</p>
+</blockquote>
+<h4 id="算法演示-6">算法演示</h4>
+<p><img src="https://uipv4.zywvvd.com:33030/HexoFiles/vvd_image_files/lpastar.gif" srcset="/img/loading.gif" lazyload alt=""></p>
+<hr>
+<h3 id="D-（Dynamic-A-）">D*（Dynamic A*）</h3>
+<p>D* 是专为<strong>动态环境</strong>设计的增量式路径规划算法。它从目标向起点<strong>反向搜索</strong>，这使得当机器人移动时能够高效地响应环境变化。</p>
+<h4 id="基本概念-7">基本概念</h4>
+<ul>
+<li>
+<p><strong>反向搜索</strong>：与 A* 从起点向目标搜索不同，D* 从<strong>目标向起点</strong>搜索。这样做的好处是：当机器人（在起点）移动时，目标不变，之前计算的路径信息可以复用。</p>
+</li>
+<li>
+<p><strong>环境变化处理</strong>：当机器人发现环境变化（如发现新的障碍物）时，D* 不需要重新规划整条路径，而是<strong>局部更新</strong>受影响节点的信息，然后快速得到新路径。</p>
+</li>
+<li>
+<p><strong>节点标签</strong>：D* 中的每个节点有一个标签：</p>
+<ol>
+<li><strong>NEW</strong>：从未被访问过。</li>
+<li><strong>OPEN</strong>：在开放列表中，待处理。</li>
+<li><strong>CLOSED</strong>：已处理完毕。</li>
+<li><strong>RAISE</strong>：代价增加，需要传播给邻居。</li>
+<li><strong>LOWER</strong>：代价减少，需要传播给邻居。</li>
+</ol>
+</li>
+<li>
+<p><strong>代价函数</strong>：</p>
+<ol>
+<li><strong>h(x)</strong>：从节点 x 到目标的当前最优路径代价。</li>
+<li><strong>k(x)</strong>：节点 x 被放入开放列表时的最小 h 值，用于确定处理优先级。</li>
+</ol>
+</li>
+<li>
+<p><strong>反向传播</strong>：当某个节点的代价发生变化时，D* 会将变化<strong>反向传播</strong>给其前驱节点，更新整条路径的信息。</p>
+</li>
+</ul>
+<h4 id="基本流程-7">基本流程</h4>
+<ol>
+<li>
+<p><strong>初始化</strong>：</p>
+<ul>
+<li>将所有节点的标签设为 NEW，h 值设为 ∞。</li>
+<li>将目标节点的 h(goal) = 0，标签设为 OPEN，加入开放列表。</li>
+</ul>
+</li>
+<li>
+<p><strong>初始规划</strong>：</p>
+<ul>
+<li>执行类似 Dijkstra 的反向搜索，从目标向起点扩展。</li>
+<li>对于每个从开放列表取出的节点 x：
+<ul>
+<li>扩展 x 的所有前驱节点 y（即所有能到达 x 的节点）。</li>
+<li>若 h(y) &gt; h(x) + c(y, x)，更新 h(y) = h(x) + c(y, x)。</li>
+<li>将更新的节点加入开放列表。</li>
+</ul>
+</li>
+<li>直到起点的 h 值确定（起点被处理）。</li>
+</ul>
+</li>
+<li>
+<p><strong>路径执行与监测</strong>：</p>
+<ul>
+<li>机器人沿着 h 值递减的方向移动（贪心选择 h(y) + c(x, y) 最小的邻居 y）。</li>
+<li>在移动过程中，持续监测环境。</li>
+</ul>
+</li>
+<li>
+<p><strong>检测到变化</strong>：</p>
+<ul>
+<li>当检测到边 (x, y) 的代价变化时：
+<ul>
+<li>更新 c(x, y) 为新值。</li>
+<li>若 c(x, y) 增大（出现障碍），将 x 的标签设为 RAISE，加入开放列表。</li>
+<li>若 c(x, y) 减小（障碍消失），将 x 的标签设为 LOWER，加入开放列表。</li>
+</ul>
+</li>
+</ul>
+</li>
+<li>
+<p><strong>重规划</strong>：</p>
+<ul>
+<li>处理开放列表中的节点，传播代价变化：
+<ul>
+<li>RAISE 节点：通知邻居代价可能增加。</li>
+<li>LOWER 节点：通知邻居代价可能减少。</li>
+</ul>
+</li>
+<li>直到开放列表为空或起点的路径已更新。</li>
+</ul>
+</li>
+<li>
+<p><strong>继续执行</strong>：</p>
+<ul>
+<li>使用更新后的 h 值继续沿最优路径移动。</li>
+<li>若再次检测到变化，返回步骤 4。</li>
+</ul>
+</li>
+</ol>
+<blockquote>
+<p><strong>优势</strong>：D* 的反向搜索使得当机器人在起点附近移动时，大部分已计算的路径信息仍然有效，只需要更新局部区域。</p>
+</blockquote>
+<blockquote>
+<p><strong>缺点</strong>：D* 的实现较为复杂，且需要维护较多的状态信息。</p>
+</blockquote>
+<h4 id="算法演示-7">算法演示</h4>
+<p><img src="https://uipv4.zywvvd.com:33030/HexoFiles/vvd_image_files/d_star.gif" srcset="/img/loading.gif" lazyload alt=""></p>
+<hr>
+<h3 id="D-Lite">D* Lite</h3>
+<p>D* Lite 是 D* 的<strong>简化和改进版本</strong>。它基于 LPA* 的框架，通过添加启发式函数来加速搜索，同时保持了 D* 处理动态环境的能力。</p>
+<h4 id="基本概念-8">基本概念</h4>
+<ul>
+<li>
+<p><em><em>与 LPA</em> 的关系</em>*：D* Lite 本质上是 LPA* 的变种，专门针对<strong>起点移动、目标固定</strong>的场景优化。它继承了 LPA* 的增量更新机制（g 值和 rhs 值）。</p>
+</li>
+<li>
+<p><em><em>与 D</em> 的关系</em>*：D* Lite 的功能与 D* 相同，但实现更简单、效率更高。D* Lite 的代码量约为 D* 的一半，更容易理解和实现。</p>
+</li>
+<li>
+<p><strong>启发式函数</strong>：D* Lite 在 LPA* 的基础上添加了启发式函数 h(s, s_start)，用于估计从当前节点到机器人当前位置（起点）的距离。这使得搜索更有方向性。</p>
+</li>
+<li>
+<p><strong>键值计算</strong>：D* Lite 的优先队列键值为：<br>
+$$<br>
+Key(s) = [\min(g(s), rhs(s)) + h(s, s_{start}) + k_m; \min(g(s), rhs(s))]<br>
+$$<br>
+其中 $k_m$ 是一个修饰值，用于在机器人移动后调整键值，避免重新计算所有节点的键值。</p>
+</li>
+<li>
+<p><strong>机器人移动</strong>：当机器人从 s_start 移动到 s’_start 时：</p>
+<ol>
+<li>更新 $k_m = k_m + h(s’<em>{start}, s</em>{start})$。</li>
+<li>更新启发式函数（因为起点变了）。</li>
+<li>处理移动过程中发现的边代价变化。</li>
+</ol>
+</li>
+</ul>
+<h4 id="基本流程-8">基本流程</h4>
+<ol>
+<li>
+<p><strong>初始化</strong>：</p>
+<ul>
+<li>对所有节点 s：g(s) = ∞, rhs(s) = ∞。</li>
+<li>rhs(goal) = 0（注意：D* Lite 的目标是原问题的起点，因为反向搜索）。</li>
+<li>k_m = 0。</li>
+<li>将 goal 加入优先队列。</li>
+</ul>
+</li>
+<li>
+<p><strong>计算最短路径</strong>：</p>
+<ul>
+<li>执行类似 LPA* 的主循环，直到 s_start 一致且队列顶部的键值不小于 s_start 的键值。</li>
+<li>使用带启发式的键值排序。</li>
+</ul>
+</li>
+<li>
+<p><strong>机器人移动</strong>：</p>
+<ul>
+<li>机器人沿着最优路径移动一步：从 s_start 移动到 s’_start。</li>
+<li>选择使 c(s_start, s’) + g(s’) 最小的邻居 s’。</li>
+</ul>
+</li>
+<li>
+<p><strong>处理环境变化</strong>：</p>
+<ul>
+<li>在移动过程中，若检测到边代价变化：
+<ul>
+<li>更新边代价。</li>
+<li>更新受影响节点的 rhs 值。</li>
+<li>将不一致节点加入优先队列。</li>
+</ul>
+</li>
+</ul>
+</li>
+<li>
+<p><strong>更新起点并重规划</strong>：</p>
+<ul>
+<li>更新 s_start = s’_start。</li>
+<li>更新 k_m = k_m + h(s’_start, s_start)。</li>
+<li>返回步骤 2，计算新的最短路径。</li>
+</ul>
+</li>
+<li>
+<p><strong>重复执行</strong>：</p>
+<ul>
+<li>重复步骤 3-5，直到机器人到达目标。</li>
+</ul>
+</li>
+</ol>
+<blockquote>
+<p><strong>优势</strong>：D* Lite 结合了 LPA* 的增量更新和 A* 的启发式搜索，效率高且易于实现。它是目前动态环境路径规划中最实用的算法之一。</p>
+</blockquote>
+<blockquote>
+<p><strong>适用场景</strong>：移动机器人导航、未知环境探索、自动驾驶车辆的重规划。</p>
+</blockquote>
+<hr>
+<h3 id="Anytime-D">Anytime D*</h3>
+<p>Anytime D* 结合了 <strong>Anytime</strong> 和 <strong>D</strong>* 的思想，既支持动态环境下的增量更新，又能在时间受限时返回次优解并逐步优化。</p>
+<h4 id="基本概念-9">基本概念</h4>
+<ul>
+<li>
+<p><strong>任意时间特性</strong>：与 ARA* 类似，Anytime D* 可以在任何时刻返回当前找到的解，并随时间增加优化解的质量。</p>
+</li>
+<li>
+<p><strong>动态环境支持</strong>：与 D* Lite 类似，Anytime D* 可以高效处理环境变化，增量更新路径。</p>
+</li>
+<li>
+<p><strong>膨胀因子</strong>：Anytime D* 使用膨胀因子 $\epsilon \geq 1$：</p>
+<ul>
+<li>$\epsilon &gt; 1$：快速找到次优解。</li>
+<li>$\epsilon = 1$：保证最优解。</li>
+</ul>
+</li>
+<li>
+<p><strong>结合两种能力</strong>：</p>
+<ul>
+<li>当时间受限时，使用较大的 $\epsilon$ 快速得到可行解。</li>
+<li>当环境变化时，增量更新路径。</li>
+<li>当时间充裕时，减小 $\epsilon$ 优化解的质量。</li>
+</ul>
+</li>
+</ul>
+<h4 id="基本流程-9">基本流程</h4>
+<ol>
+<li>
+<p><strong>初始化</strong>：</p>
+<ul>
+<li>设置初始膨胀因子 $\epsilon = \epsilon_0$。</li>
+<li>初始化 g 值、rhs 值和优先队列（类似 D* Lite）。</li>
+</ul>
+</li>
+<li>
+<p><strong>加权搜索</strong>：</p>
+<ul>
+<li>使用 $Key(s) = [\min(g(s), rhs(s)) + \epsilon \cdot h(s) + k_m; \min(g(s), rhs(s))]$ 排序。</li>
+<li>执行搜索直到找到可行路径。</li>
+</ul>
+</li>
+<li>
+<p><strong>路径执行</strong>：</p>
+<ul>
+<li>机器人沿路径移动。</li>
+<li>若检测到环境变化，更新边代价和 rhs 值，返回步骤 2 进行重规划。</li>
+</ul>
+</li>
+<li>
+<p><strong>优化阶段</strong>（时间允许时）：</p>
+<ul>
+<li>减小 $\epsilon$。</li>
+<li>增量式地更新和优化路径。</li>
+<li>不需要从头开始搜索。</li>
+</ul>
+</li>
+<li>
+<p><strong>终止</strong>：</p>
+<ul>
+<li>可以在任何时刻停止，返回当前最佳解。</li>
+<li>当 $\epsilon = 1$ 且环境稳定时，得到最优解。</li>
+</ul>
+</li>
+</ol>
+<blockquote>
+<p><strong>适用场景</strong>：Anytime D* 适合<strong>动态环境下的实时系统</strong>，如自动驾驶、机器人足球、动态游戏环境。</p>
+</blockquote>
+<h4 id="算法演示-8">算法演示</h4>
+<p><img src="https://uipv4.zywvvd.com:33030/HexoFiles/vvd_image_files/adstar_small.gif" srcset="/img/loading.gif" lazyload alt=""></p>
+<hr>
+<h3 id="算法对比总结">算法对比总结</h3>
+<h4 id="按应用场景分类">按应用场景分类</h4>
+<table>
+<thead>
+<tr>
+<th>场景</th>
+<th>推荐算法</th>
+<th>理由</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>静态环境，单次查询</td>
+<td>A*</td>
+<td>简单高效，保证最优</td>
+</tr>
+<tr>
+<td>静态环境，大规模图</td>
+<td>Bidirectional A*</td>
+<td>减少搜索空间</td>
+</tr>
+<tr>
+<td>静态环境，时间受限</td>
+<td>ARA*</td>
+<td>快速返回次优解，可逐步优化</td>
+</tr>
+<tr>
+<td>动态环境，需要重规划</td>
+<td>D* Lite、LPA*</td>
+<td>增量更新，高效</td>
+</tr>
+<tr>
+<td>实时决策，未知环境</td>
+<td>LRTA*、RTAA*</td>
+<td>每步决策时间恒定</td>
+</tr>
+<tr>
+<td>动态环境 + 时间受限</td>
+<td>Anytime D*</td>
+<td>兼顾两者</td>
+</tr>
+</tbody>
+</table>
+<h4 id="性能对比">性能对比</h4>
+<table>
+<thead>
+<tr>
+<th>算法</th>
+<th>最优性</th>
+<th>增量更新</th>
+<th>实时性</th>
+<th>实现复杂度</th>
+<th>适用环境</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>A*</td>
+<td>✓</td>
+<td>✗</td>
+<td>✗</td>
+<td>低</td>
+<td>静态</td>
+</tr>
+<tr>
+<td>Bidirectional A*</td>
+<td>✓</td>
+<td>✗</td>
+<td>✗</td>
+<td>低</td>
+<td>静态</td>
+</tr>
+<tr>
+<td>ARA*</td>
+<td>渐近最优</td>
+<td>✗</td>
+<td>✓</td>
+<td>中</td>
+<td>静态</td>
+</tr>
+<tr>
+<td>LRTA*</td>
+<td>渐近最优</td>
+<td>✗</td>
+<td>✓</td>
+<td>中</td>
+<td>静态/未知</td>
+</tr>
+<tr>
+<td>RTAA*</td>
+<td>渐近最优</td>
+<td>✗</td>
+<td>✓</td>
+<td>中</td>
+<td>静态/未知</td>
+</tr>
+<tr>
+<td>LPA*</td>
+<td>✓</td>
+<td>✓</td>
+<td>✗</td>
+<td>中</td>
+<td>动态</td>
+</tr>
+<tr>
+<td>D*</td>
+<td>✓</td>
+<td>✓</td>
+<td>✗</td>
+<td>高</td>
+<td>动态</td>
+</tr>
+<tr>
+<td>D* Lite</td>
+<td>✓</td>
+<td>✓</td>
+<td>✗</td>
+<td>中</td>
+<td>动态</td>
+</tr>
+<tr>
+<td>Anytime D*</td>
+<td>渐近最优</td>
+<td>✓</td>
+<td>✓</td>
+<td>高</td>
+<td>动态</td>
+</tr>
+</tbody>
+</table>
+<hr>
+<h3 id="算法选择指南">算法选择指南</h3>
+<figure class="highlight gherkin"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br></pre></td><td class="code"><pre><code class="hljs gherkin">                  环境是否动态？<br>                  /            \<br>                否              是<br>                |<span class="hljs-string">               </span>|<br>          时间受限？         时间受限？<br>          /      \           /        \<br>        否        是        否          是<br>        |<span class="hljs-string">         </span>|<span class="hljs-string">         </span>|<span class="hljs-string">           </span>|<br>       A<span class="hljs-symbol">*</span>       ARA<span class="hljs-symbol">*</span>     D<span class="hljs-symbol">*</span> Lite    Anytime D<span class="hljs-symbol">*</span><br>        |<span class="hljs-string">         </span>|<br>  起点终点固定？  |<span class="hljs-string"></span><br><span class="hljs-string">  /      \       </span>|<br>单向     双向    |<span class="hljs-string"></span><br><span class="hljs-string"> </span>|<span class="hljs-string">        </span>|<span class="hljs-string">      </span>|<br>A<span class="hljs-symbol">*</span>   Bidir A<span class="hljs-symbol">*</span>   LRTA<span class="hljs-symbol">*</span><br>               RTAA<span class="hljs-symbol">*</span><br></code></pre></td></tr></table></figure>
+<hr>
+<h3 id="代码实现参考">代码实现参考</h3>
+<p>推荐参考 <a target="_blank" rel="noopener" href="https://github.com/zhm-real/PathPlanning">PathPlanning</a> 仓库，包含：</p>
+<ul>
+<li>Python 实现的完整代码</li>
+<li>动画演示</li>
+<li>详细注释</li>
+</ul>
+<hr>
+<h3 id="参考资料">参考资料</h3>
+<h4 id="经典论文">经典论文</h4>
+<ul>
+<li><a target="_blank" rel="noopener" href="https://ieeexplore.ieee.org/document/4082128">A*: A Formal Basis for the heuristic Determination of Minimum Cost Paths</a></li>
+<li><a target="_blank" rel="noopener" href="https://papers.nips.cc/paper/2382-ara-anytime-a-with-provable-bounds-on-sub-optimality.pdf">ARA*: Anytime A* with Provable Bounds on Sub-Optimality</a></li>
+<li><a target="_blank" rel="noopener" href="https://arxiv.org/pdf/1110.4076.pdf">Learning Real-Time A*: Learning in Real-Time Search: A Unifying Framework</a></li>
+<li><a target="_blank" rel="noopener" href="http://idm-lab.org/bib/abstracts/papers/aamas06.pdf">Real-Time Adaptive A*</a></li>
+<li><a target="_blank" rel="noopener" href="https://www.cs.cmu.edu/~maxim/files/aij04.pdf">Lifelong Planning A*</a></li>
+<li><a target="_blank" rel="noopener" href="http://web.mit.edu/16.412j/www/html/papers/original_dstar_icra94.pdf">D*: Optimal and Efficient Path Planning for Partially-Known Environments</a></li>
+<li><a target="_blank" rel="noopener" href="http://idm-lab.org/bib/abstracts/papers/aaai02b.pdf">D* Lite</a></li>
+<li><a target="_blank" rel="noopener" href="http://www.cs.cmu.edu/~ggordon/likhachev-etal.anytime-dstar.pdf">Anytime D*: Anytime Dynamic A*: An Anytime, Replanning Algorithm</a></li>
+</ul>
+<h4 id="代码仓库">代码仓库</h4>
+<ul>
+<li><a target="_blank" rel="noopener" href="https://github.com/zhm-real/PathPlanning">PathPlanning - zhm-real</a>：包含搜索式和采样式路径规划算法的可视化实现</li>
+</ul>
+<h4 id="相关笔记">相关笔记</h4>
+<ul>
+<li><a href="/notes/study/algorithm/graph/astar/astar/">A* 算法详解</a></li>
+<li><a href="/notes/study/algorithm/graph/path-plan/path-plan/">路径规划算法简介</a></li>
+<li><a href="/notes/study/algorithm/graph/hybrid-a-start/hybrid-a-start/">Hybrid A* 混合路径规划</a></li>
+</ul>
+<link rel="stylesheet" href="/css/spoiler.css" type="text/css"><script src="/js/spoiler.js" type="text/javascript" async></script>
+                
+
+
+				<br /><br />
+				<blockquote>
+					<p>文章链接：<br /> 
+					<a style="font-size: 0.85rem" target="_blank" rel="noopener" href="https://www.zywvvd.com/notes/study/algorithm/graph/astar-variants/astar-variants/">https://www.zywvvd.com/notes/study/algorithm/graph/astar-variants/astar-variants/</a>
+					</p>
+				</blockquote>
+
+
+              </div>
+            
+            <hr/>
+			
+			<!-- 添加打赏模块 -->
+			<div class="reward-container">
+				
+					<button id="rewardBtn" class="reward-btn">
+						 
+							❤ 打赏
+							
+					</button>
+					<p class="tea">“觉得不错的话，给点打赏吧 ୧(๑•̀⌄•́๑)૭”</p>
+					<div id="rewardImgContainer" class="reward-img-container">
+						<div class="singleImgContainer">
+							<img id="wechatImg" class="reward-img" src="https://uipv4.zywvvd.com:33030/HexoFiles/vvd_pc_upload/wechatpay.png" srcset="/img/loading.gif" lazyload alt="微信二维码">
+							<p class="wechatPay">微信支付</p>
+						</div>
+						<div class="singleImgContainer">
+							<img id="alipayImg" class="reward-img" src="https://uipv4.zywvvd.com:33030/HexoFiles/vvd_pc_upload/alipay.png" srcset="/img/loading.gif" lazyload alt="支付宝二维码">
+							<p class="aliPay">支付宝支付</p>
+						</div>
+					</div>
+				
+			</div>
+			
+            <div>
+              <div class="post-metas my-3">
+  
+    <div class="post-meta mr-3 d-flex align-items-center">
+      <i class="iconfont icon-category"></i>
+      
+
+<span class="category-chains">
+  
+  
+    
+      <span class="category-chain">
+        
+  <a href="/categories/Algorithm/" class="category-chain-item">Algorithm</a>
+  
+  
+    <span>></span>
+    
+  <a href="/categories/Algorithm/PathPlan/" class="category-chain-item">PathPlan</a>
+  
+  
+
+  
+
+      </span>
+    
+  
+</span>
+
+    </div>
+  
+  
+    <div class="post-meta">
+      <i class="iconfont icon-tags"></i>
+      
+        <a href="/tags/Algorithm/" class="print-no-link">#Algorithm</a>
+      
+        <a href="/tags/PathPlan/" class="print-no-link">#PathPlan</a>
+      
+        <a href="/tags/A/" class="print-no-link">#A*</a>
+      
+    </div>
+  
+</div>
+
+
+              
+  
+
+  <div class="license-box my-3">
+    <div class="license-title">
+      <div>A* 算法及其变种详解</div>
+      <div>https://www.zywvvd.com/notes/study/algorithm/graph/astar-variants/astar-variants/</div>
+    </div>
+    <div class="license-meta">
+      
+        <div class="license-meta-item">
+          <div>作者</div>
+          <div>Yiwei Zhang</div>
+        </div>
+      
+      
+        <div class="license-meta-item license-meta-date">
+          <div>发布于</div>
+          <div>2026年3月10日</div>
+        </div>
+      
+      
+      
+        <div class="license-meta-item">
+          <div>许可协议</div>
+          <div>
+            
+              
+              
+                <a class="print-no-link" target="_blank" href="https://creativecommons.org/licenses/by/4.0/">
+                  <span class="hint--top hint--rounded" aria-label="BY - 署名">
+                    <i class="iconfont icon-by"></i>
+                  </span>
+                </a>
+              
+            
+          </div>
+        </div>
+      
+    </div>
+    <div class="license-icon iconfont"></div>
+  </div>
+
+
+
+              
+                <div class="post-prevnext my-3">
+                  <article class="post-prev col-6">
+                    
+                    
+                  </article>
+                  <article class="post-next col-6">
+                    
+                    
+                      <a href="/notes/study/llm/openclaw-multi-agents/openclaw-multi-agents/" title="OpenClaw 配置多 Agents">
+                        <span class="hidden-mobile">OpenClaw 配置多 Agents</span>
+                        <span class="visible-mobile">下一篇</span>
+                        <i class="iconfont icon-arrowright"></i>
+                      </a>
+                    
+                  </article>
+                </div>
+              
+            </div>
+
+            
+  
+  
+    <article id="comments" lazyload>
+      
+  <div id="waline"></div>
+  <script type="text/javascript">
+    Fluid.utils.loadComments('#waline', function() {
+      Fluid.utils.createCssLink('https://lib.baomitu.com/waline/2.14.8/waline.min.css')
+      Fluid.utils.createScript('https://lib.baomitu.com/waline/2.14.8/waline.min.js', function() {
+        var options = Object.assign(
+          {"serverURL":"https://uipv4.zywvvd.com:33033/","path":"window.location.pathname","meta":["nick","mail","link"],"requiredMeta":["nick"],"lang":"zh-CN","emoji":["https://cdn.jsdelivr.net/gh/walinejs/emojis/weibo"],"dark":"html[data-user-color-scheme=\"dark\"]","wordLimit":0,"pageSize":10,"reaction":true,"locale":{"placeholder":"山高路远，常来玩吖 ~","reactionTitle":null}},
+          {
+            el: '#waline',
+            path: window.location.pathname
+          }
+        )
+        Waline.init(options);
+        Fluid.utils.waitElementVisible('#waline .vcontent', () => {
+          var imgSelector = '#waline .vcontent img:not(.vemoji)';
+          Fluid.plugins.imageCaption(imgSelector);
+          Fluid.plugins.fancyBox(imgSelector);
+        })
+      });
+    });
+  </script>
+  <noscript>Please enable JavaScript to view the comments</noscript>
+
+
+    </article>
+  
+
+
+          </article>
+        </div>
+      </div>
+    </div>
+
+    <div class="side-col d-none d-lg-block col-lg-2">
+      
+  <aside class="sidebar" style="margin-left: -1rem">
+    <div id="toc">
+  <p class="toc-header">
+    <i class="iconfont icon-list"></i>
+    <span>目录</span>
+  </p>
+  <div class="toc-body" id="toc-body"></div>
+</div>
+
+
+
+  </aside>
+
+
+    </div>
+  </div>
+</div>
+
+
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+  
+  
+
+
+
+
+
+  <script>
+  Fluid.utils.createScript('https://lib.baomitu.com/mermaid/8.14.0/mermaid.min.js', function() {
+    mermaid.initialize({"theme":"default"});
+
+    Fluid.utils.listenDOMLoaded(function() {
+      Fluid.events.registerRefreshCallback(function() {
+        if ('mermaid' in window) {
+          mermaid.init();
+        }
+      });
+    });
+  });
+</script>
+
+
+
+
+
+
+    
+
+    
+      <a id="scroll-top-button" aria-label="TOP" href="#" role="button">
+        <i class="iconfont icon-xiangshangjiantou" aria-hidden="true"></i>
+      </a>
+    
+
+    
+      <div class="modal fade" id="modalSearch" tabindex="-1" role="dialog" aria-labelledby="ModalLabel"
+     aria-hidden="true">
+  <div class="modal-dialog modal-dialog-scrollable modal-lg" role="document">
+    <div class="modal-content">
+      <div class="modal-header text-center">
+        <h4 class="modal-title w-100 font-weight-bold">搜索</h4>
+        <button type="button" id="local-search-close" class="close" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body mx-3">
+        <div class="md-form mb-5">
+          <input type="text" id="local-search-input" class="form-control validate">
+          <label data-error="x" data-success="v" for="local-search-input">关键词</label>
+        </div>
+        <div class="list-group" id="local-search-result"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+    
+
+    
+  </main>
+
+  <footer>
+    <div class="footer-inner">
+  
+    <div class="footer-content">
+       <div class="vvd_footer" style="font-size: 0.85rem;"> <a href="https://hexo.io" target="_blank" rel="nofollow noopener" color="#d7d8d9" data-umami-event="Footer-Hexo"><span class="umami--click--Footer-Hexo">Hexo</span></a> <i class="iconfont icon-love"></i> <a href="https://github.com/fluid-dev/hexo-theme-fluid" target="_blank" rel="nofollow noopener" data-umami-event="Footer-Fluid"><span class="umami--click--Footer-Fluid">Fluid</span></a> <i class="iconfont icon-love"></i> <a href="https://uipv4.zywvvd.com:33039/share/0zx3o21oIpZTZqwC/%E5%8F%88%E8%A7%81%E8%8B%8D%E5%B2%9A" target="_blank" rel="nofollow noopener" data-umami-event="Footer-Umami"><span class="umami--click--Footer-Umami">Umami</span></a> <div style="font-size: 0.85rem;"> <span id="timeDate">载入天数...</span> <span id="times">载入时分秒...</span> <script src="/vvd_js/duration.js"></script> </div> <div style="font-size: 0.85rem;"> <span> 总访问量 <span style="color: #d7d8d9;" id="PVstatic">0</span> 次&nbsp</span> <span> 总访客数 <span style="color: #d7d8d9;" id="UVstatic">0</span> 人&nbsp</span> <span> 当前在线 <span style="color: #d7d8d9;" id="ACTstatic">0</span> 人&nbsp</span> <script src="https://uipv4.zywvvd.com:33037/statistics" defer></script> </div> <div> <span> Copyright © 2020-2025. All Rights Reserved.</span> </div> <div style="font-size: 0.88rem;"> <a target="_blank" rel="noopener" href="https://developer.hitokoto.cn/" id="hitokoto_text"><span style="color: #d7d8d9;"  id="hitokoto"></span></a> <script src="https://uipv4.zywvvd.com:33044/?encode=js&select=%23hitokoto" defer></script> </div> <a href="https://icp.gov.moe/?keyword=20230615" target="_blank">萌ICP备20230615号</a>
+
+
+</div> 
+    </div>
+  
+  
+  
+  
+</div>
+
+  </footer>
+
+  <!-- Scripts -->
+  
+  <script  src="https://lib.baomitu.com/nprogress/0.2.0/nprogress.min.js" ></script>
+  <link  rel="stylesheet" href="https://lib.baomitu.com/nprogress/0.2.0/nprogress.min.css" />
+
+  <script>
+    NProgress.configure({"showSpinner":false,"trickleSpeed":100})
+    NProgress.start()
+    window.addEventListener('load', function() {
+      NProgress.done();
+    })
+  </script>
+
+
+<script  src="https://lib.baomitu.com/jquery/3.6.0/jquery.min.js" ></script>
+<script  src="https://lib.baomitu.com/twitter-bootstrap/4.6.1/js/bootstrap.min.js" ></script>
+<script  src="/js/events.js" ></script>
+<script  src="/js/plugins.js" ></script>
+
+
+
+
+
+  
+    <script  src="/js/img-lazyload.js" ></script>
+  
+
+
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/tocbot/4.18.2/tocbot.min.js', function() {
+    var toc = jQuery('#toc');
+    if (toc.length === 0 || !window.tocbot) { return; }
+    var boardCtn = jQuery('#board-ctn');
+    var boardTop = boardCtn.offset().top;
+
+    window.tocbot.init(Object.assign({
+      tocSelector     : '#toc-body',
+      contentSelector : '.markdown-body',
+      linkClass       : 'tocbot-link',
+      activeLinkClass : 'tocbot-active-link',
+      listClass       : 'tocbot-list',
+      isCollapsedClass: 'tocbot-is-collapsed',
+      collapsibleClass: 'tocbot-is-collapsible',
+      scrollSmooth    : true,
+      includeTitleTags: true,
+      headingsOffset  : -boardTop,
+    }, CONFIG.toc));
+    if (toc.find('.toc-list-item').length > 0) {
+      toc.css('visibility', 'visible');
+    }
+
+    Fluid.events.registerRefreshCallback(function() {
+      if ('tocbot' in window) {
+        tocbot.refresh();
+        var toc = jQuery('#toc');
+        if (toc.length === 0 || !tocbot) {
+          return;
+        }
+        if (toc.find('.toc-list-item').length > 0) {
+          toc.css('visibility', 'visible');
+        }
+      }
+    });
+  });
+</script>
+
+
+  <script src=https://lib.baomitu.com/clipboard.js/2.0.10/clipboard.min.js></script>
+
+  <script>Fluid.plugins.codeWidget();</script>
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/anchor-js/4.3.1/anchor.min.js', function() {
+    window.anchors.options = {
+      placement: CONFIG.anchorjs.placement,
+      visible  : CONFIG.anchorjs.visible
+    };
+    if (CONFIG.anchorjs.icon) {
+      window.anchors.options.icon = CONFIG.anchorjs.icon;
+    }
+    var el = (CONFIG.anchorjs.element || 'h1,h2,h3,h4,h5,h6').split(',');
+    var res = [];
+    for (var item of el) {
+      res.push('.markdown-body > ' + item.trim());
+    }
+    if (CONFIG.anchorjs.placement === 'left') {
+      window.anchors.options.class = 'anchorjs-link-left';
+    }
+    window.anchors.add(res.join(', '));
+
+    Fluid.events.registerRefreshCallback(function() {
+      if ('anchors' in window) {
+        anchors.removeAll();
+        var el = (CONFIG.anchorjs.element || 'h1,h2,h3,h4,h5,h6').split(',');
+        var res = [];
+        for (var item of el) {
+          res.push('.markdown-body > ' + item.trim());
+        }
+        if (CONFIG.anchorjs.placement === 'left') {
+          anchors.options.class = 'anchorjs-link-left';
+        }
+        anchors.add(res.join(', '));
+      }
+    });
+  });
+</script>
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/fancybox/3.5.7/jquery.fancybox.min.js', function() {
+    Fluid.plugins.fancyBox();
+  });
+</script>
+
+
+  <script>Fluid.plugins.imageCaption();</script>
+
+  
+      <script>
+        if (!window.MathJax) {
+          window.MathJax = {
+            tex    : {
+              inlineMath: { '[+]': [['$', '$']] }
+            },
+            options: {
+              renderActions: {
+                insertedScript: [200, () => {
+                  document.querySelectorAll('mjx-container').forEach(node => {
+                    let target = node.parentNode;
+                    if (target.nodeName.toLowerCase() === 'li') {
+                      target.parentNode.classList.add('has-jax');
+                    }
+                  });
+                }, '', false]
+              }
+            }
+          };
+        } else {
+          MathJax.startup.document.state(0);
+          MathJax.texReset();
+          MathJax.typeset();
+          MathJax.typesetPromise();
+        }
+
+        Fluid.events.registerRefreshCallback(function() {
+          if ('MathJax' in window && MathJax.startup.document && typeof MathJax.startup.document.state === 'function') {
+            MathJax.startup.document.state(0);
+            MathJax.texReset();
+            MathJax.typeset();
+            MathJax.typesetPromise();
+          }
+        });
+      </script>
+    
+
+  <script  src="https://lib.baomitu.com/mathjax/3.2.1/es5/tex-mml-chtml.js" ></script>
+
+  <script defer src="/js/leancloud.js" ></script>
+
+  <script  src="/js/local-search.js" ></script>
+
+
+
+
+  
+<script src="//cdn.jsdelivr.net/npm/aplayer/dist/APlayer.min.js"></script>
+<script src="//cdn.jsdelivr.net/gh/metowolf/MetingJS@1.2/dist/Meting.min.js"></script>
+<script src="/js/reward.js"></script>
+
+
+
+<!-- 主题的启动项，将它保持在最底部 -->
+<!-- the boot of the theme, keep it at the bottom -->
+<script  src="/js/boot.js" ></script>
+
+
+  <script type="text/javascript">
+    /*窗口监视*/
+    var originalTitle = document.title;
+    window.onblur = function(){document.title = "明眸如初"};
+    window.onfocus = function(){document.title = originalTitle};
+  </script>
+
+
+  <div id="tooltip-rightmenu" class="tooltip-rightmenu">如需原始右键菜单请按下 <strong>Ctrl+右键</strong></div>
+
+<div id="rightmenu-wrapper" style="">
+  <ul class="list-v rightmenu" id="rightmenu-content">
+	  <li class="navigation menuNavigation-Content">
+		<a class="nav icon-only fix-cursor-default" onclick="history.back()"><i class="iconfont icon-zuojiantou1"></i></a>
+		<a class="nav icon-only fix-cursor-default" onclick="history.forward()"><i class="iconfont icon-youjiantou1"></i></a>
+		<a class="nav icon-only fix-cursor-default" onclick="window.location.reload()"><i class="iconfont icon-shuaxin"></i></a>
+		<a  aria-label="TOP" href="#" role="button"><i class="iconfont icon-xiangshang"></i></a>
+	  </li>
+
+		<hr class="menuLoad-Content" style="display: block;">
+	  <li class="menuLoad-Content" style="display: block;">
+		<a class="vlts-menu fix-cursor-default" target="_self" href="javascript:;" data-toggle="modal" data-target="#modalSearch" aria-label="Search">
+		  <span>
+			  <i class="iconfont icon-sousuo1 rightmenu-icon"></i>
+			  站内搜索
+		  </span>
+		</a>
+	  </li>
+
+	  <li class="menuLoad-Content" style="display: block;">
+		<a class="vlts-menu fix-cursor-default"  href="https://www.zywvvd.com/messagebd/" data-group="link">
+		  <span>
+			  <i class="iconfont icon-yangshi_icon_tongyong_chat rightmenu-icon">  </i>
+			   留言吐槽 
+		   </span>
+		</a>
+	  </li>
+
+
+	  <li class="menuLoad-Content" style="display: block;">
+		<a class="vlts-menu fix-cursor-default" id="help" target="_blank" rel="noopener" href="https://www.foreverblog.cn/go.html" data-group="link">
+		<span>
+			  <i class="iconfont icon-a-BlackHole rightmenu-icon"></i>
+			  虫洞穿梭
+		  </span>
+		</a>
+	  </li>
+
+	<a id="scroll-top-button" aria-label="TOP" href="#" role="button" style="bottom: 20px; right: 52.6364px;">
+        <i class="iconfont icon-xiangshangjiantou" aria-hidden="true"></i>
+      </a>
+
+	<hr class="menuLoad-Content" style="display: block;">
+	
+	  <li class="menuLoad-Content" style="display: block;">
+		<a class="vlts-menu fix-cursor-default" id="destroy-airplane" target="_blank" rel="noopener"  data-group="link">
+		<span>
+			  <i class="iconfont icon-feiji rightmenu-icon"></i>
+			  破坏小飞机
+		  </span>
+		</a>
+	  </li>
+  </ul>
+</div>
+
+<script>
+	var ua = navigator.userAgent;
+	var ipad = ua.match(/(iPad).*OS\s([\d_]+)/),
+		isIphone = !ipad && ua.match(/(iPhone\sOS)\s([\d_]+)/),
+		isAndroid = ua.match(/(Android)\s+([\d.]+)/),
+		isMobile = isIphone || isAndroid;
+
+	if(!isMobile) {
+		// 为按钮添加事件处理器
+		document.getElementById('destroy-airplane').onclick = function() {
+		  console.log('飞机起飞！');
+		  // 定义要执行的JavaScript代码
+		var KICKASSVERSION='2.0';
+		var s = document.createElement('script');
+		s.type='text/javascript';
+		document.body.appendChild(s);
+		s.src='https://uipv4.zywvvd.com:33030/HexoFiles/js/games/airplane/airplane.js';
+		void(0);
+		};
+	}
+</script>
+
+
+
+
+
+<link href="/css/custom.css"type="text/css"rel="stylesheet"/>
+<script src="/vvd_js/right_menu.js" type="text/javascript"></script>
+<link href="/css/right_menu.css"type="text/css"rel="stylesheet"/>
+<script src="/vvd_js/go.js"></script>
+
+
+  <noscript>
+    <div class="noscript-warning">博客在允许 JavaScript 运行的环境下浏览效果更佳</div>
+  </noscript>
+<script src="/live2dw/lib/L2Dwidget.min.js?094cbace49a39548bed64abff5988b05"></script><script>L2Dwidget.init({"pluginRootPath":"live2dw/","pluginJsPath":"lib/","pluginModelPath":"assets/","tagMode":false,"log":false,"model":{"jsonPath":"/live2dw/assets/z16.model.json"},"display":{"position":"left","width":200,"height":400},"mobile":{"show":false},"react":{"opacity":0.9}});</script></body>
+</html>
