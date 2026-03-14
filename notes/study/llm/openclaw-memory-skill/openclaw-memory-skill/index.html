@@ -17,15 +17,15 @@
   <meta name="author" content="Yiwei Zhang">
   <meta name="keywords" content="人工智能, 深度学习, 个人博客, 机器学习">
   
-    <meta name="description" content="本文记录如何配置 OpenClaw 的记忆系统，以及创建、打包和测试自定义技能的完整流程。">
+    <meta name="description" content="本文记录如何配置 OpenClaw 的记忆系统，以及创建自定义技能的流程。">
 <meta property="og:type" content="article">
 <meta property="og:title" content="OpenClaw 记忆管理与技能创建指南">
 <meta property="og:url" content="https://www.zywvvd.com/notes/study/llm/openclaw-memory-skill/openclaw-memory-skill/index.html">
 <meta property="og:site_name" content="又见苍岚">
-<meta property="og:description" content="本文记录如何配置 OpenClaw 的记忆系统，以及创建、打包和测试自定义技能的完整流程。">
+<meta property="og:description" content="本文记录如何配置 OpenClaw 的记忆系统，以及创建自定义技能的流程。">
 <meta property="og:locale" content="zh_CN">
 <meta property="article:published_time" content="2026-03-14T06:56:00.000Z">
-<meta property="article:modified_time" content="2026-03-14T08:18:04.710Z">
+<meta property="article:modified_time" content="2026-03-14T08:21:05.152Z">
 <meta property="article:author" content="Yiwei Zhang">
 <meta property="article:tag" content="Large_Language_Model">
 <meta property="article:tag" content="OpenClaw">
@@ -674,7 +674,7 @@ document.addEventListener("readystatechange", function() {
         <i class="iconfont icon-chart"></i>
         
           <!-- compatible with older versions-->
-          2.7k 字
+          846 字
         
       </span>
     
@@ -686,7 +686,7 @@ document.addEventListener("readystatechange", function() {
         
         
           <!-- compatible with older versions-->
-          23 分钟
+          8 分钟
         
       </span>
     
@@ -898,160 +898,41 @@ document.addEventListener("readystatechange", function() {
               <div class="markdown-body">
                 
                 <blockquote>
-<p>本文记录如何配置 OpenClaw 的记忆系统，以及创建、打包和测试自定义技能的完整流程。</p>
+<p>本文记录如何配置 OpenClaw 的记忆系统，以及创建自定义技能的流程。</p>
 </blockquote>
 <span id="more"></span>
 <h3 id="简介">简介</h3>
-<p>OpenClaw 是一个可扩展的 AI 助手框架，核心特性包括：</p>
+<p>OpenClaw 是一个可扩展的 AI 助手框架，核心特性：</p>
 <ul>
-<li><strong>记忆系统</strong>：持久化存储对话中的重要信息，支持语义搜索</li>
-<li><strong>技能系统</strong>：将特定工作流程打包成可复用的模块</li>
-<li><strong>多 Agent 支持</strong>：可配置多个独立运行的 AI 助手</li>
+<li><strong>记忆系统</strong>：持久化存储重要信息，支持语义搜索</li>
+<li><strong>技能系统</strong>：将工作流程打包成可复用模块</li>
 </ul>
-<p>本文将详细介绍：</p>
-<ol>
-<li>记忆系统的工作原理与配置方法</li>
-<li>本地 Embedding 的安装与配置</li>
-<li>技能的创建、打包与更新流程</li>
-<li>实战示例与最佳实践</li>
-</ol>
-<h3 id="记忆系统详解">记忆系统详解</h3>
-<h4 id="为什么需要记忆系统？">为什么需要记忆系统？</h4>
-<p>AI 助手默认只记得当前对话的内容，一旦对话结束或上下文被压缩，之前的信息就会丢失。记忆系统解决了这个问题：</p>
-<table>
-<thead>
-<tr>
-<th>场景</th>
-<th>没有记忆</th>
-<th>有记忆</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td>用户偏好</td>
-<td>每次都要重新说明</td>
-<td>自动记住并应用</td>
-</tr>
-<tr>
-<td>项目配置</td>
-<td>每次都要重复</td>
-<td>自动识别并使用</td>
-</tr>
-<tr>
-<td>历史决策</td>
-<td>无法追溯</td>
-<td>可以随时查询</td>
-</tr>
-<tr>
-<td>跨对话协作</td>
-<td>不可能</td>
-<td>可以引用之前的内容</td>
-</tr>
-</tbody>
-</table>
-<h4 id="记忆文件结构">记忆文件结构</h4>
-<p>OpenClaw 的记忆是纯 Markdown 文件，存放在 Agent 的工作空间中：</p>
-<figure class="highlight awk"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><code class="hljs awk">~<span class="hljs-regexp">/.openclaw/</span>workspaces<span class="hljs-regexp">/&lt;agent-id&gt;/</span><br>├── MEMORY.md           <span class="hljs-comment"># 核心记忆入口（长期记忆）</span><br>└── memory/<br>    ├── <span class="hljs-number">2026</span>-<span class="hljs-number">03</span>-<span class="hljs-number">14</span>.md   <span class="hljs-comment"># 每日日志（按日期记录）</span><br>    ├── <span class="hljs-number">2026</span>-<span class="hljs-number">03</span>-<span class="hljs-number">13</span>.md<br>    ├── project.md      <span class="hljs-comment"># 主题记忆文件</span><br>    └── workflow.md     <span class="hljs-comment"># 可按主题组织</span><br></code></pre></td></tr></table></figure>
-<p><strong><a target="_blank" rel="noopener" href="http://MEMORY.md">MEMORY.md</a> vs memory/ 目录</strong>：</p>
-<table>
-<thead>
-<tr>
-<th>文件</th>
-<th>用途</th>
-<th>读取时机</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td><code>MEMORY.md</code></td>
-<td>核心长期记忆，重要信息</td>
-<td>会话开始时</td>
-</tr>
-<tr>
-<td><code>memory/YYYY-MM-DD.md</code></td>
-<td>每日日志，临时记录</td>
-<td>读取今天和昨天</td>
-</tr>
-<tr>
-<td><code>memory/topic.md</code></td>
-<td>主题记忆，特定领域</td>
-<td>通过语义搜索调用</td>
-</tr>
-</tbody>
-</table>
+<h3 id="记忆系统">记忆系统</h3>
+<h4 id="文件结构">文件结构</h4>
+<figure class="highlight awk"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><code class="hljs awk">~<span class="hljs-regexp">/.openclaw/</span>workspaces<span class="hljs-regexp">/&lt;agent-id&gt;/</span><br>├── MEMORY.md           <span class="hljs-comment"># 核心记忆入口</span><br>└── memory/<br>    ├── <span class="hljs-number">2026</span>-<span class="hljs-number">03</span>-<span class="hljs-number">14</span>.md   <span class="hljs-comment"># 每日日志</span><br>    └── topic.md        <span class="hljs-comment"># 主题记忆</span><br></code></pre></td></tr></table></figure>
 <h4 id="记忆工具">记忆工具</h4>
-<p>OpenClaw 提供两个记忆工具：</p>
-<p><strong>1. memory_search - 语义搜索</strong></p>
-<figure class="highlight json"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><code class="hljs json"><span class="hljs-punctuation">&#123;</span><br>  <span class="hljs-attr">&quot;query&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;博客发布流程&quot;</span><span class="hljs-punctuation">,</span><br>  <span class="hljs-attr">&quot;maxResults&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-number">5</span><br><span class="hljs-punctuation">&#125;</span><br></code></pre></td></tr></table></figure>
-<p>返回相关记忆片段，包含：</p>
-<ul>
-<li><code>path</code> - 文件路径</li>
-<li><code>startLine</code> / <code>endLine</code> - 行号范围</li>
-<li><code>snippet</code> - 内容片段</li>
-<li><code>score</code> - 相关度分数</li>
-</ul>
-<p><strong>2. memory_get - 读取文件</strong></p>
-<figure class="highlight json"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><code class="hljs json"><span class="hljs-punctuation">&#123;</span><br>  <span class="hljs-attr">&quot;path&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;memory/hexo-workflow.md&quot;</span><span class="hljs-punctuation">,</span><br>  <span class="hljs-attr">&quot;from&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-number">1</span><span class="hljs-punctuation">,</span><br>  <span class="hljs-attr">&quot;lines&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-number">50</span><br><span class="hljs-punctuation">&#125;</span><br></code></pre></td></tr></table></figure>
-<p>直接读取指定记忆文件的内容。</p>
-<h3 id="语义搜索配置">语义搜索配置</h3>
-<h4 id="默认行为-vs-语义搜索">默认行为 vs 语义搜索</h4>
-<p>默认情况下，<code>memory_search</code> 使用全文匹配（FTS），只能通过关键词查找。这意味着：</p>
-<ul>
-<li>搜 “博客” 找不到 “Hexo”</li>
-<li>搜 “发布” 找不到 “deploy”</li>
-<li>搜 “图片” 找不到 “image”</li>
-</ul>
-<p><strong>语义搜索</strong>通过 embedding 向量化，可以理解语义相似性，大幅提升搜索准确度。</p>
-<h4 id="Embedding-Provider-选择">Embedding Provider 选择</h4>
-<p>OpenClaw 支持多种 embedding provider：</p>
 <table>
 <thead>
 <tr>
-<th>Provider</th>
-<th>费用</th>
-<th>速度</th>
-<th>准确度</th>
-<th>推荐场景</th>
+<th>工具</th>
+<th>功能</th>
 </tr>
 </thead>
 <tbody>
 <tr>
-<td>local</td>
-<td>免费</td>
-<td>中等</td>
-<td>良好</td>
-<td>个人使用、隐私优先</td>
+<td><code>memory_search</code></td>
+<td>语义搜索记忆内容</td>
 </tr>
 <tr>
-<td>openai</td>
-<td>付费</td>
-<td>快</td>
-<td>优秀</td>
-<td>商业使用、高准确度需求</td>
-</tr>
-<tr>
-<td>gemini</td>
-<td>付费</td>
-<td>快</td>
-<td>优秀</td>
-<td>已有 Gemini API</td>
-</tr>
-<tr>
-<td>ollama</td>
-<td>免费</td>
-<td>慢</td>
-<td>良好</td>
-<td>本地 Ollama 环境</td>
+<td><code>memory_get</code></td>
+<td>读取指定记忆文件</td>
 </tr>
 </tbody>
 </table>
-<h4 id="方案一：本地-Embedding（推荐）">方案一：本地 Embedding（推荐）</h4>
-<p><strong>优点</strong>：</p>
-<ul>
-<li>完全免费</li>
-<li>数据不上传，隐私安全</li>
-<li>无需 API Key</li>
-</ul>
+<h3 id="语义搜索配置">语义搜索配置</h3>
+<p>默认使用全文匹配，搜&quot;博客&quot;找不到&quot;Hexo&quot;。启用语义搜索可理解语义相似性。</p>
+<h4 id="本地-Embedding（推荐）">本地 Embedding（推荐）</h4>
+<p><strong>优点</strong>：免费、隐私安全、无需 API Key</p>
 <p><strong>配置步骤</strong>：</p>
 <ol>
 <li>修改 <code>~/.openclaw/openclaw.json</code>：</li>
@@ -1060,281 +941,99 @@ document.addEventListener("readystatechange", function() {
 <ol start="2">
 <li>安装依赖：</li>
 </ol>
-<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><code class="hljs bash"><span class="hljs-built_in">cd</span> ~/.nvm/versions/node/v22.22.0/lib/node_modules/openclaw<br>npx pnpm install node-llama-cpp<br></code></pre></td></tr></table></figure>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><code class="hljs bash"><span class="hljs-built_in">cd</span> /path/to/openclaw<br>npx pnpm install node-llama-cpp<br></code></pre></td></tr></table></figure>
 <ol start="3">
 <li>重启 Gateway：</li>
 </ol>
 <figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs bash">openclaw gateway restart<br></code></pre></td></tr></table></figure>
-<p><strong>首次使用</strong>会自动下载 embedding 模型（约 0.6GB），存储在本地缓存中。</p>
-<p><strong>模型信息</strong>：</p>
-<ul>
-<li>默认模型：<code>embeddinggemma-300m-qat-q8_0</code></li>
-<li>来源：HuggingFace (GGUF 格式)</li>
-<li>维度：768</li>
-<li>语言：支持中英文</li>
-</ul>
-<h4 id="方案二：远程-Embedding-服务">方案二：远程 Embedding 服务</h4>
-<p><strong>OpenAI 配置</strong>：</p>
-<figure class="highlight json"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><code class="hljs json"><span class="hljs-punctuation">&#123;</span><br>  <span class="hljs-attr">&quot;agents&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-punctuation">&#123;</span><br>    <span class="hljs-attr">&quot;defaults&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-punctuation">&#123;</span><br>      <span class="hljs-attr">&quot;memorySearch&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-punctuation">&#123;</span><br>        <span class="hljs-attr">&quot;provider&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;openai&quot;</span><span class="hljs-punctuation">,</span><br>        <span class="hljs-attr">&quot;model&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;text-embedding-3-small&quot;</span><span class="hljs-punctuation">,</span><br>        <span class="hljs-attr">&quot;remote&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-punctuation">&#123;</span><br>          <span class="hljs-attr">&quot;apiKey&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;sk-xxx&quot;</span><br>        <span class="hljs-punctuation">&#125;</span><br>      <span class="hljs-punctuation">&#125;</span><br>    <span class="hljs-punctuation">&#125;</span><br>  <span class="hljs-punctuation">&#125;</span><br><span class="hljs-punctuation">&#125;</span><br></code></pre></td></tr></table></figure>
-<p><strong>Gemini 配置</strong>：</p>
-<figure class="highlight json"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><code class="hljs json"><span class="hljs-punctuation">&#123;</span><br>  <span class="hljs-attr">&quot;agents&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-punctuation">&#123;</span><br>    <span class="hljs-attr">&quot;defaults&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-punctuation">&#123;</span><br>      <span class="hljs-attr">&quot;memorySearch&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-punctuation">&#123;</span><br>        <span class="hljs-attr">&quot;provider&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;gemini&quot;</span><span class="hljs-punctuation">,</span><br>        <span class="hljs-attr">&quot;model&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;gemini-embedding-001&quot;</span><span class="hljs-punctuation">,</span><br>        <span class="hljs-attr">&quot;remote&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-punctuation">&#123;</span><br>          <span class="hljs-attr">&quot;apiKey&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;AIzaxxx&quot;</span><br>        <span class="hljs-punctuation">&#125;</span><br>      <span class="hljs-punctuation">&#125;</span><br>    <span class="hljs-punctuation">&#125;</span><br>  <span class="hljs-punctuation">&#125;</span><br><span class="hljs-punctuation">&#125;</span><br></code></pre></td></tr></table></figure>
-<h4 id="混合搜索（Hybrid-Search）">混合搜索（Hybrid Search）</h4>
-<p>OpenClaw 默认启用混合搜索，结合：</p>
-<ul>
-<li><strong>向量相似度</strong>（语义匹配）</li>
-<li><strong>BM25 关键词</strong>（精确匹配）</li>
-</ul>
-<p>配置选项：</p>
-<figure class="highlight json"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><code class="hljs json"><span class="hljs-punctuation">&#123;</span><br>  <span class="hljs-attr">&quot;agents&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-punctuation">&#123;</span><br>    <span class="hljs-attr">&quot;defaults&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-punctuation">&#123;</span><br>      <span class="hljs-attr">&quot;memorySearch&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-punctuation">&#123;</span><br>        <span class="hljs-attr">&quot;query&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-punctuation">&#123;</span><br>          <span class="hljs-attr">&quot;hybrid&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-punctuation">&#123;</span><br>            <span class="hljs-attr">&quot;enabled&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-literal"><span class="hljs-keyword">true</span></span><span class="hljs-punctuation">,</span><br>            <span class="hljs-attr">&quot;vectorWeight&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-number">0.7</span><span class="hljs-punctuation">,</span><br>            <span class="hljs-attr">&quot;textWeight&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-number">0.3</span><br>          <span class="hljs-punctuation">&#125;</span><br>        <span class="hljs-punctuation">&#125;</span><br>      <span class="hljs-punctuation">&#125;</span><br>    <span class="hljs-punctuation">&#125;</span><br>  <span class="hljs-punctuation">&#125;</span><br><span class="hljs-punctuation">&#125;</span><br></code></pre></td></tr></table></figure>
-<h4 id="验证配置">验证配置</h4>
-<p>重启后测试记忆搜索：</p>
-<figure class="highlight"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs">用户：图片怎么上传？<br></code></pre></td></tr></table></figure>
-<p>如果返回相关结果，说明语义搜索已生效。</p>
+<p>首次使用会自动下载 embedding 模型（约 0.6GB）。</p>
+<h4 id="远程服务">远程服务</h4>
+<p><strong>OpenAI</strong>：</p>
+<figure class="highlight json"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><code class="hljs json"><span class="hljs-punctuation">&#123;</span><br>  <span class="hljs-attr">&quot;agents&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-punctuation">&#123;</span><br>    <span class="hljs-attr">&quot;defaults&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-punctuation">&#123;</span><br>      <span class="hljs-attr">&quot;memorySearch&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-punctuation">&#123;</span><br>        <span class="hljs-attr">&quot;provider&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;openai&quot;</span><span class="hljs-punctuation">,</span><br>        <span class="hljs-attr">&quot;model&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;text-embedding-3-small&quot;</span><span class="hljs-punctuation">,</span><br>        <span class="hljs-attr">&quot;remote&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-punctuation">&#123;</span><br>          <span class="hljs-attr">&quot;apiKey&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;your-api-key&quot;</span><br>        <span class="hljs-punctuation">&#125;</span><br>      <span class="hljs-punctuation">&#125;</span><br>    <span class="hljs-punctuation">&#125;</span><br>  <span class="hljs-punctuation">&#125;</span><br><span class="hljs-punctuation">&#125;</span><br></code></pre></td></tr></table></figure>
 <h3 id="创建-MEMORY-md">创建 <a target="_blank" rel="noopener" href="http://MEMORY.md">MEMORY.md</a></h3>
-<h4 id="推荐结构">推荐结构</h4>
-<figure class="highlight markdown"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br></pre></td><td class="code"><pre><code class="hljs markdown"><span class="hljs-section"># Agent 记忆</span><br><br><span class="hljs-section">## 核心职责</span><br><span class="hljs-bullet">-</span> 职责1：详细说明<br><span class="hljs-bullet">-</span> 职责2：详细说明<br><br><span class="hljs-section">## 项目信息</span><br><span class="hljs-section">### 项目A</span><br><span class="hljs-bullet">-</span> 路径：<span class="hljs-code">`/path/to/project`</span><br><span class="hljs-bullet">-</span> 说明：项目描述<br><span class="hljs-bullet">-</span> 关键文件：列出重要文件<br><br><span class="hljs-section">### 项目B</span><br><span class="hljs-bullet">-</span> 路径：<span class="hljs-code">`/path/to/project2`</span><br><span class="hljs-bullet">-</span> 说明：项目描述<br><br><span class="hljs-section">## 用户偏好</span><br><span class="hljs-bullet">-</span> 偏好1：说明<br><span class="hljs-bullet">-</span> 偏好2：说明<br><br><span class="hljs-section">## 常用命令</span><br><span class="hljs-code">```bash</span><br><span class="hljs-code"># 命令1</span><br><span class="hljs-code">command1</span><br><span class="hljs-code"></span><br><span class="hljs-code"># 命令2</span><br><span class="hljs-code">command2</span><br></code></pre></td></tr></table></figure>
-<h2 id="重要事项">重要事项</h2>
+<p>推荐结构：</p>
+<figure class="highlight markdown"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br></pre></td><td class="code"><pre><code class="hljs markdown"><span class="hljs-section"># Agent 记忆</span><br><br><span class="hljs-section">## 核心职责</span><br><span class="hljs-bullet">-</span> 职责说明<br><br><span class="hljs-section">## 项目信息</span><br><span class="hljs-bullet">-</span> 项目路径：<span class="hljs-code">`/path/to/project`</span><br><span class="hljs-bullet">-</span> 关键配置<br><br><span class="hljs-section">## 用户偏好</span><br><span class="hljs-bullet">-</span> 偏好说明<br><br><span class="hljs-section">## 常用命令</span><br>\<span class="hljs-code">`\`</span>\`bash<br>command1<br>\<span class="hljs-code">`\`</span>\`<br></code></pre></td></tr></table></figure>
+<p>在对话中请求写入：</p>
+<figure class="highlight gradle"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs gradle">用户：记住，我的项目在 <span class="hljs-regexp">/path/</span>to/<span class="hljs-keyword">project</span><br></code></pre></td></tr></table></figure>
+<h3 id="技能系统">技能系统</h3>
+<h4 id="什么是技能？">什么是技能？</h4>
+<p>技能是可复用的工作流程包：</p>
+<figure class="highlight 1c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><code class="hljs 1c">skill-name/<br>├── SKILL.md           <span class="hljs-meta"># 主文件（必需）</span><br>├── scripts/           <span class="hljs-meta"># 可执行脚本</span><br>├── references/        <span class="hljs-meta"># 参考文档</span><br>└── assets/            <span class="hljs-meta"># 模板资源</span><br></code></pre></td></tr></table></figure>
+<h4 id="SKILL-md-格式"><a target="_blank" rel="noopener" href="http://SKILL.md">SKILL.md</a> 格式</h4>
+<figure class="highlight yaml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br></pre></td><td class="code"><pre><code class="hljs yaml"><span class="hljs-meta">---</span><br><span class="hljs-attr">name:</span> <span class="hljs-string">skill-name</span><br><span class="hljs-attr">description:</span> <span class="hljs-string">|</span><br><span class="hljs-string">  技能描述。</span><br><span class="hljs-string">  触发场景：用户提到&quot;关键词1&quot;、&quot;关键词2&quot;时使用。</span><br><span class="hljs-string"></span><span class="hljs-meta">---</span><br><span class="hljs-meta"></span><br><span class="hljs-comment"># 技能标题</span><br><br><span class="hljs-comment">## 环境信息</span><br><span class="hljs-string">项目路径、配置等。</span><br><br><span class="hljs-comment">## 工作流程</span><br><span class="hljs-comment">### 步骤1</span><br><span class="hljs-string">说明...</span><br><br><span class="hljs-comment">### 步骤2</span><br><span class="hljs-string">说明...</span><br><br><span class="hljs-comment">## 常用命令</span><br><span class="hljs-string">|</span> <span class="hljs-string">操作</span> <span class="hljs-string">|</span> <span class="hljs-string">命令</span> <span class="hljs-string">|</span><br><span class="hljs-string">|------|------|</span><br><span class="hljs-string">|</span> <span class="hljs-string">操作1</span> <span class="hljs-string">|</span> <span class="hljs-string">`command1`</span> <span class="hljs-string">|</span><br></code></pre></td></tr></table></figure>
+<h3 id="创建技能流程">创建技能流程</h3>
+<h4 id="1-初始化">1. 初始化</h4>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><code class="hljs bash">python3 scripts/init_skill.py my-skill \<br>  --path ~/.openclaw/skills \<br>  --resources scripts,references<br></code></pre></td></tr></table></figure>
+<h4 id="2-编辑-SKILL-md">2. 编辑 <a target="_blank" rel="noopener" href="http://SKILL.md">SKILL.md</a></h4>
+<p>填写：</p>
 <ul>
-<li>事项1</li>
-<li>事项2</li>
+<li><code>description</code> - 描述和触发场景</li>
+<li>环境信息和配置</li>
+<li>工作流程步骤</li>
 </ul>
-<figure class="highlight clean"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><code class="hljs clean"><br>#### 写入记忆<br><br>在对话中请求写入：<br><br></code></pre></td></tr></table></figure>
-<p>用户：记住，我的博客项目在 /home/vvd/VVD/VVD_Hexo/</p>
-<figure class="highlight markdown"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br></pre></td><td class="code"><pre><code class="hljs markdown"><br>Agent 会自动将信息写入 <span class="hljs-code">`MEMORY.md`</span> 或 <span class="hljs-code">`memory/YYYY-MM-DD.md`</span>。<br><br><span class="hljs-section">### 技能系统详解</span><br><br><span class="hljs-section">#### 什么是技能？</span><br><br>技能是可复用的工作流程包，包含：<br><span class="hljs-bullet">-</span> <span class="hljs-strong">**SKILL.md**</span> - 主说明文件（必需）<br><span class="hljs-bullet">-</span> <span class="hljs-strong">**scripts/**</span> - 可执行脚本<br><span class="hljs-bullet">-</span> <span class="hljs-strong">**references/**</span> - 参考文档<br><span class="hljs-bullet">-</span> <span class="hljs-strong">**assets/**</span> - 模板、资源文件<br><br>技能让 Agent 具备特定领域的专业能力。<br><br><span class="hljs-section">#### 技能结构</span><br><br></code></pre></td></tr></table></figure>
-<p>skill-name/<br>
-├── <a target="_blank" rel="noopener" href="http://SKILL.md">SKILL.md</a>              # 主文件（必需）<br>
-│   ├── frontmatter       # YAML 元数据<br>
-│   │   ├── name          # 技能名称<br>
-│   │   └── description   # 描述和触发条件<br>
-│   └── body              # Markdown 内容<br>
-├── scripts/              # 可执行脚本<br>
-│   ├── <a target="_blank" rel="noopener" href="http://script1.sh">script1.sh</a><br>
-│   └── <a target="_blank" rel="noopener" href="http://script2.py">script2.py</a><br>
-├── references/           # 参考文档<br>
-│   ├── <a target="_blank" rel="noopener" href="http://guide.md">guide.md</a><br>
-│   └── <a target="_blank" rel="noopener" href="http://schema.md">schema.md</a><br>
-└── assets/               # 资源文件<br>
-├── <a target="_blank" rel="noopener" href="http://template.md">template.md</a><br>
-└── config.json</p>
-<figure class="highlight yaml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><code class="hljs yaml"><br><span class="hljs-comment">#### SKILL.md 格式详解</span><br><br><span class="hljs-string">**Front</span> <span class="hljs-string">Matter**：</span><br><br><span class="hljs-string">```yaml</span><br><span class="hljs-meta">---</span><br><span class="hljs-attr">name:</span> <span class="hljs-string">skill-name</span>                                          <span class="hljs-comment"># 技能名称（小写字母、数字、连字符）</span><br><span class="hljs-attr">description:</span> <span class="hljs-string">|</span><br><span class="hljs-string">  技能描述，说明做什么以及何时使用。</span><br><span class="hljs-string">  触发场景：用户提到&quot;xxx&quot;、&quot;yyy&quot;时使用此技能。</span><br><span class="hljs-string"></span><span class="hljs-meta">---</span><br></code></pre></td></tr></table></figure>
-<p><strong>Body 结构</strong>：</p>
-<figure class="highlight markdown"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br></pre></td><td class="code"><pre><code class="hljs markdown"><span class="hljs-section"># 技能标题</span><br><br><span class="hljs-section">## 环境信息</span><br>项目路径、配置、依赖等。<br><br><span class="hljs-section">## 工作流程</span><br><span class="hljs-section">### 步骤1</span><br>详细说明...<br><br><span class="hljs-section">### 步骤2</span><br>详细说明...<br><br><span class="hljs-section">## 常用命令</span><br>| 操作 | 命令 |<br>|------|------|<br>| 操作1 | <span class="hljs-code">`command1`</span> |<br>| 操作2 | <span class="hljs-code">`command2`</span> |<br><br><span class="hljs-section">## 注意事项</span><br><span class="hljs-bullet">-</span> 注意1<br><span class="hljs-bullet">-</span> 注意2<br><br><span class="hljs-section">## 参考资源</span><br><span class="hljs-bullet">-</span> [<span class="hljs-string">详细说明</span>](<span class="hljs-link">references/detail.md</span>)<br></code></pre></td></tr></table></figure>
-<h4 id="资源目录说明">资源目录说明</h4>
+<p><strong>description 写法</strong>：</p>
+<figure class="highlight yaml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><code class="hljs yaml"><span class="hljs-comment"># 好的写法</span><br><span class="hljs-attr">description:</span> <span class="hljs-string">|</span><br><span class="hljs-string">  博客写作与发布。触发场景：用户提到&quot;写博客&quot;、&quot;发博客&quot;、&quot;hexo&quot;。</span><br><span class="hljs-string"></span><br><span class="hljs-comment"># 不好的写法</span><br><span class="hljs-attr">description:</span> <span class="hljs-string">博客技能</span><br></code></pre></td></tr></table></figure>
+<h4 id="3-添加资源">3. 添加资源</h4>
 <table>
 <thead>
 <tr>
 <th>目录</th>
 <th>内容</th>
-<th>加载方式</th>
 </tr>
 </thead>
 <tbody>
 <tr>
 <td><code>scripts/</code></td>
-<td>Shell/Python 脚本</td>
-<td>按需执行</td>
+<td>可执行脚本</td>
 </tr>
 <tr>
 <td><code>references/</code></td>
 <td>详细文档</td>
-<td>按需加载到上下文</td>
 </tr>
 <tr>
 <td><code>assets/</code></td>
-<td>模板、配置文件</td>
-<td>用于生成输出</td>
+<td>模板文件</td>
 </tr>
 </tbody>
 </table>
-<p><strong>scripts/ 示例</strong>：</p>
-<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><code class="hljs bash"><span class="hljs-meta">#!/bin/bash</span><br><span class="hljs-comment"># upload-image.sh</span><br>NAME=<span class="hljs-string">&quot;desc_<span class="hljs-subst">$(date +%Y%m%d%H%M%S)</span>.jpg&quot;</span><br>curl -sL <span class="hljs-string">&quot;<span class="hljs-variable">$1</span>&quot;</span> -o /tmp/<span class="hljs-variable">$NAME</span> &amp;&amp; \<br>curl -X POST -F <span class="hljs-string">&quot;file=@/tmp/<span class="hljs-variable">$NAME</span>&quot;</span> <span class="hljs-string">&quot;http://server/upload&quot;</span><br></code></pre></td></tr></table></figure>
-<p><strong>references/ 示例</strong>：</p>
-<figure class="highlight markdown"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><code class="hljs markdown"><span class="hljs-section"># 分类目录</span><br><br><span class="hljs-section">## 一级分类</span><br><span class="hljs-bullet">-</span> coding - 编程<br><span class="hljs-bullet">-</span> tools - 工具<br><span class="hljs-bullet">-</span> study - 学习笔记<br><br><span class="hljs-section">## 二级分类</span><br><span class="hljs-bullet">-</span> coding/python<br><span class="hljs-bullet">-</span> coding/cpp<br><span class="hljs-bullet">-</span> tools/git<br></code></pre></td></tr></table></figure>
-<h3 id="创建技能流程">创建技能流程</h3>
-<h4 id="1-初始化技能">1. 初始化技能</h4>
-<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><code class="hljs bash">python3 scripts/init_skill.py my-skill \<br>  --path ~/.openclaw/skills \<br>  --resources scripts,references,assets<br></code></pre></td></tr></table></figure>
-<p><strong>参数说明</strong>：</p>
-<ul>
-<li><code>my-skill</code> - 技能名称</li>
-<li><code>--path</code> - 输出目录</li>
-<li><code>--resources</code> - 创建的资源目录</li>
-</ul>
-<h4 id="2-编辑-SKILL-md">2. 编辑 <a target="_blank" rel="noopener" href="http://SKILL.md">SKILL.md</a></h4>
-<p>填写以下内容：</p>
-<ol>
-<li><code>description</code> - 描述和触发场景</li>
-<li>环境信息和配置</li>
-<li>工作流程步骤</li>
-<li>常用命令速查</li>
-</ol>
-<p><strong>description 写法技巧</strong>：</p>
-<figure class="highlight yaml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><code class="hljs yaml"><span class="hljs-comment"># 好的写法</span><br><span class="hljs-attr">description:</span> <span class="hljs-string">|</span><br><span class="hljs-string">  Hexo 博客写作与发布。用于创建文章、上传图片、格式检查和发布。</span><br><span class="hljs-string">  触发场景：用户提到&quot;写博客&quot;、&quot;发博客&quot;、&quot;上传图片&quot;、&quot;hexo&quot;。</span><br><span class="hljs-string"></span><br><span class="hljs-comment"># 不好的写法</span><br><span class="hljs-attr">description:</span> <span class="hljs-string">博客技能</span><br></code></pre></td></tr></table></figure>
-<h4 id="3-添加资源文件">3. 添加资源文件</h4>
-<p><strong>scripts/ 目录</strong>：</p>
-<ul>
-<li>放置可执行脚本</li>
-<li>使用 <code>#!/bin/bash</code> 或 <code>#!/usr/bin/env python3</code> 开头</li>
-<li>添加执行权限：<code>chmod +x scripts/*.sh</code></li>
-</ul>
-<p><strong>references/ 目录</strong>：</p>
-<ul>
-<li>放置详细文档</li>
-<li>被 <a target="_blank" rel="noopener" href="http://SKILL.md">SKILL.md</a> 引用时按需加载</li>
-<li>避免与 <a target="_blank" rel="noopener" href="http://SKILL.md">SKILL.md</a> 内容重复</li>
-</ul>
-<p><strong>assets/ 目录</strong>：</p>
-<ul>
-<li>放置模板文件</li>
-<li>用于生成最终输出</li>
-</ul>
-<h4 id="4-验证技能">4. 验证技能</h4>
+<h4 id="4-打包">4. 打包</h4>
 <figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs bash">python3 scripts/package_skill.py ~/.openclaw/skills/my-skill<br></code></pre></td></tr></table></figure>
-<p>验证内容：</p>
-<ul>
-<li>YAML frontmatter 格式</li>
-<li>必需字段是否完整</li>
-<li>文件结构是否正确</li>
-</ul>
-<h4 id="5-打包技能">5. 打包技能</h4>
-<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs bash">python3 scripts/package_skill.py ~/.openclaw/skills/my-skill ./dist<br></code></pre></td></tr></table></figure>
-<p>输出：<code>my-skill.skill</code> 文件（ZIP 格式）</p>
+<p>输出：<code>my-skill.skill</code> 文件</p>
 <h3 id="技能更新">技能更新</h3>
-<h4 id="修改技能">修改技能</h4>
 <ol>
-<li>
-<p>编辑 <code>~/.openclaw/skills/&lt;skill-name&gt;/</code> 目录下的文件</p>
-</li>
-<li>
-<p>重新打包：</p>
-</li>
+<li>编辑 <code>~/.openclaw/skills/&lt;skill-name&gt;/</code> 下的文件</li>
+<li>重新打包</li>
 </ol>
-<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs bash">python3 scripts/package_skill.py ~/.openclaw/skills/&lt;skill-name&gt;<br></code></pre></td></tr></table></figure>
-<h4 id="版本管理建议">版本管理建议</h4>
-<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><code class="hljs bash"><span class="hljs-comment"># 使用 git 管理技能</span><br><span class="hljs-built_in">cd</span> ~/.openclaw/skills/my-skill<br>git init<br>git add .<br>git commit -m <span class="hljs-string">&quot;Initial skill&quot;</span><br></code></pre></td></tr></table></figure>
-<h3 id="实战示例：博客管理技能">实战示例：博客管理技能</h3>
-<h4 id="需求分析">需求分析</h4>
-<p>博客管理需要：</p>
+<h3 id="常见问题">常见问题</h3>
+<h4 id="Q-记忆搜索返回空结果？">Q: 记忆搜索返回空结果？</h4>
 <ol>
-<li>创建文章 - 按分类目录创建</li>
-<li>图片上传 - 自动命名并上传</li>
-<li>格式检查 - Markdown、公式、链接</li>
-<li>本地预览 - hexo s</li>
-<li>发布博客 - 随机选择脚本</li>
+<li>检查 <code>MEMORY.md</code> 是否存在</li>
+<li>确认 <code>memorySearch.provider</code> 配置正确</li>
+<li>验证 <code>node-llama-cpp</code> 依赖已安装</li>
 </ol>
-<h4 id="技能结构">技能结构</h4>
-<figure class="highlight nim"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><code class="hljs nim">hexo-blog/<br>├── <span class="hljs-type">SKILL</span>.md                    <span class="hljs-comment"># 主流程</span><br>├── scripts/<br>│   ├── upload-image.sh         <span class="hljs-comment"># 图片上传</span><br>│   └── publish.sh              <span class="hljs-comment"># 发布脚本</span><br>├── references/<br>│   ├── categories.md           <span class="hljs-comment"># 分类目录</span><br>│   └── style-guide.md          <span class="hljs-comment"># 写作风格</span><br>└── assets/<br>    └── article-<span class="hljs-keyword">template</span>.md     <span class="hljs-comment"># 文章模板</span><br></code></pre></td></tr></table></figure>
-<h4 id="SKILL-md-核心内容"><a target="_blank" rel="noopener" href="http://SKILL.md">SKILL.md</a> 核心内容</h4>
-<figure class="highlight yaml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><code class="hljs yaml"><span class="hljs-meta">---</span><br><span class="hljs-attr">name:</span> <span class="hljs-string">hexo-blog</span><br><span class="hljs-attr">description:</span> <span class="hljs-string">|</span><br><span class="hljs-string">  Hexo 博客写作与发布流程。</span><br><span class="hljs-string">  触发场景：用户提到&quot;写博客&quot;、&quot;发博客&quot;、&quot;上传图片到博客&quot;、&quot;hexo&quot;。</span><br><span class="hljs-string"></span><span class="hljs-meta">---</span><br></code></pre></td></tr></table></figure>
-<figure class="highlight markdown"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><code class="hljs markdown"><span class="hljs-section"># Hexo 博客助手</span><br><br><span class="hljs-section">## 环境信息</span><br><span class="hljs-bullet">-</span> 博客路径：<span class="hljs-code">`/home/vvd/VVD/VVD_Hexo/`</span><br><span class="hljs-bullet">-</span> 文章目录：<span class="hljs-code">`source/_posts/notes/`</span><br><br><span class="hljs-section">## 工作流程</span><br><br><span class="hljs-section">### 1. 创建文章</span><br><span class="hljs-code">```bash</span><br><span class="hljs-code">hexo new post &quot;标题&quot; --path notes/分类/子分类/标题/标题</span><br></code></pre></td></tr></table></figure>
-<h3 id="2-图片上传">2. 图片上传</h3>
-<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><code class="hljs bash">NAME=<span class="hljs-string">&quot;描述_<span class="hljs-subst">$(date +%Y%m%d%H%M%S)</span>.jpg&quot;</span><br>curl -sL <span class="hljs-string">&quot;URL&quot;</span> -o /tmp/<span class="hljs-variable">$NAME</span> &amp;&amp; \<br>curl -X POST -F <span class="hljs-string">&quot;file=@/tmp/<span class="hljs-variable">$NAME</span>&quot;</span> <span class="hljs-string">&quot;http://server/upload&quot;</span><br></code></pre></td></tr></table></figure>
-<h3 id="3-格式检查">3. 格式检查</h3>
-<ul>
-<li>Front Matter 完整性</li>
-<li>Markdown 语法</li>
-<li>公式语法</li>
-<li>链接有效性</li>
-</ul>
-<h3 id="4-发布">4. 发布</h3>
-<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><code class="hljs bash"><span class="hljs-built_in">cd</span> /home/vvd/VVD/VVD_Hexo<br><span class="hljs-keyword">if</span> [ $((RANDOM % <span class="hljs-number">10</span>)) -lt 8 ]; <span class="hljs-keyword">then</span><br>    ./simple_publish.sh<br><span class="hljs-keyword">else</span><br>    ./word_push.sh<br><span class="hljs-keyword">fi</span><br></code></pre></td></tr></table></figure>
-<h2 id="参考资源">参考资源</h2>
-<ul>
-<li><a href="references/categories.md">分类目录</a></li>
-<li><a href="references/style-guide.md">写作风格</a></li>
-</ul>
-<figure class="highlight crmsh"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br></pre></td><td class="code"><pre><code class="hljs crmsh"><br><span class="hljs-comment">### 常见问题</span><br><br><span class="hljs-comment">#### Q: 记忆搜索返回空结果？</span><br><br>**排查步骤**：<br><span class="hljs-number">1</span>. 检查 `MEMORY.md` 是否存在<br><span class="hljs-number">2</span>. 确认 `memorySearch.provider` 配置正确<br><span class="hljs-number">3</span>. 验证 `<span class="hljs-keyword">node</span><span class="hljs-title">-llama-cpp</span>` 依赖已安装<br><span class="hljs-number">4</span>. 查看 Gateway 日志是否有错误<br><br>```bash<br><span class="hljs-comment"># 检查依赖</span><br>ls ~/.nvm/versions/<span class="hljs-keyword">node</span><span class="hljs-title">/v22</span>.<span class="hljs-number">22.0</span>/lib/node_modules/openclaw/node_modules/<span class="hljs-keyword">node</span><span class="hljs-title">-llama-cpp</span><br><br><span class="hljs-comment"># 查看日志</span><br>tail -f /tmp/openclaw/openclaw-*.log<br></code></pre></td></tr></table></figure>
 <h4 id="Q-技能没有触发？">Q: 技能没有触发？</h4>
-<p><strong>常见原因</strong>：</p>
-<ol>
-<li><code>description</code> 中没有明确的触发场景</li>
-<li>技能目录位置不正确</li>
-<li><a target="_blank" rel="noopener" href="http://SKILL.md">SKILL.md</a> 格式错误</li>
-</ol>
-<p><strong>解决方法</strong>：</p>
-<figure class="highlight yaml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><code class="hljs yaml"><span class="hljs-comment"># 确保 description 包含触发条件</span><br><span class="hljs-attr">description:</span> <span class="hljs-string">|</span><br><span class="hljs-string">  技能描述。</span><br><span class="hljs-string">  触发场景：用户提到&quot;关键词1&quot;、&quot;关键词2&quot;时使用。</span><br></code></pre></td></tr></table></figure>
+<p>确保 <code>description</code> 包含触发场景：</p>
+<figure class="highlight yaml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><code class="hljs yaml"><span class="hljs-attr">description:</span> <span class="hljs-string">|</span><br><span class="hljs-string">  技能描述。</span><br><span class="hljs-string">  触发场景：用户提到&quot;关键词&quot;时使用。</span><br></code></pre></td></tr></table></figure>
 <h4 id="Q-本地-Embedding-下载失败？">Q: 本地 Embedding 下载失败？</h4>
-<p><strong>可能原因</strong>：</p>
-<ul>
-<li>网络问题（HuggingFace 在国内可能较慢）</li>
-<li>磁盘空间不足</li>
-</ul>
-<p><strong>解决方法</strong>：</p>
-<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><code class="hljs bash"><span class="hljs-comment"># 手动下载模型</span><br>wget https://huggingface.co/ggml-org/embeddinggemma-300m-qat-q8_0-GGUF/resolve/main/embeddinggemma-300m-qat-Q8_0.gguf<br><br><span class="hljs-comment"># 移动到缓存目录</span><br><span class="hljs-built_in">mkdir</span> -p ~/.cache/llama.cpp<br><span class="hljs-built_in">mv</span> embeddinggemma-300m-qat-Q8_0.gguf ~/.cache/llama.cpp/<br></code></pre></td></tr></table></figure>
-<h4 id="Q-如何调试技能？">Q: 如何调试技能？</h4>
-<ol>
-<li><strong>检查语法</strong>：</li>
-</ol>
-<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs bash">python3 scripts/package_skill.py ~/.openclaw/skills/my-skill<br></code></pre></td></tr></table></figure>
-<ol start="2">
-<li><strong>查看加载日志</strong>：</li>
-</ol>
-<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><code class="hljs bash">openclaw gateway restart<br><span class="hljs-built_in">tail</span> -f /tmp/openclaw/openclaw-*.<span class="hljs-built_in">log</span> | grep skill<br></code></pre></td></tr></table></figure>
-<ol start="3">
-<li><strong>手动触发测试</strong>：</li>
-</ol>
-<figure class="highlight"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs">用户：帮我写一篇博客<br></code></pre></td></tr></table></figure>
+<p>手动下载模型：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><code class="hljs bash">wget https://huggingface.co/ggml-org/embeddinggemma-300m-qat-q8_0-GGUF/resolve/main/embeddinggemma-300m-qat-Q8_0.gguf<br><span class="hljs-built_in">mkdir</span> -p ~/.cache/llama.cpp<br><span class="hljs-built_in">mv</span> embeddinggemma-300m-qat-Q8_0.gguf ~/.cache/llama.cpp/<br></code></pre></td></tr></table></figure>
 <h3 id="最佳实践">最佳实践</h3>
-<h4 id="记忆系统">记忆系统</h4>
-<ol>
-<li>
-<p><strong>定期整理 <a target="_blank" rel="noopener" href="http://MEMORY.md">MEMORY.md</a></strong></p>
+<h4 id="记忆系统-2">记忆系统</h4>
 <ul>
-<li>移除过时信息</li>
-<li>更新项目路径</li>
-<li>补充新的偏好</li>
+<li>定期整理 <code>MEMORY.md</code>，移除过时信息</li>
+<li>及时写入重要信息</li>
 </ul>
-</li>
-<li>
-<p><strong>使用语义化标签</strong></p>
-<figure class="highlight markdown"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><code class="hljs markdown">&lt;!-- good --&gt;<br><span class="hljs-bullet">-</span> 博客项目路径：<span class="hljs-code">`/home/vvd/blog`</span><br><br>&lt;!-- better --&gt;<br><span class="hljs-bullet">-</span> 博客项目：<br><span class="hljs-bullet">  -</span> 路径：<span class="hljs-code">`/home/vvd/blog`</span><br><span class="hljs-bullet">  -</span> 平台：Hexo<br><span class="hljs-bullet">  -</span> 分类：技术笔记<br></code></pre></td></tr></table></figure>
-</li>
-<li>
-<p><strong>及时写入重要信息</strong></p>
-<figure class="highlight gauss"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs gauss">用户：记住，我的 API <span class="hljs-built_in">Key</span> 是 xxx<br></code></pre></td></tr></table></figure>
-</li>
-</ol>
-<h4 id="技能系统">技能系统</h4>
-<ol>
-<li>
-<p><strong>description 要具体</strong></p>
+<h4 id="技能系统-2">技能系统</h4>
 <ul>
-<li>说明技能做什么</li>
-<li>列出触发关键词</li>
-<li>避免模糊描述</li>
+<li><code>description</code> 要具体，列出触发关键词</li>
+<li>保持 <code>SKILL.md</code> 精简，详细信息放 <code>references/</code></li>
+<li>使用 git 管理技能版本</li>
 </ul>
-</li>
-<li>
-<p><strong>保持 <a target="_blank" rel="noopener" href="http://SKILL.md">SKILL.md</a> 精简</strong></p>
-<ul>
-<li>核心流程放 body</li>
-<li>详细信息放 references</li>
-<li>避免内容重复</li>
-</ul>
-</li>
-<li>
-<p><strong>脚本要健壮</strong></p>
-<ul>
-<li>添加错误处理</li>
-<li>提供使用说明</li>
-<li>记录关键日志</li>
-</ul>
-</li>
-<li>
-<p><strong>版本控制</strong></p>
-<ul>
-<li>使用 git 管理技能</li>
-<li>保留更新历史</li>
-<li>便于回滚</li>
-</ul>
-</li>
-</ol>
 <h3 id="参考资料">参考资料</h3>
 <ul>
 <li><a target="_blank" rel="noopener" href="https://docs.openclaw.ai">OpenClaw 官方文档</a></li>
 <li><a target="_blank" rel="noopener" href="https://github.com/openclaw/openclaw">OpenClaw GitHub</a></li>
 <li><a target="_blank" rel="noopener" href="https://clawhub.com">技能商店 ClawHub</a></li>
-<li><a target="_blank" rel="noopener" href="https://docs.openclaw.ai/concepts/memory">OpenClaw 记忆系统文档</a></li>
-<li><a target="_blank" rel="noopener" href="https://docs.openclaw.ai/skills/creating-skills">技能创建指南</a></li>
 </ul>
 <link rel="stylesheet" href="/css/spoiler.css" type="text/css"><script src="/js/spoiler.js" type="text/javascript" async></script>
                 
