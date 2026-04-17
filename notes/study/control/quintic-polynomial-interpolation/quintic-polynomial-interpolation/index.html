@@ -1,0 +1,2128 @@
+
+
+<!DOCTYPE html>
+<html lang="zh-CN" data-default-color-scheme=auto>
+
+
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="baidu-site-verification" content="codeva-rLWafCJGYc" />
+  <link rel="apple-touch-icon" sizes="76x76" href="/image/avatar.png">
+  <link rel="icon" href="/image/avatar.png">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, shrink-to-fit=no">
+  <meta http-equiv="x-ua-compatible" content="ie=edge">
+  
+  <meta name="theme-color" content="#2f4154">
+  <meta name="author" content="Yiwei Zhang">
+  <meta name="keywords" content="人工智能, 深度学习, 个人博客, 机器学习">
+  
+    <meta name="description" content="本文详细介绍分段五次多项式插值的数学原理、公式推导及代码实现。该方法广泛应用于自动驾驶路径规划，能够生成 $C^2$ 连续（位置、航向连续；可实现曲率连续）的平滑轨迹。">
+<meta property="og:type" content="article">
+<meta property="og:title" content="分段五次多项式插值原理详解">
+<meta property="og:url" content="https://www.zywvvd.com/notes/study/control/quintic-polynomial-interpolation/quintic-polynomial-interpolation/index.html">
+<meta property="og:site_name" content="又见苍岚">
+<meta property="og:description" content="本文详细介绍分段五次多项式插值的数学原理、公式推导及代码实现。该方法广泛应用于自动驾驶路径规划，能够生成 $C^2$ 连续（位置、航向连续；可实现曲率连续）的平滑轨迹。">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="https://uipv4.zywvvd.com:33030/HexoFiles/vvd_image_files/quintic_R15_upload.jpg">
+<meta property="og:image" content="https://uipv4.zywvvd.com:33030/HexoFiles/vvd_image_files/quintic_R10_upload.jpg">
+<meta property="article:published_time" content="2026-03-23T06:10:00.000Z">
+<meta property="article:modified_time" content="2026-04-03T10:42:43.822Z">
+<meta property="article:author" content="Yiwei Zhang">
+<meta property="article:tag" content="Path Planning">
+<meta property="article:tag" content="Polynomial Interpolation">
+<meta property="article:tag" content="Control">
+<meta property="article:tag" content="Autonomous Driving">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:image" content="https://uipv4.zywvvd.com:33030/HexoFiles/vvd_image_files/quintic_R15_upload.jpg">
+  
+  
+  
+  <title>分段五次多项式插值原理详解 - 又见苍岚</title>
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/twitter-bootstrap/4.6.1/css/bootstrap.min.css" />
+
+
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/github-markdown-css/4.0.0/github-markdown.min.css" />
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/hint.css/2.7.0/hint.min.css" />
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/fancybox/3.5.7/jquery.fancybox.min.css" />
+
+
+
+<!-- 主题依赖的图标库，不要自行修改 -->
+<!-- Do not modify the link that theme dependent icons -->
+
+<link rel="stylesheet" href="//at.alicdn.com/t/font_1749284_hj8rtnfg7um.css">
+
+
+
+<link rel="stylesheet" href="//at.alicdn.com/t/font_1736178_lbnruvf0jn.css">
+
+
+<link  rel="stylesheet" href="/css/main.css" />
+
+
+  <link id="highlight-css" rel="stylesheet" href="/css/highlight.css" />
+  
+    <link id="highlight-css-dark" rel="stylesheet" href="/css/highlight-dark.css" />
+  
+
+
+
+  
+<link rel="stylesheet" href="/css/custom.css">
+<link rel="stylesheet" href="/css/reward.css">
+<link rel="stylesheet" href="//cdn.jsdelivr.net/npm/aplayer/dist/APlayer.min.css">
+
+
+
+  <script id="fluid-configs">
+    var Fluid = window.Fluid || {};
+    Fluid.ctx = Object.assign({}, Fluid.ctx)
+    var CONFIG = {"hostname":"www.zywvvd.com","root":"/","version":"1.9.7","typing":{"enable":true,"typeSpeed":90,"cursorChar":"_","loop":false,"scope":["home"]},"anchorjs":{"enable":true,"element":"h1,h2,h3,h4,h5,h6","placement":"left","visible":"hover","icon":""},"progressbar":{"enable":true,"height_px":3,"color":"#29d","options":{"showSpinner":false,"trickleSpeed":100}},"code_language":{"enable":true,"default":"TEXT"},"copy_btn":true,"image_caption":{"enable":true},"image_zoom":{"enable":true,"img_url_replace":["",""]},"toc":{"enable":true,"placement":"right","headingSelector":"h1,h2,h3,h4,h5,h6","collapseDepth":0},"lazyload":{"enable":true,"loading_img":"/img/loading.gif","onlypost":false,"offset_factor":2},"web_analytics":{"enable":true,"follow_dnt":true,"baidu":null,"google":null,"tencent":{"sid":null,"cid":null},"woyaola":null,"cnzz":null,"leancloud":{"app_id":"Cv0XNeBSBdAPAIuVj3PsyM3R-MdYXbMMI","app_key":"4PU1rNlGrqXWzhfW3dgq98oX","server_url":null,"path":"window.location.pathname","ignore_local":false},"gtag":null},"search_path":"/local-search.xml","include_content_in_search":true};
+
+    if (CONFIG.web_analytics.follow_dnt) {
+      var dntVal = navigator.doNotTrack || window.doNotTrack || navigator.msDoNotTrack;
+      Fluid.ctx.dnt = dntVal && (dntVal.startsWith('1') || dntVal.startsWith('yes') || dntVal.startsWith('on'));
+    }
+  </script>
+  <script  src="/js/utils.js" ></script>
+  <script  src="/js/color-schema.js" ></script>
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+    
+  
+
+
+
+  
+<meta name="generator" content="Hexo 7.2.0"><link rel="alternate" href="/atom.xml" title="又见苍岚" type="application/atom+xml">
+</head>
+
+<script>
+// 页面加载完成后隐藏加载动画
+document.addEventListener("readystatechange", function() {
+    const loader = document.getElementById('Loadanimation');
+    if (loader) {
+        // 停留1秒后开始淡出
+        setTimeout(function() {
+            loader.style.transition = 'opacity 1.2s';
+            loader.style.opacity = '0';
+            // 淡出完成后隐藏
+            setTimeout(() => {
+                loader.style.display = 'none';
+            }, 1000); // 等待淡出动画完成
+        }, 700); // 停留0.8秒
+    }
+});
+</script>
+
+
+
+<body>
+  
+<div id="Loadanimation" style="z-index:999999;">
+<div id="Loadanimation-center">
+   <div id="Loadanimation-center-absolute">
+       <div class="xccx_object" id="xccx_four"></div>
+       <div class="xccx_object" id="xccx_three"></div>
+       <div class="xccx_object" id="xccx_two"></div>
+       <div class="xccx_object" id="xccx_one"></div>
+   </div>
+</div>
+</div>
+
+<link href="/css/loading.css"type="text/css"rel="stylesheet"/>
+
+
+
+
+
+
+<div>
+	<div class='real_mask' style="
+		background-color: rgba(0,0,0,0.4);
+		width: 100%;
+		height: 100%;
+		position: fixed;
+		z-index: -777;
+	"></div>
+	<div id="banner_video_insert">
+	</div>	
+	<div id='vvd_banner_img'>
+	</div>
+</div>
+<div id="banner"></div>
+
+
+
+
+
+
+
+  <header>
+    
+
+<div class="header-inner" style="height: 80vh;">
+  <nav id="navbar" class="navbar fixed-top  navbar-expand-lg navbar-dark scrolling-navbar">
+  <div class="container">
+    <a class="navbar-brand" href="/">
+      <strong>CangLan</strong>
+    </a>
+
+    <button id="navbar-toggler-btn" class="navbar-toggler" type="button" data-toggle="collapse"
+            data-target="#navbarSupportedContent"
+            aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
+      <div class="animated-icon"><span></span><span></span><span></span></div>
+    </button>
+
+    <!-- Collapsible content -->
+    <div class="collapse navbar-collapse" id="navbarSupportedContent">
+      <ul class="navbar-nav ml-auto text-center">
+        
+          
+          
+          
+          
+            <li class="nav-item">
+		<div >
+		      <a class="nav-link" href="/" target="_self" data-umami-event="Navigation-Homepage">
+
+		        <i class="iconfont icon-home-fill"></i>
+		        <span>首页</span>
+		      </a>
+		</div>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item dropdown">
+              <a class="nav-link dropdown-toggle" target="_self" href="javascript:;" role="button"
+                 data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                <i class="iconfont icon-shuji1"></i>
+                <span>文章</span>
+              </a>
+              <div class="dropdown-menu" aria-labelledby="navbarDropdown">
+                
+                  
+                  
+                  
+		<div >
+
+                  <a class="dropdown-item" href="/archives/" target="_self" data-umami-event="Navigation-Archive">
+
+                    <i class="iconfont icon-archive-fill"></i>
+                    <span>归档</span>
+                  </a>
+		</div>
+                
+                  
+                  
+                  
+		<div >
+
+                  <a class="dropdown-item" href="/categories/" target="_self" data-umami-event="Navigation-Category">
+
+                    <i class="iconfont icon-category-fill"></i>
+                    <span>分类</span>
+                  </a>
+		</div>
+                
+                  
+                  
+                  
+		<div >
+
+                  <a class="dropdown-item" href="/tags/" target="_self" data-umami-event="Navigation-Tag">
+
+                    <i class="iconfont icon-tags-fill"></i>
+                    <span>标签</span>
+                  </a>
+		</div>
+                
+                  
+                  
+                  
+		<div >
+
+                  <a class="dropdown-item" href="/shuoshuo/" target="_self" data-umami-event="Navigation-Shuoshuo">
+
+                    <i class="iconfont icon-24gf-bubblesDots4"></i>
+                    <span>说说</span>
+                  </a>
+		</div>
+                
+              </div>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item dropdown">
+              <a class="nav-link dropdown-toggle" target="_self" href="javascript:;" role="button"
+                 data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                <i class="iconfont icon-momo"></i>
+                <span>社交</span>
+              </a>
+              <div class="dropdown-menu" aria-labelledby="navbarDropdown">
+                
+                  
+                  
+                  
+		<div >
+
+                  <a class="dropdown-item" href="/links/" target="_self" data-umami-event="Navigation-Friends">
+
+                    <i class="iconfont icon-link-fill"></i>
+                    <span>友链</span>
+                  </a>
+		</div>
+                
+                  
+                  
+                  
+		<div >
+
+                  <a class="dropdown-item" href="/messagebd/" target="_self" data-umami-event="Navigation-MessageBoard">
+
+                    <i class="iconfont icon-comment"></i>
+                    <span>留言板</span>
+                  </a>
+		</div>
+                
+                  
+                  
+                  
+		<div >
+
+                  <a class="dropdown-item" href="/atom.xml" target="_self" data-umami-event="Navigation-RSS">
+
+                    <i class="iconfont icon-dingyue"></i>
+                    <span>RSS订阅</span>
+                  </a>
+		</div>
+                
+                  
+                  
+                  
+		<div >
+
+                  <a class="dropdown-item" href="/reccomments/" target="_self" data-umami-event="Navigation-Recent-Comments">
+
+                    <i class="iconfont icon-icon-pinglunguanli-pinglunliebiao"></i>
+                    <span>近期评论</span>
+                  </a>
+		</div>
+                
+              </div>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item dropdown">
+              <a class="nav-link dropdown-toggle" target="_self" href="javascript:;" role="button"
+                 data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                <i class="iconfont icon-user-fill"></i>
+                <span>个人</span>
+              </a>
+              <div class="dropdown-menu" aria-labelledby="navbarDropdown">
+                
+                  
+                  
+                  
+		<div >
+
+                  <a class="dropdown-item" href="/about/" target="_self" data-umami-event="Navigation-AboutMe">
+
+                    <i class="iconfont icon-guanyuwomen"></i>
+                    <span>关于</span>
+                  </a>
+		</div>
+                
+                  
+                  
+                  
+		<div >
+
+                  <a class="dropdown-item" href="/playlist/" target="_self" data-umami-event="Navigation-Music">
+
+                    <i class="iconfont icon-music"></i>
+                    <span>歌单</span>
+                  </a>
+		</div>
+                
+                  
+                  
+                  
+		<div >
+
+                  <a class="dropdown-item" href="https://uipv4.zywvvd.com:33035" target="_self" data-umami-event="Navigation-Nextcloud">
+
+                    <i class="iconfont icon-xuniyingpan"></i>
+                    <span>网盘</span>
+                  </a>
+		</div>
+                
+                  
+                  
+                  
+		<div >
+
+                  <a class="dropdown-item" href="https://uipv4.zywvvd.com:33036" target="_self" data-umami-event="Navigation-OneDev">
+
+                    <i class="iconfont icon-git"></i>
+                    <span>仓库</span>
+                  </a>
+		</div>
+                
+                  
+                  
+                  
+		<div >
+
+                  <a class="dropdown-item" href="https://uipv4.zywvvd.com:33041" target="_self" data-umami-event="Navigation-Wiki">
+
+                    <i class="iconfont icon-wiki"></i>
+                    <span>百科</span>
+                  </a>
+		</div>
+                
+              </div>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item dropdown">
+              <a class="nav-link dropdown-toggle" target="_self" href="javascript:;" role="button"
+                 data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                <i class="iconfont icon-ic_fly"></i>
+                <span>导航</span>
+              </a>
+              <div class="dropdown-menu" aria-labelledby="navbarDropdown">
+                
+                  
+                  
+                  
+		<div >
+
+                  <a class="dropdown-item" href="/site-map/" target="_self" data-umami-event="Navigation-SiteMap">
+
+                    <i class="iconfont icon-lianjie"></i>
+                    <span>链接</span>
+                  </a>
+		</div>
+                
+                  
+                  
+                  
+		<div >
+
+                  <a class="dropdown-item" href="/nodeppt/hexo/snavigation/" target="_self" data-umami-event="Navigation-Search">
+
+                    <i class="iconfont icon-sousuo"></i>
+                    <span>搜索</span>
+                  </a>
+		</div>
+                
+              </div>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item dropdown">
+              <a class="nav-link dropdown-toggle" target="_self" href="javascript:;" role="button"
+                 data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                <i class="iconfont icon-wangzhan"></i>
+                <span>站点</span>
+              </a>
+              <div class="dropdown-menu" aria-labelledby="navbarDropdown">
+                
+                  
+                  
+                  
+		<div >
+
+                  <a class="dropdown-item" href="https://uipv4.zywvvd.com:33039/share/0zx3o21oIpZTZqwC/%E5%8F%88%E8%A7%81%E8%8B%8D%E5%B2%9A" target="_self" data-umami-event="Navigation-Umami">
+
+                    <i class="iconfont icon-tongji2"></i>
+                    <span>站点分析</span>
+                  </a>
+		</div>
+                
+                  
+                  
+                  
+		<div >
+
+                  <a class="dropdown-item" href="/earth_sta/" target="_self" data-umami-event="Navigation-Globe">
+
+                    <i class="iconfont icon-tongjifenxi-xiangmubiaogetongji"></i>
+                    <span>访问统计</span>
+                  </a>
+		</div>
+                
+                  
+                  
+                  
+		<div >
+
+                  <a class="dropdown-item" href="https://uipv4.zywvvd.com:33034/status/show" target="_self" data-umami-event="Navigation-Monitor">
+
+                    <i class="iconfont icon-jiankong"></i>
+                    <span>站点监控</span>
+                  </a>
+		</div>
+                
+              </div>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item dropdown">
+              <a class="nav-link dropdown-toggle" target="_self" href="javascript:;" role="button"
+                 data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                <i class="iconfont icon-chuansong"></i>
+                <span>传送</span>
+              </a>
+              <div class="dropdown-menu" aria-labelledby="navbarDropdown">
+                
+                  
+                  
+                  
+		<div >
+
+                  <a class="dropdown-item" href="https://www.foreverblog.cn/go.html" target="_self" data-umami-event="Navigation-ForeverBolg">
+
+                    <i class="iconfont icon-a-BlackHole"></i>
+                    <span>十年之约</span>
+                  </a>
+		</div>
+                
+                  
+                  
+                  
+		<div >
+
+                  <a class="dropdown-item" href="https://www.travellings.cn/go.html" target="_self" data-umami-event="Navigation-DriveTo">
+
+                    <i class="iconfont icon-train1"></i>
+                    <span>开往</span>
+                  </a>
+		</div>
+                
+                  
+                  
+                  
+		<div >
+
+                  <a class="dropdown-item" href="https://bf.zzxworld.com/" target="_self" data-umami-event="Navigation-BlogFinder">
+
+                    <i class="iconfont icon-icon-"></i>
+                    <span>BlogFinder</span>
+                  </a>
+		</div>
+                
+                  
+                  
+                  
+		<div >
+
+                  <a class="dropdown-item" href="https://www.perass.com/" target="_self" data-umami-event="Navigation-Bloghome">
+
+                    <i class="iconfont icon-home-fill"></i>
+                    <span>博客之家</span>
+                  </a>
+		</div>
+                
+              </div>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item dropdown">
+              <a class="nav-link dropdown-toggle" target="_self" href="javascript:;" role="button"
+                 data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                <i class="iconfont icon-gongju"></i>
+                <span>工具</span>
+              </a>
+              <div class="dropdown-menu" aria-labelledby="navbarDropdown">
+                
+                  
+                  
+                  
+		<div >
+
+                  <a class="dropdown-item" href="/navigates/calculator" target="_self" data-umami-event="Navigation-Calculator">
+
+                    <i class="iconfont icon-jisuan"></i>
+                    <span>计算器</span>
+                  </a>
+		</div>
+                
+                  
+                  
+                  
+		<div >
+
+                  <a class="dropdown-item" href="/navigates/webgraphviz" target="_self" data-umami-event="Navigation-WebGtaphviz">
+
+                    <i class="iconfont icon-tongyong-huatugongju2"></i>
+                    <span>Graphviz</span>
+                  </a>
+		</div>
+                
+                  
+                  
+                  
+		<div >
+
+                  <a class="dropdown-item" href="/navigates/formular_reco" target="_self" data-umami-event="Navigation-Formular-Reco">
+
+                    <i class="iconfont icon-a-checkformula"></i>
+                    <span>公式识别</span>
+                  </a>
+		</div>
+                
+              </div>
+            </li>
+          
+        
+        
+          <li class="nav-item" id="search-btn">
+            <a class="nav-link" target="_self" href="javascript:;" data-toggle="modal" data-target="#modalSearch" aria-label="Search">
+              <i class="iconfont icon-search"></i>
+            </a>
+          </li>
+          
+        
+        
+          <li class="nav-item" id="color-toggle-btn">
+            <a class="nav-link" target="_self" href="javascript:;" aria-label="Color Toggle">
+              <i class="iconfont icon-dark" id="color-toggle-icon"></i>
+            </a>
+          </li>
+        
+      </ul>
+    </div>
+  </div>
+</nav>
+
+  
+
+<div id="banner" class="banner" parallax=true
+     style="background: url('https://uipv4.zywvvd.com:33030/HexoFiles/new/bg-trans.png') no-repeat center center; background-size: cover;">
+  <div class="full-bg-img">
+    <div class="mask flex-center" style="background-color: rgba(0, 0, 0, 0)">
+      <div class="banner-text text-center fade-in-up">
+        <div class="h2">
+          
+            <span id="subtitle">分段五次多项式插值原理详解</span>
+          
+        </div>
+
+        
+          
+  <div class="mt-3">
+    
+      <span class="post-meta mr-2">
+        <i class="iconfont icon-author" aria-hidden="true"></i>
+        Yiwei Zhang
+      </span>
+    
+    
+      <span class="post-meta">
+        <i class="iconfont icon-date-fill" aria-hidden="true"></i>
+        <time datetime="2026-03-23 14:10" pubdate>
+          2026年3月23日 下午
+        </time>
+      </span>
+    
+  </div>
+
+  <div class="mt-1">
+    
+      <span class="post-meta mr-2">
+        <i class="iconfont icon-chart"></i>
+        
+          <!-- compatible with older versions-->
+          4.8k 字
+        
+      </span>
+    
+
+    
+      <span class="post-meta mr-2">
+        <i class="iconfont icon-clock-fill"></i>
+        
+        
+        
+          <!-- compatible with older versions-->
+          40 分钟
+        
+      </span>
+    
+
+    
+    
+      
+        <span id="vvdpost_container_page_pvuv" style="display: none">
+          <i class="iconfont icon-eye" aria-hidden="true"></i>
+          <span id="vvdpost_value_page_pv">0</span> 次&nbsp&nbsp
+		  <i class="iconfont icon-users" aria-hidden="true"></i>
+		  <span id="vvdpost_value_page_uv">0</span> 人&nbsp&nbsp
+		  <i class="iconfont icon-comment" aria-hidden="true"></i>
+		  <span id="vvdpost_value_page_cn">0</span> 条
+        </span>
+
+    <script>
+    document.addEventListener("DOMContentLoaded", function() {
+	      console.log("PVUV_" + window.location.pathname);
+
+	      // 使用 fetch API 发送 POST 请求
+	      fetch('https://uipv4.zywvvd.com:33037/poststats', { 
+		  method: 'POST',
+		  headers: {
+		      'Content-Type': 'application/json'
+		  },
+		  body: JSON.stringify(window.location.pathname) // 将路径名作为对象发送，以便在服务器端更容易处理
+	      })
+	      .then(response => {
+		  // 检查响应状态
+		  if (!response.ok) {
+		      throw new Error('Network response was not ok ' + response.statusText);
+		  }
+		  return response.json(); // 解析 JSON 响应
+	      })
+	      .then(data => {
+		  // 处理解析后的数据
+		  console.log(data.pv);
+		  var pvCtn = document.querySelector('#vvdpost_container_page_pvuv');
+		  if (pvCtn) {
+		      var pvEle = document.querySelector('#vvdpost_value_page_pv');
+		      var uvEle = document.querySelector('#vvdpost_value_page_uv');
+		      var cnEle = document.querySelector('#vvdpost_value_page_cn');
+		      if (pvEle && uvEle) {
+		          pvEle.innerText = data.pv;
+		          uvEle.innerText = data.uv;
+		          cnEle.innerText = data.cn;
+		          pvCtn.style.display = 'inline';
+		      }
+		  }
+	      })
+	      .catch(error => {
+		  // 处理请求错误
+		  console.error('There has been a problem with your fetch operation:', error);
+	      });
+      });
+  </script>
+      
+    
+  </div>
+
+
+        
+      </div>
+
+      
+        <div class="scroll-down-bar">
+          <i class="iconfont icon-arrowdown"></i>
+        </div>
+      
+    </div>
+  </div>
+</div>
+
+</div>
+
+
+	<script type="text/javascript" src="/vvd_js/jquery.js"></script>
+	<script async src="https://uipv4.zywvvd.com:33039/script.js" data-website-id="dd4a05c6-dde2-4743-9c3a-a79d6bee0778"></script>
+	<div class="banner" id='banner' >
+
+		<div class="full-bg-img" >
+
+			
+				<script>
+					var ua = navigator.userAgent;
+					var ipad = ua.match(/(iPad).*OS\s([\d_]+)/),
+						isIphone = !ipad && ua.match(/(iPhone\sOS)\s([\d_]+)/),
+						isAndroid = ua.match(/(Android)\s+([\d.]+)/),
+						isMobile = isIphone || isAndroid;
+
+					function set_video_attr(id){
+						var height = document.body.clientHeight
+						var width = document.body.clientWidth
+						var video_item = document.getElementById(id);
+
+						if (height / width < 0.56){
+							video_item.setAttribute('width', '100%');
+							video_item.setAttribute('height', 'auto');
+						} else {
+							video_item.setAttribute('height', '100%');
+							video_item.setAttribute('width', 'auto');
+						}
+					}
+
+					fetch('https://uipv4.zywvvd.com:33037/wallpaper-pair')
+					  .then(response => response.json()) // 解析JSON数据
+					  .then(data => {
+						console.log('获取链接成功');
+						video_url = data[0][0]
+						pre_show_image_url = data[0][1]
+
+						banner_obj = document.getElementById("banner")
+						banner_obj.style.cssText = "background: url('" + pre_show_image_url + "') no-repeat;"
+
+						vvd_banner_obj = document.getElementById("vvd_banner_img")
+						vvd_banner_content = "<img id='banner_img_item' src='" + pre_show_image_url + "'style='position: fixed; z-index: -999'>"
+						vvd_banner_obj.innerHTML = vvd_banner_content 
+
+						if (!isMobile) {
+							video_html_res = "<video id='video_item' style='position: fixed; z-index: -888;'  muted='muted' src=" + video_url + " autoplay='autoplay' loop='loop'></video>"
+							document.getElementById("banner_video_insert").innerHTML = video_html_res;
+							set_video_attr('video_item')
+							set_video_attr('banner_img_item')
+						}
+					    
+					  })
+					  .catch((error) => {
+					    console.error('请求失败,尝试本地获取背景图像：', error);
+	    					$.getJSON('/vvd_js/video_url.json', function(data){
+
+							var video_list_length = data.length
+							var seed = Math.random()
+							index = Math.floor(seed * video_list_length)
+
+							video_url = data[index][0]
+							pre_show_image_url = data[index][1]
+
+							banner_obj = document.getElementById("banner")
+							banner_obj.style.cssText = "background: url('" + pre_show_image_url + "') no-repeat;"
+
+							vvd_banner_obj = document.getElementById("vvd_banner_img")
+							vvd_banner_content = "<img id='banner_img_item' src='" + pre_show_image_url + "'style='position: fixed; z-index: -999'>"
+							vvd_banner_obj.innerHTML = vvd_banner_content 
+
+							if (!isMobile) {
+								video_html_res = "<video id='video_item' style='position: fixed; z-index: -888;'  muted='muted' src=" + video_url + " autoplay='autoplay' loop='loop'></video>"
+								document.getElementById("banner_video_insert").innerHTML = video_html_res;
+								set_video_attr('video_item')
+								set_video_attr('banner_img_item')
+							}
+						});
+					  });
+
+
+
+
+
+
+					if (!isMobile){
+						window.onresize = function(){
+							set_video_attr('video_item')
+							set_video_attr('banner_img_item')
+							}
+						}
+				</script>
+
+			
+
+
+			
+			</div>
+		</div>
+    </div>
+
+  </header>
+
+  <main>
+    
+      
+
+
+
+<div class="container-fluid nopadding-x">
+  <div class="row nomargin-x">
+    <div class="side-col d-none d-lg-block col-lg-2">
+      
+
+    </div>
+
+    <div class="col-lg-8 nopadding-x-md">
+      <div class="container nopadding-x-md" id="board-ctn">
+        <div id="board">
+          <article class="post-content mx-auto">
+
+            <!-- <h1 id="seo-header">分段五次多项式插值原理详解</h1> -->
+
+            
+              <p id="updated-time" class="note note-info" style="">
+                
+                  
+                    <!-- compatible with older versions-->
+                    本文最后更新于：2026年4月3日 晚上
+                  
+                
+              </p>
+            
+            
+              <div class="markdown-body">
+                
+                <blockquote>
+<p>本文详细介绍分段五次多项式插值的数学原理、公式推导及代码实现。该方法广泛应用于自动驾驶路径规划，能够生成 $C^2$ 连续（位置、航向连续；可实现曲率连续）的平滑轨迹。</p>
+</blockquote>
+<span id="more"></span>
+<h2 id="一、问题背景">一、问题背景</h2>
+<h3 id="1-1-为什么需要多项式插值？">1.1 为什么需要多项式插值？</h3>
+<p>在自动驾驶路径规划中，经常需要将离散的路径点（如车道中心线、参考轨迹）转换为<strong>连续可导</strong>的曲线，以满足：</p>
+<ol>
+<li><strong>舒适性要求</strong>：曲率连续，避免方向盘突变</li>
+<li><strong>控制可行性</strong>：车辆运动学约束要求轨迹 $C^2$ 连续</li>
+<li><strong>优化便利性</strong>：多项式形式便于求导、积分和优化</li>
+</ol>
+<h3 id="1-2-为什么选择-五次-？">1.2 为什么选择&quot;五次&quot;？</h3>
+<p><strong>核心思路</strong>：边界条件数量决定多项式次数。</p>
+<p>要实现 $C^2$ 连续，每段曲线需要满足起点和终点的约束：</p>
+<ul>
+<li><strong>起点</strong>：位置 + 速度 + 加速度 → 3个方程</li>
+<li><strong>终点</strong>：位置 + 速度 + 加速度 → 3个方程</li>
+<li><strong>共计</strong>：6个方程</li>
+</ul>
+<p>n 次多项式有 n+1 个待定系数。要解 6 个方程，需要 <strong>6 个未知数</strong>，因此选择 <strong>5次多项式</strong>（系数 a₀~a₅ 共6个）。</p>
+<table>
+<thead>
+<tr>
+<th>多项式次数</th>
+<th>可控制的边界条件</th>
+<th>连续性阶数</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>三次 (Cubic)</td>
+<td>位置 + 速度</td>
+<td>$C^1$ (位置、航向连续)</td>
+</tr>
+<tr>
+<td>五次 (Quintic)</td>
+<td>位置 + 速度 + 加速度</td>
+<td>$C^2$ (位置、航向连续；可实现曲率连续)</td>
+</tr>
+<tr>
+<td>七次 (Septic)</td>
+<td>位置 + 速度 + 加速度 + Jerk</td>
+<td>$C^3$</td>
+</tr>
+</tbody>
+</table>
+<hr>
+<h2 id="二、曲线连续性的数学定义">二、曲线连续性的数学定义</h2>
+<h3 id="2-1-C⁰、C¹、C²、C³-连续性">2.1 C⁰、C¹、C²、C³ 连续性</h3>
+<p>对于参数曲线 $\mathbf{r}(s) = (x(s), y(s))$，其中 $s$ 为参数：</p>
+<h4 id="C-0-连续（位置连续）">$C^0$ 连续（位置连续）</h4>
+<p>两段曲线 $\mathbf{r}_1(s)$ 和 $\mathbf{r}_2(s)$ 在连接点处位置相同：</p>
+
+$$\mathbf{r}_1(s_{end}) = \mathbf{r}_2(s_{start})$$
+
+<p>即：</p>
+
+$$x_1(s_{end}) = x_2(s_{start}), \quad y_1(s_{end}) = y_2(s_{start})$$
+
+<p><strong>物理意义</strong>：轨迹没有&quot;断点&quot;，车辆可以从一段平滑过渡到下一段。</p>
+<h4 id="C-1-连续（切线连续）">$C^1$ 连续（切线连续）</h4>
+<p>在 $C^0$ 连续的基础上，一阶导数（切向量）也连续。</p>
+
+$$\mathbf{r}'_1(s_{end}) = \mathbf{r}'_2(s_{start})$$
+
+<p>即：</p>
+
+$$x'_1(s_{end}) = x'_2(s_{start}), \quad y'_1(s_{end}) = y'_2(s_{start})$$
+
+<p><strong>推导</strong>：一阶导数定义切线方向</p>
+
+$$\mathbf{r}'(s) = \frac{d\mathbf{r}}{ds} = \left(\frac{dx}{ds}, \frac{dy}{ds}\right) = (x', y')$$
+
+<p><strong>物理意义</strong>：航向角 θ 连续，车辆经过连接点时不需要瞬时转向。</p>
+<h4 id="C-2-连续（二阶导数连续）">$C^2$ 连续（二阶导数连续）</h4>
+<p>在 $C^1$ 连续的基础上，二阶导数也连续。</p>
+
+$$\mathbf{r}''_1(s_{end}) = \mathbf{r}''_2(s_{start})$$
+
+<p>即：</p>
+
+$$x''_1(s_{end}) = x''_2(s_{start}), \quad y''_1(s_{end}) = y''_2(s_{start})$$
+
+<p><strong>推导</strong>：二阶导数与曲率的关系</p>
+<p>曲率公式（详见 §4.2）：</p>
+
+$$\kappa = \frac{x'y'' - y'x''}{\left((x')^2 + (y')^2\right)^{3/2}}$$
+
+<p>当 $x', y'$ 连续（$C^1$）且 $x'', y''$ 连续（$C^2$），且 $|\mathbf{r}'| \neq 0$ 时，曲率 $\kappa$ 连续。</p>
+<p><strong>物理意义</strong>：曲率连续，车辆经过连接点时方向盘转角不需要瞬时变化，乘客感觉舒适。</p>
+<h4 id="C-3-连续（Jerk-连续）">$C^3$ 连续（Jerk 连续）</h4>
+<p>在 $C^2$ 连续的基础上，三阶导数也连续。</p>
+
+$$\mathbf{r}'''_1(s_{end}) = \mathbf{r}'''_2(s_{start})$$
+
+<p><strong>物理意义</strong>：曲率变化率连续，方向盘转动速度连续,更适合高速场景。</p>
+<h3 id="2-2-连续性与多项式次数的关系">2.2 连续性与多项式次数的关系</h3>
+<table>
+<thead>
+<tr>
+<th>连续性</th>
+<th>需要控制的导数</th>
+<th>边界条件数</th>
+<th>最小多项式次数</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>$C^0$</td>
+<td>位置</td>
+<td>2</td>
+<td>一次（线性）</td>
+</tr>
+<tr>
+<td>$C^1$</td>
+<td>位置 + 一阶导</td>
+<td>4</td>
+<td>三次</td>
+</tr>
+<tr>
+<td>$C^2$</td>
+<td>位置 + 一阶 + 二阶导</td>
+<td>6</td>
+<td><strong>五次</strong></td>
+</tr>
+<tr>
+<td>$C^3$</td>
+<td>位置 + 一阶 + 二阶 + 三阶导</td>
+<td>8</td>
+<td>七次</td>
+</tr>
+</tbody>
+</table>
+<p><strong>结论</strong>：要实现 $C^2$ 连续,每段需要 6 个边界条件,因此选择<strong>五次多项式</strong>。</p>
+<hr>
+<h2 id="三、五次多项式数学模型">三、五次多项式数学模型</h2>
+<h3 id="3-1-参数化表示">3.1 参数化表示</h3>
+<p>对于路径的一段,使用参数 <strong>s ∈ [0, 1]</strong>（归一化弧长），分别对 x 和 y 坐标建立五次多项式：</p>
+
+$$x(s) = a_0 + a_1 s + a_2 s^{2} + a_3 s^{3} + a_4 s^{4} + a_5 s^{5}$$
+
+
+$$y(s) = b_0 + b_1 s + b_2 s^{2} + b_3 s^{3} + b_4 s^{4} + b_5 s^{5}$$
+
+<p>简记为：</p>
+
+$$x(s) = \sum_{i=0}^{5} a_i s^{i}, \quad y(s) = \sum_{i=0}^{5} b_i s^{i}$$
+
+<h3 id="3-2-关于参数-s-的说明">3.2 关于参数 s 的说明</h3>
+<p><strong>为什么用 s ∈ [0, 1] 而不是 s ∈ [0, L]？</strong></p>
+<p>使用归一化参数有以下优点：</p>
+<ol>
+<li><strong>数值稳定性</strong>：系数 $a_i$ 的量级更均匀</li>
+<li><strong>通用性</strong>：不同长度的段使用相同的公式</li>
+<li><strong>边界条件统一</strong>：起点 s=0，终点 s=1</li>
+</ol>
+<h3 id="3-3-L（段长度）的详细解释">3.3 L（段长度）的详细解释</h3>
+<p><strong>L 是本段路径的实际物理长度（单位：米）。</strong></p>
+<h4 id="为什么需要-L？">为什么需要 L？</h4>
+<ol>
+<li><strong>速度归一化</strong>：将物理速度转换为参数域速度</li>
+<li><strong>加速度归一化</strong>：将物理加速度转换为参数域加速度</li>
+<li><strong>曲率计算</strong>：曲率公式中的分母涉及切向量长度</li>
+</ol>
+<h4 id="物理量与参数量的转换">物理量与参数量的转换</h4>
+<table>
+<thead>
+<tr><th>物理量</th><th>参数域表示</th><th>物理域表示</th></tr>
+</thead>
+<tbody>
+<tr><td>位置</td><td>$\mathbf{r}(s)$</td><td>$\mathbf{r}(s \cdot L)$</td></tr>
+<tr><td>速度</td><td>$\dfrac{d\mathbf{r}}{ds}$</td><td>$\dfrac{d\mathbf{r}}{ds} \cdot \dfrac{1}{L}$</td></tr>
+<tr><td>加速度</td><td>$\dfrac{d^2\mathbf{r}}{ds^2}$</td><td>$\dfrac{d^2\mathbf{r}}{ds^2} \cdot \dfrac{1}{L^2}$</td></tr>
+</tbody>
+</table>
+<h4 id="边界条件中-L-的作用">边界条件中 L 的作用</h4>
+<p>设切向量长度为 L（即参数域中 $|\mathbf{r}'| = L$），则：</p>
+
+$$\begin{aligned}
+x' &= L \cos\theta \\
+y' &= L \sin\theta \\
+x'' &= -L^{2} \kappa \sin\theta \\
+y'' &= L^{2} \kappa \cos\theta
+\end{aligned}$$
+
+<p><strong>推导过程</strong>见 §4.1 和 §4.2。</p>
+<h3 id="3-4-边界条件">3.4 边界条件</h3>
+<p>五次多项式有 <strong>6 个待定系数</strong>，需要 <strong>6 个边界条件</strong>：</p>
+<h4 id="起点-s-0-：">起点 (s = 0)：</h4>
+<table>
+<thead>
+<tr>
+<th>条件</th>
+<th>物理意义</th>
+<th>数学表达</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>位置</td>
+<td>起点坐标</td>
+<td>$x(0) = x_0$, $y(0) = y_0$</td>
+</tr>
+<tr>
+<td>一阶导数</td>
+<td>切线方向（航向角）</td>
+<td>$\dot{x}(0)$, $\dot{y}(0)$</td>
+</tr>
+<tr>
+<td>二阶导数</td>
+<td>曲率相关</td>
+<td>$\ddot{x}(0)$, $\ddot{y}(0)$</td>
+</tr>
+</tbody>
+</table>
+<h4 id="终点-s-1-：">终点 (s = 1)：</h4>
+<table>
+<thead>
+<tr>
+<th>条件</th>
+<th>物理意义</th>
+<th>数学表达</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>位置</td>
+<td>终点坐标</td>
+<td>$x(1) = x_1$, $y(1) = y_1$</td>
+</tr>
+<tr>
+<td>一阶导数</td>
+<td>切线方向（航向角）</td>
+<td>$\dot{x}(1)$, $\dot{y}(1)$</td>
+</tr>
+<tr>
+<td>二阶导数</td>
+<td>曲率相关</td>
+<td>$\ddot{x}(1)$, $\ddot{y}(1)$</td>
+</tr>
+</tbody>
+</table>
+<hr>
+<h2 id="四、边界条件的物理意义与公式推导">四、边界条件的物理意义与公式推导</h2>
+<h3 id="4-1-一阶导数与航向角的关系">4.1 一阶导数与航向角的关系</h3>
+<h4 id="推导过程">推导过程</h4>
+<p>参数曲线 $\mathbf{r}(s) = (x(s), y(s))$ 的切向量为：</p>
+
+$$\mathbf{r}'(s) = \left(\frac{dx}{ds}, \frac{dy}{ds}\right) = (x', y')$$
+
+<p>切线方向（航向角 θ)满足：</p>
+
+$$\tan\theta = \frac{dy/ds}{dx/ds} = \frac{y'}{x'}$$
+
+<p>由反正切函数得到：</p>
+
+$$\theta = \arctan\left(\frac{y'}{x'}\right)$$
+
+<p>但 <strong>arctan 只能处理一三象限</strong>， 范围为 $(-\frac{\pi}{2}, \frac{\pi}{2})$。</p>
+<p>在路径规划中，切向量可能指向任何方向，因此使用 <strong>双参数反正切函数 arctan2</strong>：</p>
+
+$$\theta = \arctan2(y', x')$$
+
+<p><strong>arctan2 的优势</strong>：能正确处理所有四个象限，返回范围 $(-\pi, \pi]$。</p>
+<h4 id="引入段长度-L">引入段长度 L</h4>
+<p>设切向量的模长为 L（段长度），即：</p>
+
+$$|\mathbf{r}'| = \sqrt{(x')^2 + (y')^2} = L$$
+
+<p>根据三角函数定义：</p>
+
+$$\cos\theta = \frac{x'}{|\mathbf{r}'|} = \frac{x'}{L}, \quad \sin\theta = \frac{y'}{|\mathbf{r}'|} = \frac{y'}{L}$$
+
+<p>反解得到：</p>
+
+$$\boxed{x' = L \cos\theta, \quad y' = L \sin\theta}$$
+
+<h4 id="代码实现">代码实现</h4>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><code class="hljs python"><span class="hljs-comment"># 一阶导数边界条件</span><br>xp0 = L * np.cos(theta0)  <span class="hljs-comment"># 起点x方向&quot;速度&quot;</span><br>yp0 = L * np.sin(theta0)  <span class="hljs-comment"># 起点y方向&quot;速度&quot;</span><br>xp1 = L * np.cos(theta1)  <span class="hljs-comment"># 终点x方向&quot;速度&quot;</span><br>yp1 = L * np.sin(theta1)  <span class="hljs-comment"># 终点y方向&quot;速度&quot;</span><br></code></pre></td></tr></table></figure>
+<h3 id="4-2-二阶导数与曲率的关系">4.2 二阶导数与曲率的关系</h3>
+<h4 id="曲率公式的推导">曲率公式的推导</h4>
+<p><strong>曲率的几何定义</strong>：曲率是切线方向对弧长的变化率。</p>
+
+$$\kappa = \frac{d\theta}{d\ell}$$
+
+<p>其中 $\ell$ 是弧长，$\theta$ 是切线角。<br>
+<strong>参数曲线的曲率公式推导</strong>：<br>
+由 $\theta = \arctan(y'/x')$，对弧长 $\ell$ 求导：</p>
+
+$$\frac{d\theta}{d\ell} = \frac{d}{d\ell}\arctan\left(\frac{y'}{x'}\right)$$
+
+<p>使用链式法则和商法则：</p>
+
+$$\frac{d\theta}{d\ell} = \frac{1}{1+(y'/x')^{2}} \cdot \frac{x'y'' - y'x''}{(x')^2} \cdot \frac{1}{|\mathbf{r}'|}$$
+
+<p>其中 $|\mathbf{r}'| = \sqrt{(x')^2 + (y')^2}$ 是切向量长度。<br>
+简化：</p>
+
+$$\kappa = \frac{x'y'' - y'x''}{\left((x')^2 + (y')^2\right)^{3/2}}$$
+
+
+$$\boxed{\kappa = \frac{x'y'' - y'x''}{|\mathbf{r}'|^{3}}}$$
+
+<h4 id="从曲率反推二阶导数">从曲率反推二阶导数</h4>
+<p>已知曲率 $\kappa$ 和航向角 $\theta$，切向量长度 $|\mathbf{r}'| = L$，求 $x'', y''$。<br>
+由曲率公式：</p>
+
+$$\kappa = \frac{x'y'' - y'x''}{L^{3}}$$
+
+<p>代入 $x' = L\cos\theta$, $y' = L\sin\theta$：</p>
+
+$$\kappa L^{3} = (L\cos\theta) y'' - (L\sin\theta) x''$$
+
+
+$$\kappa L^{2} = \cos\theta \cdot y'' - \sin\theta \cdot x''$$
+
+<p><strong>关键观察</strong>：$x'', y''$ 可以看作切向加速度和法向加速度的分量。<br>
+在曲线运动中：</p>
+<ul>
+<li>切向加速度：$a_t = \frac{d|\mathbf{v}|}{dt}$（速度大小变化）</li>
+<li>法向加速度：$a_n = \frac{v^{2}}{R} = v^{2}\kappa$（向心加速度）<br>
+当速度恒定时（$a_t = 0$），加速度完全指向曲率中心（法向）：</li>
+</ul>
+
+$$\mathbf{a} = a_n \cdot \mathbf{n} = v^{2}\kappa \cdot \mathbf{n}$$
+
+<p>其中 $\mathbf{n} = (-\sin\theta, \cos\theta)$ 是法向量（指向曲率中心）。<br>
+因此在参数域（$v = L$）：</p>
+
+$$\begin{aligned}
+x'' &= -L^{2} \kappa \sin\theta \\
+y'' &= L^{2} \kappa \cos\theta
+\end{aligned}$$
+
+<p><strong>验证</strong>：代入曲率公式</p>
+
+$$\kappa = \frac{(L\cos\theta)(L^{2}\kappa\cos\theta) - (L\sin\theta)(-L^{2}\kappa\sin\theta)}{L^{3}} = \frac{L^{3}\kappa(\cos^{2}\theta + \sin^{2}\theta)}{L^{3}} = \kappa \checkmark$$
+
+
+$$\boxed{x'' = -L^{2} \kappa \sin\theta, \quad y'' = L^{2} \kappa \cos\theta}$$
+
+<h4 id="代码实现-2">代码实现</h4>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><code class="hljs python"><span class="hljs-comment"># 二阶导数边界条件（由曲率反推）</span><br>xpp0 = -L**<span class="hljs-number">2</span> * kappa0 * np.sin(theta0)  <span class="hljs-comment"># 起点x加速度</span><br>ypp0 =  L**<span class="hljs-number">2</span> * kappa0 * np.cos(theta0)  <span class="hljs-comment"># 起点y加速度</span><br>xpp1 = -L**<span class="hljs-number">2</span> * kappa1 * np.sin(theta1)  <span class="hljs-comment"># 终点x加速度</span><br>ypp1 =  L**<span class="hljs-number">2</span> * kappa1 * np.cos(theta1)  <span class="hljs-comment"># 终点y加速度</span><br></code></pre></td></tr></table></figure>
+<hr>
+<h2 id="五、系数求解与线性方程组推导">五、系数求解与线性方程组推导</h2>
+<h3 id="5-1-从边界条件到线性方程组">5.1 从边界条件到线性方程组</h3>
+<p>设五次多项式：</p>
+
+$$x(s) = a_0 + a_1 s + a_2 s^{2} + a_3 s^{3} + a_4 s^{4} + a_5 s^{5}$$
+
+<p><strong>各阶导数</strong>：</p>
+
+$$\begin{aligned}
+x'(s) &= a_1 + 2a_2 s + 3a_3 s^{2} + 4a_4 s^{3} + 5a_5 s^{4} \\
+x''(s) &= 2a_2 + 6a_3 s + 12a_4 s^{2} + 20a_5 s^{3}
+\end{aligned}$$
+
+<p><strong>起点 (s = 0) 的边界条件</strong>：</p>
+
+$$\begin{aligned}
+x(0) &= a_0 = x_0 \\
+x'(0) &= a_1 = x'_0 \\
+x''(0) &= 2a_2 = x''_0 \Rightarrow a_2 = \frac{x''_0}{2}
+\end{aligned}$$
+
+<p><strong>终点 (s = 1) 的边界条件</strong>：</p>
+
+$$\begin{aligned}
+x(1) &= a_0 + a_1 + a_2 + a_3 + a_4 + a_5 = x_1 \\
+x'(1) &= a_1 + 2a_2 + 3a_3 + 4a_4 + 5a_5 = x'_1 \\
+x''(1) &= 2a_2 + 6a_3 + 12a_4 + 20a_5 = x''_1
+\end{aligned}$$
+
+<p><strong>得到方程组</strong>（未知量 $a_3, a_4, a_5$）：</p>
+
+$$\begin{cases}
+a_3 + a_4 + a_5 = x_1 - a_0 - a_1 - a_2 = \Delta x - a_1 - a_2 \\
+3a_3 + 4a_4 + 5a_5 = x'_1 - a_1 - 2a_2 \\
+6a_3 + 12a_4 + 20a_5 = x''_1 - 2a_2
+\end{cases}$$
+
+<h3 id="5-2-矩阵形式">5.2 矩阵形式</h3>
+<p>完整的六元线性方程组矩阵形式：</p>
+
+$$\begin{bmatrix} 
+1 & 0 & 0 & 0 & 0 & 0 \\ 
+1 & 1 & 1 & 1 & 1 & 1 \\ 
+0 & 1 & 0 & 0 & 0 & 0 \\ 
+0 & 1 & 2 & 3 & 4 & 5 \\ 
+0 & 0 & 2 & 0 & 0 & 0 \\ 
+0 & 0 & 2 & 6 & 12 & 20 
+\end{bmatrix} \begin{bmatrix} a_0 \\ a_1 \\ a_2 \\ a_3 \\ a_4 \\ a_5 \end{bmatrix} = \begin{bmatrix} x_0 \\ x_1 \\ x'_0 \\ x'_1 \\ x''_0 \\ x''_1 \end{bmatrix}$$
+
+<p><strong>矩阵元素来源</strong>：</p>
+<ul>
+<li>第1行：$x(0) = a_0$，只有 $a_0$ 系数为 1</li>
+<li>第2行：$x(1) = a_0 + a_1 + a_2 + a_3 + a_4 + a_5$，所有系数为 1</li>
+<li>第3行：$x'(0) = a_1$，只有 $a_1$ 系数为 1</li>
+<li>第4行：$x'(1) = a_1 + 2a_2 + 3a_3 + 4a_4 + 5a_5$，系数为 1,2,3,4,5</li>
+<li>第5行：$x''(0) = 2a_2$，只有 $a_2$ 系数为 2</li>
+<li>第6行：$x''(1) = 2a_2 + 6a_3 + 12a_4 + 20a_5$，系数为 2,6,12,20</li>
+</ul>
+<h3 id="5-3-解析解推导">5.3 解析解推导</h3>
+<p>由前三个方程直接得到：</p>
+
+$$a_0 = x_0, \quad a_1 = x'_0, \quad a_2 = \frac{x''_0}{2}$$
+
+<p>代入后三个方程，令 $\Delta x = x_1 - x_0$，得到关于 $a_3, a_4, a_5$ 的方程组：</p>
+
+$$\begin{bmatrix} 
+1 & 1 & 1 \\ 
+3 & 4 & 5 \\ 
+6 & 12 & 20 
+\end{bmatrix} \begin{bmatrix} a_3 \\ a_4 \\ a_5 \end{bmatrix} = \begin{bmatrix} \Delta x - x'_0 - \frac{x''_0}{2} \\ x'_1 - x'_0 - x''_0 \\ x''_1 - x''_0 \end{bmatrix}$$
+
+<p>使用 Cramer 法则或 Gauss 消元法求解，得到：</p>
+
+$$\boxed{\begin{aligned}
+a_0 &= x_0 \\
+a_1 &= x'_0 \\
+a_2 &= \frac{x''_0}{2} \\
+a_3 &= 10\Delta x - 6x'_0 - 4x'_1 - \frac{3}{2}x''_0 + \frac{1}{2}x''_1 \\
+a_4 &= -15\Delta x + 8x'_0 + 7x'_1 + \frac{3}{2}x''_0 - x''_1 \\
+a_5 &= 6\Delta x - 3x'_0 - 3x'_1 - \frac{1}{2}x''_0 + \frac{1}{2}x''_1
+\end{aligned}}$$
+
+<h3 id="5-4-代码实现">5.4 代码实现</h3>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><code class="hljs python">self.ax = [<br>    x0,                                                    <span class="hljs-comment"># a₀</span><br>    xp0,                                                   <span class="hljs-comment"># a₁</span><br>    xpp0 / <span class="hljs-number">2</span>,                                              <span class="hljs-comment"># a₂</span><br>    <span class="hljs-number">10</span>*(x1-x0) - <span class="hljs-number">6</span>*xp0 - <span class="hljs-number">4</span>*xp1 - <span class="hljs-number">1.5</span>*xpp0 + <span class="hljs-number">0.5</span>*xpp1,      <span class="hljs-comment"># a₃</span><br>    -<span class="hljs-number">15</span>*(x1-x0) + <span class="hljs-number">8</span>*xp0 + <span class="hljs-number">7</span>*xp1 + <span class="hljs-number">1.5</span>*xpp0 - xpp1,         <span class="hljs-comment"># a₄</span><br>    <span class="hljs-number">6</span>*(x1-x0) - <span class="hljs-number">3</span>*xp0 - <span class="hljs-number">3</span>*xp1 - <span class="hljs-number">0.5</span>*xpp0 + <span class="hljs-number">0.5</span>*xpp1        <span class="hljs-comment"># a₅</span><br>]<br></code></pre></td></tr></table></figure>
+<h2 id="y-方向系数-ay-的求解完全类似。">y 方向系数 <code>ay</code> 的求解完全类似。</h2>
+<h2 id="六、轨迹评估公式推导">六、轨迹评估公式推导</h2>
+<h3 id="6-1-位置">6.1 位置</h3>
+<p>直接由多项式定义：</p>
+
+$$x(s) = \sum_{i=0}^{5} a_i s^{i}, \quad y(s) = \sum_{i=0}^{5} b_i s^{i}$$
+
+<h3 id="6-2-一阶导数（速度）">6.2 一阶导数（速度）</h3>
+<p><strong>推导</strong>：对多项式求导</p>
+
+$$\frac{d}{ds}\left(\sum_{i=0}^{5} a_i s^{i}\right) = \sum_{i=1}^{5} i \cdot a_i s^{i-1}$$
+
+<p>展开：</p>
+
+$$x'(s) = a_1 + 2a_2 s + 3a_3 s^{2} + 4a_4 s^{3} + 5a_5 s^{4}$$
+
+<h3 id="6-3-二阶导数（加速度）">6.3 二阶导数（加速度）</h3>
+<p><strong>推导</strong>：再次求导</p>
+
+$$\frac{d^{2}}{ds^{2}}\left(\sum_{i=0}^{5} a_i s^{i}\right) = \sum_{i=2}^{5} i(i-1) \cdot a_i s^{i-2}$$
+
+<p>展开：</p>
+
+$$x''(s) = 2a_2 + 6a_3 s + 12a_4 s^{2} + 20a_5 s^{3}$$
+
+<h3 id="6-4-航向角">6.4 航向角</h3>
+<p>由一阶导数的几何意义（见 §4.1）：</p>
+
+$$\theta(s) = \arctan2(y'(s), x'(s))$$
+
+<h3 id="6-5-曲率">6.5 曲率</h3>
+<p>由曲率公式（见 §4.2）：</p>
+
+$$\kappa(s) = \frac{x'(s) y''(s) - y'(s) x''(s)}{\left[(x'(s))^2 + (y'(s))^2\right]^{3/2}}$$
+
+<h3 id="6-6-代码实现">6.6 代码实现</h3>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br></pre></td><td class="code"><pre><code class="hljs python"><span class="hljs-keyword">def</span> <span class="hljs-title function_">evaluate</span>(<span class="hljs-params">self, s: np.ndarray</span>) -&gt; <span class="hljs-type">Dict</span>[<span class="hljs-built_in">str</span>, np.ndarray]:<br>    <span class="hljs-string">&quot;&quot;&quot;评估参数 s ∈ [0, 1]&quot;&quot;&quot;</span><br>    s = np.atleast_1d(s).astype(<span class="hljs-built_in">float</span>)<br><br>    <span class="hljs-comment"># 位置</span><br>    x = <span class="hljs-built_in">sum</span>(self.ax[i] * s**i <span class="hljs-keyword">for</span> i <span class="hljs-keyword">in</span> <span class="hljs-built_in">range</span>(<span class="hljs-number">6</span>))<br>    y = <span class="hljs-built_in">sum</span>(self.ay[i] * s**i <span class="hljs-keyword">for</span> i <span class="hljs-keyword">in</span> <span class="hljs-built_in">range</span>(<span class="hljs-number">6</span>))<br><br>    <span class="hljs-comment"># 一阶导数</span><br>    dx = <span class="hljs-built_in">sum</span>(i * self.ax[i] * s**(i-<span class="hljs-number">1</span>) <span class="hljs-keyword">for</span> i <span class="hljs-keyword">in</span> <span class="hljs-built_in">range</span>(<span class="hljs-number">1</span>, <span class="hljs-number">6</span>))<br>    dy = <span class="hljs-built_in">sum</span>(i * self.ay[i] * s**(i-<span class="hljs-number">1</span>) <span class="hljs-keyword">for</span> i <span class="hljs-keyword">in</span> <span class="hljs-built_in">range</span>(<span class="hljs-number">1</span>, <span class="hljs-number">6</span>))<br><br>    <span class="hljs-comment"># 二阶导数</span><br>    ddx = <span class="hljs-built_in">sum</span>(i * (i-<span class="hljs-number">1</span>) * self.ax[i] * s**(i-<span class="hljs-number">2</span>) <span class="hljs-keyword">for</span> i <span class="hljs-keyword">in</span> <span class="hljs-built_in">range</span>(<span class="hljs-number">2</span>, <span class="hljs-number">6</span>))<br>    ddy = <span class="hljs-built_in">sum</span>(i * (i-<span class="hljs-number">1</span>) * self.ay[i] * s**(i-<span class="hljs-number">2</span>) <span class="hljs-keyword">for</span> i <span class="hljs-keyword">in</span> <span class="hljs-built_in">range</span>(<span class="hljs-number">2</span>, <span class="hljs-number">6</span>))<br><br>    <span class="hljs-comment"># 航向角</span><br>    theta = np.arctan2(dy, dx)<br><br>    <span class="hljs-comment"># 曲率</span><br>    kappa = (dx * ddy - dy * ddx) / (dx**<span class="hljs-number">2</span> + dy**<span class="hljs-number">2</span>)**<span class="hljs-number">1.5</span><br><br>    <span class="hljs-keyword">return</span> &#123;<span class="hljs-string">&#x27;x&#x27;</span>: x, <span class="hljs-string">&#x27;y&#x27;</span>: y, <span class="hljs-string">&#x27;theta&#x27;</span>: theta, <span class="hljs-string">&#x27;kappa&#x27;</span>: kappa,<br>            <span class="hljs-string">&#x27;dx&#x27;</span>: dx, <span class="hljs-string">&#x27;dy&#x27;</span>: dy, <span class="hljs-string">&#x27;ddx&#x27;</span>: ddx, <span class="hljs-string">&#x27;ddy&#x27;</span>: ddy&#125;<br></code></pre></td></tr></table></figure>
+<hr>
+<h2 id="七、分段策略">七、分段策略</h2>
+<h3 id="7-1-单段多项式的局限">7.1 单段多项式的局限</h3>
+<p>用单段五次多项式拟合大转角圆弧时：</p>
+<ul>
+<li>转角越大，曲率偏差越大</li>
+<li>无法精确匹配圆弧的恒定曲率特性</li>
+<li>边界条件过于刚性</li>
+</ul>
+<h3 id="7-2-分段拼接原理">7.2 分段拼接原理</h3>
+<p>将大转角圆弧分解为多个小段：</p>
+
+$$\text{分段数 } n = \lceil \frac{\Delta\theta}{\theta_{seg}} \rceil$$
+
+<p>每段独立拟合，在连接点处保证 <strong>$C^2$ 连续</strong>。</p>
+<h3 id="7-3-曲率边界条件设计">7.3 曲率边界条件设计</h3>
+<p><strong>关键技巧</strong>：合理设置各段的曲率边界条件</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><code class="hljs python"><span class="hljs-comment"># 曲率边界条件</span><br><span class="hljs-keyword">if</span> i == <span class="hljs-number">0</span>:<br>    start_kappa = <span class="hljs-number">0.0</span>      <span class="hljs-comment"># 起点：曲率归零（便于与直线衔接）</span><br><span class="hljs-keyword">else</span>:<br>    start_kappa = <span class="hljs-number">0.5</span> / R  <span class="hljs-comment"># 中间段起点</span><br><br><span class="hljs-keyword">if</span> i == self.num_segments - <span class="hljs-number">1</span>:<br>    end_kappa = <span class="hljs-number">0.0</span>        <span class="hljs-comment"># 终点：曲率归零</span><br><span class="hljs-keyword">else</span>:<br>    end_kappa = <span class="hljs-number">0.5</span> / R    <span class="hljs-comment"># 中间段终点</span><br></code></pre></td></tr></table></figure>
+<p><strong>设计原理</strong>：</p>
+<ul>
+<li><strong>起点/终点 κ=0</strong>：便于与直线段平滑过渡</li>
+<li><strong>中间段 κ=0.5/R</strong>：半圆弧曲率作为&quot;缓冲&quot;，避免曲率突变</li>
+</ul>
+<hr>
+<h2 id="八、运动学分析">八、运动学分析</h2>
+<p>给定车速 v，可计算：</p>
+<h3 id="8-1-横向加速度">8.1 横向加速度</h3>
+<p><strong>推导</strong>：向心加速度公式<br>
+车辆以速度 v 沿曲率 $\kappa$ 的曲线行驶，向心加速度为：</p>
+
+$$a_n = \frac{v^{2}}{R} = v^{2} \kappa$$
+
+<h3 id="8-2-Jerk（加加速度）">8.2 Jerk（加加速度）</h3>
+<p><strong>推导</strong>：加速度对时间的变化率</p>
+
+$$j = \frac{da_n}{dt} = \frac{d(v^{2}\kappa)}{dt} = v^{2} \frac{d\kappa}{dt} = v^{2} \frac{d\kappa}{ds} \cdot \frac{ds}{dt} = v^{3} \frac{d\kappa}{ds}$$
+
+<p>数值近似：</p>
+
+$$j \approx v^{3} \frac{\Delta\kappa}{\Delta s}$$
+
+<h3 id="8-3-代码实现">8.3 代码实现</h3>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><code class="hljs python"><span class="hljs-comment"># 横向加速度</span><br>a_n = v**<span class="hljs-number">2</span> * path[<span class="hljs-string">&#x27;kappa&#x27;</span>]<br><br><span class="hljs-comment"># Jerk</span><br>jerk = np.zeros_like(path[<span class="hljs-string">&#x27;kappa&#x27;</span>])<br><span class="hljs-keyword">for</span> i <span class="hljs-keyword">in</span> <span class="hljs-built_in">range</span>(<span class="hljs-number">1</span>, <span class="hljs-built_in">len</span>(path[<span class="hljs-string">&#x27;s&#x27;</span>])):<br>    ds = path[<span class="hljs-string">&#x27;s&#x27;</span>][i] - path[<span class="hljs-string">&#x27;s&#x27;</span>][i-<span class="hljs-number">1</span>]<br>    <span class="hljs-keyword">if</span> ds &gt; <span class="hljs-number">0</span>:<br>        jerk[i] = v**<span class="hljs-number">3</span> * (path[<span class="hljs-string">&#x27;kappa&#x27;</span>][i] - path[<span class="hljs-string">&#x27;kappa&#x27;</span>][i-<span class="hljs-number">1</span>]) / ds<br></code></pre></td></tr></table></figure>
+<hr>
+<h2 id="九、完整代码实现">九、完整代码实现</h2>
+<h3 id="9-1-数据结构定义">9.1 数据结构定义</h3>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br></pre></td><td class="code"><pre><code class="hljs python"><span class="hljs-keyword">from</span> dataclasses <span class="hljs-keyword">import</span> dataclass<br><span class="hljs-keyword">from</span> typing <span class="hljs-keyword">import</span> <span class="hljs-type">Tuple</span>, <span class="hljs-type">List</span>, <span class="hljs-type">Dict</span><br><span class="hljs-keyword">import</span> numpy <span class="hljs-keyword">as</span> np<br><br><span class="hljs-meta">@dataclass</span><br><span class="hljs-keyword">class</span> <span class="hljs-title class_">ArcInfo</span>:<br>    <span class="hljs-string">&quot;&quot;&quot;圆弧信息&quot;&quot;&quot;</span><br>    radius: <span class="hljs-built_in">float</span>           <span class="hljs-comment"># 半径 (米)</span><br>    start_angle: <span class="hljs-built_in">float</span>      <span class="hljs-comment"># 起始角度 (弧度)</span><br>    end_angle: <span class="hljs-built_in">float</span>        <span class="hljs-comment"># 结束角度 (弧度)</span><br>    center: <span class="hljs-type">Tuple</span>[<span class="hljs-built_in">float</span>, <span class="hljs-built_in">float</span>] = (<span class="hljs-number">0</span>, <span class="hljs-number">0</span>)  <span class="hljs-comment"># 圆心位置</span><br><br><span class="hljs-meta">    @property</span><br>    <span class="hljs-keyword">def</span> <span class="hljs-title function_">total_angle</span>(<span class="hljs-params">self</span>) -&gt; <span class="hljs-built_in">float</span>:<br>        <span class="hljs-string">&quot;&quot;&quot;总转角（弧度）&quot;&quot;&quot;</span><br>        <span class="hljs-keyword">return</span> self.end_angle - self.start_angle<br><br><span class="hljs-meta">    @property</span><br>    <span class="hljs-keyword">def</span> <span class="hljs-title function_">total_angle_deg</span>(<span class="hljs-params">self</span>) -&gt; <span class="hljs-built_in">float</span>:<br>        <span class="hljs-string">&quot;&quot;&quot;总转角（度）&quot;&quot;&quot;</span><br>        <span class="hljs-keyword">return</span> np.degrees(self.total_angle)<br><br><span class="hljs-meta">    @property</span><br>    <span class="hljs-keyword">def</span> <span class="hljs-title function_">arc_length</span>(<span class="hljs-params">self</span>) -&gt; <span class="hljs-built_in">float</span>:<br>        <span class="hljs-string">&quot;&quot;&quot;弧长（米）&quot;&quot;&quot;</span><br>        <span class="hljs-keyword">return</span> self.radius * <span class="hljs-built_in">abs</span>(self.total_angle)<br><br><br><span class="hljs-meta">@dataclass</span><br><span class="hljs-keyword">class</span> <span class="hljs-title class_">Node</span>:<br>    <span class="hljs-string">&quot;&quot;&quot;路径节点&quot;&quot;&quot;</span><br>    x: <span class="hljs-built_in">float</span><br>    y: <span class="hljs-built_in">float</span><br>    theta: <span class="hljs-built_in">float</span>  <span class="hljs-comment"># 航向角（弧度）</span><br>    kappa: <span class="hljs-built_in">float</span>  <span class="hljs-comment"># 曲率</span><br>    s: <span class="hljs-built_in">float</span>      <span class="hljs-comment"># 弧长位置</span><br></code></pre></td></tr></table></figure>
+<h3 id="9-2-五次多项式段类">9.2 五次多项式段类</h3>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br></pre></td><td class="code"><pre><code class="hljs python"><span class="hljs-keyword">class</span> <span class="hljs-title class_">QuinticPolynomialSegment</span>:<br>    <span class="hljs-string">&quot;&quot;&quot;五次多项式段&quot;&quot;&quot;</span><br><br>    <span class="hljs-keyword">def</span> <span class="hljs-title function_">__init__</span>(<span class="hljs-params">self, start_state: <span class="hljs-type">Tuple</span>, end_state: <span class="hljs-type">Tuple</span>, L: <span class="hljs-built_in">float</span></span>):<br>        <span class="hljs-string">&quot;&quot;&quot;</span><br><span class="hljs-string">        start_state: (x0, y0, theta0, kappa0)</span><br><span class="hljs-string">        end_state: (x1, y1, theta1, kappa1)</span><br><span class="hljs-string">        L: 段长度（米）</span><br><span class="hljs-string">        &quot;&quot;&quot;</span><br>        self.L = L<br>        x0, y0, theta0, kappa0 = start_state<br>        x1, y1, theta1, kappa1 = end_state<br><br>        <span class="hljs-comment"># 一阶导数边界条件（由航向角计算）</span><br>        xp0 = L * np.cos(theta0)<br>        xp1 = L * np.cos(theta1)<br>        yp0 = L * np.sin(theta0)<br>        yp1 = L * np.sin(theta1)<br><br>        <span class="hljs-comment"># 二阶导数边界条件（由曲率计算）</span><br>        xpp0 = -L**<span class="hljs-number">2</span> * kappa0 * np.sin(theta0)<br>        xpp1 = -L**<span class="hljs-number">2</span> * kappa1 * np.sin(theta1)<br>        ypp0 = L**<span class="hljs-number">2</span> * kappa0 * np.cos(theta0)<br>        ypp1 = L**<span class="hljs-number">2</span> * kappa1 * np.cos(theta1)<br><br>        <span class="hljs-comment"># X 系数（解析解）</span><br>        self.ax = [<br>            x0,<br>            xp0,<br>            xpp0 / <span class="hljs-number">2</span>,<br>            <span class="hljs-number">10</span>*(x1-x0) - <span class="hljs-number">6</span>*xp0 - <span class="hljs-number">4</span>*xp1 - <span class="hljs-number">1.5</span>*xpp0 + <span class="hljs-number">0.5</span>*xpp1,<br>            -<span class="hljs-number">15</span>*(x1-x0) + <span class="hljs-number">8</span>*xp0 + <span class="hljs-number">7</span>*xp1 + <span class="hljs-number">1.5</span>*xpp0 - xpp1,<br>            <span class="hljs-number">6</span>*(x1-x0) - <span class="hljs-number">3</span>*xp0 - <span class="hljs-number">3</span>*xp1 - <span class="hljs-number">0.5</span>*xpp0 + <span class="hljs-number">0.5</span>*xpp1<br>        ]<br><br>        <span class="hljs-comment"># Y 系数（同理）</span><br>        self.ay = [<br>            y0,<br>            yp0,<br>            ypp0 / <span class="hljs-number">2</span>,<br>            <span class="hljs-number">10</span>*(y1-y0) - <span class="hljs-number">6</span>*yp0 - <span class="hljs-number">4</span>*yp1 - <span class="hljs-number">1.5</span>*ypp0 + <span class="hljs-number">0.5</span>*ypp1,<br>            -<span class="hljs-number">15</span>*(y1-y0) + <span class="hljs-number">8</span>*yp0 + <span class="hljs-number">7</span>*yp1 + <span class="hljs-number">1.5</span>*ypp0 - ypp1,<br>            <span class="hljs-number">6</span>*(y1-y0) - <span class="hljs-number">3</span>*yp0 - <span class="hljs-number">3</span>*yp1 - <span class="hljs-number">0.5</span>*ypp0 + <span class="hljs-number">0.5</span>*ypp1<br>        ]<br><br>    <span class="hljs-keyword">def</span> <span class="hljs-title function_">evaluate</span>(<span class="hljs-params">self, s: np.ndarray</span>) -&gt; <span class="hljs-type">Dict</span>[<span class="hljs-built_in">str</span>, np.ndarray]:<br>        <span class="hljs-string">&quot;&quot;&quot;评估参数 s ∈ [0, 1]&quot;&quot;&quot;</span><br>        s = np.atleast_1d(s).astype(<span class="hljs-built_in">float</span>)<br><br>        x = <span class="hljs-built_in">sum</span>(self.ax[i] * s**i <span class="hljs-keyword">for</span> i <span class="hljs-keyword">in</span> <span class="hljs-built_in">range</span>(<span class="hljs-number">6</span>))<br>        y = <span class="hljs-built_in">sum</span>(self.ay[i] * s**i <span class="hljs-keyword">for</span> i <span class="hljs-keyword">in</span> <span class="hljs-built_in">range</span>(<span class="hljs-number">6</span>))<br>        dx = <span class="hljs-built_in">sum</span>(i * self.ax[i] * s**(i-<span class="hljs-number">1</span>) <span class="hljs-keyword">for</span> i <span class="hljs-keyword">in</span> <span class="hljs-built_in">range</span>(<span class="hljs-number">1</span>, <span class="hljs-number">6</span>))<br>        dy = <span class="hljs-built_in">sum</span>(i * self.ay[i] * s**(i-<span class="hljs-number">1</span>) <span class="hljs-keyword">for</span> i <span class="hljs-keyword">in</span> <span class="hljs-built_in">range</span>(<span class="hljs-number">1</span>, <span class="hljs-number">6</span>))<br>        ddx = <span class="hljs-built_in">sum</span>(i * (i-<span class="hljs-number">1</span>) * self.ax[i] * s**(i-<span class="hljs-number">2</span>) <span class="hljs-keyword">for</span> i <span class="hljs-keyword">in</span> <span class="hljs-built_in">range</span>(<span class="hljs-number">2</span>, <span class="hljs-number">6</span>))<br>        ddy = <span class="hljs-built_in">sum</span>(i * (i-<span class="hljs-number">1</span>) * self.ay[i] * s**(i-<span class="hljs-number">2</span>) <span class="hljs-keyword">for</span> i <span class="hljs-keyword">in</span> <span class="hljs-built_in">range</span>(<span class="hljs-number">2</span>, <span class="hljs-number">6</span>))<br><br>        theta = np.arctan2(dy, dx)<br>        kappa = (dx * ddy - dy * ddx) / (dx**<span class="hljs-number">2</span> + dy**<span class="hljs-number">2</span>)**<span class="hljs-number">1.5</span><br><br>        <span class="hljs-keyword">return</span> &#123;<span class="hljs-string">&#x27;x&#x27;</span>: x, <span class="hljs-string">&#x27;y&#x27;</span>: y, <span class="hljs-string">&#x27;theta&#x27;</span>: theta, <span class="hljs-string">&#x27;kappa&#x27;</span>: kappa,<br>                <span class="hljs-string">&#x27;dx&#x27;</span>: dx, <span class="hljs-string">&#x27;dy&#x27;</span>: dy, <span class="hljs-string">&#x27;ddx&#x27;</span>: ddx, <span class="hljs-string">&#x27;ddy&#x27;</span>: ddy&#125;<br></code></pre></td></tr></table></figure>
+<h3 id="9-3-分段插值器">9.3 分段插值器</h3>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br><span class="line">84</span><br></pre></td><td class="code"><pre><code class="hljs python"><span class="hljs-keyword">class</span> <span class="hljs-title class_">SegmentedQuinticInterpolator</span>:<br>    <span class="hljs-string">&quot;&quot;&quot;分段五次多项式插值器&quot;&quot;&quot;</span><br><br>    <span class="hljs-keyword">def</span> <span class="hljs-title function_">__init__</span>(<span class="hljs-params">self, arc_info: ArcInfo, segment_angle_deg: <span class="hljs-built_in">float</span>,</span><br><span class="hljs-params">                 points_per_segment: <span class="hljs-built_in">int</span> = <span class="hljs-number">50</span></span>):<br>        self.arc_info = arc_info<br>        self.segment_angle_deg = segment_angle_deg<br>        self.segment_angle_rad = np.radians(segment_angle_deg)<br>        self.points_per_segment = points_per_segment<br><br>        self.num_segments = <span class="hljs-built_in">max</span>(<span class="hljs-number">1</span>, <span class="hljs-built_in">int</span>(np.ceil(<br>            <span class="hljs-built_in">abs</span>(arc_info.total_angle_deg) / segment_angle_deg<br>        )))<br><br>        self.quintic_segments: <span class="hljs-type">List</span>[QuinticPolynomialSegment] = []<br>        self.all_nodes: <span class="hljs-type">List</span>[Node] = []<br><br>        self._build()<br><br>    <span class="hljs-keyword">def</span> <span class="hljs-title function_">_get_arc_point</span>(<span class="hljs-params">self, angle: <span class="hljs-built_in">float</span></span>) -&gt; <span class="hljs-type">Tuple</span>[<span class="hljs-built_in">float</span>, <span class="hljs-built_in">float</span>, <span class="hljs-built_in">float</span>]:<br>        <span class="hljs-string">&quot;&quot;&quot;获取圆弧上某角度处的点&quot;&quot;&quot;</span><br>        R = self.arc_info.radius<br>        cx, cy = self.arc_info.center<br><br>        <span class="hljs-comment"># 圆心在原点时的参数化</span><br>        x = cx + R * np.sin(angle)<br>        y = cy + R * (<span class="hljs-number">1</span> - np.cos(angle))<br>        theta = angle<br><br>        <span class="hljs-keyword">return</span> x, y, theta<br><br>    <span class="hljs-keyword">def</span> <span class="hljs-title function_">_build</span>(<span class="hljs-params">self</span>):<br>        <span class="hljs-string">&quot;&quot;&quot;构建所有分段&quot;&quot;&quot;</span><br>        R = self.arc_info.radius<br>        total_angle = self.arc_info.total_angle<br>        actual_segment_angle = total_angle / self.num_segments<br><br>        current_s = <span class="hljs-number">0.0</span><br>        current_angle = self.arc_info.start_angle<br><br>        <span class="hljs-keyword">for</span> i <span class="hljs-keyword">in</span> <span class="hljs-built_in">range</span>(self.num_segments):<br>            end_angle = current_angle + actual_segment_angle<br>            segment_length = R * <span class="hljs-built_in">abs</span>(actual_segment_angle)  <span class="hljs-comment"># L</span><br><br>            start_x, start_y, start_theta = self._get_arc_point(current_angle)<br>            end_x, end_y, end_theta = self._get_arc_point(end_angle)<br><br>            <span class="hljs-comment"># 曲率边界条件</span><br>            start_kappa = <span class="hljs-number">0.0</span> <span class="hljs-keyword">if</span> i == <span class="hljs-number">0</span> <span class="hljs-keyword">else</span> <span class="hljs-number">0.5</span> / R<br>            end_kappa = <span class="hljs-number">0.0</span> <span class="hljs-keyword">if</span> i == self.num_segments - <span class="hljs-number">1</span> <span class="hljs-keyword">else</span> <span class="hljs-number">0.5</span> / R<br><br>            qp = QuinticPolynomialSegment(<br>                (start_x, start_y, start_theta, start_kappa),<br>                (end_x, end_y, end_theta, end_kappa),<br>                segment_length<br>            )<br>            self.quintic_segments.append(qp)<br><br>            <span class="hljs-comment"># 采样并创建节点</span><br>            s_vals = np.linspace(<span class="hljs-number">0</span>, <span class="hljs-number">1</span>, self.points_per_segment)<br>            result = qp.evaluate(s_vals)<br><br>            <span class="hljs-keyword">for</span> j, s <span class="hljs-keyword">in</span> <span class="hljs-built_in">enumerate</span>(s_vals):<br>                <span class="hljs-keyword">if</span> i &gt; <span class="hljs-number">0</span> <span class="hljs-keyword">and</span> j == <span class="hljs-number">0</span>:<br>                    <span class="hljs-keyword">continue</span>  <span class="hljs-comment"># 避免重复添加连接点</span><br>                node = Node(<br>                    x=result[<span class="hljs-string">&#x27;x&#x27;</span>][j], y=result[<span class="hljs-string">&#x27;y&#x27;</span>][j],<br>                    theta=result[<span class="hljs-string">&#x27;theta&#x27;</span>][j], kappa=result[<span class="hljs-string">&#x27;kappa&#x27;</span>][j],<br>                    s=current_s + s * segment_length<br>                )<br>                self.all_nodes.append(node)<br><br>            current_angle = end_angle<br>            current_s += segment_length<br><br>    <span class="hljs-keyword">def</span> <span class="hljs-title function_">get_path_data</span>(<span class="hljs-params">self</span>) -&gt; <span class="hljs-type">Dict</span>[<span class="hljs-built_in">str</span>, np.ndarray]:<br>        <span class="hljs-string">&quot;&quot;&quot;获取完整路径数据&quot;&quot;&quot;</span><br>        <span class="hljs-keyword">return</span> &#123;<br>            <span class="hljs-string">&#x27;x&#x27;</span>: np.array([n.x <span class="hljs-keyword">for</span> n <span class="hljs-keyword">in</span> self.all_nodes]),<br>            <span class="hljs-string">&#x27;y&#x27;</span>: np.array([n.y <span class="hljs-keyword">for</span> n <span class="hljs-keyword">in</span> self.all_nodes]),<br>            <span class="hljs-string">&#x27;theta&#x27;</span>: np.array([n.theta <span class="hljs-keyword">for</span> n <span class="hljs-keyword">in</span> self.all_nodes]),<br>            <span class="hljs-string">&#x27;kappa&#x27;</span>: np.array([n.kappa <span class="hljs-keyword">for</span> n <span class="hljs-keyword">in</span> self.all_nodes]),<br>            <span class="hljs-string">&#x27;s&#x27;</span>: np.array([n.s <span class="hljs-keyword">for</span> n <span class="hljs-keyword">in</span> self.all_nodes])<br>        &#125;<br></code></pre></td></tr></table></figure>
+<hr>
+<h2 id="十、可视化结果">十、可视化结果</h2>
+<h3 id="10-1-示例-1：R-15m-90°-转角-20°-分段">10.1 示例 1：R=15m, 90° 转角, 20° 分段</h3>
+<p><img src="https://uipv4.zywvvd.com:33030/HexoFiles/vvd_image_files/quintic_R15_upload.jpg" srcset="/img/loading.gif" lazyload alt="R=15m, 90°转角, 20°分段"></p>
+<p><strong>统计信息</strong>：</p>
+<ul>
+<li>分段数：5</li>
+<li>每段长度 L ≈ 5.24 m</li>
+<li>曲率比：约 1.0x（接近圆弧曲率）</li>
+<li>最大偏差：约 0.6 cm</li>
+<li>平均偏差：约 0.3 cm</li>
+</ul>
+<h3 id="10-2-示例-2：R-10m-180°-转角-30°-分段">10.2 示例 2：R=10m, 180° 转角, 30° 分段</h3>
+<p><img src="https://uipv4.zywvvd.com:33030/HexoFiles/vvd_image_files/quintic_R10_upload.jpg" srcset="/img/loading.gif" lazyload alt="R=10m, 180°转角, 30°分段"></p>
+<p><strong>统计信息</strong>：</p>
+<ul>
+<li>分段数：6</li>
+<li>每段长度 L ≈ 5.24 m</li>
+<li>曲率比：约 1.0x</li>
+<li>最大偏差：约 1.4 cm</li>
+<li>平均偏差：约 0.6 cm</li>
+</ul>
+<hr>
+<h2 id="十一、总结">十一、总结</h2>
+<h3 id="11-1-方法优势">11.1 方法优势</h3>
+<table>
+<thead>
+<tr>
+<th>特性</th>
+<th>说明</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>$C^2$ 连续</strong></td>
+<td>位置、航向连续；可实现曲率连续</td>
+</tr>
+<tr>
+<td><strong>解析解</strong></td>
+<td>无需迭代优化，计算高效</td>
+</tr>
+<tr>
+<td><strong>可控精度</strong></td>
+<td>分段越细，越接近目标曲线</td>
+</tr>
+<tr>
+<td><strong>物理友好</strong></td>
+<td>横向加速度、Jerk 有界</td>
+</tr>
+</tbody>
+</table>
+<h3 id="11-2-适用场景">11.2 适用场景</h3>
+<ul>
+<li>自动驾驶轨迹规划</li>
+<li>机器人路径平滑</li>
+<li>CNC 加工路径生成</li>
+<li>无人机航线优化</li>
+</ul>
+<h3 id="11-3-关键公式速查">11.3 关键公式速查</h3>
+<table>
+<thead>
+<tr>
+<th>物理量</th>
+<th>公式</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>一阶导数（由航向角）</td>
+<td>$x’ = L\cos\theta$, $y’ = L\sin\theta$</td>
+</tr>
+<tr>
+<td>二阶导数（由曲率）</td>
+<td>$x’’ = -L^{2}\kappa\sin\theta$, $y’’ = L^{2}\kappa\cos\theta$</td>
+</tr>
+<tr>
+<td>航向角</td>
+<td>$\theta = \mathrm{arctan2}(y’, x’)$</td>
+</tr>
+<tr>
+<td>曲率</td>
+<td>$\kappa = \dfrac{x’y’’ - y’x’‘}{\left((x’)^2 + (y’)<sup>2\right)</sup>{3/2}}$</td>
+</tr>
+<tr>
+<td>横向加速度</td>
+<td>$a_n = v^{2} \kappa$</td>
+</tr>
+<tr>
+<td>Jerk</td>
+<td>$j = v^{3} \dfrac{d\kappa}{ds}$</td>
+</tr>
+</tbody>
+</table>
+<hr>
+<h2 id="参考资料">参考资料</h2>
+<ul>
+<li><a target="_blank" rel="noopener" href="https://example.com">Polynomial Trajectory Planning for Autonomous Vehicles</a></li>
+<li><a target="_blank" rel="noopener" href="https://example.com">Optimal Trajectory Generation for Dynamic Street Scenarios</a></li>
+<li><a target="_blank" rel="noopener" href="https://example.com">Path Planning for Autonomous Vehicles</a></li>
+</ul>
+<link rel="stylesheet" href="/css/spoiler.css" type="text/css"><script src="/js/spoiler.js" type="text/javascript" async></script>
+                
+
+
+				<br /><br />
+				<blockquote>
+					<p>文章链接：<br /> 
+					<a style="font-size: 0.85rem" target="_blank" rel="noopener" href="https://www.zywvvd.com/notes/study/control/quintic-polynomial-interpolation/quintic-polynomial-interpolation/">https://www.zywvvd.com/notes/study/control/quintic-polynomial-interpolation/quintic-polynomial-interpolation/</a>
+					</p>
+				</blockquote>
+
+
+              </div>
+            
+            <hr/>
+			
+			<!-- 添加打赏模块 -->
+			<div class="reward-container">
+				
+					<button id="rewardBtn" class="reward-btn">
+						 
+							❤ 打赏
+							
+					</button>
+					<p class="tea">“觉得不错的话，给点打赏吧 ୧(๑•̀⌄•́๑)૭”</p>
+					<div id="rewardImgContainer" class="reward-img-container">
+						<div class="singleImgContainer">
+							<img id="wechatImg" class="reward-img" src="https://uipv4.zywvvd.com:33030/HexoFiles/vvd_pc_upload/wechatpay.png" srcset="/img/loading.gif" lazyload alt="微信二维码">
+							<p class="wechatPay">微信支付</p>
+						</div>
+						<div class="singleImgContainer">
+							<img id="alipayImg" class="reward-img" src="https://uipv4.zywvvd.com:33030/HexoFiles/vvd_pc_upload/alipay.png" srcset="/img/loading.gif" lazyload alt="支付宝二维码">
+							<p class="aliPay">支付宝支付</p>
+						</div>
+					</div>
+				
+			</div>
+			
+            <div>
+              <div class="post-metas my-3">
+  
+    <div class="post-meta mr-3 d-flex align-items-center">
+      <i class="iconfont icon-category"></i>
+      
+
+<span class="category-chains">
+  
+  
+    
+      <span class="category-chain">
+        
+  <a href="/categories/Study/" class="category-chain-item">Study</a>
+  
+  
+    <span>></span>
+    
+  <a href="/categories/Study/Control/" class="category-chain-item">Control</a>
+  
+  
+    <span>></span>
+    
+  <a href="/categories/Study/Control/Path-Planning/" class="category-chain-item">Path Planning</a>
+  
+  
+
+  
+
+  
+
+      </span>
+    
+  
+</span>
+
+    </div>
+  
+  
+    <div class="post-meta">
+      <i class="iconfont icon-tags"></i>
+      
+        <a href="/tags/Path-Planning/" class="print-no-link">#Path Planning</a>
+      
+        <a href="/tags/Polynomial-Interpolation/" class="print-no-link">#Polynomial Interpolation</a>
+      
+        <a href="/tags/Control/" class="print-no-link">#Control</a>
+      
+        <a href="/tags/Autonomous-Driving/" class="print-no-link">#Autonomous Driving</a>
+      
+    </div>
+  
+</div>
+
+
+              
+  
+
+  <div class="license-box my-3">
+    <div class="license-title">
+      <div>分段五次多项式插值原理详解</div>
+      <div>https://www.zywvvd.com/notes/study/control/quintic-polynomial-interpolation/quintic-polynomial-interpolation/</div>
+    </div>
+    <div class="license-meta">
+      
+        <div class="license-meta-item">
+          <div>作者</div>
+          <div>Yiwei Zhang</div>
+        </div>
+      
+      
+        <div class="license-meta-item license-meta-date">
+          <div>发布于</div>
+          <div>2026年3月23日</div>
+        </div>
+      
+      
+      
+        <div class="license-meta-item">
+          <div>许可协议</div>
+          <div>
+            
+              
+              
+                <a class="print-no-link" target="_blank" href="https://creativecommons.org/licenses/by/4.0/">
+                  <span class="hint--top hint--rounded" aria-label="BY - 署名">
+                    <i class="iconfont icon-by"></i>
+                  </span>
+                </a>
+              
+            
+          </div>
+        </div>
+      
+    </div>
+    <div class="license-icon iconfont"></div>
+  </div>
+
+
+
+              
+                <div class="post-prevnext my-3">
+                  <article class="post-prev col-6">
+                    
+                    
+                      <a href="/notes/tools/git/git-proxy-clash/git-proxy-clash/" title="Git 在国内网络环境下无法 Push 的排查与修复 —— 配置 Clash 代理">
+                        <i class="iconfont icon-arrowleft"></i>
+                        <span class="hidden-mobile">Git 在国内网络环境下无法 Push 的排查与修复 —— 配置 Clash 代理</span>
+                        <span class="visible-mobile">上一篇</span>
+                      </a>
+                    
+                  </article>
+                  <article class="post-next col-6">
+                    
+                    
+                      <a href="/notes/study/algorithm/path-interpolation-comparison/path-interpolation-comparison/" title="路径插值方法深度对比研究">
+                        <span class="hidden-mobile">路径插值方法深度对比研究</span>
+                        <span class="visible-mobile">下一篇</span>
+                        <i class="iconfont icon-arrowright"></i>
+                      </a>
+                    
+                  </article>
+                </div>
+              
+            </div>
+
+            
+  
+  
+    <article id="comments" lazyload>
+      
+  <div id="waline"></div>
+  <script type="text/javascript">
+    Fluid.utils.loadComments('#waline', function() {
+      Fluid.utils.createCssLink('https://lib.baomitu.com/waline/2.14.8/waline.min.css')
+      Fluid.utils.createScript('https://lib.baomitu.com/waline/2.14.8/waline.min.js', function() {
+        var options = Object.assign(
+          {"serverURL":"https://uipv4.zywvvd.com:33033/","path":"window.location.pathname","meta":["nick","mail","link"],"requiredMeta":["nick"],"lang":"zh-CN","emoji":["https://cdn.jsdelivr.net/gh/walinejs/emojis/weibo"],"dark":"html[data-user-color-scheme=\"dark\"]","wordLimit":0,"pageSize":10,"reaction":true,"locale":{"placeholder":"山高路远，常来玩吖 ~","reactionTitle":null}},
+          {
+            el: '#waline',
+            path: window.location.pathname
+          }
+        )
+        Waline.init(options);
+        Fluid.utils.waitElementVisible('#waline .vcontent', () => {
+          var imgSelector = '#waline .vcontent img:not(.vemoji)';
+          Fluid.plugins.imageCaption(imgSelector);
+          Fluid.plugins.fancyBox(imgSelector);
+        })
+      });
+    });
+  </script>
+  <noscript>Please enable JavaScript to view the comments</noscript>
+
+
+    </article>
+  
+
+
+          </article>
+        </div>
+      </div>
+    </div>
+
+    <div class="side-col d-none d-lg-block col-lg-2">
+      
+  <aside class="sidebar" style="margin-left: -1rem">
+    <div id="toc">
+  <p class="toc-header">
+    <i class="iconfont icon-list"></i>
+    <span>目录</span>
+  </p>
+  <div class="toc-body" id="toc-body"></div>
+</div>
+
+
+
+  </aside>
+
+
+    </div>
+  </div>
+</div>
+
+
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+  
+  
+
+
+
+
+
+  <script>
+  Fluid.utils.createScript('https://lib.baomitu.com/mermaid/8.14.0/mermaid.min.js', function() {
+    mermaid.initialize({"theme":"default"});
+
+    Fluid.utils.listenDOMLoaded(function() {
+      Fluid.events.registerRefreshCallback(function() {
+        if ('mermaid' in window) {
+          mermaid.init();
+        }
+      });
+    });
+  });
+</script>
+
+
+
+
+
+
+    
+
+    
+      <a id="scroll-top-button" aria-label="TOP" href="#" role="button">
+        <i class="iconfont icon-xiangshangjiantou" aria-hidden="true"></i>
+      </a>
+    
+
+    
+      <div class="modal fade" id="modalSearch" tabindex="-1" role="dialog" aria-labelledby="ModalLabel"
+     aria-hidden="true">
+  <div class="modal-dialog modal-dialog-scrollable modal-lg" role="document">
+    <div class="modal-content">
+      <div class="modal-header text-center">
+        <h4 class="modal-title w-100 font-weight-bold">搜索</h4>
+        <button type="button" id="local-search-close" class="close" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body mx-3">
+        <div class="md-form mb-5">
+          <input type="text" id="local-search-input" class="form-control validate">
+          <label data-error="x" data-success="v" for="local-search-input">关键词</label>
+        </div>
+        <div class="list-group" id="local-search-result"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+    
+
+    
+  </main>
+
+  <footer>
+    <div class="footer-inner">
+  
+    <div class="footer-content">
+       <div class="vvd_footer" style="font-size: 0.85rem;"> <a href="https://hexo.io" target="_blank" rel="nofollow noopener" color="#d7d8d9" data-umami-event="Footer-Hexo"><span class="umami--click--Footer-Hexo">Hexo</span></a> <i class="iconfont icon-love"></i> <a href="https://github.com/fluid-dev/hexo-theme-fluid" target="_blank" rel="nofollow noopener" data-umami-event="Footer-Fluid"><span class="umami--click--Footer-Fluid">Fluid</span></a> <i class="iconfont icon-love"></i> <a href="https://uipv4.zywvvd.com:33039/share/0zx3o21oIpZTZqwC/%E5%8F%88%E8%A7%81%E8%8B%8D%E5%B2%9A" target="_blank" rel="nofollow noopener" data-umami-event="Footer-Umami"><span class="umami--click--Footer-Umami">Umami</span></a> <div style="font-size: 0.85rem;"> <span id="timeDate">载入天数...</span> <span id="times">载入时分秒...</span> <script src="/vvd_js/duration.js"></script> </div> <div style="font-size: 0.85rem;"> <span> 总访问量 <span style="color: #d7d8d9;" id="PVstatic">0</span> 次&nbsp</span> <span> 总访客数 <span style="color: #d7d8d9;" id="UVstatic">0</span> 人&nbsp</span> <span> 当前在线 <span style="color: #d7d8d9;" id="ACTstatic">0</span> 人&nbsp</span> <script src="https://uipv4.zywvvd.com:33037/statistics" defer></script> </div> <div> <span> Copyright © 2020-2025. All Rights Reserved.</span> </div> <div style="font-size: 0.88rem;"> <a target="_blank" rel="noopener" href="https://developer.hitokoto.cn/" id="hitokoto_text"><span style="color: #d7d8d9;"  id="hitokoto"></span></a> <script src="https://uipv4.zywvvd.com:33044/?encode=js&select=%23hitokoto" defer></script> </div> <a href="https://icp.gov.moe/?keyword=20230615" target="_blank">萌ICP备20230615号</a>
+
+
+</div> 
+    </div>
+  
+  
+  
+  
+</div>
+
+  </footer>
+
+  <!-- Scripts -->
+  
+  <script  src="https://lib.baomitu.com/nprogress/0.2.0/nprogress.min.js" ></script>
+  <link  rel="stylesheet" href="https://lib.baomitu.com/nprogress/0.2.0/nprogress.min.css" />
+
+  <script>
+    NProgress.configure({"showSpinner":false,"trickleSpeed":100})
+    NProgress.start()
+    window.addEventListener('load', function() {
+      NProgress.done();
+    })
+  </script>
+
+
+<script  src="https://lib.baomitu.com/jquery/3.6.0/jquery.min.js" ></script>
+<script  src="https://lib.baomitu.com/twitter-bootstrap/4.6.1/js/bootstrap.min.js" ></script>
+<script  src="/js/events.js" ></script>
+<script  src="/js/plugins.js" ></script>
+
+
+
+
+
+  
+    <script  src="/js/img-lazyload.js" ></script>
+  
+
+
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/tocbot/4.18.2/tocbot.min.js', function() {
+    var toc = jQuery('#toc');
+    if (toc.length === 0 || !window.tocbot) { return; }
+    var boardCtn = jQuery('#board-ctn');
+    var boardTop = boardCtn.offset().top;
+
+    window.tocbot.init(Object.assign({
+      tocSelector     : '#toc-body',
+      contentSelector : '.markdown-body',
+      linkClass       : 'tocbot-link',
+      activeLinkClass : 'tocbot-active-link',
+      listClass       : 'tocbot-list',
+      isCollapsedClass: 'tocbot-is-collapsed',
+      collapsibleClass: 'tocbot-is-collapsible',
+      scrollSmooth    : true,
+      includeTitleTags: true,
+      headingsOffset  : -boardTop,
+    }, CONFIG.toc));
+    if (toc.find('.toc-list-item').length > 0) {
+      toc.css('visibility', 'visible');
+    }
+
+    Fluid.events.registerRefreshCallback(function() {
+      if ('tocbot' in window) {
+        tocbot.refresh();
+        var toc = jQuery('#toc');
+        if (toc.length === 0 || !tocbot) {
+          return;
+        }
+        if (toc.find('.toc-list-item').length > 0) {
+          toc.css('visibility', 'visible');
+        }
+      }
+    });
+  });
+</script>
+
+
+  <script src=https://lib.baomitu.com/clipboard.js/2.0.10/clipboard.min.js></script>
+
+  <script>Fluid.plugins.codeWidget();</script>
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/anchor-js/4.3.1/anchor.min.js', function() {
+    window.anchors.options = {
+      placement: CONFIG.anchorjs.placement,
+      visible  : CONFIG.anchorjs.visible
+    };
+    if (CONFIG.anchorjs.icon) {
+      window.anchors.options.icon = CONFIG.anchorjs.icon;
+    }
+    var el = (CONFIG.anchorjs.element || 'h1,h2,h3,h4,h5,h6').split(',');
+    var res = [];
+    for (var item of el) {
+      res.push('.markdown-body > ' + item.trim());
+    }
+    if (CONFIG.anchorjs.placement === 'left') {
+      window.anchors.options.class = 'anchorjs-link-left';
+    }
+    window.anchors.add(res.join(', '));
+
+    Fluid.events.registerRefreshCallback(function() {
+      if ('anchors' in window) {
+        anchors.removeAll();
+        var el = (CONFIG.anchorjs.element || 'h1,h2,h3,h4,h5,h6').split(',');
+        var res = [];
+        for (var item of el) {
+          res.push('.markdown-body > ' + item.trim());
+        }
+        if (CONFIG.anchorjs.placement === 'left') {
+          anchors.options.class = 'anchorjs-link-left';
+        }
+        anchors.add(res.join(', '));
+      }
+    });
+  });
+</script>
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/fancybox/3.5.7/jquery.fancybox.min.js', function() {
+    Fluid.plugins.fancyBox();
+  });
+</script>
+
+
+  <script>Fluid.plugins.imageCaption();</script>
+
+  
+      <script>
+        if (!window.MathJax) {
+          window.MathJax = {
+            tex    : {
+              inlineMath: { '[+]': [['$', '$']] }
+            },
+            options: {
+              renderActions: {
+                insertedScript: [200, () => {
+                  document.querySelectorAll('mjx-container').forEach(node => {
+                    let target = node.parentNode;
+                    if (target.nodeName.toLowerCase() === 'li') {
+                      target.parentNode.classList.add('has-jax');
+                    }
+                  });
+                }, '', false]
+              }
+            }
+          };
+        } else {
+          MathJax.startup.document.state(0);
+          MathJax.texReset();
+          MathJax.typeset();
+          MathJax.typesetPromise();
+        }
+
+        Fluid.events.registerRefreshCallback(function() {
+          if ('MathJax' in window && MathJax.startup.document && typeof MathJax.startup.document.state === 'function') {
+            MathJax.startup.document.state(0);
+            MathJax.texReset();
+            MathJax.typeset();
+            MathJax.typesetPromise();
+          }
+        });
+      </script>
+    
+
+  <script  src="https://lib.baomitu.com/mathjax/3.2.1/es5/tex-mml-chtml.js" ></script>
+
+  <script defer src="/js/leancloud.js" ></script>
+
+  <script  src="/js/local-search.js" ></script>
+
+
+
+
+  
+<script src="//cdn.jsdelivr.net/npm/aplayer/dist/APlayer.min.js"></script>
+<script src="//cdn.jsdelivr.net/gh/metowolf/MetingJS@1.2/dist/Meting.min.js"></script>
+<script src="/js/reward.js"></script>
+
+
+
+<!-- 主题的启动项，将它保持在最底部 -->
+<!-- the boot of the theme, keep it at the bottom -->
+<script  src="/js/boot.js" ></script>
+
+
+  <script type="text/javascript">
+    /*窗口监视*/
+    var originalTitle = document.title;
+    window.onblur = function(){document.title = "明眸如初"};
+    window.onfocus = function(){document.title = originalTitle};
+  </script>
+
+
+  <div id="tooltip-rightmenu" class="tooltip-rightmenu">如需原始右键菜单请按下 <strong>Ctrl+右键</strong></div>
+
+<div id="rightmenu-wrapper" style="">
+  <ul class="list-v rightmenu" id="rightmenu-content">
+	  <li class="navigation menuNavigation-Content">
+		<a class="nav icon-only fix-cursor-default" onclick="history.back()"><i class="iconfont icon-zuojiantou1"></i></a>
+		<a class="nav icon-only fix-cursor-default" onclick="history.forward()"><i class="iconfont icon-youjiantou1"></i></a>
+		<a class="nav icon-only fix-cursor-default" onclick="window.location.reload()"><i class="iconfont icon-shuaxin"></i></a>
+		<a  aria-label="TOP" href="#" role="button"><i class="iconfont icon-xiangshang"></i></a>
+	  </li>
+
+		<hr class="menuLoad-Content" style="display: block;">
+	  <li class="menuLoad-Content" style="display: block;">
+		<a class="vlts-menu fix-cursor-default" target="_self" href="javascript:;" data-toggle="modal" data-target="#modalSearch" aria-label="Search">
+		  <span>
+			  <i class="iconfont icon-sousuo1 rightmenu-icon"></i>
+			  站内搜索
+		  </span>
+		</a>
+	  </li>
+
+	  <li class="menuLoad-Content" style="display: block;">
+		<a class="vlts-menu fix-cursor-default"  href="https://www.zywvvd.com/messagebd/" data-group="link">
+		  <span>
+			  <i class="iconfont icon-yangshi_icon_tongyong_chat rightmenu-icon">  </i>
+			   留言吐槽 
+		   </span>
+		</a>
+	  </li>
+
+
+	  <li class="menuLoad-Content" style="display: block;">
+		<a class="vlts-menu fix-cursor-default" id="help" target="_blank" rel="noopener" href="https://www.foreverblog.cn/go.html" data-group="link">
+		<span>
+			  <i class="iconfont icon-a-BlackHole rightmenu-icon"></i>
+			  虫洞穿梭
+		  </span>
+		</a>
+	  </li>
+
+	<a id="scroll-top-button" aria-label="TOP" href="#" role="button" style="bottom: 20px; right: 52.6364px;">
+        <i class="iconfont icon-xiangshangjiantou" aria-hidden="true"></i>
+      </a>
+
+	<hr class="menuLoad-Content" style="display: block;">
+	
+	  <li class="menuLoad-Content" style="display: block;">
+		<a class="vlts-menu fix-cursor-default" id="destroy-airplane" target="_blank" rel="noopener"  data-group="link">
+		<span>
+			  <i class="iconfont icon-feiji rightmenu-icon"></i>
+			  破坏小飞机
+		  </span>
+		</a>
+	  </li>
+  </ul>
+</div>
+
+<script>
+	var ua = navigator.userAgent;
+	var ipad = ua.match(/(iPad).*OS\s([\d_]+)/),
+		isIphone = !ipad && ua.match(/(iPhone\sOS)\s([\d_]+)/),
+		isAndroid = ua.match(/(Android)\s+([\d.]+)/),
+		isMobile = isIphone || isAndroid;
+
+	if(!isMobile) {
+		// 为按钮添加事件处理器
+		document.getElementById('destroy-airplane').onclick = function() {
+		  console.log('飞机起飞！');
+		  // 定义要执行的JavaScript代码
+		var KICKASSVERSION='2.0';
+		var s = document.createElement('script');
+		s.type='text/javascript';
+		document.body.appendChild(s);
+		s.src='https://uipv4.zywvvd.com:33030/HexoFiles/js/games/airplane/airplane.js';
+		void(0);
+		};
+	}
+</script>
+
+
+
+
+
+<link href="/css/custom.css"type="text/css"rel="stylesheet"/>
+<script src="/vvd_js/right_menu.js" type="text/javascript"></script>
+<link href="/css/right_menu.css"type="text/css"rel="stylesheet"/>
+<script src="/vvd_js/go.js"></script>
+
+
+  <noscript>
+    <div class="noscript-warning">博客在允许 JavaScript 运行的环境下浏览效果更佳</div>
+  </noscript>
+<script src="/live2dw/lib/L2Dwidget.min.js?094cbace49a39548bed64abff5988b05"></script><script>L2Dwidget.init({"pluginRootPath":"live2dw/","pluginJsPath":"lib/","pluginModelPath":"assets/","tagMode":false,"log":false,"model":{"jsonPath":"/live2dw/assets/z16.model.json"},"display":{"position":"left","width":200,"height":400},"mobile":{"show":false},"react":{"opacity":0.9}});</script></body>
+</html>
