@@ -29,6 +29,12 @@ css:
 
 8 年算法经验 · 4 家公司 · 7+ 项目
 
+---
+
+<font size=3 color=#999>
+
+2026 年 6 月
+
 
 
 <slide class="bg-white">
@@ -609,3 +615,17 @@ css:
 ---
 
 **8 年 · 4 公司 · 7+ 项目 · 跨领域算法复用能力**
+
+:::
+
+
+
+<slide class="bg-apple aligncenter">
+
+# 感谢聆听{.text-landing}
+
+---
+
+<font size=4 color=#BBB>
+
+Thanks · 欢迎提问与交流
