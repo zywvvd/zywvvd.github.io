@@ -1,0 +1,1635 @@
+
+
+<!DOCTYPE html>
+<html lang="zh-CN" data-default-color-scheme=auto>
+
+
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="baidu-site-verification" content="codeva-rLWafCJGYc" />
+  <link rel="apple-touch-icon" sizes="76x76" href="/image/avatar.png">
+  <link rel="icon" href="/image/avatar.png">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, shrink-to-fit=no">
+  <meta http-equiv="x-ua-compatible" content="ie=edge">
+  
+  <meta name="theme-color" content="#2f4154">
+  <meta name="author" content="Yiwei Zhang">
+  <meta name="keywords" content="人工智能, 深度学习, 个人博客, 机器学习">
+  
+    <meta name="description" content="FoundationPose（CVPR 2024 Highlight，NVIDIA）把 6D 物体位姿估计做成了&quot;一个模型零样本泛化到新物体&quot;——给定 CAD 模型或几张参考照片即可，不重新训练。它的核心是 render-and-compare（渲染对比），把位姿估计从端到端回归转成带监督的图像判别问题。这篇记录它的算法原理和源码架构要点（不含具体代码）。">
+<meta property="og:type" content="article">
+<meta property="og:title" content="FoundationPose：渲染对比式 6D 位姿估计">
+<meta property="og:url" content="https://www.zywvvd.com/notes/study/pose-estimation/foundationpose/foundationpose/index.html">
+<meta property="og:site_name" content="又见苍岚">
+<meta property="og:description" content="FoundationPose（CVPR 2024 Highlight，NVIDIA）把 6D 物体位姿估计做成了&quot;一个模型零样本泛化到新物体&quot;——给定 CAD 模型或几张参考照片即可，不重新训练。它的核心是 render-and-compare（渲染对比），把位姿估计从端到端回归转成带监督的图像判别问题。这篇记录它的算法原理和源码架构要点（不含具体代码）。">
+<meta property="og:locale" content="zh_CN">
+<meta property="article:published_time" content="2026-06-25T01:38:46.000Z">
+<meta property="article:modified_time" content="2026-07-03T05:37:08.802Z">
+<meta property="article:author" content="Yiwei Zhang">
+<meta property="article:tag" content="Deep_Learning">
+<meta property="article:tag" content="Pose_Estimation">
+<meta name="twitter:card" content="summary_large_image">
+  
+  
+  
+  <title>FoundationPose：渲染对比式 6D 位姿估计 - 又见苍岚</title>
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/twitter-bootstrap/4.6.1/css/bootstrap.min.css" />
+
+
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/github-markdown-css/4.0.0/github-markdown.min.css" />
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/hint.css/2.7.0/hint.min.css" />
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/fancybox/3.5.7/jquery.fancybox.min.css" />
+
+
+
+<!-- 主题依赖的图标库，不要自行修改 -->
+<!-- Do not modify the link that theme dependent icons -->
+
+<link rel="stylesheet" href="//at.alicdn.com/t/font_1749284_hj8rtnfg7um.css">
+
+
+
+<link rel="stylesheet" href="//at.alicdn.com/t/font_1736178_lbnruvf0jn.css">
+
+
+<link  rel="stylesheet" href="/css/main.css" />
+
+
+  <link id="highlight-css" rel="stylesheet" href="/css/highlight.css" />
+  
+    <link id="highlight-css-dark" rel="stylesheet" href="/css/highlight-dark.css" />
+  
+
+
+
+  
+<link rel="stylesheet" href="/css/custom.css">
+<link rel="stylesheet" href="/css/reward.css">
+<link rel="stylesheet" href="//cdn.jsdelivr.net/npm/aplayer/dist/APlayer.min.css">
+
+
+
+  <script id="fluid-configs">
+    var Fluid = window.Fluid || {};
+    Fluid.ctx = Object.assign({}, Fluid.ctx)
+    var CONFIG = {"hostname":"www.zywvvd.com","root":"/","version":"1.9.7","typing":{"enable":true,"typeSpeed":90,"cursorChar":"_","loop":false,"scope":["home"]},"anchorjs":{"enable":true,"element":"h1,h2,h3,h4,h5,h6","placement":"left","visible":"hover","icon":""},"progressbar":{"enable":true,"height_px":3,"color":"#29d","options":{"showSpinner":false,"trickleSpeed":100}},"code_language":{"enable":true,"default":"TEXT"},"copy_btn":true,"image_caption":{"enable":true},"image_zoom":{"enable":true,"img_url_replace":["",""]},"toc":{"enable":true,"placement":"right","headingSelector":"h1,h2,h3,h4,h5,h6","collapseDepth":0},"lazyload":{"enable":true,"loading_img":"/img/loading.gif","onlypost":false,"offset_factor":2},"web_analytics":{"enable":true,"follow_dnt":true,"baidu":null,"google":null,"tencent":{"sid":null,"cid":null},"woyaola":null,"cnzz":null,"leancloud":{"app_id":"Cv0XNeBSBdAPAIuVj3PsyM3R-MdYXbMMI","app_key":"4PU1rNlGrqXWzhfW3dgq98oX","server_url":null,"path":"window.location.pathname","ignore_local":false},"gtag":null},"search_path":"/local-search.xml","include_content_in_search":true};
+
+    if (CONFIG.web_analytics.follow_dnt) {
+      var dntVal = navigator.doNotTrack || window.doNotTrack || navigator.msDoNotTrack;
+      Fluid.ctx.dnt = dntVal && (dntVal.startsWith('1') || dntVal.startsWith('yes') || dntVal.startsWith('on'));
+    }
+  </script>
+  <script  src="/js/utils.js" ></script>
+  <script  src="/js/color-schema.js" ></script>
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+    
+  
+
+
+
+  
+<meta name="generator" content="Hexo 7.2.0"><link rel="alternate" href="/atom.xml" title="又见苍岚" type="application/atom+xml">
+</head>
+
+<script>
+// 页面加载完成后隐藏加载动画
+document.addEventListener("readystatechange", function() {
+    const loader = document.getElementById('Loadanimation');
+    if (loader) {
+        // 停留1秒后开始淡出
+        setTimeout(function() {
+            loader.style.transition = 'opacity 1.2s';
+            loader.style.opacity = '0';
+            // 淡出完成后隐藏
+            setTimeout(() => {
+                loader.style.display = 'none';
+            }, 1000); // 等待淡出动画完成
+        }, 700); // 停留0.8秒
+    }
+});
+</script>
+
+
+
+<body>
+  
+<div id="Loadanimation" style="z-index:999999;">
+<div id="Loadanimation-center">
+   <div id="Loadanimation-center-absolute">
+       <div class="xccx_object" id="xccx_four"></div>
+       <div class="xccx_object" id="xccx_three"></div>
+       <div class="xccx_object" id="xccx_two"></div>
+       <div class="xccx_object" id="xccx_one"></div>
+   </div>
+</div>
+</div>
+
+<link href="/css/loading.css"type="text/css"rel="stylesheet"/>
+
+
+
+
+
+
+<div>
+	<div class='real_mask' style="
+		background-color: rgba(0,0,0,0.4);
+		width: 100%;
+		height: 100%;
+		position: fixed;
+		z-index: -777;
+	"></div>
+	<div id="banner_video_insert">
+	</div>	
+	<div id='vvd_banner_img'>
+	</div>
+</div>
+<div id="banner"></div>
+
+
+
+
+
+
+
+  <header>
+    
+
+<div class="header-inner" style="height: 80vh;">
+  <nav id="navbar" class="navbar fixed-top  navbar-expand-lg navbar-dark scrolling-navbar">
+  <div class="container">
+    <a class="navbar-brand" href="/">
+      <strong>CangLan</strong>
+    </a>
+
+    <button id="navbar-toggler-btn" class="navbar-toggler" type="button" data-toggle="collapse"
+            data-target="#navbarSupportedContent"
+            aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
+      <div class="animated-icon"><span></span><span></span><span></span></div>
+    </button>
+
+    <!-- Collapsible content -->
+    <div class="collapse navbar-collapse" id="navbarSupportedContent">
+      <ul class="navbar-nav ml-auto text-center">
+        
+          
+          
+          
+          
+            <li class="nav-item">
+		<div >
+		      <a class="nav-link" href="/" target="_self" data-umami-event="Navigation-Homepage">
+
+		        <i class="iconfont icon-home-fill"></i>
+		        <span>首页</span>
+		      </a>
+		</div>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item dropdown">
+              <a class="nav-link dropdown-toggle" target="_self" href="javascript:;" role="button"
+                 data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                <i class="iconfont icon-shuji1"></i>
+                <span>文章</span>
+              </a>
+              <div class="dropdown-menu" aria-labelledby="navbarDropdown">
+                
+                  
+                  
+                  
+		<div >
+
+                  <a class="dropdown-item" href="/archives/" target="_self" data-umami-event="Navigation-Archive">
+
+                    <i class="iconfont icon-archive-fill"></i>
+                    <span>归档</span>
+                  </a>
+		</div>
+                
+                  
+                  
+                  
+		<div >
+
+                  <a class="dropdown-item" href="/categories/" target="_self" data-umami-event="Navigation-Category">
+
+                    <i class="iconfont icon-category-fill"></i>
+                    <span>分类</span>
+                  </a>
+		</div>
+                
+                  
+                  
+                  
+		<div >
+
+                  <a class="dropdown-item" href="/tags/" target="_self" data-umami-event="Navigation-Tag">
+
+                    <i class="iconfont icon-tags-fill"></i>
+                    <span>标签</span>
+                  </a>
+		</div>
+                
+                  
+                  
+                  
+		<div >
+
+                  <a class="dropdown-item" href="/shuoshuo/" target="_self" data-umami-event="Navigation-Shuoshuo">
+
+                    <i class="iconfont icon-24gf-bubblesDots4"></i>
+                    <span>说说</span>
+                  </a>
+		</div>
+                
+              </div>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item dropdown">
+              <a class="nav-link dropdown-toggle" target="_self" href="javascript:;" role="button"
+                 data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                <i class="iconfont icon-momo"></i>
+                <span>社交</span>
+              </a>
+              <div class="dropdown-menu" aria-labelledby="navbarDropdown">
+                
+                  
+                  
+                  
+		<div >
+
+                  <a class="dropdown-item" href="/links/" target="_self" data-umami-event="Navigation-Friends">
+
+                    <i class="iconfont icon-link-fill"></i>
+                    <span>友链</span>
+                  </a>
+		</div>
+                
+                  
+                  
+                  
+		<div >
+
+                  <a class="dropdown-item" href="/messagebd/" target="_self" data-umami-event="Navigation-MessageBoard">
+
+                    <i class="iconfont icon-comment"></i>
+                    <span>留言板</span>
+                  </a>
+		</div>
+                
+                  
+                  
+                  
+		<div >
+
+                  <a class="dropdown-item" href="/atom.xml" target="_self" data-umami-event="Navigation-RSS">
+
+                    <i class="iconfont icon-dingyue"></i>
+                    <span>RSS订阅</span>
+                  </a>
+		</div>
+                
+                  
+                  
+                  
+		<div >
+
+                  <a class="dropdown-item" href="/reccomments/" target="_self" data-umami-event="Navigation-Recent-Comments">
+
+                    <i class="iconfont icon-icon-pinglunguanli-pinglunliebiao"></i>
+                    <span>近期评论</span>
+                  </a>
+		</div>
+                
+              </div>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item dropdown">
+              <a class="nav-link dropdown-toggle" target="_self" href="javascript:;" role="button"
+                 data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                <i class="iconfont icon-user-fill"></i>
+                <span>个人</span>
+              </a>
+              <div class="dropdown-menu" aria-labelledby="navbarDropdown">
+                
+                  
+                  
+                  
+		<div >
+
+                  <a class="dropdown-item" href="/about/" target="_self" data-umami-event="Navigation-AboutMe">
+
+                    <i class="iconfont icon-guanyuwomen"></i>
+                    <span>关于</span>
+                  </a>
+		</div>
+                
+                  
+                  
+                  
+		<div >
+
+                  <a class="dropdown-item" href="/playlist/" target="_self" data-umami-event="Navigation-Music">
+
+                    <i class="iconfont icon-music"></i>
+                    <span>歌单</span>
+                  </a>
+		</div>
+                
+                  
+                  
+                  
+		<div >
+
+                  <a class="dropdown-item" href="https://uipv4.zywvvd.com:33035" target="_self" data-umami-event="Navigation-Nextcloud">
+
+                    <i class="iconfont icon-xuniyingpan"></i>
+                    <span>网盘</span>
+                  </a>
+		</div>
+                
+                  
+                  
+                  
+		<div >
+
+                  <a class="dropdown-item" href="https://uipv4.zywvvd.com:33036" target="_self" data-umami-event="Navigation-OneDev">
+
+                    <i class="iconfont icon-git"></i>
+                    <span>仓库</span>
+                  </a>
+		</div>
+                
+                  
+                  
+                  
+		<div >
+
+                  <a class="dropdown-item" href="https://uipv4.zywvvd.com:33041" target="_self" data-umami-event="Navigation-Wiki">
+
+                    <i class="iconfont icon-wiki"></i>
+                    <span>百科</span>
+                  </a>
+		</div>
+                
+              </div>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item dropdown">
+              <a class="nav-link dropdown-toggle" target="_self" href="javascript:;" role="button"
+                 data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                <i class="iconfont icon-ic_fly"></i>
+                <span>导航</span>
+              </a>
+              <div class="dropdown-menu" aria-labelledby="navbarDropdown">
+                
+                  
+                  
+                  
+		<div >
+
+                  <a class="dropdown-item" href="/site-map/" target="_self" data-umami-event="Navigation-SiteMap">
+
+                    <i class="iconfont icon-lianjie"></i>
+                    <span>链接</span>
+                  </a>
+		</div>
+                
+                  
+                  
+                  
+		<div >
+
+                  <a class="dropdown-item" href="/nodeppt/hexo/snavigation/" target="_self" data-umami-event="Navigation-Search">
+
+                    <i class="iconfont icon-sousuo"></i>
+                    <span>搜索</span>
+                  </a>
+		</div>
+                
+              </div>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item dropdown">
+              <a class="nav-link dropdown-toggle" target="_self" href="javascript:;" role="button"
+                 data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                <i class="iconfont icon-wangzhan"></i>
+                <span>站点</span>
+              </a>
+              <div class="dropdown-menu" aria-labelledby="navbarDropdown">
+                
+                  
+                  
+                  
+		<div >
+
+                  <a class="dropdown-item" href="https://uipv4.zywvvd.com:33039/share/0zx3o21oIpZTZqwC/%E5%8F%88%E8%A7%81%E8%8B%8D%E5%B2%9A" target="_self" data-umami-event="Navigation-Umami">
+
+                    <i class="iconfont icon-tongji2"></i>
+                    <span>站点分析</span>
+                  </a>
+		</div>
+                
+                  
+                  
+                  
+		<div >
+
+                  <a class="dropdown-item" href="/earth_sta/" target="_self" data-umami-event="Navigation-Globe">
+
+                    <i class="iconfont icon-tongjifenxi-xiangmubiaogetongji"></i>
+                    <span>访问统计</span>
+                  </a>
+		</div>
+                
+                  
+                  
+                  
+		<div >
+
+                  <a class="dropdown-item" href="https://uipv4.zywvvd.com:33034/status/show" target="_self" data-umami-event="Navigation-Monitor">
+
+                    <i class="iconfont icon-jiankong"></i>
+                    <span>站点监控</span>
+                  </a>
+		</div>
+                
+              </div>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item dropdown">
+              <a class="nav-link dropdown-toggle" target="_self" href="javascript:;" role="button"
+                 data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                <i class="iconfont icon-chuansong"></i>
+                <span>传送</span>
+              </a>
+              <div class="dropdown-menu" aria-labelledby="navbarDropdown">
+                
+                  
+                  
+                  
+		<div >
+
+                  <a class="dropdown-item" href="https://www.foreverblog.cn/go.html" target="_self" data-umami-event="Navigation-ForeverBolg">
+
+                    <i class="iconfont icon-a-BlackHole"></i>
+                    <span>十年之约</span>
+                  </a>
+		</div>
+                
+                  
+                  
+                  
+		<div >
+
+                  <a class="dropdown-item" href="https://www.travellings.cn/go.html" target="_self" data-umami-event="Navigation-DriveTo">
+
+                    <i class="iconfont icon-train1"></i>
+                    <span>开往</span>
+                  </a>
+		</div>
+                
+                  
+                  
+                  
+		<div >
+
+                  <a class="dropdown-item" href="https://bf.zzxworld.com/" target="_self" data-umami-event="Navigation-BlogFinder">
+
+                    <i class="iconfont icon-icon-"></i>
+                    <span>BlogFinder</span>
+                  </a>
+		</div>
+                
+                  
+                  
+                  
+		<div >
+
+                  <a class="dropdown-item" href="https://www.perass.com/" target="_self" data-umami-event="Navigation-Bloghome">
+
+                    <i class="iconfont icon-home-fill"></i>
+                    <span>博客之家</span>
+                  </a>
+		</div>
+                
+              </div>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item dropdown">
+              <a class="nav-link dropdown-toggle" target="_self" href="javascript:;" role="button"
+                 data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                <i class="iconfont icon-gongju"></i>
+                <span>工具</span>
+              </a>
+              <div class="dropdown-menu" aria-labelledby="navbarDropdown">
+                
+                  
+                  
+                  
+		<div >
+
+                  <a class="dropdown-item" href="/navigates/calculator" target="_self" data-umami-event="Navigation-Calculator">
+
+                    <i class="iconfont icon-jisuan"></i>
+                    <span>计算器</span>
+                  </a>
+		</div>
+                
+                  
+                  
+                  
+		<div >
+
+                  <a class="dropdown-item" href="/navigates/webgraphviz" target="_self" data-umami-event="Navigation-WebGtaphviz">
+
+                    <i class="iconfont icon-tongyong-huatugongju2"></i>
+                    <span>Graphviz</span>
+                  </a>
+		</div>
+                
+                  
+                  
+                  
+		<div >
+
+                  <a class="dropdown-item" href="/navigates/formular_reco" target="_self" data-umami-event="Navigation-Formular-Reco">
+
+                    <i class="iconfont icon-a-checkformula"></i>
+                    <span>公式识别</span>
+                  </a>
+		</div>
+                
+              </div>
+            </li>
+          
+        
+        
+          <li class="nav-item" id="search-btn">
+            <a class="nav-link" target="_self" href="javascript:;" data-toggle="modal" data-target="#modalSearch" aria-label="Search">
+              <i class="iconfont icon-search"></i>
+            </a>
+          </li>
+          
+        
+        
+          <li class="nav-item" id="color-toggle-btn">
+            <a class="nav-link" target="_self" href="javascript:;" aria-label="Color Toggle">
+              <i class="iconfont icon-dark" id="color-toggle-icon"></i>
+            </a>
+          </li>
+        
+      </ul>
+    </div>
+  </div>
+</nav>
+
+  
+
+<div id="banner" class="banner" parallax=true
+     style="background: url('https://uipv4.zywvvd.com:33030/HexoFiles/new/bg-trans.png') no-repeat center center; background-size: cover;">
+  <div class="full-bg-img">
+    <div class="mask flex-center" style="background-color: rgba(0, 0, 0, 0)">
+      <div class="banner-text text-center fade-in-up">
+        <div class="h2">
+          
+            <span id="subtitle">FoundationPose：渲染对比式 6D 位姿估计</span>
+          
+        </div>
+
+        
+          
+  <div class="mt-3">
+    
+      <span class="post-meta mr-2">
+        <i class="iconfont icon-author" aria-hidden="true"></i>
+        Yiwei Zhang
+      </span>
+    
+    
+      <span class="post-meta">
+        <i class="iconfont icon-date-fill" aria-hidden="true"></i>
+        <time datetime="2026-06-25 09:38" pubdate>
+          2026年6月25日 上午
+        </time>
+      </span>
+    
+  </div>
+
+  <div class="mt-1">
+    
+      <span class="post-meta mr-2">
+        <i class="iconfont icon-chart"></i>
+        
+          <!-- compatible with older versions-->
+          1.3k 字
+        
+      </span>
+    
+
+    
+      <span class="post-meta mr-2">
+        <i class="iconfont icon-clock-fill"></i>
+        
+        
+        
+          <!-- compatible with older versions-->
+          11 分钟
+        
+      </span>
+    
+
+    
+    
+      
+        <span id="vvdpost_container_page_pvuv" style="display: none">
+          <i class="iconfont icon-eye" aria-hidden="true"></i>
+          <span id="vvdpost_value_page_pv">0</span> 次&nbsp&nbsp
+		  <i class="iconfont icon-users" aria-hidden="true"></i>
+		  <span id="vvdpost_value_page_uv">0</span> 人&nbsp&nbsp
+		  <i class="iconfont icon-comment" aria-hidden="true"></i>
+		  <span id="vvdpost_value_page_cn">0</span> 条
+        </span>
+
+    <script>
+    document.addEventListener("DOMContentLoaded", function() {
+	      console.log("PVUV_" + window.location.pathname);
+
+	      // 使用 fetch API 发送 POST 请求
+	      fetch('https://uipv4.zywvvd.com:33037/poststats', { 
+		  method: 'POST',
+		  headers: {
+		      'Content-Type': 'application/json'
+		  },
+		  body: JSON.stringify(window.location.pathname) // 将路径名作为对象发送，以便在服务器端更容易处理
+	      })
+	      .then(response => {
+		  // 检查响应状态
+		  if (!response.ok) {
+		      throw new Error('Network response was not ok ' + response.statusText);
+		  }
+		  return response.json(); // 解析 JSON 响应
+	      })
+	      .then(data => {
+		  // 处理解析后的数据
+		  console.log(data.pv);
+		  var pvCtn = document.querySelector('#vvdpost_container_page_pvuv');
+		  if (pvCtn) {
+		      var pvEle = document.querySelector('#vvdpost_value_page_pv');
+		      var uvEle = document.querySelector('#vvdpost_value_page_uv');
+		      var cnEle = document.querySelector('#vvdpost_value_page_cn');
+		      if (pvEle && uvEle) {
+		          pvEle.innerText = data.pv;
+		          uvEle.innerText = data.uv;
+		          cnEle.innerText = data.cn;
+		          pvCtn.style.display = 'inline';
+		      }
+		  }
+	      })
+	      .catch(error => {
+		  // 处理请求错误
+		  console.error('There has been a problem with your fetch operation:', error);
+	      });
+      });
+  </script>
+      
+    
+  </div>
+
+
+        
+      </div>
+
+      
+        <div class="scroll-down-bar">
+          <i class="iconfont icon-arrowdown"></i>
+        </div>
+      
+    </div>
+  </div>
+</div>
+
+</div>
+
+
+	<script type="text/javascript" src="/vvd_js/jquery.js"></script>
+	<script async src="https://uipv4.zywvvd.com:33039/script.js" data-website-id="dd4a05c6-dde2-4743-9c3a-a79d6bee0778"></script>
+	<div class="banner" id='banner' >
+
+		<div class="full-bg-img" >
+
+			
+				<script>
+					var ua = navigator.userAgent;
+					var ipad = ua.match(/(iPad).*OS\s([\d_]+)/),
+						isIphone = !ipad && ua.match(/(iPhone\sOS)\s([\d_]+)/),
+						isAndroid = ua.match(/(Android)\s+([\d.]+)/),
+						isMobile = isIphone || isAndroid;
+
+					function set_video_attr(id){
+						var height = document.body.clientHeight
+						var width = document.body.clientWidth
+						var video_item = document.getElementById(id);
+
+						if (height / width < 0.56){
+							video_item.setAttribute('width', '100%');
+							video_item.setAttribute('height', 'auto');
+						} else {
+							video_item.setAttribute('height', '100%');
+							video_item.setAttribute('width', 'auto');
+						}
+					}
+
+					fetch('https://uipv4.zywvvd.com:33037/wallpaper-pair')
+					  .then(response => response.json()) // 解析JSON数据
+					  .then(data => {
+						console.log('获取链接成功');
+						video_url = data[0][0]
+						pre_show_image_url = data[0][1]
+
+						banner_obj = document.getElementById("banner")
+						banner_obj.style.cssText = "background: url('" + pre_show_image_url + "') no-repeat;"
+
+						vvd_banner_obj = document.getElementById("vvd_banner_img")
+						vvd_banner_content = "<img id='banner_img_item' src='" + pre_show_image_url + "'style='position: fixed; z-index: -999'>"
+						vvd_banner_obj.innerHTML = vvd_banner_content 
+
+						if (!isMobile) {
+							video_html_res = "<video id='video_item' style='position: fixed; z-index: -888;'  muted='muted' src=" + video_url + " autoplay='autoplay' loop='loop'></video>"
+							document.getElementById("banner_video_insert").innerHTML = video_html_res;
+							set_video_attr('video_item')
+							set_video_attr('banner_img_item')
+						}
+					    
+					  })
+					  .catch((error) => {
+					    console.error('请求失败,尝试本地获取背景图像：', error);
+	    					$.getJSON('/vvd_js/video_url.json', function(data){
+
+							var video_list_length = data.length
+							var seed = Math.random()
+							index = Math.floor(seed * video_list_length)
+
+							video_url = data[index][0]
+							pre_show_image_url = data[index][1]
+
+							banner_obj = document.getElementById("banner")
+							banner_obj.style.cssText = "background: url('" + pre_show_image_url + "') no-repeat;"
+
+							vvd_banner_obj = document.getElementById("vvd_banner_img")
+							vvd_banner_content = "<img id='banner_img_item' src='" + pre_show_image_url + "'style='position: fixed; z-index: -999'>"
+							vvd_banner_obj.innerHTML = vvd_banner_content 
+
+							if (!isMobile) {
+								video_html_res = "<video id='video_item' style='position: fixed; z-index: -888;'  muted='muted' src=" + video_url + " autoplay='autoplay' loop='loop'></video>"
+								document.getElementById("banner_video_insert").innerHTML = video_html_res;
+								set_video_attr('video_item')
+								set_video_attr('banner_img_item')
+							}
+						});
+					  });
+
+
+
+
+
+
+					if (!isMobile){
+						window.onresize = function(){
+							set_video_attr('video_item')
+							set_video_attr('banner_img_item')
+							}
+						}
+				</script>
+
+			
+
+
+			
+			</div>
+		</div>
+    </div>
+
+  </header>
+
+  <main>
+    
+      
+
+
+
+<div class="container-fluid nopadding-x">
+  <div class="row nomargin-x">
+    <div class="side-col d-none d-lg-block col-lg-2">
+      
+
+    </div>
+
+    <div class="col-lg-8 nopadding-x-md">
+      <div class="container nopadding-x-md" id="board-ctn">
+        <div id="board">
+          <article class="post-content mx-auto">
+
+            <!-- <h1 id="seo-header">FoundationPose：渲染对比式 6D 位姿估计</h1> -->
+
+            
+              <p id="updated-time" class="note note-info" style="">
+                
+                  
+                    <!-- compatible with older versions-->
+                    本文最后更新于：2026年7月3日 下午
+                  
+                
+              </p>
+            
+            
+              <div class="markdown-body">
+                
+                <blockquote>
+<p>FoundationPose（CVPR 2024 Highlight，NVIDIA）把 6D 物体位姿估计做成了&quot;一个模型零样本泛化到新物体&quot;——给定 CAD 模型或几张参考照片即可，不重新训练。它的核心是 render-and-compare（渲染对比），把位姿估计从端到端回归转成带监督的图像判别问题。这篇记录它的算法原理和源码架构要点（不含具体代码）。</p>
+</blockquote>
+<span id="more"></span>
+<h3 id="要解决什么问题">要解决什么问题</h3>
+<p>传统 6D 位姿估计方法的痛点：PCA + ICP 需要好初值、对称物体主轴不唯一、对遮挡反光敏感；关键点 + PnP（如 PVN3D）每个物体要单独训练，换新物体要重新标注训练；直接回归（如 PoseCNN）旋转回归精度差、泛化弱。</p>
+<p>FoundationPose 的目标是：<strong>一个模型，零样本泛化到从未见过的新物体，不重新训练</strong>。同时支持两种输入——model-based（有 3D CAD 模型）和 model-free（只有几张参考照片，无 CAD）。</p>
+<h3 id="核心思想：渲染对比（Analysis-by-Synthesis）">核心思想：渲染对比（Analysis-by-Synthesis）</h3>
+<p>不直接回归位姿，而是：生成多个候选位姿 → 在每个位姿下用网格渲染出&quot;物体应该长什么样&quot; → 和真实观测（RGB-D）对比 → 由网络回归位姿修正量、再打分挑出最优。这套范式叫 <strong>analysis-by-synthesis</strong>（或 render-and-compare），更接近&quot;人眼认物体&quot;的方式——“从这个角度看它应该长这样”。</p>
+<h4 id="一个关键澄清：不是可微渲染">一个关键澄清：不是可微渲染</h4>
+<p>容易误解的一点：FoundationPose <strong>不做可微渲染优化</strong>。它不是把 loss 对位姿求梯度反传——渲染本身在 <code>@torch.inference_mode()</code> 下、不反传梯度。它做的是 DeepIM 风格的**“render → compare → 网络直接回归 Δpose”** 的迭代（5 次），每轮重新渲染构成闭环。这样既保留了 render-and-compare 的判别力，又避开了可微渲染梯度不稳、算力昂贵的坑。</p>
+<h4 id="与-ICP-的哲学对比">与 ICP 的哲学对比</h4>
+<table>
+<thead>
+<tr>
+<th>维度</th>
+<th>ICP（传统几何）</th>
+<th>FoundationPose（学习 + 渲染对比）</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>对比的&quot;东西&quot;</td>
+<td>3D 点的空间坐标</td>
+<td>2D 图像外观 + 几何（RGB-D）</td>
+</tr>
+<tr>
+<td>距离度量</td>
+<td>点到点 / 点到面（欧氏几何）</td>
+<td>CNN+Transformer 学到的判别距离</td>
+</tr>
+<tr>
+<td>搜索方式</td>
+<td>局部梯度下降（需好初值）</td>
+<td>全局 icosphere 假设采样 + 局部神经细化</td>
+</tr>
+<tr>
+<td>初始化</td>
+<td>需好初值（PCA / 上一帧）</td>
+<td>Register 模式不需要初值</td>
+</tr>
+<tr>
+<td>鲁棒性</td>
+<td>外点 / 遮挡 / 反光敏感</td>
+<td>大规模合成训练见过 → 鲁棒</td>
+</tr>
+</tbody>
+</table>
+<p>核心转变：把&quot;位姿估计&quot;从<strong>几何优化</strong>变成<strong>图像判别</strong>——度量函数本身是被学出来的（而非手写的点到点距离），所以能学到&quot;哪些像素/通道对位姿敏感、哪些是噪声/遮挡&quot;。</p>
+<h3 id="极简架构：两个网络-一个渲染器">极简架构：两个网络 + 一个渲染器</h3>
+<p>源码里只有两个可训练网络（RefineNet、ScoreNet）加一个不可微的 GPU 光栅化器（nvdiffrast）：</p>
+<figure class="highlight scss"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><code class="hljs scss">                ┌─────────────────────────────┐<br>网格 mesh ─────▶│   nvdiffrast 光栅化器          │<br>位姿 (R,t) ────▶│   (不可微, GPU, 支持光照)      │──▶ 渲染裁剪图 <span class="hljs-selector-tag">A</span> (RGB + xyz)<br>                └─────────────────────────────┘<br>                ┌─────────────────────────────┐<br>真实 RGB-D ────▶│ warp_perspective 裁剪对齐     │──▶ 观测裁剪图 <span class="hljs-selector-tag">B</span> (RGB + xyz)<br>                └─────────────────────────────┘<br>                              │<br>                              ▼<br>          ┌────────────────────────────────────────┐<br>          │  RefineNet:   回归 Δt, ΔR → 更新位姿     │  (迭代 <span class="hljs-number">5</span> 轮)<br>          │  ScoreNet:    回归标量分数 → 选最优      │  (仅 register 末轮)<br>          └────────────────────────────────────────┘<br></code></pre></td></tr></table></figure>
+<h3 id="位姿参数化与自我中心增量更新">位姿参数化与自我中心增量更新</h3>
+<p>物体位姿 $T=(R,\mathbf{t})\in SE(3)$，表示物体坐标系到相机坐标系的刚体变换。物体的网格预先做一次<strong>居中</strong>（减去质心），让旋转的枢轴落在物体几何中心，使网络学到的增量在所有物体上对称、可归一化。</p>
+<p>RefineNet 输出<strong>相对当前位姿的增量</strong> $(\Delta\mathbf{t},\Delta R)$，按&quot;自我中心&quot;方式更新（在相机系下增量）：</p>
+
+$$
+\mathbf{t}_{k+1}=\mathbf{t}_k+\Delta\mathbf{t},\qquad R_{k+1}=\Delta R\cdot R_k
+$$
+
+<p>注意旋转是<strong>左乘</strong>（相机系增量）。输出做限幅防止大跳变：平移用 $\tanh(\cdot)\odot\text{trans\_normalizer}$（逐通道），旋转 $\Delta\omega=\tanh(\cdot)\cdot\text{rot\_normalizer}$ 再经 so3 指数映射转旋转矩阵 $\Delta R=\exp_{SO(3)}(\Delta\omega^\wedge)$。<code>tanh</code> 把无界回归压到 $[-1,1]$ 乘以 normalizer 得到物理合理的最大步长——这是迭代收敛的工程保证（类似 trust-region），每轮只能做有限修正。</p>
+<h3 id="平移：从-mask-深度闭式估计（不搜索）">平移：从 mask + 深度闭式估计（不搜索）</h3>
+<p>平移不需要全局采样，直接从 mask 闭式求：</p>
+
+$$
+\mathbf{t}=K^{-1}\begin{bmatrix}u_c\\ v_c\\ 1\end{bmatrix}\cdot z_c,\qquad z_c=\text{median}\big(D[\text{mask}>0]\big),\quad (u_c,v_c)=\text{mask 质心}
+$$
+
+<p>所有候选位姿共享这一个 $\mathbf{t}$，只需对 $R$ 做全局假设采样。这是一个关键降维：从 $SE(3)$（6 维）降到 $SO(3)$（3 维）。</p>
+<h3 id="旋转：icosphere-视角网格采样-对称聚类">旋转：icosphere 视角网格采样 + 对称聚类</h3>
+<p>绕物体的相机方向用<strong>正二十面体球面（icosphere）顶点</strong>离散采样：逐级细分直到顶点数 ≥ 40（约 42 个），每个顶点构造一个相机到物体的旋转（look-at），每个视角再叠加面内旋转 0°/60°/120°/180°/240°/300°（6 个）。裸候选约 $42\times6\approx252$ 个。</p>
+<p>裸候选里大量视角在对称物体下其实等价，需去重。判据：两个位姿 $T_1,T_2$ 同簇当且仅当存在对称变换 $S$ 使</p>
+
+$$
+\lVert\mathbf{t}_1-\mathbf{t}_2\rVert<d_{\text{th}}\ \text{且}\ d_{\text{geo}}(R_1,R_2\,S)<\theta_{\text{th}}
+$$
+
+<p>其中 $d_{\text{geo}}(R_a,R_b)=\arccos\big(\tfrac{\operatorname{tr}(R_a^\top R_b)-1}{2}\big)$ 是旋转的测地距离，阈值约 30°。聚类后候选数随物体对称性降到几十到上百个。</p>
+<p>为什么用 icosphere 而非经纬度网格？icosphere 顶点在球面上近似均匀（每点占据的立体角近似相等），经纬度网格两极过密、赤道过稀。均匀采样保证最坏情况下的视角覆盖，用最少候选达到给定角度分辨率。</p>
+<h3 id="Register-模式：首帧全局定位流程">Register 模式：首帧全局定位流程</h3>
+<p>首帧定位（不依赖初值）的完整流程：</p>
+<figure class="highlight routeros"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><code class="hljs routeros"><span class="hljs-keyword">Step</span> 0  深度预处理: erode → bilateral<span class="hljs-built_in"> filter </span>→ depth2xyz map<br><span class="hljs-keyword">Step</span> 1  guess_translation:   mask 质心 + 深度中位数 → t  (所有候选共享)<br><span class="hljs-keyword">Step</span> 2  generate_random_pose_hypo: icosphere×6 → 聚类 → N 个候选旋转 R_i<br>        候选 T_i = [R_i | t],  <span class="hljs-attribute">i</span>=1..N (典型 <span class="hljs-attribute">N</span>=几十~上百)<br><span class="hljs-keyword">Step</span> 3  RefineNet.predict(<span class="hljs-attribute">iteration</span>=5):  对全部 N 候选并行跑 5 轮细化<br><span class="hljs-keyword">Step</span> 4  ScoreNet.predict:  对细化后的 N 个位姿打标量分<br><span class="hljs-keyword">Step</span> 5  argsort 降序 → 取分数最高者作为最优位姿<br></code></pre></td></tr></table></figure>
+<p>N 个候选完全并行（网络前向 batch 可达 1024，渲染 batch 512），这是 register 模式虽慢但可接受的关键。</p>
+<h3 id="每轮细化内部的-render-and-compare">每轮细化内部的 render-and-compare</h3>
+<p>对每个候选位姿 $T_k$ 执行以下流程：</p>
+<p><strong>(a) 计算 3D 包围盒裁剪窗口</strong>：以位姿中心为圆心、半径取物体直径的某个比例，投影到像素取外接矩形，再 warp 到固定输出尺寸（如 160×160）。这保证渲染图和观测图在同一个 2D 裁剪坐标系下对齐。</p>
+<p><strong>(b) 渲染图 A</strong>：用 nvdiffrast 对居中网格在位姿 $T_k$ 下做 GPU 光栅化，输出 RGB（带环境光加漫反射）和 3 通道 xyz_map（每像素的相机系 3D 坐标）。</p>
+<p><strong>© 观测图 B</strong>：把原始 RGB 和 xyz_map（由深度反投影得到）按同一个裁剪变换 warp 到相同尺寸，与 A 像素级对齐。</p>
+<p><strong>(d) 几何通道归一化（跨物体泛化的关键）</strong>：xyz 不直接喂网络，而是中心化加尺度归一化：</p>
+
+$$
+\tilde{\mathbf{x}}_{A/B}(u,v)=\frac{\mathbf{x}_{A/B}(u,v)-\mathbf{t}_k}{\text{diameter}/2}
+$$
+
+<p>每像素 3D 坐标减去当前位姿平移、除以物体半径，让不同大小、不同距离的物体的几何特征都落在相近量级。这是跨物体泛化的关键归一化。</p>
+<p><strong>(e) 网络输入</strong>：每张图 6 通道（RGB 3 加归一化 xyz 3）。用 3D xyz 而非单通道深度，是因为 xyz 保留了完整 3D 几何，网络能直接从几何偏移判读位姿误差。</p>
+<h3 id="RefineNet：从对比图对回归位姿增量">RefineNet：从对比图对回归位姿增量</h3>
+<p>RefineNet 是<strong>双分支权重共享的 CNN + Transformer</strong>，把&quot;渲染图 A vs 观测图 B&quot;的差异编码成位姿修正量。</p>
+<p>关键技术点：</p>
+<ul>
+<li><strong>权重共享双分支编码</strong>：对 A、B 用同一套卷积权重（实现上把 A、B 沿 batch 维 stack 一次性前向再拆回），保证渲染域和真实域的特征落在同一子空间——这是跨域（合成渲染 vs 真实拍摄）对齐的核心。</li>
+<li><strong>拼接后深层融合</strong>：早期分别提特征（保留模态特异性），中期 cat 成 256 通道后再深层 ResBlock 融合，让网络学到&quot;A 和 B 在哪里不一致&quot;。</li>
+<li><strong>Transformer 聚合</strong>：把 2D 特征图展平成 token 序列（加正余弦位置编码），用一层 TransformerEncoder 让 token 间全局交互。自注意力能学到&quot;看哪几个像素位置最判断位姿误差&quot;（遮挡区域 token 的注意力权重自然变低）。</li>
+<li><strong>双头输出</strong>：一头输出 3 维 $\Delta\mathbf{t}$，一头输出 3 维轴角 $\Delta\omega$，分别 mean-pool 得每个候选的增量。</li>
+</ul>
+<p>训练目标是回归位姿增量的 L2 损失（可选 ADD 度量）：</p>
+
+$$
+\mathcal{L}_{\text{refine}}=\big\lVert\Delta\mathbf{t}_{\text{pred}}-\Delta\mathbf{t}_{\text{gt}}\big\rVert_2^2+\lambda\big\lVert\Delta\omega_{\text{pred}}-\Delta\omega_{\text{gt}}\big\rVert_2^2
+$$
+
+<h3 id="ScoreNet：候选间交叉注意力-锦标赛筛选">ScoreNet：候选间交叉注意力 + 锦标赛筛选</h3>
+<p>RefineNet 是逐候选独立回归——它不知道别的候选长什么样。当初始假设离真值太远或物体严重遮挡时，5 轮迭代未必把每个候选都带到真值附近，此时需要一个看全局、做相对排序的网络。</p>
+<p>ScoreNet 与 RefineNet 的核心区别：多了一个<strong>候选间交叉注意力</strong>，让 L 个候选假设互相 attend——每个候选的分数是在&quot;看到其它候选长什么样&quot;之后才给出的。这让网络学到的不是绝对分数，而是<strong>相对判别</strong>（“这一堆里谁更像真的”）。</p>
+<p>对应的损失是对比损失族（pairwise / InfoNCE 风格）：给定一批候选和真值，让最接近真值的那个候选 logit 最大：</p>
+
+$$
+\mathcal{L}_{\text{score}}=-\log\frac{\exp\,s_{i^*}}{\sum_i\exp\,s_i},\qquad i^*=\arg\min_i\,d_{\text{ADD}}(T_i,T^*)
+$$
+
+<p>直接对全部 N 个候选做交叉注意力算力爆炸，所以用<strong>锦标赛淘汰</strong>：逐轮两两比较取胜者、败者淘汰，每轮减半直到只剩一个冠军，冠军给加分确保 argsort 后排第一。这是用 $O(\log N)$ 轮两两比较替代 $O(N^2)$ 的全局注意力。</p>
+<h3 id="Track-模式：后续帧单假设跟踪">Track 模式：后续帧单假设跟踪</h3>
+<p>已知上一帧位姿后，每帧只用 RefineNet 在上一帧位姿附近单假设细化（不用 ScoreNet）。因为只剩 1 个假设，没有候选间比较的需求；帧间运动小，假设已在收敛域内。这就是 register 慢（全局搜索加评分）、track 快（单假设细化）的工程分工。</p>
+<h3 id="为什么能零样本泛化">为什么能零样本泛化</h3>
+<p>FoundationPose 对新物体不微调，由四个机制共同保证：</p>
+<ol>
+<li><strong>网络只看&quot;渲染图 vs 真实图&quot;对，不看物体身份</strong>：RefineNet / ScoreNet 输入只有 A、B 两个张量，没有任何物体 ID 或嵌入向量。网络学的是通用的图像判别函数，对所有物体共享同一套权重。</li>
+<li><strong>几何通道的尺度归一化</strong>：xyz 通道用&quot;减当前位姿平移、除物体半径&quot;归一化，让&quot;小物体近拍&quot;和&quot;大物体远拍&quot;在网络上看起来尺度一致。新物体只要能算出直径就自动落入训练时见过的几何尺度分布。</li>
+<li><strong>大规模合成训练 + 域随机化</strong>：训练不依赖真实位姿标注（极贵），而是用 NVIDIA Isaac Sim/Omniverse 渲染几万种物体（来自 Objaverse 等大模型库），施加随机纹理、随机光照、随机背景（sim-to-real），并用 LLM 辅助扩大物体外观多样性。</li>
+<li><strong>Model-free 用 Neural Object Field 统一到 mesh 管线</strong>：没有 CAD 时，先用几张参考 RGB-D 训练一个神经隐式表示（NeRF 风格的 Neural Object Field），导出为 mesh；之后 Register/Track 全程用这个 mesh 渲染，与 Model-based 完全共用同一套网络。统一的本质是：下游网络只关心&quot;能不能在任意位姿渲染出物体的 RGB-D&quot;，不关心 mesh 来自 CAD 还是 NeRF 重建。</li>
+</ol>
+<h3 id="小结">小结</h3>
+<p>FoundationPose 的核心是 render-and-compare：icosphere 全局采样 N 个候选旋转（平移由 mask 闭式估出，降维到 SO(3)），对每个候选用 nvdiffrast 渲染 RGB-D 与真实观测裁剪对齐，RefineNet（双分支权重共享 CNN+Transformer）回归位姿增量迭代 5 轮，ScoreNet（带候选间交叉注意力）打分挑最优。关键澄清是它<strong>不是可微渲染</strong>，而是 DeepIM 风格的网络回归增量；零样本泛化靠&quot;网络不识物体身份 + xyz 尺度归一化 + 大规模合成训练 + model-free 统一 mesh 管线&quot;四机制。代价是秒级、需 GPU，与毫秒级的 ICP 互补——后者快但需初值、对遮挡敏感，前者慢但无需初值、鲁棒。</p>
+<h3 id="参考资料">参考资料</h3>
+<ul>
+<li>B. Wen et al., “FoundationPose: Unified 6D Pose Estimation and Tracking of Novel Objects,” CVPR, 2024.</li>
+<li>Y. Li et al., “DeepIM: Deep Layered Matching for 6D Pose Estimation,” ECCV, 2018.（render-and-compare 姿态细化的先驱）</li>
+<li>T. Gleicher et al., “nvdiffrast: Gradient-based primitives,” 2020.</li>
+<li>相关笔记：<a href="https://www.zywvvd.com/notes/study/camera-imaging/pnp/pnp/">PnP 算法</a>、<a href="https://www.zywvvd.com/notes/study/camera-imaging/pnp-essence/pnp-essence/">PnP 的本质</a>、<a href="https://www.zywvvd.com/notes/3d/registration/icp/">ICP 配准</a></li>
+</ul>
+<link rel="stylesheet" href="/css/spoiler.css" type="text/css"><script src="/js/spoiler.js" type="text/javascript" async></script>
+                
+
+
+				<br /><br />
+				<blockquote>
+					<p>文章链接：<br /> 
+					<a style="font-size: 0.85rem" target="_blank" rel="noopener" href="https://www.zywvvd.com/notes/study/pose-estimation/foundationpose/foundationpose/">https://www.zywvvd.com/notes/study/pose-estimation/foundationpose/foundationpose/</a>
+					</p>
+				</blockquote>
+
+
+              </div>
+            
+            <hr/>
+			
+			<!-- 添加打赏模块 -->
+			<div class="reward-container">
+				
+					<button id="rewardBtn" class="reward-btn">
+						 
+							❤ 打赏
+							
+					</button>
+					<p class="tea">“觉得不错的话，给点打赏吧 ୧(๑•̀⌄•́๑)૭”</p>
+					<div id="rewardImgContainer" class="reward-img-container">
+						<div class="singleImgContainer">
+							<img id="wechatImg" class="reward-img" src="https://uipv4.zywvvd.com:33030/HexoFiles/vvd_pc_upload/wechatpay.png" srcset="/img/loading.gif" lazyload alt="微信二维码">
+							<p class="wechatPay">微信支付</p>
+						</div>
+						<div class="singleImgContainer">
+							<img id="alipayImg" class="reward-img" src="https://uipv4.zywvvd.com:33030/HexoFiles/vvd_pc_upload/alipay.png" srcset="/img/loading.gif" lazyload alt="支付宝二维码">
+							<p class="aliPay">支付宝支付</p>
+						</div>
+					</div>
+				
+			</div>
+			
+            <div>
+              <div class="post-metas my-3">
+  
+    <div class="post-meta mr-3 d-flex align-items-center">
+      <i class="iconfont icon-category"></i>
+      
+
+<span class="category-chains">
+  
+  
+    
+      <span class="category-chain">
+        
+  <a href="/categories/Pose-Estimation/" class="category-chain-item">Pose_Estimation</a>
+  
+  
+    <span>></span>
+    
+  <a href="/categories/Pose-Estimation/Deep-Learning/" class="category-chain-item">Deep_Learning</a>
+  
+  
+
+  
+
+      </span>
+    
+  
+</span>
+
+    </div>
+  
+  
+    <div class="post-meta">
+      <i class="iconfont icon-tags"></i>
+      
+        <a href="/tags/Deep-Learning/" class="print-no-link">#Deep_Learning</a>
+      
+        <a href="/tags/Pose-Estimation/" class="print-no-link">#Pose_Estimation</a>
+      
+    </div>
+  
+</div>
+
+
+              
+  
+
+  <div class="license-box my-3">
+    <div class="license-title">
+      <div>FoundationPose：渲染对比式 6D 位姿估计</div>
+      <div>https://www.zywvvd.com/notes/study/pose-estimation/foundationpose/foundationpose/</div>
+    </div>
+    <div class="license-meta">
+      
+        <div class="license-meta-item">
+          <div>作者</div>
+          <div>Yiwei Zhang</div>
+        </div>
+      
+      
+        <div class="license-meta-item license-meta-date">
+          <div>发布于</div>
+          <div>2026年6月25日</div>
+        </div>
+      
+      
+      
+        <div class="license-meta-item">
+          <div>许可协议</div>
+          <div>
+            
+              
+              
+                <a class="print-no-link" target="_blank" href="https://creativecommons.org/licenses/by/4.0/">
+                  <span class="hint--top hint--rounded" aria-label="BY - 署名">
+                    <i class="iconfont icon-by"></i>
+                  </span>
+                </a>
+              
+            
+          </div>
+        </div>
+      
+    </div>
+    <div class="license-icon iconfont"></div>
+  </div>
+
+
+
+              
+                <div class="post-prevnext my-3">
+                  <article class="post-prev col-6">
+                    
+                    
+                      <a href="/notes/study/SLAM/slam-overview/slam-overview/" title="SLAM 全景：定位与建图的联合估计">
+                        <i class="iconfont icon-arrowleft"></i>
+                        <span class="hidden-mobile">SLAM 全景：定位与建图的联合估计</span>
+                        <span class="visible-mobile">上一篇</span>
+                      </a>
+                    
+                  </article>
+                  <article class="post-next col-6">
+                    
+                    
+                      <a href="/notes/study/SLAM/loop-closure-sim3/loop-closure-sim3/" title="回环检测：候选之后（几何验证、Sim3 与全局校正）">
+                        <span class="hidden-mobile">回环检测：候选之后（几何验证、Sim3 与全局校正）</span>
+                        <span class="visible-mobile">下一篇</span>
+                        <i class="iconfont icon-arrowright"></i>
+                      </a>
+                    
+                  </article>
+                </div>
+              
+            </div>
+
+            
+  
+  
+    <article id="comments" lazyload>
+      
+  <div id="waline"></div>
+  <script type="text/javascript">
+    Fluid.utils.loadComments('#waline', function() {
+      Fluid.utils.createCssLink('https://lib.baomitu.com/waline/2.14.8/waline.min.css')
+      Fluid.utils.createScript('https://lib.baomitu.com/waline/2.14.8/waline.min.js', function() {
+        var options = Object.assign(
+          {"serverURL":"https://uipv4.zywvvd.com:33033/","path":"window.location.pathname","meta":["nick","mail","link"],"requiredMeta":["nick"],"lang":"zh-CN","emoji":["https://cdn.jsdelivr.net/gh/walinejs/emojis/weibo"],"dark":"html[data-user-color-scheme=\"dark\"]","wordLimit":0,"pageSize":10,"reaction":true,"locale":{"placeholder":"山高路远，常来玩吖 ~","reactionTitle":null}},
+          {
+            el: '#waline',
+            path: window.location.pathname
+          }
+        )
+        Waline.init(options);
+        Fluid.utils.waitElementVisible('#waline .vcontent', () => {
+          var imgSelector = '#waline .vcontent img:not(.vemoji)';
+          Fluid.plugins.imageCaption(imgSelector);
+          Fluid.plugins.fancyBox(imgSelector);
+        })
+      });
+    });
+  </script>
+  <noscript>Please enable JavaScript to view the comments</noscript>
+
+
+    </article>
+  
+
+
+          </article>
+        </div>
+      </div>
+    </div>
+
+    <div class="side-col d-none d-lg-block col-lg-2">
+      
+  <aside class="sidebar" style="margin-left: -1rem">
+    <div id="toc">
+  <p class="toc-header">
+    <i class="iconfont icon-list"></i>
+    <span>目录</span>
+  </p>
+  <div class="toc-body" id="toc-body"></div>
+</div>
+
+
+
+  </aside>
+
+
+    </div>
+  </div>
+</div>
+
+
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+  
+  
+
+
+
+
+
+  <script>
+  Fluid.utils.createScript('https://lib.baomitu.com/mermaid/8.14.0/mermaid.min.js', function() {
+    mermaid.initialize({"theme":"default"});
+
+    Fluid.utils.listenDOMLoaded(function() {
+      Fluid.events.registerRefreshCallback(function() {
+        if ('mermaid' in window) {
+          mermaid.init();
+        }
+      });
+    });
+  });
+</script>
+
+
+
+
+
+
+    
+
+    
+      <a id="scroll-top-button" aria-label="TOP" href="#" role="button">
+        <i class="iconfont icon-xiangshangjiantou" aria-hidden="true"></i>
+      </a>
+    
+
+    
+      <div class="modal fade" id="modalSearch" tabindex="-1" role="dialog" aria-labelledby="ModalLabel"
+     aria-hidden="true">
+  <div class="modal-dialog modal-dialog-scrollable modal-lg" role="document">
+    <div class="modal-content">
+      <div class="modal-header text-center">
+        <h4 class="modal-title w-100 font-weight-bold">搜索</h4>
+        <button type="button" id="local-search-close" class="close" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body mx-3">
+        <div class="md-form mb-5">
+          <input type="text" id="local-search-input" class="form-control validate">
+          <label data-error="x" data-success="v" for="local-search-input">关键词</label>
+        </div>
+        <div class="list-group" id="local-search-result"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+    
+
+    
+  </main>
+
+  <footer>
+    <div class="footer-inner">
+  
+    <div class="footer-content">
+       <div class="vvd_footer" style="font-size: 0.85rem;"> <a href="https://hexo.io" target="_blank" rel="nofollow noopener" color="#d7d8d9" data-umami-event="Footer-Hexo"><span class="umami--click--Footer-Hexo">Hexo</span></a> <i class="iconfont icon-love"></i> <a href="https://github.com/fluid-dev/hexo-theme-fluid" target="_blank" rel="nofollow noopener" data-umami-event="Footer-Fluid"><span class="umami--click--Footer-Fluid">Fluid</span></a> <i class="iconfont icon-love"></i> <a href="https://uipv4.zywvvd.com:33039/share/0zx3o21oIpZTZqwC/%E5%8F%88%E8%A7%81%E8%8B%8D%E5%B2%9A" target="_blank" rel="nofollow noopener" data-umami-event="Footer-Umami"><span class="umami--click--Footer-Umami">Umami</span></a> <div style="font-size: 0.85rem;"> <span id="timeDate">载入天数...</span> <span id="times">载入时分秒...</span> <script src="/vvd_js/duration.js"></script> </div> <div style="font-size: 0.85rem;"> <span> 总访问量 <span style="color: #d7d8d9;" id="PVstatic">0</span> 次&nbsp</span> <span> 总访客数 <span style="color: #d7d8d9;" id="UVstatic">0</span> 人&nbsp</span> <span> 当前在线 <span style="color: #d7d8d9;" id="ACTstatic">0</span> 人&nbsp</span> <script src="https://uipv4.zywvvd.com:33037/statistics" defer></script> </div> <div> <span> Copyright © 2020-2025. All Rights Reserved.</span> </div> <div style="font-size: 0.88rem;"> <a target="_blank" rel="noopener" href="https://developer.hitokoto.cn/" id="hitokoto_text"><span style="color: #d7d8d9;"  id="hitokoto"></span></a> <script src="https://uipv4.zywvvd.com:33044/?encode=js&select=%23hitokoto" defer></script> </div> <a href="https://icp.gov.moe/?keyword=20230615" target="_blank">萌ICP备20230615号</a>
+
+
+</div> 
+    </div>
+  
+  
+  
+  
+</div>
+
+  </footer>
+
+  <!-- Scripts -->
+  
+  <script  src="https://lib.baomitu.com/nprogress/0.2.0/nprogress.min.js" ></script>
+  <link  rel="stylesheet" href="https://lib.baomitu.com/nprogress/0.2.0/nprogress.min.css" />
+
+  <script>
+    NProgress.configure({"showSpinner":false,"trickleSpeed":100})
+    NProgress.start()
+    window.addEventListener('load', function() {
+      NProgress.done();
+    })
+  </script>
+
+
+<script  src="https://lib.baomitu.com/jquery/3.6.0/jquery.min.js" ></script>
+<script  src="https://lib.baomitu.com/twitter-bootstrap/4.6.1/js/bootstrap.min.js" ></script>
+<script  src="/js/events.js" ></script>
+<script  src="/js/plugins.js" ></script>
+
+
+
+
+
+  
+    <script  src="/js/img-lazyload.js" ></script>
+  
+
+
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/tocbot/4.18.2/tocbot.min.js', function() {
+    var toc = jQuery('#toc');
+    if (toc.length === 0 || !window.tocbot) { return; }
+    var boardCtn = jQuery('#board-ctn');
+    var boardTop = boardCtn.offset().top;
+
+    window.tocbot.init(Object.assign({
+      tocSelector     : '#toc-body',
+      contentSelector : '.markdown-body',
+      linkClass       : 'tocbot-link',
+      activeLinkClass : 'tocbot-active-link',
+      listClass       : 'tocbot-list',
+      isCollapsedClass: 'tocbot-is-collapsed',
+      collapsibleClass: 'tocbot-is-collapsible',
+      scrollSmooth    : true,
+      includeTitleTags: true,
+      headingsOffset  : -boardTop,
+    }, CONFIG.toc));
+    if (toc.find('.toc-list-item').length > 0) {
+      toc.css('visibility', 'visible');
+    }
+
+    Fluid.events.registerRefreshCallback(function() {
+      if ('tocbot' in window) {
+        tocbot.refresh();
+        var toc = jQuery('#toc');
+        if (toc.length === 0 || !tocbot) {
+          return;
+        }
+        if (toc.find('.toc-list-item').length > 0) {
+          toc.css('visibility', 'visible');
+        }
+      }
+    });
+  });
+</script>
+
+
+  <script src=https://lib.baomitu.com/clipboard.js/2.0.10/clipboard.min.js></script>
+
+  <script>Fluid.plugins.codeWidget();</script>
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/anchor-js/4.3.1/anchor.min.js', function() {
+    window.anchors.options = {
+      placement: CONFIG.anchorjs.placement,
+      visible  : CONFIG.anchorjs.visible
+    };
+    if (CONFIG.anchorjs.icon) {
+      window.anchors.options.icon = CONFIG.anchorjs.icon;
+    }
+    var el = (CONFIG.anchorjs.element || 'h1,h2,h3,h4,h5,h6').split(',');
+    var res = [];
+    for (var item of el) {
+      res.push('.markdown-body > ' + item.trim());
+    }
+    if (CONFIG.anchorjs.placement === 'left') {
+      window.anchors.options.class = 'anchorjs-link-left';
+    }
+    window.anchors.add(res.join(', '));
+
+    Fluid.events.registerRefreshCallback(function() {
+      if ('anchors' in window) {
+        anchors.removeAll();
+        var el = (CONFIG.anchorjs.element || 'h1,h2,h3,h4,h5,h6').split(',');
+        var res = [];
+        for (var item of el) {
+          res.push('.markdown-body > ' + item.trim());
+        }
+        if (CONFIG.anchorjs.placement === 'left') {
+          anchors.options.class = 'anchorjs-link-left';
+        }
+        anchors.add(res.join(', '));
+      }
+    });
+  });
+</script>
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/fancybox/3.5.7/jquery.fancybox.min.js', function() {
+    Fluid.plugins.fancyBox();
+  });
+</script>
+
+
+  <script>Fluid.plugins.imageCaption();</script>
+
+  
+      <script>
+        if (!window.MathJax) {
+          window.MathJax = {
+            tex    : {
+              inlineMath: { '[+]': [['$', '$']] }
+            },
+            options: {
+              renderActions: {
+                insertedScript: [200, () => {
+                  document.querySelectorAll('mjx-container').forEach(node => {
+                    let target = node.parentNode;
+                    if (target.nodeName.toLowerCase() === 'li') {
+                      target.parentNode.classList.add('has-jax');
+                    }
+                  });
+                }, '', false]
+              }
+            }
+          };
+        } else {
+          MathJax.startup.document.state(0);
+          MathJax.texReset();
+          MathJax.typeset();
+          MathJax.typesetPromise();
+        }
+
+        Fluid.events.registerRefreshCallback(function() {
+          if ('MathJax' in window && MathJax.startup.document && typeof MathJax.startup.document.state === 'function') {
+            MathJax.startup.document.state(0);
+            MathJax.texReset();
+            MathJax.typeset();
+            MathJax.typesetPromise();
+          }
+        });
+      </script>
+    
+
+  <script  src="https://lib.baomitu.com/mathjax/3.2.1/es5/tex-mml-chtml.js" ></script>
+
+  <script defer src="/js/leancloud.js" ></script>
+
+  <script  src="/js/local-search.js" ></script>
+
+
+
+
+  
+<script src="//cdn.jsdelivr.net/npm/aplayer/dist/APlayer.min.js"></script>
+<script src="//cdn.jsdelivr.net/gh/metowolf/MetingJS@1.2/dist/Meting.min.js"></script>
+<script src="/js/reward.js"></script>
+
+
+
+<!-- 主题的启动项，将它保持在最底部 -->
+<!-- the boot of the theme, keep it at the bottom -->
+<script  src="/js/boot.js" ></script>
+
+
+  <script type="text/javascript">
+    /*窗口监视*/
+    var originalTitle = document.title;
+    window.onblur = function(){document.title = "明眸如初"};
+    window.onfocus = function(){document.title = originalTitle};
+  </script>
+
+
+  <div id="tooltip-rightmenu" class="tooltip-rightmenu">如需原始右键菜单请按下 <strong>Ctrl+右键</strong></div>
+
+<div id="rightmenu-wrapper" style="">
+  <ul class="list-v rightmenu" id="rightmenu-content">
+	  <li class="navigation menuNavigation-Content">
+		<a class="nav icon-only fix-cursor-default" onclick="history.back()"><i class="iconfont icon-zuojiantou1"></i></a>
+		<a class="nav icon-only fix-cursor-default" onclick="history.forward()"><i class="iconfont icon-youjiantou1"></i></a>
+		<a class="nav icon-only fix-cursor-default" onclick="window.location.reload()"><i class="iconfont icon-shuaxin"></i></a>
+		<a  aria-label="TOP" href="#" role="button"><i class="iconfont icon-xiangshang"></i></a>
+	  </li>
+
+		<hr class="menuLoad-Content" style="display: block;">
+	  <li class="menuLoad-Content" style="display: block;">
+		<a class="vlts-menu fix-cursor-default" target="_self" href="javascript:;" data-toggle="modal" data-target="#modalSearch" aria-label="Search">
+		  <span>
+			  <i class="iconfont icon-sousuo1 rightmenu-icon"></i>
+			  站内搜索
+		  </span>
+		</a>
+	  </li>
+
+	  <li class="menuLoad-Content" style="display: block;">
+		<a class="vlts-menu fix-cursor-default"  href="https://www.zywvvd.com/messagebd/" data-group="link">
+		  <span>
+			  <i class="iconfont icon-yangshi_icon_tongyong_chat rightmenu-icon">  </i>
+			   留言吐槽 
+		   </span>
+		</a>
+	  </li>
+
+
+	  <li class="menuLoad-Content" style="display: block;">
+		<a class="vlts-menu fix-cursor-default" id="help" target="_blank" rel="noopener" href="https://www.foreverblog.cn/go.html" data-group="link">
+		<span>
+			  <i class="iconfont icon-a-BlackHole rightmenu-icon"></i>
+			  虫洞穿梭
+		  </span>
+		</a>
+	  </li>
+
+	<a id="scroll-top-button" aria-label="TOP" href="#" role="button" style="bottom: 20px; right: 52.6364px;">
+        <i class="iconfont icon-xiangshangjiantou" aria-hidden="true"></i>
+      </a>
+
+	<hr class="menuLoad-Content" style="display: block;">
+	
+	  <li class="menuLoad-Content" style="display: block;">
+		<a class="vlts-menu fix-cursor-default" id="destroy-airplane" target="_blank" rel="noopener"  data-group="link">
+		<span>
+			  <i class="iconfont icon-feiji rightmenu-icon"></i>
+			  破坏小飞机
+		  </span>
+		</a>
+	  </li>
+  </ul>
+</div>
+
+<script>
+	var ua = navigator.userAgent;
+	var ipad = ua.match(/(iPad).*OS\s([\d_]+)/),
+		isIphone = !ipad && ua.match(/(iPhone\sOS)\s([\d_]+)/),
+		isAndroid = ua.match(/(Android)\s+([\d.]+)/),
+		isMobile = isIphone || isAndroid;
+
+	if(!isMobile) {
+		// 为按钮添加事件处理器
+		document.getElementById('destroy-airplane').onclick = function() {
+		  console.log('飞机起飞！');
+		  // 定义要执行的JavaScript代码
+		var KICKASSVERSION='2.0';
+		var s = document.createElement('script');
+		s.type='text/javascript';
+		document.body.appendChild(s);
+		s.src='https://uipv4.zywvvd.com:33030/HexoFiles/js/games/airplane/airplane.js';
+		void(0);
+		};
+	}
+</script>
+
+
+
+
+
+<link href="/css/custom.css"type="text/css"rel="stylesheet"/>
+<script src="/vvd_js/right_menu.js" type="text/javascript"></script>
+<link href="/css/right_menu.css"type="text/css"rel="stylesheet"/>
+<script src="/vvd_js/go.js"></script>
+
+
+  <noscript>
+    <div class="noscript-warning">博客在允许 JavaScript 运行的环境下浏览效果更佳</div>
+  </noscript>
+<script src="/live2dw/lib/L2Dwidget.min.js?094cbace49a39548bed64abff5988b05"></script><script>L2Dwidget.init({"pluginRootPath":"live2dw/","pluginJsPath":"lib/","pluginModelPath":"assets/","tagMode":false,"log":false,"model":{"jsonPath":"/live2dw/assets/z16.model.json"},"display":{"position":"left","width":200,"height":400},"mobile":{"show":false},"react":{"opacity":0.9}});</script></body>
+</html>

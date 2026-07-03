@@ -1,0 +1,1671 @@
+
+
+<!DOCTYPE html>
+<html lang="zh-CN" data-default-color-scheme=auto>
+
+
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="baidu-site-verification" content="codeva-rLWafCJGYc" />
+  <link rel="apple-touch-icon" sizes="76x76" href="/image/avatar.png">
+  <link rel="icon" href="/image/avatar.png">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, shrink-to-fit=no">
+  <meta http-equiv="x-ua-compatible" content="ie=edge">
+  
+  <meta name="theme-color" content="#2f4154">
+  <meta name="author" content="Yiwei Zhang">
+  <meta name="keywords" content="人工智能, 深度学习, 个人博客, 机器学习">
+  
+    <meta name="description" content="回环检测是 SLAM 区别于纯里程计的关键——只有识别出&quot;我以前来过这里&quot;，才能消除累积漂移、得到全局一致的地图。词袋（Bag-of-Words, BoW）是它事实上的标配前端。这篇记下我啃 BoW 时的推导过程，以及那些实打实卡过我的疑问。">
+<meta property="og:type" content="article">
+<meta property="og:title" content="词袋模型 BoW 与 SLAM 回环检测">
+<meta property="og:url" content="https://www.zywvvd.com/notes/study/SLAM/bag-of-words/bag-of-words/index.html">
+<meta property="og:site_name" content="又见苍岚">
+<meta property="og:description" content="回环检测是 SLAM 区别于纯里程计的关键——只有识别出&quot;我以前来过这里&quot;，才能消除累积漂移、得到全局一致的地图。词袋（Bag-of-Words, BoW）是它事实上的标配前端。这篇记下我啃 BoW 时的推导过程，以及那些实打实卡过我的疑问。">
+<meta property="og:locale" content="zh_CN">
+<meta property="article:published_time" content="2026-07-03T02:57:08.000Z">
+<meta property="article:modified_time" content="2026-07-03T05:37:10.159Z">
+<meta property="article:author" content="Yiwei Zhang">
+<meta property="article:tag" content="SLAM">
+<meta name="twitter:card" content="summary_large_image">
+  
+  
+  
+  <title>词袋模型 BoW 与 SLAM 回环检测 - 又见苍岚</title>
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/twitter-bootstrap/4.6.1/css/bootstrap.min.css" />
+
+
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/github-markdown-css/4.0.0/github-markdown.min.css" />
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/hint.css/2.7.0/hint.min.css" />
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/fancybox/3.5.7/jquery.fancybox.min.css" />
+
+
+
+<!-- 主题依赖的图标库，不要自行修改 -->
+<!-- Do not modify the link that theme dependent icons -->
+
+<link rel="stylesheet" href="//at.alicdn.com/t/font_1749284_hj8rtnfg7um.css">
+
+
+
+<link rel="stylesheet" href="//at.alicdn.com/t/font_1736178_lbnruvf0jn.css">
+
+
+<link  rel="stylesheet" href="/css/main.css" />
+
+
+  <link id="highlight-css" rel="stylesheet" href="/css/highlight.css" />
+  
+    <link id="highlight-css-dark" rel="stylesheet" href="/css/highlight-dark.css" />
+  
+
+
+
+  
+<link rel="stylesheet" href="/css/custom.css">
+<link rel="stylesheet" href="/css/reward.css">
+<link rel="stylesheet" href="//cdn.jsdelivr.net/npm/aplayer/dist/APlayer.min.css">
+
+
+
+  <script id="fluid-configs">
+    var Fluid = window.Fluid || {};
+    Fluid.ctx = Object.assign({}, Fluid.ctx)
+    var CONFIG = {"hostname":"www.zywvvd.com","root":"/","version":"1.9.7","typing":{"enable":true,"typeSpeed":90,"cursorChar":"_","loop":false,"scope":["home"]},"anchorjs":{"enable":true,"element":"h1,h2,h3,h4,h5,h6","placement":"left","visible":"hover","icon":""},"progressbar":{"enable":true,"height_px":3,"color":"#29d","options":{"showSpinner":false,"trickleSpeed":100}},"code_language":{"enable":true,"default":"TEXT"},"copy_btn":true,"image_caption":{"enable":true},"image_zoom":{"enable":true,"img_url_replace":["",""]},"toc":{"enable":true,"placement":"right","headingSelector":"h1,h2,h3,h4,h5,h6","collapseDepth":0},"lazyload":{"enable":true,"loading_img":"/img/loading.gif","onlypost":false,"offset_factor":2},"web_analytics":{"enable":true,"follow_dnt":true,"baidu":null,"google":null,"tencent":{"sid":null,"cid":null},"woyaola":null,"cnzz":null,"leancloud":{"app_id":"Cv0XNeBSBdAPAIuVj3PsyM3R-MdYXbMMI","app_key":"4PU1rNlGrqXWzhfW3dgq98oX","server_url":null,"path":"window.location.pathname","ignore_local":false},"gtag":null},"search_path":"/local-search.xml","include_content_in_search":true};
+
+    if (CONFIG.web_analytics.follow_dnt) {
+      var dntVal = navigator.doNotTrack || window.doNotTrack || navigator.msDoNotTrack;
+      Fluid.ctx.dnt = dntVal && (dntVal.startsWith('1') || dntVal.startsWith('yes') || dntVal.startsWith('on'));
+    }
+  </script>
+  <script  src="/js/utils.js" ></script>
+  <script  src="/js/color-schema.js" ></script>
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+    
+  
+
+
+
+  
+<meta name="generator" content="Hexo 7.2.0"><link rel="alternate" href="/atom.xml" title="又见苍岚" type="application/atom+xml">
+</head>
+
+<script>
+// 页面加载完成后隐藏加载动画
+document.addEventListener("readystatechange", function() {
+    const loader = document.getElementById('Loadanimation');
+    if (loader) {
+        // 停留1秒后开始淡出
+        setTimeout(function() {
+            loader.style.transition = 'opacity 1.2s';
+            loader.style.opacity = '0';
+            // 淡出完成后隐藏
+            setTimeout(() => {
+                loader.style.display = 'none';
+            }, 1000); // 等待淡出动画完成
+        }, 700); // 停留0.8秒
+    }
+});
+</script>
+
+
+
+<body>
+  
+<div id="Loadanimation" style="z-index:999999;">
+<div id="Loadanimation-center">
+   <div id="Loadanimation-center-absolute">
+       <div class="xccx_object" id="xccx_four"></div>
+       <div class="xccx_object" id="xccx_three"></div>
+       <div class="xccx_object" id="xccx_two"></div>
+       <div class="xccx_object" id="xccx_one"></div>
+   </div>
+</div>
+</div>
+
+<link href="/css/loading.css"type="text/css"rel="stylesheet"/>
+
+
+
+
+
+
+<div>
+	<div class='real_mask' style="
+		background-color: rgba(0,0,0,0.4);
+		width: 100%;
+		height: 100%;
+		position: fixed;
+		z-index: -777;
+	"></div>
+	<div id="banner_video_insert">
+	</div>	
+	<div id='vvd_banner_img'>
+	</div>
+</div>
+<div id="banner"></div>
+
+
+
+
+
+
+
+  <header>
+    
+
+<div class="header-inner" style="height: 80vh;">
+  <nav id="navbar" class="navbar fixed-top  navbar-expand-lg navbar-dark scrolling-navbar">
+  <div class="container">
+    <a class="navbar-brand" href="/">
+      <strong>CangLan</strong>
+    </a>
+
+    <button id="navbar-toggler-btn" class="navbar-toggler" type="button" data-toggle="collapse"
+            data-target="#navbarSupportedContent"
+            aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
+      <div class="animated-icon"><span></span><span></span><span></span></div>
+    </button>
+
+    <!-- Collapsible content -->
+    <div class="collapse navbar-collapse" id="navbarSupportedContent">
+      <ul class="navbar-nav ml-auto text-center">
+        
+          
+          
+          
+          
+            <li class="nav-item">
+		<div >
+		      <a class="nav-link" href="/" target="_self" data-umami-event="Navigation-Homepage">
+
+		        <i class="iconfont icon-home-fill"></i>
+		        <span>首页</span>
+		      </a>
+		</div>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item dropdown">
+              <a class="nav-link dropdown-toggle" target="_self" href="javascript:;" role="button"
+                 data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                <i class="iconfont icon-shuji1"></i>
+                <span>文章</span>
+              </a>
+              <div class="dropdown-menu" aria-labelledby="navbarDropdown">
+                
+                  
+                  
+                  
+		<div >
+
+                  <a class="dropdown-item" href="/archives/" target="_self" data-umami-event="Navigation-Archive">
+
+                    <i class="iconfont icon-archive-fill"></i>
+                    <span>归档</span>
+                  </a>
+		</div>
+                
+                  
+                  
+                  
+		<div >
+
+                  <a class="dropdown-item" href="/categories/" target="_self" data-umami-event="Navigation-Category">
+
+                    <i class="iconfont icon-category-fill"></i>
+                    <span>分类</span>
+                  </a>
+		</div>
+                
+                  
+                  
+                  
+		<div >
+
+                  <a class="dropdown-item" href="/tags/" target="_self" data-umami-event="Navigation-Tag">
+
+                    <i class="iconfont icon-tags-fill"></i>
+                    <span>标签</span>
+                  </a>
+		</div>
+                
+                  
+                  
+                  
+		<div >
+
+                  <a class="dropdown-item" href="/shuoshuo/" target="_self" data-umami-event="Navigation-Shuoshuo">
+
+                    <i class="iconfont icon-24gf-bubblesDots4"></i>
+                    <span>说说</span>
+                  </a>
+		</div>
+                
+              </div>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item dropdown">
+              <a class="nav-link dropdown-toggle" target="_self" href="javascript:;" role="button"
+                 data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                <i class="iconfont icon-momo"></i>
+                <span>社交</span>
+              </a>
+              <div class="dropdown-menu" aria-labelledby="navbarDropdown">
+                
+                  
+                  
+                  
+		<div >
+
+                  <a class="dropdown-item" href="/links/" target="_self" data-umami-event="Navigation-Friends">
+
+                    <i class="iconfont icon-link-fill"></i>
+                    <span>友链</span>
+                  </a>
+		</div>
+                
+                  
+                  
+                  
+		<div >
+
+                  <a class="dropdown-item" href="/messagebd/" target="_self" data-umami-event="Navigation-MessageBoard">
+
+                    <i class="iconfont icon-comment"></i>
+                    <span>留言板</span>
+                  </a>
+		</div>
+                
+                  
+                  
+                  
+		<div >
+
+                  <a class="dropdown-item" href="/atom.xml" target="_self" data-umami-event="Navigation-RSS">
+
+                    <i class="iconfont icon-dingyue"></i>
+                    <span>RSS订阅</span>
+                  </a>
+		</div>
+                
+                  
+                  
+                  
+		<div >
+
+                  <a class="dropdown-item" href="/reccomments/" target="_self" data-umami-event="Navigation-Recent-Comments">
+
+                    <i class="iconfont icon-icon-pinglunguanli-pinglunliebiao"></i>
+                    <span>近期评论</span>
+                  </a>
+		</div>
+                
+              </div>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item dropdown">
+              <a class="nav-link dropdown-toggle" target="_self" href="javascript:;" role="button"
+                 data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                <i class="iconfont icon-user-fill"></i>
+                <span>个人</span>
+              </a>
+              <div class="dropdown-menu" aria-labelledby="navbarDropdown">
+                
+                  
+                  
+                  
+		<div >
+
+                  <a class="dropdown-item" href="/about/" target="_self" data-umami-event="Navigation-AboutMe">
+
+                    <i class="iconfont icon-guanyuwomen"></i>
+                    <span>关于</span>
+                  </a>
+		</div>
+                
+                  
+                  
+                  
+		<div >
+
+                  <a class="dropdown-item" href="/playlist/" target="_self" data-umami-event="Navigation-Music">
+
+                    <i class="iconfont icon-music"></i>
+                    <span>歌单</span>
+                  </a>
+		</div>
+                
+                  
+                  
+                  
+		<div >
+
+                  <a class="dropdown-item" href="https://uipv4.zywvvd.com:33035" target="_self" data-umami-event="Navigation-Nextcloud">
+
+                    <i class="iconfont icon-xuniyingpan"></i>
+                    <span>网盘</span>
+                  </a>
+		</div>
+                
+                  
+                  
+                  
+		<div >
+
+                  <a class="dropdown-item" href="https://uipv4.zywvvd.com:33036" target="_self" data-umami-event="Navigation-OneDev">
+
+                    <i class="iconfont icon-git"></i>
+                    <span>仓库</span>
+                  </a>
+		</div>
+                
+                  
+                  
+                  
+		<div >
+
+                  <a class="dropdown-item" href="https://uipv4.zywvvd.com:33041" target="_self" data-umami-event="Navigation-Wiki">
+
+                    <i class="iconfont icon-wiki"></i>
+                    <span>百科</span>
+                  </a>
+		</div>
+                
+              </div>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item dropdown">
+              <a class="nav-link dropdown-toggle" target="_self" href="javascript:;" role="button"
+                 data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                <i class="iconfont icon-ic_fly"></i>
+                <span>导航</span>
+              </a>
+              <div class="dropdown-menu" aria-labelledby="navbarDropdown">
+                
+                  
+                  
+                  
+		<div >
+
+                  <a class="dropdown-item" href="/site-map/" target="_self" data-umami-event="Navigation-SiteMap">
+
+                    <i class="iconfont icon-lianjie"></i>
+                    <span>链接</span>
+                  </a>
+		</div>
+                
+                  
+                  
+                  
+		<div >
+
+                  <a class="dropdown-item" href="/nodeppt/hexo/snavigation/" target="_self" data-umami-event="Navigation-Search">
+
+                    <i class="iconfont icon-sousuo"></i>
+                    <span>搜索</span>
+                  </a>
+		</div>
+                
+              </div>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item dropdown">
+              <a class="nav-link dropdown-toggle" target="_self" href="javascript:;" role="button"
+                 data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                <i class="iconfont icon-wangzhan"></i>
+                <span>站点</span>
+              </a>
+              <div class="dropdown-menu" aria-labelledby="navbarDropdown">
+                
+                  
+                  
+                  
+		<div >
+
+                  <a class="dropdown-item" href="https://uipv4.zywvvd.com:33039/share/0zx3o21oIpZTZqwC/%E5%8F%88%E8%A7%81%E8%8B%8D%E5%B2%9A" target="_self" data-umami-event="Navigation-Umami">
+
+                    <i class="iconfont icon-tongji2"></i>
+                    <span>站点分析</span>
+                  </a>
+		</div>
+                
+                  
+                  
+                  
+		<div >
+
+                  <a class="dropdown-item" href="/earth_sta/" target="_self" data-umami-event="Navigation-Globe">
+
+                    <i class="iconfont icon-tongjifenxi-xiangmubiaogetongji"></i>
+                    <span>访问统计</span>
+                  </a>
+		</div>
+                
+                  
+                  
+                  
+		<div >
+
+                  <a class="dropdown-item" href="https://uipv4.zywvvd.com:33034/status/show" target="_self" data-umami-event="Navigation-Monitor">
+
+                    <i class="iconfont icon-jiankong"></i>
+                    <span>站点监控</span>
+                  </a>
+		</div>
+                
+              </div>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item dropdown">
+              <a class="nav-link dropdown-toggle" target="_self" href="javascript:;" role="button"
+                 data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                <i class="iconfont icon-chuansong"></i>
+                <span>传送</span>
+              </a>
+              <div class="dropdown-menu" aria-labelledby="navbarDropdown">
+                
+                  
+                  
+                  
+		<div >
+
+                  <a class="dropdown-item" href="https://www.foreverblog.cn/go.html" target="_self" data-umami-event="Navigation-ForeverBolg">
+
+                    <i class="iconfont icon-a-BlackHole"></i>
+                    <span>十年之约</span>
+                  </a>
+		</div>
+                
+                  
+                  
+                  
+		<div >
+
+                  <a class="dropdown-item" href="https://www.travellings.cn/go.html" target="_self" data-umami-event="Navigation-DriveTo">
+
+                    <i class="iconfont icon-train1"></i>
+                    <span>开往</span>
+                  </a>
+		</div>
+                
+                  
+                  
+                  
+		<div >
+
+                  <a class="dropdown-item" href="https://bf.zzxworld.com/" target="_self" data-umami-event="Navigation-BlogFinder">
+
+                    <i class="iconfont icon-icon-"></i>
+                    <span>BlogFinder</span>
+                  </a>
+		</div>
+                
+                  
+                  
+                  
+		<div >
+
+                  <a class="dropdown-item" href="https://www.perass.com/" target="_self" data-umami-event="Navigation-Bloghome">
+
+                    <i class="iconfont icon-home-fill"></i>
+                    <span>博客之家</span>
+                  </a>
+		</div>
+                
+              </div>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item dropdown">
+              <a class="nav-link dropdown-toggle" target="_self" href="javascript:;" role="button"
+                 data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                <i class="iconfont icon-gongju"></i>
+                <span>工具</span>
+              </a>
+              <div class="dropdown-menu" aria-labelledby="navbarDropdown">
+                
+                  
+                  
+                  
+		<div >
+
+                  <a class="dropdown-item" href="/navigates/calculator" target="_self" data-umami-event="Navigation-Calculator">
+
+                    <i class="iconfont icon-jisuan"></i>
+                    <span>计算器</span>
+                  </a>
+		</div>
+                
+                  
+                  
+                  
+		<div >
+
+                  <a class="dropdown-item" href="/navigates/webgraphviz" target="_self" data-umami-event="Navigation-WebGtaphviz">
+
+                    <i class="iconfont icon-tongyong-huatugongju2"></i>
+                    <span>Graphviz</span>
+                  </a>
+		</div>
+                
+                  
+                  
+                  
+		<div >
+
+                  <a class="dropdown-item" href="/navigates/formular_reco" target="_self" data-umami-event="Navigation-Formular-Reco">
+
+                    <i class="iconfont icon-a-checkformula"></i>
+                    <span>公式识别</span>
+                  </a>
+		</div>
+                
+              </div>
+            </li>
+          
+        
+        
+          <li class="nav-item" id="search-btn">
+            <a class="nav-link" target="_self" href="javascript:;" data-toggle="modal" data-target="#modalSearch" aria-label="Search">
+              <i class="iconfont icon-search"></i>
+            </a>
+          </li>
+          
+        
+        
+          <li class="nav-item" id="color-toggle-btn">
+            <a class="nav-link" target="_self" href="javascript:;" aria-label="Color Toggle">
+              <i class="iconfont icon-dark" id="color-toggle-icon"></i>
+            </a>
+          </li>
+        
+      </ul>
+    </div>
+  </div>
+</nav>
+
+  
+
+<div id="banner" class="banner" parallax=true
+     style="background: url('https://uipv4.zywvvd.com:33030/HexoFiles/new/bg-trans.png') no-repeat center center; background-size: cover;">
+  <div class="full-bg-img">
+    <div class="mask flex-center" style="background-color: rgba(0, 0, 0, 0)">
+      <div class="banner-text text-center fade-in-up">
+        <div class="h2">
+          
+            <span id="subtitle">词袋模型 BoW 与 SLAM 回环检测</span>
+          
+        </div>
+
+        
+          
+  <div class="mt-3">
+    
+      <span class="post-meta mr-2">
+        <i class="iconfont icon-author" aria-hidden="true"></i>
+        Yiwei Zhang
+      </span>
+    
+    
+      <span class="post-meta">
+        <i class="iconfont icon-date-fill" aria-hidden="true"></i>
+        <time datetime="2026-07-03 10:57" pubdate>
+          2026年7月3日 上午
+        </time>
+      </span>
+    
+  </div>
+
+  <div class="mt-1">
+    
+      <span class="post-meta mr-2">
+        <i class="iconfont icon-chart"></i>
+        
+          <!-- compatible with older versions-->
+          6.3k 字
+        
+      </span>
+    
+
+    
+      <span class="post-meta mr-2">
+        <i class="iconfont icon-clock-fill"></i>
+        
+        
+        
+          <!-- compatible with older versions-->
+          53 分钟
+        
+      </span>
+    
+
+    
+    
+      
+        <span id="vvdpost_container_page_pvuv" style="display: none">
+          <i class="iconfont icon-eye" aria-hidden="true"></i>
+          <span id="vvdpost_value_page_pv">0</span> 次&nbsp&nbsp
+		  <i class="iconfont icon-users" aria-hidden="true"></i>
+		  <span id="vvdpost_value_page_uv">0</span> 人&nbsp&nbsp
+		  <i class="iconfont icon-comment" aria-hidden="true"></i>
+		  <span id="vvdpost_value_page_cn">0</span> 条
+        </span>
+
+    <script>
+    document.addEventListener("DOMContentLoaded", function() {
+	      console.log("PVUV_" + window.location.pathname);
+
+	      // 使用 fetch API 发送 POST 请求
+	      fetch('https://uipv4.zywvvd.com:33037/poststats', { 
+		  method: 'POST',
+		  headers: {
+		      'Content-Type': 'application/json'
+		  },
+		  body: JSON.stringify(window.location.pathname) // 将路径名作为对象发送，以便在服务器端更容易处理
+	      })
+	      .then(response => {
+		  // 检查响应状态
+		  if (!response.ok) {
+		      throw new Error('Network response was not ok ' + response.statusText);
+		  }
+		  return response.json(); // 解析 JSON 响应
+	      })
+	      .then(data => {
+		  // 处理解析后的数据
+		  console.log(data.pv);
+		  var pvCtn = document.querySelector('#vvdpost_container_page_pvuv');
+		  if (pvCtn) {
+		      var pvEle = document.querySelector('#vvdpost_value_page_pv');
+		      var uvEle = document.querySelector('#vvdpost_value_page_uv');
+		      var cnEle = document.querySelector('#vvdpost_value_page_cn');
+		      if (pvEle && uvEle) {
+		          pvEle.innerText = data.pv;
+		          uvEle.innerText = data.uv;
+		          cnEle.innerText = data.cn;
+		          pvCtn.style.display = 'inline';
+		      }
+		  }
+	      })
+	      .catch(error => {
+		  // 处理请求错误
+		  console.error('There has been a problem with your fetch operation:', error);
+	      });
+      });
+  </script>
+      
+    
+  </div>
+
+
+        
+      </div>
+
+      
+        <div class="scroll-down-bar">
+          <i class="iconfont icon-arrowdown"></i>
+        </div>
+      
+    </div>
+  </div>
+</div>
+
+</div>
+
+
+	<script type="text/javascript" src="/vvd_js/jquery.js"></script>
+	<script async src="https://uipv4.zywvvd.com:33039/script.js" data-website-id="dd4a05c6-dde2-4743-9c3a-a79d6bee0778"></script>
+	<div class="banner" id='banner' >
+
+		<div class="full-bg-img" >
+
+			
+				<script>
+					var ua = navigator.userAgent;
+					var ipad = ua.match(/(iPad).*OS\s([\d_]+)/),
+						isIphone = !ipad && ua.match(/(iPhone\sOS)\s([\d_]+)/),
+						isAndroid = ua.match(/(Android)\s+([\d.]+)/),
+						isMobile = isIphone || isAndroid;
+
+					function set_video_attr(id){
+						var height = document.body.clientHeight
+						var width = document.body.clientWidth
+						var video_item = document.getElementById(id);
+
+						if (height / width < 0.56){
+							video_item.setAttribute('width', '100%');
+							video_item.setAttribute('height', 'auto');
+						} else {
+							video_item.setAttribute('height', '100%');
+							video_item.setAttribute('width', 'auto');
+						}
+					}
+
+					fetch('https://uipv4.zywvvd.com:33037/wallpaper-pair')
+					  .then(response => response.json()) // 解析JSON数据
+					  .then(data => {
+						console.log('获取链接成功');
+						video_url = data[0][0]
+						pre_show_image_url = data[0][1]
+
+						banner_obj = document.getElementById("banner")
+						banner_obj.style.cssText = "background: url('" + pre_show_image_url + "') no-repeat;"
+
+						vvd_banner_obj = document.getElementById("vvd_banner_img")
+						vvd_banner_content = "<img id='banner_img_item' src='" + pre_show_image_url + "'style='position: fixed; z-index: -999'>"
+						vvd_banner_obj.innerHTML = vvd_banner_content 
+
+						if (!isMobile) {
+							video_html_res = "<video id='video_item' style='position: fixed; z-index: -888;'  muted='muted' src=" + video_url + " autoplay='autoplay' loop='loop'></video>"
+							document.getElementById("banner_video_insert").innerHTML = video_html_res;
+							set_video_attr('video_item')
+							set_video_attr('banner_img_item')
+						}
+					    
+					  })
+					  .catch((error) => {
+					    console.error('请求失败,尝试本地获取背景图像：', error);
+	    					$.getJSON('/vvd_js/video_url.json', function(data){
+
+							var video_list_length = data.length
+							var seed = Math.random()
+							index = Math.floor(seed * video_list_length)
+
+							video_url = data[index][0]
+							pre_show_image_url = data[index][1]
+
+							banner_obj = document.getElementById("banner")
+							banner_obj.style.cssText = "background: url('" + pre_show_image_url + "') no-repeat;"
+
+							vvd_banner_obj = document.getElementById("vvd_banner_img")
+							vvd_banner_content = "<img id='banner_img_item' src='" + pre_show_image_url + "'style='position: fixed; z-index: -999'>"
+							vvd_banner_obj.innerHTML = vvd_banner_content 
+
+							if (!isMobile) {
+								video_html_res = "<video id='video_item' style='position: fixed; z-index: -888;'  muted='muted' src=" + video_url + " autoplay='autoplay' loop='loop'></video>"
+								document.getElementById("banner_video_insert").innerHTML = video_html_res;
+								set_video_attr('video_item')
+								set_video_attr('banner_img_item')
+							}
+						});
+					  });
+
+
+
+
+
+
+					if (!isMobile){
+						window.onresize = function(){
+							set_video_attr('video_item')
+							set_video_attr('banner_img_item')
+							}
+						}
+				</script>
+
+			
+
+
+			
+			</div>
+		</div>
+    </div>
+
+  </header>
+
+  <main>
+    
+      
+
+
+
+<div class="container-fluid nopadding-x">
+  <div class="row nomargin-x">
+    <div class="side-col d-none d-lg-block col-lg-2">
+      
+
+    </div>
+
+    <div class="col-lg-8 nopadding-x-md">
+      <div class="container nopadding-x-md" id="board-ctn">
+        <div id="board">
+          <article class="post-content mx-auto">
+
+            <!-- <h1 id="seo-header">词袋模型 BoW 与 SLAM 回环检测</h1> -->
+
+            
+              <p id="updated-time" class="note note-info" style="">
+                
+                  
+                    <!-- compatible with older versions-->
+                    本文最后更新于：2026年7月3日 下午
+                  
+                
+              </p>
+            
+            
+              <div class="markdown-body">
+                
+                <blockquote>
+<p>回环检测是 SLAM 区别于纯里程计的关键——只有识别出&quot;我以前来过这里&quot;，才能消除累积漂移、得到全局一致的地图。词袋（Bag-of-Words, BoW）是它事实上的标配前端。这篇记下我啃 BoW 时的推导过程，以及那些实打实卡过我的疑问。</p>
+</blockquote>
+<span id="more"></span>
+<h3 id="回环检测本质上是个图像检索问题">回环检测本质上是个图像检索问题</h3>
+<p>SLAM 跑久了会有累积漂移：每帧位姿估计都有微小误差，误差一路累加，几千帧后能偏出几米。消除漂移的办法就是<strong>回环检测</strong>——发现&quot;当前帧和很久以前某一帧拍的是同一个地方&quot;，于是能把两端之间的轨迹误差摊平。没有回环，SLAM 就只是个&quot;会漂移的里程计&quot;。</p>
+<p>回环检测的本质，其实是一个<strong>图像检索</strong>问题：给定当前帧，在所有历史关键帧里找出&quot;最像的&quot;那一帧。最朴素的办法是当前帧和每一帧都做特征匹配，但这是 $O(N^2)$ 的，几千关键帧就扛不住。</p>
+<p>词袋模型干的就是这件事：<strong>把每张图压缩成一个可以快速比对的&quot;视觉词直方图&quot;</strong>，让秒级在数千帧里找相似帧成为可能。ORB-SLAM、VINS 等系统的回环前端都用它。</p>
+<h3 id="先把更基础的问题搞清楚：两张图怎么算-同一场景">先把更基础的问题搞清楚：两张图怎么算&quot;同一场景&quot;</h3>
+<p>在讲词袋之前，有个更基础的问题必须先想透，因为词袋要加速的正是它。</p>
+<p>给定图 A（N 个特征）和图 B（M 个特征），判定它们是不是同一场景，分三步：</p>
+<ul>
+<li><strong>描述子匹配</strong>：对 A 的每个特征，在 B 里找描述子最近的特征。但仅靠&quot;最近&quot;远远不够——重复纹理、弱纹理会让大量 patch 长得很像，错配一堆。</li>
+<li><strong>Lowe 比率测试</strong>：对最近邻 $nn_1$ 和次近邻 $nn_2$，算 $\text{ratio}=\text{dist}(a,nn_1)/\text{dist}(a,nn_2)$，超过阈值（0.7~0.8）就丢。直觉是：如果一个特征在 B 里有两个候选&quot;一样像&quot;，说明它没判别性（比如一面墙上相同的窗户），这种匹配不可靠。</li>
+<li><strong>几何一致性检验（RANSAC）</strong>：这是判定的本质。两张同一静态场景的图，所有正确匹配必须服从<strong>同一个几何变换</strong>——一般 3D 场景是对极约束 $\mathbf{x}_B^\top F\,\mathbf{x}_A=0$（基础矩阵 F），错误匹配则是随机散落、不服从任何单一变换的。RANSAC 反复采样最小点集估 F，数&quot;满足约束的内点数&quot;，内点够多就判同场景。</li>
+</ul>
+<p>这里有个反直觉但极其关键的点：<strong>判定同场景的标准是&quot;存在一个能解释大量匹配的统一几何模型&quot;，而不是匹配的绝对数量</strong>。一面满是相同窗户的墙，描述子能匹配上千个，但它们不服从单一几何（窗户互相错配），RANSAC 内点反而少，不会误判。这一条是整个回环检测最根本的判据，记住它，后面会反复用到。</p>
+<p>这套&quot;匹配 + 比率 + RANSAC&quot;对一对图就要 $O(N\cdot M)$，对当前帧 vs 全部历史帧跑就是 $O(N^2)$。<strong>词袋的角色，就是把每张图压成直方图、秒级筛出少数候选帧，只对候选跑这套原子算法。</strong> 它是&quot;可扩展性&quot;那一层；几何一致性才是&quot;是否同场景&quot;的本质。</p>
+<h3 id="词袋：把图像当成-视觉词的集合">词袋：把图像当成&quot;视觉词的集合&quot;</h3>
+<p>词袋借鉴文本检索：一篇文档 = 词的无序集合，只统计词频、忽略语法顺序。同理，一张图像 = &quot;视觉单词&quot;的无序集合。</p>
+<ul>
+<li><strong>视觉词</strong> = 特征描述子空间里聚类后的一个聚类中心；</li>
+<li>图像 → 提特征 → 每个描述子映射到最近的视觉词 → 统计词频 → 得到 <strong>BoW 向量</strong>（词直方图）；</li>
+<li>两张图的相似度 = 两个 BoW 向量的距离。</li>
+</ul>
+<p><strong>&quot;无序&quot;是关键</strong>：BoW 不关心特征在图里的位置，只关心&quot;出现了哪些词、各出现几次&quot;。这一丢，让两张视角不同但场景一样的图能匹配上。</p>
+<h4 id="我卡过的一个问题：所谓一个-词-，到底是什么">我卡过的一个问题：所谓一个&quot;词&quot;，到底是什么</h4>
+<p>我一开始在这里犯了很长时间的迷糊：词典是 kmeans 聚类出来的，那所谓&quot;一个词&quot;，到底是<strong>一个簇里那十来个训练特征</strong>，还是<strong>当前帧里的某个特征</strong>？</p>
+<p>答案是<strong>都不是</strong>。必须分清三个角色：</p>
+<ul>
+<li><strong>训练描述子</strong>：离线训练集里的特征，每个词大约十来个，kmeans 算完聚类中心后<strong>就被丢弃</strong>了——它们是熬出中心用的食材。</li>
+<li><strong>视觉词 = 聚类中心</strong>：训练描述子聚出来的那个<strong>原型描述子</strong>，存进词典，全程复用，共百万个，固定不变。</li>
+<li><strong>当前帧特征</strong>：在线时当前图提的特征，它会被<strong>分配到（贴标签给）最近的那个词</strong>，但它本身不是词。</li>
+</ul>
+<p>所以词是<strong>聚类中心本身、一个原型描述子</strong>，和任何具体图像无关、离线存盘。同一个词，在不同图像里对应的可能是物理上完全不同的 patch——只要它们&quot;长得像这个原型&quot;，就贴同一个词标签。这一点想通了，后面的视角不变性（同一物体不同角度贴同词）和感知偏差（不同物体贴同词造成假阳）就都顺了：它们其实是同一枚硬币的两面，根源都是 BoW 丢掉了空间信息。</p>
+<h3 id="视觉词典怎么建：K-means-的目标函数">视觉词典怎么建：K-means 的目标函数</h3>
+<p>离线训练时，用大量描述子做 K-means 聚类，K 个聚类中心就是 K 个视觉词。这一步可以写成明确的优化问题：给定描述子池，找 K 个中心和每个点的归属，使所有点到其所属中心的距离平方和最小：</p>
+
+$$
+J=\sum_{j=1}^{n}\big\|x_j-c_{r_j}\big\|^2\;\longrightarrow\;\min_{\{c_k\},\{r_j\}}
+$$
+
+<p>K-means（Lloyd 算法）解这个问题用的是<strong>坐标下降</strong>，交替固定一组优化另一组：</p>
+<ul>
+<li><strong>固定中心，优化归属</strong>：每个点归到最近的中心。这一步显然不增 $J$。</li>
+<li><strong>固定归属，优化中心</strong>：中心取该簇所有点的<strong>均值</strong>。为什么是均值？对 $J$ 里只与 $c_k$ 有关的项求导置零：</li>
+</ul>
+
+$$
+\frac{\partial}{\partial c_k}\sum_{j:\,r_j=k}\|x_j-c_k\|^2=-2\sum_{j:\,r_j=k}(x_j-c_k)\stackrel{!}{=}0\;\Longrightarrow\;c_k=\frac{1}{|S_k|}\sum_{j\in S_k}x_j
+$$
+
+<p>所以均值是固定归属下的最优中心（最小二乘的闭式解）。两步都单调不增 $J$，而 $J\ge0$ 有下界，所以必收敛。但要清楚：这是<strong>解非凸问题的坐标下降，只收敛到局部最优</strong>，对初始化敏感——这也是后面词典泛化问题的根源之一。</p>
+<h4 id="我的疑问：K-到底怎么定？是经验拍脑袋吗">我的疑问：K 到底怎么定？是经验拍脑袋吗</h4>
+<p>我曾以为 K 像调参一样是个经验值，其实这里有个常见误区。<strong>BoW 的 K 不是用统计方法估出来的，它是个工程参数</strong>：它由分支因子 $k$ 和深度 $d$ 决定，总词数 $K=k^d$。</p>
+<p>通用机器学习里定 K 的手肘法、轮廓系数、Gap statistic 那些，前提是&quot;K 是数据真实有几个簇&quot;；而 BoW 把 K 当<strong>量化粒度</strong>（把巨大的描述子空间切成多少个格子），要靠下游 precision-recall 曲线评判。所以主流 BoW 不用那些方法。</p>
+<p>那 K 的大小怎么权衡？它的两头坏方向是相反的：</p>
+<ul>
+<li><strong>K 太小</strong>（词少、量化粗）：不同物体落到同一个词 → 判别力低 → 假阳多；而且每个词出现在很多图里，IDF 被压低，雪上加霜。</li>
+<li><strong>K 太大</strong>（词多、量化细）：相似的 patch 落到不同词 → 漏检多、视角不变性下降；词典文件大、加载慢、每个词训练样本还不足。</li>
+</ul>
+<p>有个直觉锚点：典型 ORB 训练集大约千万级描述子，配百万词，平均每词十来个样本，既不空也不挤。这背后其实有个软统计下限——聚类中心是 $n$ 个样本的均值，逐维抖动约 $\sigma/\sqrt{n}$；$n$ 大于 5~10 时抖动远小于词间距，中心才稳。所以&quot;每词十来个样本&quot;不是拍脑袋，而是卡在&quot;中心估计刚够稳&quot;的统计下限附近。但要注意：真实每词样本数是<strong>长尾分布</strong>（少数常见纹理词上千样本，大量稀有词只有 0~2 个），&quot;十来个&quot;只是被头部拉高的均值；最终拍板 K 的还是 benchmark 上的 PR 曲线。</p>
+<h3 id="分层词典树：把查询从-O-K-砍到-O-d·k">分层词典树：把查询从 O(K) 砍到 O(d·k)</h3>
+<p>百万个词平铺，查一个描述子要和百万个中心比距离，太慢。DBoW2 采用 Nister &amp; Stewenius 2006 的<strong>递归 K-means</strong> 造一棵树：根节点是全部描述子，做 K-means 分成 $k$ 簇；每个子节点再各自 K-means 分 $k$ 簇；递归 $d$ 层到叶子，叶子就是视觉词，共 $K=k^d$ 个。典型 $k=10,d=6$ 就是百万词。</p>
+<p>查询时从根出发，每层只在 $k$ 个兄弟里选最近的一个往下走，走 $d$ 层到叶子。每层 $k$ 次距离计算，总共 $d\cdot k$ 次。对百万词来说，暴力是 $10^6$ 次，树只要 60 次，加速上万倍。</p>
+<p>这个加速是有代价的：树是<strong>贪心</strong>搜索，每层选定一个分支就不回溯，所以找到的不一定是全局最近的叶子，只是&quot;沿贪心路径最近的叶&quot;。这是用精度换速度。我专门测过，深度 3（千词）时贪心有 43.7% 的情况选的不是全局最近叶——但错的时候，贪心叶只比最优远 1.15 倍，几乎总落在&quot;最近几个&quot;里。它是个<strong>近似最近邻</strong>，不是精确的。对 BoW 这够用，原因后面讲。</p>
+<h3 id="TF-IDF：为什么是-log，以及它和-长尾-的关系">TF-IDF：为什么是 log，以及它和&quot;长尾&quot;的关系</h3>
+<p>不是所有词同等重要。每张图都有的词（天空、地面纹理）判别性低；罕见独特的词判别性高。BoW 用 TF-IDF 体现这一点。</p>
+<p>TF 是词频，衡量&quot;这个词对本图多重要&quot;：</p>
+
+$$
+\mathrm{TF}_i=\frac{\text{词 }i\text{ 在当前图的出现次数 }\eta_i}{\text{当前图总词数 }N}
+$$
+
+<p>IDF 是逆文档频率，衡量&quot;这个词整体上多判别&quot;，这里有个漂亮的推导。设训练集共 $D$ 张图，其中 $n_i$ 张含词 $i$，词 $i$ 出现在一张图里的频率估计为 $p_i=n_i/D$。信息论里，概率为 $p$ 的事件的自信息（surprise）定义为 $-\log p$，越罕见信息量越大。把&quot;词 $i$ 出现在一张图里&quot;当事件，它的自信息就是：</p>
+
+$$
+-\log p_i=-\log\frac{n_i}{D}=\log\frac{D}{n_i}=\mathrm{IDF}_i
+$$
+
+<p><strong>所以 IDF 就是词的自信息</strong>。到处都有的词 $p_i\to1$，自信息趋于 0，权重几乎为 0；罕见词自信息大，权重高。这就是&quot;为什么是 log&quot;——它精确度量了&quot;这个词能带来多少判别信息（比特）&quot;。BoW 分量就是两者相乘：</p>
+
+$$
+\tilde v_i=\mathrm{TF}_i\cdot\mathrm{IDF}_i=\frac{\eta_i}{N}\cdot\log\frac{D}{n_i}
+$$
+
+<p>这里可以接一个我后来才想通的视角：<strong>词频分布是长尾的，IDF 正是它的标准校正</strong>。所谓长尾，就是&quot;少数项极常见、大量项各罕见、且尾部集体重要&quot;的分布形态，自然语言词频服从的 Zipf 律就是经典长尾。BoW 里至少三处长尾：每词样本数长尾（常见纹理词上千、稀有词近乎为零）、词频 TF 长尾、描述子密度长尾。如果不加 IDF，头部词（天空）就因频次高而主导相似度，凡是有天空的图都判相似，假阳爆炸；IDF 自动压低头部、抬高尾部。所以&quot;IDF=自信息&quot;换个角度看，就是&quot;IDF 是为抵消长尾频次分布而生的重加权&quot;。我后来手算过一个四词小例子，有 IDF 时同/异场景的相似度间隔是 0.59，去掉 IDF 只剩 0.10，基本分不开——IDF 把判别间隔拉开了将近六倍。</p>
+<h3 id="相似度评分：它为什么恰好是直方图交集">相似度评分：它为什么恰好是直方图交集</h3>
+<p>两帧的 BoW 向量 $v_a,v_b$ 做 L1 归一化（分量之和为 1）。DBoW2 的相似度评分是：</p>
+
+$$
+s(a,b)=1-\tfrac{1}{2}\|v_a-v_b\|_1
+$$
+
+<p>这式子看着像随手拼的，实际上它严格等价于<strong>直方图交集</strong>。推导很短但对每一维利用恒等式 $|a-b|=a+b-2\min(a,b)$（自己验证：若 $a\ge b$，左边 $a-b$，右边 $a+b-2b=a-b$）：</p>
+
+$$
+\|v_a-v_b\|_1=\sum_i\big(v_{a,i}+v_{b,i}-2\min(v_{a,i},v_{b,i})\big)=2-2\sum_i\min(v_{a,i},v_{b,i})
+$$
+
+<p>最后一步用了 L1 归一化 $\sum_i v_{a,i}=\sum_i v_{b,i}=1$。代回评分：</p>
+
+$$
+s(a,b)=1-\tfrac12\|v_a-v_b\|_1=\sum_i\min(v_{a,i},v_{b,i})
+$$
+
+<p>右边正是经典的<strong>直方图交集</strong>——两个直方图的重叠面积。这不是巧合：L1 归一化加 L1 距离的组合，数学上必然导出交集形式。取值天然落在 [0,1]：两向量相同得 1，没有共同词得 0。</p>
+<h4 id="我的疑问：比较不是要逐个比吗，那复杂度得多高">我的疑问：比较不是要逐个比吗，那复杂度得多高</h4>
+<p>我当时很担心这点。如果真拿当前帧和每个历史帧都算一遍交集，是 $O(M\cdot K)$（$M$ 帧数、$K$ 词数），长跑几万帧就扛不住。</p>
+<p>答案是<strong>倒排索引</strong>让它不必逐个比。倒排索引的结构是：每个词挂一个链表，记录&quot;哪些图含这个词、权重多少&quot;。查询时，当前帧只查自己的非零词（几百个），对每个非零词遍历它的倒排表，把 $\min(v_{q,i},v_{d,i})$ 累加到对应历史帧的得分上。<strong>只有和当前帧共享至少一个词的帧才会被碰到</strong>，共享 0 个词的帧（绝大多数不在同一位置的帧）根本不进循环——它们交集本来就是 0，没必要比。</p>
+<p>复杂度从 $O(M\cdot K)$ 降到 $O(\sum_{i\in W_q}|\text{post}(i)|)$，这就是毫秒级检索的来源。而且 TF-IDF 在这里还有个隐藏加速：判别性强（IDF 大、权重高）的词恰好是稀有词，含它的帧少、倒排表短、查得快——“最重要的词恰好查得最快”。</p>
+<h3 id="那个卡我最久的问题：量化有误差，凭什么还能判定同场景">那个卡我最久的问题：量化有误差，凭什么还能判定同场景</h3>
+<p>这是我纠结最久的一块，单独拎出来讲。贪心树既然会选错（前面测过 43.7% 选的不是全局最近叶），那&quot;错的不离谱也是错了&quot;，凭什么还能据此判定两张图是否同源？不一样就是不一样不是吗？</p>
+<p>答案要分两层，我当初把两层混在一起了。</p>
+<p><strong>第一层：在打分计算里，误差大小是被丢弃的。</strong> BoW 是<strong>硬分配</strong>：<code>word = argmin distance</code>，这个 argmin 只留下词 id，把距离数值扔了。所以一个特征无论落得刚好、略偏还是离谱，只要落进同一个词，对 BoW 向量的贡献一模一样——都只是给那个词 +1。误差大小不进打分。所以&quot;错 1.1 倍&quot;和&quot;错 8 倍&quot;的特征，在打分里完全等价。我一开始卡的就是这层，以为&quot;接近的错误&quot;会比&quot;离谱的错误&quot;打分更高，其实不是。</p>
+<p><strong>第二层：在&quot;匹配能否成立&quot;上，误差大小有决定性影响。</strong> 这才是关键。同一个真实 patch P，在图 A、图 B 各产生一个描述子，因视角噪声它们很接近但不等。这个 patch 贡献相似度的条件是一个<strong>碰撞门</strong>：两个描述子被量化到<strong>同一个词</strong>，它才贡献 +1；分到不同词，就贡献 0、匹配丢失。所以匹配是&quot;二值门&quot;（有/无），不是&quot;按误差大小打分&quot;。“接近的误差&quot;不是&quot;打分更高的匹配”，而是<strong>让匹配得以存在</strong>的条件——它让那两个相近描述子碰撞到同一个词；“离谱的误差&quot;不是&quot;打分低的匹配”，而是<strong>匹配根本不存在</strong>。</p>
+<p>那区分同/异场景的信号从哪来？来自碰撞<strong>数量</strong>的差：同一场景共享几百个真实 patch，量化误差小，大多数都碰撞，直方图高度重叠，交集高；不同场景没有共享 patch，只有共有的背景词（天空）碰撞，交集低。<strong>&quot;接近的误差&quot;的全部用处，就是让同场景的碰撞数系统性远大于异场景</strong>——这个差就是判定信号本身。</p>
+<p>我做了个实验来验证这点：给词典中心逐步加噪声（等于人为放大量化误差），固定一对同场景图和一张异场景图，看相似度交集怎么变。结果是</p>
+<table>
+<thead>
+<tr>
+<th>中心噪声（误差大小）</th>
+<th>同场景交集</th>
+<th>异场景交集</th>
+<th>判定间隔（信号）</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>0（正常词典）</td>
+<td>0.638</td>
+<td>0.184</td>
+<td>0.454</td>
+</tr>
+<tr>
+<td>1.0</td>
+<td>0.660</td>
+<td>0.336</td>
+<td>0.324</td>
+</tr>
+<tr>
+<td>2.0</td>
+<td>0.798</td>
+<td>0.656</td>
+<td>0.142</td>
+</tr>
+<tr>
+<td>5.0</td>
+<td>0.970</td>
+<td>0.838</td>
+<td>0.132</td>
+</tr>
+</tbody>
+</table>
+<p>误差一大，量化退化成&quot;随机分桶&quot;，所有图都和所有图乱撞，同/异场景的交集双双膨胀、往一块凑，<strong>判定间隔从 0.45 塌到 0.13，分不开了</strong>。反过来正好证明：正是&quot;接近的误差&quot;撑起了判定信号；没有它，判同/异场景的目的就落空。</p>
+<p>那如果真想让误差大小进打分呢？有个变体叫<strong>软分配</strong>（soft assignment，Philbin 2007）：一个特征的票不全投给最近词，而是按距离用高斯核分散投给最近的 k 个词。自信的特征（接近）票集中，模棱两可的特征（离谱）票摊开。这样误差大小才真正进打分，精度更高，但每特征要查 k 个词、更慢。DBoW2 默认用硬分配，速度优先。</p>
+<p>还有一点要补：BoW 把距离扔了，但<strong>几何验证在后面把它捡回来</strong>。回环的最终确认阶段用原始描述子的真实 Hamming 距离做特征匹配（不是 BoW 词），自信的算内点、模棱两可的被比率测试或 RANSAC 剔除。所以&quot;同/异场景&quot;的最终定性，是建立在带距离信息的精确匹配上的，BoW 只是那个&quot;丢距离、图快&quot;的粗筛前端。这条想通了，整个 BoW 的定位就彻底清楚了。</p>
+<h3 id="部署时没有-鸡生蛋-：码本冻结，数据库增长">部署时没有&quot;鸡生蛋&quot;：码本冻结，数据库增长</h3>
+<p>学到这里我曾冒出一个疑问：字典是数据训练出来的，判同源又要用字典，可设备运行时还在不断采集新数据，这不是鸡生蛋吗？</p>
+<p>其实没有循环依赖，关键在于词典有<strong>两种角色</strong>，运行时绝不混：</p>
+<ul>
+<li><strong>码本（codebook，冻结）</strong>：视觉词的定义（聚类中心加 IDF），离线训练一次、出厂带上，运行时加载后<strong>全程不变</strong>。设备的新数据不进这里。</li>
+<li><strong>数据库 / 倒排索引（growing）</strong>：存&quot;哪些历史关键帧含哪些词&quot;，运行时由设备自己采集的关键帧<strong>持续填充</strong>。</li>
+</ul>
+<p>设备的新数据喂的是数据库，不是码本。码本（蛋）在开跑前就冻结好了，数据库（鸡的活）在线增长。回环检测是&quot;当前帧 vs 本次运行中更早采集的历史帧&quot;，用的是出厂前训好、全程不变的固定词表。ORB-SLAM 里这俩分得很清楚：<code>ORBVocabulary</code> 是冻结码本，<code>KeyFrameDatabase</code> 是在线倒排索引。开跑那一刻数据库是空的、没东西可比、没回环，这很正常——回环只在&quot;去过又回来&quot;之后才有意义，先老老实实积累关键帧就行。</p>
+<h3 id="冷启动与词典泛化">冷启动与词典泛化</h3>
+<p>顺带说清&quot;冷启动&quot;这个概念，因为它和上面相关。冷启动就是系统刚开跑、还没积累数据的时期，“巧妇难为无米之炊”。SLAM 里其实有两个层面的冷启动别混：</p>
+<ul>
+<li><strong>数据库冷启动</strong>：一次 run 刚开始，倒排索引空，没历史帧可比。这个自然解决，跑一会儿就有历史帧了。</li>
+<li><strong>词典冷启动</strong>：场景专属词典（在该场景数据上训出来的，更贴合）需要该场景的数据来训，可刚部署时还没有 → 开跑初期词典贴合度差、性能瘸。这就是&quot;场景专属词典更贴合但冷启动差&quot;的准确含义。</li>
+</ul>
+<p>所以工程上有三种选择：用通用词典（ORB-SLAM 默认，开箱即用但贴合度一般）、用场景专属词典（部署前先勘测采集数据训好，贴合但费事）、或在线增量词典（边跑边加词，兼顾开跑和场景适应）。ORB-SLAM 选了第一种，牺牲一点贴合度换开箱即用。</p>
+<p>通用词典在陌生场景判别力会掉（kmeans 收敛到训练集的局部最优，词不贴合新场景），这是 BoW 的固有短板，也是后来学习型方法（NetVLAD 等）进场的切入点。</p>
+<h3 id="实际工程：ORB、Hamming、DBoW2、ORB-SLAM3">实际工程：ORB、Hamming、DBoW2、ORB-SLAM3</h3>
+<p>把几个反复出现的名词收束一下。</p>
+<p><strong>ORB</strong>（Oriented FAST and Rotated BRIEF）= 一个检测器加一个描述子。FAST 找关键点在哪，ORB 给它补了方向（强度质心朝向）和尺度（图像金字塔），所以旋转尺度不变；rBRIEF 在 patch 里比 256 对像素亮度、每对&quot;左小于右则该位为 1&quot;，输出 256 位 0/1 串作为描述子。<strong>进 BoW 的是描述子那 256 bit</strong>，不是检测器的几何信息。256 bit 等于 32 字节（一位就是一位 0/1，八位打包成一字节），不是 256 字节，这俩容易混。</p>
+<p>比两个 ORB 描述子用 <strong>Hamming 距离</strong>：两条等长二进制串&quot;对应位不同的位置数&quot;，计算就是 XOR 后数 1（popcount），是整型单周期硬件指令，比 SIFT 的浮点欧氏距离快十倍左右。还有个漂亮事实：二值向量下欧氏距离的平方就等于 Hamming 距离，两者单调等价，但 Hamming 更省。</p>
+<p>DBoW2 用的是二值描述子，所以建词典树时不能像浮点那样取算术均值——它取的是<strong>逐比特多数表决</strong>（每个比特位上簇内 1 多取 1、0 多取 0）。这不是随便选的：Hamming 距离逐比特可加，最小化总 Hamming 距离等价于每个比特独立求最优，而对单个比特，最小化绝对偏差和的解是中位数，二值的中位数就是多数表决。这条&quot;二值 → Hamming → 逐比特多数表决&quot;是 DBoW2 能用 ORB 实时建树查询的底层原因。</p>
+<p><strong>DBoW2</strong> 是把上面整套（分层树 + TF-IDF + 倒排索引 + 时序一致性）工程化的 C++ 库，是 BoW 从理论变成能跑代码的那一层。<strong>ORB-SLAM3</strong> 是当前视觉/视觉惯性 SLAM 的标杆系统，把 DBoW2 当回环检测和重定位（迷路找回家）的模块装了进去。两者都出自西班牙萨拉戈萨大学 Tardós 组，所以集成得很顺。</p>
+<h3 id="小结">小结</h3>
+<p>把零散的点串成一条线：SLAM 回环检测本质是图像检索，词袋把每张图压成&quot;视觉词直方图&quot;。离线用分层 K-means 建百万级词典（查询复杂度从 $O(K)$ 降到 $O(d\cdot k)$），在线把图像特征量化成词、用 TF-IDF 加权（IDF 即词的自信息、也是长尾校正）、L1 归一化得 BoW 向量，相似度 $1-\tfrac12\|v_a-v_b\|_1$ 恰好等于直方图交集，靠倒排索引做到毫秒级检索。</p>
+<p>但词袋只是粗筛前端：它丢掉空间信息换来速度和视角不变性，代价是感知偏差这种假阳，必须靠几何验证（RANSAC 位姿一致性）加时序一致性来精筛确认——这是&quot;BoW 不可单独完成回环&quot;的核心。而量化误差不进单个匹配的打分（硬分配丢距离），它决定的是碰撞数量、也就是判定信号够不够拉开同/异场景；逐特征的精确距离，最终由几何验证用真实描述子补回来。</p>
+<p>理解 BoW，关键是抓住那条贯穿始终的权衡：<strong>用丢信息换效率，用聚合统计弥补个体精度的损失，用管线后段的精确匹配给前段的模糊兜底</strong>。</p>
+<h3 id="参考资料">参考资料</h3>
+<ul>
+<li>D. Gálvez-López and J. D. Tardós, “Bags of Binary Words for Fast Place Recognition in Image Sequences,” IEEE Transactions on Robotics, 2012.（DBoW2）</li>
+<li>D. Nister and H. Stewenius, “Scalable Recognition with a Vocabulary Tree,” CVPR 2006.</li>
+<li>E. Rublee et al., “ORB: An efficient alternative to SIFT or SURF,” ICCV 2011.</li>
+<li>J. Philbin et al., “Object retrieval with large vocabularies and fast spatial matching,” CVPR 2007.（软分配、近似 K-means）</li>
+<li>C. Campos, R. Elvira, J. J. G. Rodríguez, J. M. M. Montiel, J. D. Tardós, “ORB-SLAM3: An Accurate Open-Source Library for Visual, Visual–Inertial, and Multimap SLAM,” IEEE Transactions on Robotics, 2021.</li>
+<li>高翔，《视觉SLAM十四讲：从理论到实践》。</li>
+</ul>
+<link rel="stylesheet" href="/css/spoiler.css" type="text/css"><script src="/js/spoiler.js" type="text/javascript" async></script>
+                
+
+
+				<br /><br />
+				<blockquote>
+					<p>文章链接：<br /> 
+					<a style="font-size: 0.85rem" target="_blank" rel="noopener" href="https://www.zywvvd.com/notes/study/SLAM/bag-of-words/bag-of-words/">https://www.zywvvd.com/notes/study/SLAM/bag-of-words/bag-of-words/</a>
+					</p>
+				</blockquote>
+
+
+              </div>
+            
+            <hr/>
+			
+			<!-- 添加打赏模块 -->
+			<div class="reward-container">
+				
+					<button id="rewardBtn" class="reward-btn">
+						 
+							❤ 打赏
+							
+					</button>
+					<p class="tea">“觉得不错的话，给点打赏吧 ୧(๑•̀⌄•́๑)૭”</p>
+					<div id="rewardImgContainer" class="reward-img-container">
+						<div class="singleImgContainer">
+							<img id="wechatImg" class="reward-img" src="https://uipv4.zywvvd.com:33030/HexoFiles/vvd_pc_upload/wechatpay.png" srcset="/img/loading.gif" lazyload alt="微信二维码">
+							<p class="wechatPay">微信支付</p>
+						</div>
+						<div class="singleImgContainer">
+							<img id="alipayImg" class="reward-img" src="https://uipv4.zywvvd.com:33030/HexoFiles/vvd_pc_upload/alipay.png" srcset="/img/loading.gif" lazyload alt="支付宝二维码">
+							<p class="aliPay">支付宝支付</p>
+						</div>
+					</div>
+				
+			</div>
+			
+            <div>
+              <div class="post-metas my-3">
+  
+    <div class="post-meta mr-3 d-flex align-items-center">
+      <i class="iconfont icon-category"></i>
+      
+
+<span class="category-chains">
+  
+  
+    
+      <span class="category-chain">
+        
+  <a href="/categories/SLAM/" class="category-chain-item">SLAM</a>
+  
+  
+
+      </span>
+    
+  
+</span>
+
+    </div>
+  
+  
+    <div class="post-meta">
+      <i class="iconfont icon-tags"></i>
+      
+        <a href="/tags/SLAM/" class="print-no-link">#SLAM</a>
+      
+    </div>
+  
+</div>
+
+
+              
+  
+
+  <div class="license-box my-3">
+    <div class="license-title">
+      <div>词袋模型 BoW 与 SLAM 回环检测</div>
+      <div>https://www.zywvvd.com/notes/study/SLAM/bag-of-words/bag-of-words/</div>
+    </div>
+    <div class="license-meta">
+      
+        <div class="license-meta-item">
+          <div>作者</div>
+          <div>Yiwei Zhang</div>
+        </div>
+      
+      
+        <div class="license-meta-item license-meta-date">
+          <div>发布于</div>
+          <div>2026年7月3日</div>
+        </div>
+      
+      
+      
+        <div class="license-meta-item">
+          <div>许可协议</div>
+          <div>
+            
+              
+              
+                <a class="print-no-link" target="_blank" href="https://creativecommons.org/licenses/by/4.0/">
+                  <span class="hint--top hint--rounded" aria-label="BY - 署名">
+                    <i class="iconfont icon-by"></i>
+                  </span>
+                </a>
+              
+            
+          </div>
+        </div>
+      
+    </div>
+    <div class="license-icon iconfont"></div>
+  </div>
+
+
+
+              
+                <div class="post-prevnext my-3">
+                  <article class="post-prev col-6">
+                    
+                    
+                  </article>
+                  <article class="post-next col-6">
+                    
+                    
+                      <a href="/notes/study/SLAM/slam-overview/slam-overview/" title="SLAM 全景：定位与建图的联合估计">
+                        <span class="hidden-mobile">SLAM 全景：定位与建图的联合估计</span>
+                        <span class="visible-mobile">下一篇</span>
+                        <i class="iconfont icon-arrowright"></i>
+                      </a>
+                    
+                  </article>
+                </div>
+              
+            </div>
+
+            
+  
+  
+    <article id="comments" lazyload>
+      
+  <div id="waline"></div>
+  <script type="text/javascript">
+    Fluid.utils.loadComments('#waline', function() {
+      Fluid.utils.createCssLink('https://lib.baomitu.com/waline/2.14.8/waline.min.css')
+      Fluid.utils.createScript('https://lib.baomitu.com/waline/2.14.8/waline.min.js', function() {
+        var options = Object.assign(
+          {"serverURL":"https://uipv4.zywvvd.com:33033/","path":"window.location.pathname","meta":["nick","mail","link"],"requiredMeta":["nick"],"lang":"zh-CN","emoji":["https://cdn.jsdelivr.net/gh/walinejs/emojis/weibo"],"dark":"html[data-user-color-scheme=\"dark\"]","wordLimit":0,"pageSize":10,"reaction":true,"locale":{"placeholder":"山高路远，常来玩吖 ~","reactionTitle":null}},
+          {
+            el: '#waline',
+            path: window.location.pathname
+          }
+        )
+        Waline.init(options);
+        Fluid.utils.waitElementVisible('#waline .vcontent', () => {
+          var imgSelector = '#waline .vcontent img:not(.vemoji)';
+          Fluid.plugins.imageCaption(imgSelector);
+          Fluid.plugins.fancyBox(imgSelector);
+        })
+      });
+    });
+  </script>
+  <noscript>Please enable JavaScript to view the comments</noscript>
+
+
+    </article>
+  
+
+
+          </article>
+        </div>
+      </div>
+    </div>
+
+    <div class="side-col d-none d-lg-block col-lg-2">
+      
+  <aside class="sidebar" style="margin-left: -1rem">
+    <div id="toc">
+  <p class="toc-header">
+    <i class="iconfont icon-list"></i>
+    <span>目录</span>
+  </p>
+  <div class="toc-body" id="toc-body"></div>
+</div>
+
+
+
+  </aside>
+
+
+    </div>
+  </div>
+</div>
+
+
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+  
+  
+
+
+
+
+
+  <script>
+  Fluid.utils.createScript('https://lib.baomitu.com/mermaid/8.14.0/mermaid.min.js', function() {
+    mermaid.initialize({"theme":"default"});
+
+    Fluid.utils.listenDOMLoaded(function() {
+      Fluid.events.registerRefreshCallback(function() {
+        if ('mermaid' in window) {
+          mermaid.init();
+        }
+      });
+    });
+  });
+</script>
+
+
+
+
+
+
+    
+
+    
+      <a id="scroll-top-button" aria-label="TOP" href="#" role="button">
+        <i class="iconfont icon-xiangshangjiantou" aria-hidden="true"></i>
+      </a>
+    
+
+    
+      <div class="modal fade" id="modalSearch" tabindex="-1" role="dialog" aria-labelledby="ModalLabel"
+     aria-hidden="true">
+  <div class="modal-dialog modal-dialog-scrollable modal-lg" role="document">
+    <div class="modal-content">
+      <div class="modal-header text-center">
+        <h4 class="modal-title w-100 font-weight-bold">搜索</h4>
+        <button type="button" id="local-search-close" class="close" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body mx-3">
+        <div class="md-form mb-5">
+          <input type="text" id="local-search-input" class="form-control validate">
+          <label data-error="x" data-success="v" for="local-search-input">关键词</label>
+        </div>
+        <div class="list-group" id="local-search-result"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+    
+
+    
+  </main>
+
+  <footer>
+    <div class="footer-inner">
+  
+    <div class="footer-content">
+       <div class="vvd_footer" style="font-size: 0.85rem;"> <a href="https://hexo.io" target="_blank" rel="nofollow noopener" color="#d7d8d9" data-umami-event="Footer-Hexo"><span class="umami--click--Footer-Hexo">Hexo</span></a> <i class="iconfont icon-love"></i> <a href="https://github.com/fluid-dev/hexo-theme-fluid" target="_blank" rel="nofollow noopener" data-umami-event="Footer-Fluid"><span class="umami--click--Footer-Fluid">Fluid</span></a> <i class="iconfont icon-love"></i> <a href="https://uipv4.zywvvd.com:33039/share/0zx3o21oIpZTZqwC/%E5%8F%88%E8%A7%81%E8%8B%8D%E5%B2%9A" target="_blank" rel="nofollow noopener" data-umami-event="Footer-Umami"><span class="umami--click--Footer-Umami">Umami</span></a> <div style="font-size: 0.85rem;"> <span id="timeDate">载入天数...</span> <span id="times">载入时分秒...</span> <script src="/vvd_js/duration.js"></script> </div> <div style="font-size: 0.85rem;"> <span> 总访问量 <span style="color: #d7d8d9;" id="PVstatic">0</span> 次&nbsp</span> <span> 总访客数 <span style="color: #d7d8d9;" id="UVstatic">0</span> 人&nbsp</span> <span> 当前在线 <span style="color: #d7d8d9;" id="ACTstatic">0</span> 人&nbsp</span> <script src="https://uipv4.zywvvd.com:33037/statistics" defer></script> </div> <div> <span> Copyright © 2020-2025. All Rights Reserved.</span> </div> <div style="font-size: 0.88rem;"> <a target="_blank" rel="noopener" href="https://developer.hitokoto.cn/" id="hitokoto_text"><span style="color: #d7d8d9;"  id="hitokoto"></span></a> <script src="https://uipv4.zywvvd.com:33044/?encode=js&select=%23hitokoto" defer></script> </div> <a href="https://icp.gov.moe/?keyword=20230615" target="_blank">萌ICP备20230615号</a>
+
+
+</div> 
+    </div>
+  
+  
+  
+  
+</div>
+
+  </footer>
+
+  <!-- Scripts -->
+  
+  <script  src="https://lib.baomitu.com/nprogress/0.2.0/nprogress.min.js" ></script>
+  <link  rel="stylesheet" href="https://lib.baomitu.com/nprogress/0.2.0/nprogress.min.css" />
+
+  <script>
+    NProgress.configure({"showSpinner":false,"trickleSpeed":100})
+    NProgress.start()
+    window.addEventListener('load', function() {
+      NProgress.done();
+    })
+  </script>
+
+
+<script  src="https://lib.baomitu.com/jquery/3.6.0/jquery.min.js" ></script>
+<script  src="https://lib.baomitu.com/twitter-bootstrap/4.6.1/js/bootstrap.min.js" ></script>
+<script  src="/js/events.js" ></script>
+<script  src="/js/plugins.js" ></script>
+
+
+
+
+
+  
+    <script  src="/js/img-lazyload.js" ></script>
+  
+
+
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/tocbot/4.18.2/tocbot.min.js', function() {
+    var toc = jQuery('#toc');
+    if (toc.length === 0 || !window.tocbot) { return; }
+    var boardCtn = jQuery('#board-ctn');
+    var boardTop = boardCtn.offset().top;
+
+    window.tocbot.init(Object.assign({
+      tocSelector     : '#toc-body',
+      contentSelector : '.markdown-body',
+      linkClass       : 'tocbot-link',
+      activeLinkClass : 'tocbot-active-link',
+      listClass       : 'tocbot-list',
+      isCollapsedClass: 'tocbot-is-collapsed',
+      collapsibleClass: 'tocbot-is-collapsible',
+      scrollSmooth    : true,
+      includeTitleTags: true,
+      headingsOffset  : -boardTop,
+    }, CONFIG.toc));
+    if (toc.find('.toc-list-item').length > 0) {
+      toc.css('visibility', 'visible');
+    }
+
+    Fluid.events.registerRefreshCallback(function() {
+      if ('tocbot' in window) {
+        tocbot.refresh();
+        var toc = jQuery('#toc');
+        if (toc.length === 0 || !tocbot) {
+          return;
+        }
+        if (toc.find('.toc-list-item').length > 0) {
+          toc.css('visibility', 'visible');
+        }
+      }
+    });
+  });
+</script>
+
+
+  <script src=https://lib.baomitu.com/clipboard.js/2.0.10/clipboard.min.js></script>
+
+  <script>Fluid.plugins.codeWidget();</script>
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/anchor-js/4.3.1/anchor.min.js', function() {
+    window.anchors.options = {
+      placement: CONFIG.anchorjs.placement,
+      visible  : CONFIG.anchorjs.visible
+    };
+    if (CONFIG.anchorjs.icon) {
+      window.anchors.options.icon = CONFIG.anchorjs.icon;
+    }
+    var el = (CONFIG.anchorjs.element || 'h1,h2,h3,h4,h5,h6').split(',');
+    var res = [];
+    for (var item of el) {
+      res.push('.markdown-body > ' + item.trim());
+    }
+    if (CONFIG.anchorjs.placement === 'left') {
+      window.anchors.options.class = 'anchorjs-link-left';
+    }
+    window.anchors.add(res.join(', '));
+
+    Fluid.events.registerRefreshCallback(function() {
+      if ('anchors' in window) {
+        anchors.removeAll();
+        var el = (CONFIG.anchorjs.element || 'h1,h2,h3,h4,h5,h6').split(',');
+        var res = [];
+        for (var item of el) {
+          res.push('.markdown-body > ' + item.trim());
+        }
+        if (CONFIG.anchorjs.placement === 'left') {
+          anchors.options.class = 'anchorjs-link-left';
+        }
+        anchors.add(res.join(', '));
+      }
+    });
+  });
+</script>
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/fancybox/3.5.7/jquery.fancybox.min.js', function() {
+    Fluid.plugins.fancyBox();
+  });
+</script>
+
+
+  <script>Fluid.plugins.imageCaption();</script>
+
+  
+      <script>
+        if (!window.MathJax) {
+          window.MathJax = {
+            tex    : {
+              inlineMath: { '[+]': [['$', '$']] }
+            },
+            options: {
+              renderActions: {
+                insertedScript: [200, () => {
+                  document.querySelectorAll('mjx-container').forEach(node => {
+                    let target = node.parentNode;
+                    if (target.nodeName.toLowerCase() === 'li') {
+                      target.parentNode.classList.add('has-jax');
+                    }
+                  });
+                }, '', false]
+              }
+            }
+          };
+        } else {
+          MathJax.startup.document.state(0);
+          MathJax.texReset();
+          MathJax.typeset();
+          MathJax.typesetPromise();
+        }
+
+        Fluid.events.registerRefreshCallback(function() {
+          if ('MathJax' in window && MathJax.startup.document && typeof MathJax.startup.document.state === 'function') {
+            MathJax.startup.document.state(0);
+            MathJax.texReset();
+            MathJax.typeset();
+            MathJax.typesetPromise();
+          }
+        });
+      </script>
+    
+
+  <script  src="https://lib.baomitu.com/mathjax/3.2.1/es5/tex-mml-chtml.js" ></script>
+
+  <script defer src="/js/leancloud.js" ></script>
+
+  <script  src="/js/local-search.js" ></script>
+
+
+
+
+  
+<script src="//cdn.jsdelivr.net/npm/aplayer/dist/APlayer.min.js"></script>
+<script src="//cdn.jsdelivr.net/gh/metowolf/MetingJS@1.2/dist/Meting.min.js"></script>
+<script src="/js/reward.js"></script>
+
+
+
+<!-- 主题的启动项，将它保持在最底部 -->
+<!-- the boot of the theme, keep it at the bottom -->
+<script  src="/js/boot.js" ></script>
+
+
+  <script type="text/javascript">
+    /*窗口监视*/
+    var originalTitle = document.title;
+    window.onblur = function(){document.title = "明眸如初"};
+    window.onfocus = function(){document.title = originalTitle};
+  </script>
+
+
+  <div id="tooltip-rightmenu" class="tooltip-rightmenu">如需原始右键菜单请按下 <strong>Ctrl+右键</strong></div>
+
+<div id="rightmenu-wrapper" style="">
+  <ul class="list-v rightmenu" id="rightmenu-content">
+	  <li class="navigation menuNavigation-Content">
+		<a class="nav icon-only fix-cursor-default" onclick="history.back()"><i class="iconfont icon-zuojiantou1"></i></a>
+		<a class="nav icon-only fix-cursor-default" onclick="history.forward()"><i class="iconfont icon-youjiantou1"></i></a>
+		<a class="nav icon-only fix-cursor-default" onclick="window.location.reload()"><i class="iconfont icon-shuaxin"></i></a>
+		<a  aria-label="TOP" href="#" role="button"><i class="iconfont icon-xiangshang"></i></a>
+	  </li>
+
+		<hr class="menuLoad-Content" style="display: block;">
+	  <li class="menuLoad-Content" style="display: block;">
+		<a class="vlts-menu fix-cursor-default" target="_self" href="javascript:;" data-toggle="modal" data-target="#modalSearch" aria-label="Search">
+		  <span>
+			  <i class="iconfont icon-sousuo1 rightmenu-icon"></i>
+			  站内搜索
+		  </span>
+		</a>
+	  </li>
+
+	  <li class="menuLoad-Content" style="display: block;">
+		<a class="vlts-menu fix-cursor-default"  href="https://www.zywvvd.com/messagebd/" data-group="link">
+		  <span>
+			  <i class="iconfont icon-yangshi_icon_tongyong_chat rightmenu-icon">  </i>
+			   留言吐槽 
+		   </span>
+		</a>
+	  </li>
+
+
+	  <li class="menuLoad-Content" style="display: block;">
+		<a class="vlts-menu fix-cursor-default" id="help" target="_blank" rel="noopener" href="https://www.foreverblog.cn/go.html" data-group="link">
+		<span>
+			  <i class="iconfont icon-a-BlackHole rightmenu-icon"></i>
+			  虫洞穿梭
+		  </span>
+		</a>
+	  </li>
+
+	<a id="scroll-top-button" aria-label="TOP" href="#" role="button" style="bottom: 20px; right: 52.6364px;">
+        <i class="iconfont icon-xiangshangjiantou" aria-hidden="true"></i>
+      </a>
+
+	<hr class="menuLoad-Content" style="display: block;">
+	
+	  <li class="menuLoad-Content" style="display: block;">
+		<a class="vlts-menu fix-cursor-default" id="destroy-airplane" target="_blank" rel="noopener"  data-group="link">
+		<span>
+			  <i class="iconfont icon-feiji rightmenu-icon"></i>
+			  破坏小飞机
+		  </span>
+		</a>
+	  </li>
+  </ul>
+</div>
+
+<script>
+	var ua = navigator.userAgent;
+	var ipad = ua.match(/(iPad).*OS\s([\d_]+)/),
+		isIphone = !ipad && ua.match(/(iPhone\sOS)\s([\d_]+)/),
+		isAndroid = ua.match(/(Android)\s+([\d.]+)/),
+		isMobile = isIphone || isAndroid;
+
+	if(!isMobile) {
+		// 为按钮添加事件处理器
+		document.getElementById('destroy-airplane').onclick = function() {
+		  console.log('飞机起飞！');
+		  // 定义要执行的JavaScript代码
+		var KICKASSVERSION='2.0';
+		var s = document.createElement('script');
+		s.type='text/javascript';
+		document.body.appendChild(s);
+		s.src='https://uipv4.zywvvd.com:33030/HexoFiles/js/games/airplane/airplane.js';
+		void(0);
+		};
+	}
+</script>
+
+
+
+
+
+<link href="/css/custom.css"type="text/css"rel="stylesheet"/>
+<script src="/vvd_js/right_menu.js" type="text/javascript"></script>
+<link href="/css/right_menu.css"type="text/css"rel="stylesheet"/>
+<script src="/vvd_js/go.js"></script>
+
+
+  <noscript>
+    <div class="noscript-warning">博客在允许 JavaScript 运行的环境下浏览效果更佳</div>
+  </noscript>
+<script src="/live2dw/lib/L2Dwidget.min.js?094cbace49a39548bed64abff5988b05"></script><script>L2Dwidget.init({"pluginRootPath":"live2dw/","pluginJsPath":"lib/","pluginModelPath":"assets/","tagMode":false,"log":false,"model":{"jsonPath":"/live2dw/assets/z16.model.json"},"display":{"position":"left","width":200,"height":400},"mobile":{"show":false},"react":{"opacity":0.9}});</script></body>
+</html>
