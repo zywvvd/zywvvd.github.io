@@ -1,0 +1,1751 @@
+
+
+<!DOCTYPE html>
+<html lang="zh-CN" data-default-color-scheme=auto>
+
+
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="baidu-site-verification" content="codeva-rLWafCJGYc" />
+  <link rel="apple-touch-icon" sizes="76x76" href="/image/avatar.png">
+  <link rel="icon" href="/image/avatar.png">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, shrink-to-fit=no">
+  <meta http-equiv="x-ua-compatible" content="ie=edge">
+  
+  <meta name="theme-color" content="#2f4154">
+  <meta name="author" content="Yiwei Zhang">
+  <meta name="keywords" content="人工智能, 深度学习, 个人博客, 机器学习">
+  
+    <meta name="description" content="DINOv2（Meta AI，2023）是个自监督视觉基础模型——无标签训出对视角&#x2F;光照&#x2F;域惊人鲁棒的通用 patch 特征；AnyLoc（2023）把它和经典 VLAD 加按域适配组装起来，零 VPR 专属训练就拿到 SOTA 级的视觉位置检索。这篇拆解 DINOv2 怎么&quot;自己教自己&quot;（自蒸馏 DINO + 掩码 iBOT + 防塌缩）、AnyLoc 怎么零训练用上它，是">
+<meta property="og:type" content="article">
+<meta property="og:title" content="DINOv2 与 AnyLoc：自监督基础模型与零训练位置检索">
+<meta property="og:url" content="https://www.zywvvd.com/notes/study/SLAM/dinov2-anyloc/dinov2-anyloc/index.html">
+<meta property="og:site_name" content="又见苍岚">
+<meta property="og:description" content="DINOv2（Meta AI，2023）是个自监督视觉基础模型——无标签训出对视角&#x2F;光照&#x2F;域惊人鲁棒的通用 patch 特征；AnyLoc（2023）把它和经典 VLAD 加按域适配组装起来，零 VPR 专属训练就拿到 SOTA 级的视觉位置检索。这篇拆解 DINOv2 怎么&quot;自己教自己&quot;（自蒸馏 DINO + 掩码 iBOT + 防塌缩）、AnyLoc 怎么零训练用上它，是">
+<meta property="og:locale" content="zh_CN">
+<meta property="article:published_time" content="2026-07-07T06:50:24.000Z">
+<meta property="article:modified_time" content="2026-07-07T06:54:55.709Z">
+<meta property="article:author" content="Yiwei Zhang">
+<meta property="article:tag" content="SLAM">
+<meta name="twitter:card" content="summary_large_image">
+  
+  
+  
+  <title>DINOv2 与 AnyLoc：自监督基础模型与零训练位置检索 - 又见苍岚</title>
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/twitter-bootstrap/4.6.1/css/bootstrap.min.css" />
+
+
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/github-markdown-css/4.0.0/github-markdown.min.css" />
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/hint.css/2.7.0/hint.min.css" />
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/fancybox/3.5.7/jquery.fancybox.min.css" />
+
+
+
+<!-- 主题依赖的图标库，不要自行修改 -->
+<!-- Do not modify the link that theme dependent icons -->
+
+<link rel="stylesheet" href="//at.alicdn.com/t/font_1749284_hj8rtnfg7um.css">
+
+
+
+<link rel="stylesheet" href="//at.alicdn.com/t/font_1736178_lbnruvf0jn.css">
+
+
+<link  rel="stylesheet" href="/css/main.css" />
+
+
+  <link id="highlight-css" rel="stylesheet" href="/css/highlight.css" />
+  
+    <link id="highlight-css-dark" rel="stylesheet" href="/css/highlight-dark.css" />
+  
+
+
+
+  
+<link rel="stylesheet" href="/css/custom.css">
+<link rel="stylesheet" href="/css/reward.css">
+<link rel="stylesheet" href="//cdn.jsdelivr.net/npm/aplayer/dist/APlayer.min.css">
+
+
+
+  <script id="fluid-configs">
+    var Fluid = window.Fluid || {};
+    Fluid.ctx = Object.assign({}, Fluid.ctx)
+    var CONFIG = {"hostname":"www.zywvvd.com","root":"/","version":"1.9.7","typing":{"enable":true,"typeSpeed":90,"cursorChar":"_","loop":false,"scope":["home"]},"anchorjs":{"enable":true,"element":"h1,h2,h3,h4,h5,h6","placement":"left","visible":"hover","icon":""},"progressbar":{"enable":true,"height_px":3,"color":"#29d","options":{"showSpinner":false,"trickleSpeed":100}},"code_language":{"enable":true,"default":"TEXT"},"copy_btn":true,"image_caption":{"enable":true},"image_zoom":{"enable":true,"img_url_replace":["",""]},"toc":{"enable":true,"placement":"right","headingSelector":"h1,h2,h3,h4,h5,h6","collapseDepth":0},"lazyload":{"enable":true,"loading_img":"/img/loading.gif","onlypost":false,"offset_factor":2},"web_analytics":{"enable":true,"follow_dnt":true,"baidu":null,"google":null,"tencent":{"sid":null,"cid":null},"woyaola":null,"cnzz":null,"leancloud":{"app_id":"Cv0XNeBSBdAPAIuVj3PsyM3R-MdYXbMMI","app_key":"4PU1rNlGrqXWzhfW3dgq98oX","server_url":null,"path":"window.location.pathname","ignore_local":false},"gtag":null},"search_path":"/local-search.xml","include_content_in_search":true};
+
+    if (CONFIG.web_analytics.follow_dnt) {
+      var dntVal = navigator.doNotTrack || window.doNotTrack || navigator.msDoNotTrack;
+      Fluid.ctx.dnt = dntVal && (dntVal.startsWith('1') || dntVal.startsWith('yes') || dntVal.startsWith('on'));
+    }
+  </script>
+  <script  src="/js/utils.js" ></script>
+  <script  src="/js/color-schema.js" ></script>
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+    
+  
+
+
+
+  
+<meta name="generator" content="Hexo 7.2.0"><link rel="alternate" href="/atom.xml" title="又见苍岚" type="application/atom+xml">
+</head>
+
+<script>
+// 页面加载完成后隐藏加载动画
+document.addEventListener("readystatechange", function() {
+    const loader = document.getElementById('Loadanimation');
+    if (loader) {
+        // 停留1秒后开始淡出
+        setTimeout(function() {
+            loader.style.transition = 'opacity 1.2s';
+            loader.style.opacity = '0';
+            // 淡出完成后隐藏
+            setTimeout(() => {
+                loader.style.display = 'none';
+            }, 1000); // 等待淡出动画完成
+        }, 700); // 停留0.8秒
+    }
+});
+</script>
+
+
+
+<body>
+  
+<div id="Loadanimation" style="z-index:999999;">
+<div id="Loadanimation-center">
+   <div id="Loadanimation-center-absolute">
+       <div class="xccx_object" id="xccx_four"></div>
+       <div class="xccx_object" id="xccx_three"></div>
+       <div class="xccx_object" id="xccx_two"></div>
+       <div class="xccx_object" id="xccx_one"></div>
+   </div>
+</div>
+</div>
+
+<link href="/css/loading.css"type="text/css"rel="stylesheet"/>
+
+
+
+
+
+
+<div>
+	<div class='real_mask' style="
+		background-color: rgba(0,0,0,0.4);
+		width: 100%;
+		height: 100%;
+		position: fixed;
+		z-index: -777;
+	"></div>
+	<div id="banner_video_insert">
+	</div>	
+	<div id='vvd_banner_img'>
+	</div>
+</div>
+<div id="banner"></div>
+
+
+
+
+
+
+
+  <header>
+    
+
+<div class="header-inner" style="height: 80vh;">
+  <nav id="navbar" class="navbar fixed-top  navbar-expand-lg navbar-dark scrolling-navbar">
+  <div class="container">
+    <a class="navbar-brand" href="/">
+      <strong>CangLan</strong>
+    </a>
+
+    <button id="navbar-toggler-btn" class="navbar-toggler" type="button" data-toggle="collapse"
+            data-target="#navbarSupportedContent"
+            aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
+      <div class="animated-icon"><span></span><span></span><span></span></div>
+    </button>
+
+    <!-- Collapsible content -->
+    <div class="collapse navbar-collapse" id="navbarSupportedContent">
+      <ul class="navbar-nav ml-auto text-center">
+        
+          
+          
+          
+          
+            <li class="nav-item">
+		<div >
+		      <a class="nav-link" href="/" target="_self" data-umami-event="Navigation-Homepage">
+
+		        <i class="iconfont icon-home-fill"></i>
+		        <span>首页</span>
+		      </a>
+		</div>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item dropdown">
+              <a class="nav-link dropdown-toggle" target="_self" href="javascript:;" role="button"
+                 data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                <i class="iconfont icon-shuji1"></i>
+                <span>文章</span>
+              </a>
+              <div class="dropdown-menu" aria-labelledby="navbarDropdown">
+                
+                  
+                  
+                  
+		<div >
+
+                  <a class="dropdown-item" href="/archives/" target="_self" data-umami-event="Navigation-Archive">
+
+                    <i class="iconfont icon-archive-fill"></i>
+                    <span>归档</span>
+                  </a>
+		</div>
+                
+                  
+                  
+                  
+		<div >
+
+                  <a class="dropdown-item" href="/categories/" target="_self" data-umami-event="Navigation-Category">
+
+                    <i class="iconfont icon-category-fill"></i>
+                    <span>分类</span>
+                  </a>
+		</div>
+                
+                  
+                  
+                  
+		<div >
+
+                  <a class="dropdown-item" href="/tags/" target="_self" data-umami-event="Navigation-Tag">
+
+                    <i class="iconfont icon-tags-fill"></i>
+                    <span>标签</span>
+                  </a>
+		</div>
+                
+                  
+                  
+                  
+		<div >
+
+                  <a class="dropdown-item" href="/shuoshuo/" target="_self" data-umami-event="Navigation-Shuoshuo">
+
+                    <i class="iconfont icon-24gf-bubblesDots4"></i>
+                    <span>说说</span>
+                  </a>
+		</div>
+                
+              </div>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item dropdown">
+              <a class="nav-link dropdown-toggle" target="_self" href="javascript:;" role="button"
+                 data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                <i class="iconfont icon-momo"></i>
+                <span>社交</span>
+              </a>
+              <div class="dropdown-menu" aria-labelledby="navbarDropdown">
+                
+                  
+                  
+                  
+		<div >
+
+                  <a class="dropdown-item" href="/links/" target="_self" data-umami-event="Navigation-Friends">
+
+                    <i class="iconfont icon-link-fill"></i>
+                    <span>友链</span>
+                  </a>
+		</div>
+                
+                  
+                  
+                  
+		<div >
+
+                  <a class="dropdown-item" href="/messagebd/" target="_self" data-umami-event="Navigation-MessageBoard">
+
+                    <i class="iconfont icon-comment"></i>
+                    <span>留言板</span>
+                  </a>
+		</div>
+                
+                  
+                  
+                  
+		<div >
+
+                  <a class="dropdown-item" href="/atom.xml" target="_self" data-umami-event="Navigation-RSS">
+
+                    <i class="iconfont icon-dingyue"></i>
+                    <span>RSS订阅</span>
+                  </a>
+		</div>
+                
+                  
+                  
+                  
+		<div >
+
+                  <a class="dropdown-item" href="/reccomments/" target="_self" data-umami-event="Navigation-Recent-Comments">
+
+                    <i class="iconfont icon-icon-pinglunguanli-pinglunliebiao"></i>
+                    <span>近期评论</span>
+                  </a>
+		</div>
+                
+              </div>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item dropdown">
+              <a class="nav-link dropdown-toggle" target="_self" href="javascript:;" role="button"
+                 data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                <i class="iconfont icon-user-fill"></i>
+                <span>个人</span>
+              </a>
+              <div class="dropdown-menu" aria-labelledby="navbarDropdown">
+                
+                  
+                  
+                  
+		<div >
+
+                  <a class="dropdown-item" href="/about/" target="_self" data-umami-event="Navigation-AboutMe">
+
+                    <i class="iconfont icon-guanyuwomen"></i>
+                    <span>关于</span>
+                  </a>
+		</div>
+                
+                  
+                  
+                  
+		<div >
+
+                  <a class="dropdown-item" href="/playlist/" target="_self" data-umami-event="Navigation-Music">
+
+                    <i class="iconfont icon-music"></i>
+                    <span>歌单</span>
+                  </a>
+		</div>
+                
+                  
+                  
+                  
+		<div >
+
+                  <a class="dropdown-item" href="https://uipv4.zywvvd.com:33035" target="_self" data-umami-event="Navigation-Nextcloud">
+
+                    <i class="iconfont icon-xuniyingpan"></i>
+                    <span>网盘</span>
+                  </a>
+		</div>
+                
+                  
+                  
+                  
+		<div >
+
+                  <a class="dropdown-item" href="https://uipv4.zywvvd.com:33036" target="_self" data-umami-event="Navigation-OneDev">
+
+                    <i class="iconfont icon-git"></i>
+                    <span>仓库</span>
+                  </a>
+		</div>
+                
+                  
+                  
+                  
+		<div >
+
+                  <a class="dropdown-item" href="https://uipv4.zywvvd.com:33041" target="_self" data-umami-event="Navigation-Wiki">
+
+                    <i class="iconfont icon-wiki"></i>
+                    <span>百科</span>
+                  </a>
+		</div>
+                
+              </div>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item dropdown">
+              <a class="nav-link dropdown-toggle" target="_self" href="javascript:;" role="button"
+                 data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                <i class="iconfont icon-ic_fly"></i>
+                <span>导航</span>
+              </a>
+              <div class="dropdown-menu" aria-labelledby="navbarDropdown">
+                
+                  
+                  
+                  
+		<div >
+
+                  <a class="dropdown-item" href="/site-map/" target="_self" data-umami-event="Navigation-SiteMap">
+
+                    <i class="iconfont icon-lianjie"></i>
+                    <span>链接</span>
+                  </a>
+		</div>
+                
+                  
+                  
+                  
+		<div >
+
+                  <a class="dropdown-item" href="/nodeppt/hexo/snavigation/" target="_self" data-umami-event="Navigation-Search">
+
+                    <i class="iconfont icon-sousuo"></i>
+                    <span>搜索</span>
+                  </a>
+		</div>
+                
+              </div>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item dropdown">
+              <a class="nav-link dropdown-toggle" target="_self" href="javascript:;" role="button"
+                 data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                <i class="iconfont icon-wangzhan"></i>
+                <span>站点</span>
+              </a>
+              <div class="dropdown-menu" aria-labelledby="navbarDropdown">
+                
+                  
+                  
+                  
+		<div >
+
+                  <a class="dropdown-item" href="https://uipv4.zywvvd.com:33039/share/0zx3o21oIpZTZqwC/%E5%8F%88%E8%A7%81%E8%8B%8D%E5%B2%9A" target="_self" data-umami-event="Navigation-Umami">
+
+                    <i class="iconfont icon-tongji2"></i>
+                    <span>站点分析</span>
+                  </a>
+		</div>
+                
+                  
+                  
+                  
+		<div >
+
+                  <a class="dropdown-item" href="/earth_sta/" target="_self" data-umami-event="Navigation-Globe">
+
+                    <i class="iconfont icon-tongjifenxi-xiangmubiaogetongji"></i>
+                    <span>访问统计</span>
+                  </a>
+		</div>
+                
+                  
+                  
+                  
+		<div >
+
+                  <a class="dropdown-item" href="https://uipv4.zywvvd.com:33034/status/show" target="_self" data-umami-event="Navigation-Monitor">
+
+                    <i class="iconfont icon-jiankong"></i>
+                    <span>站点监控</span>
+                  </a>
+		</div>
+                
+              </div>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item dropdown">
+              <a class="nav-link dropdown-toggle" target="_self" href="javascript:;" role="button"
+                 data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                <i class="iconfont icon-chuansong"></i>
+                <span>传送</span>
+              </a>
+              <div class="dropdown-menu" aria-labelledby="navbarDropdown">
+                
+                  
+                  
+                  
+		<div >
+
+                  <a class="dropdown-item" href="https://www.foreverblog.cn/go.html" target="_self" data-umami-event="Navigation-ForeverBolg">
+
+                    <i class="iconfont icon-a-BlackHole"></i>
+                    <span>十年之约</span>
+                  </a>
+		</div>
+                
+                  
+                  
+                  
+		<div >
+
+                  <a class="dropdown-item" href="https://www.travellings.cn/go.html" target="_self" data-umami-event="Navigation-DriveTo">
+
+                    <i class="iconfont icon-train1"></i>
+                    <span>开往</span>
+                  </a>
+		</div>
+                
+                  
+                  
+                  
+		<div >
+
+                  <a class="dropdown-item" href="https://bf.zzxworld.com/" target="_self" data-umami-event="Navigation-BlogFinder">
+
+                    <i class="iconfont icon-icon-"></i>
+                    <span>BlogFinder</span>
+                  </a>
+		</div>
+                
+                  
+                  
+                  
+		<div >
+
+                  <a class="dropdown-item" href="https://www.perass.com/" target="_self" data-umami-event="Navigation-Bloghome">
+
+                    <i class="iconfont icon-home-fill"></i>
+                    <span>博客之家</span>
+                  </a>
+		</div>
+                
+              </div>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item dropdown">
+              <a class="nav-link dropdown-toggle" target="_self" href="javascript:;" role="button"
+                 data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                <i class="iconfont icon-gongju"></i>
+                <span>工具</span>
+              </a>
+              <div class="dropdown-menu" aria-labelledby="navbarDropdown">
+                
+                  
+                  
+                  
+		<div >
+
+                  <a class="dropdown-item" href="/navigates/calculator" target="_self" data-umami-event="Navigation-Calculator">
+
+                    <i class="iconfont icon-jisuan"></i>
+                    <span>计算器</span>
+                  </a>
+		</div>
+                
+                  
+                  
+                  
+		<div >
+
+                  <a class="dropdown-item" href="/navigates/webgraphviz" target="_self" data-umami-event="Navigation-WebGtaphviz">
+
+                    <i class="iconfont icon-tongyong-huatugongju2"></i>
+                    <span>Graphviz</span>
+                  </a>
+		</div>
+                
+                  
+                  
+                  
+		<div >
+
+                  <a class="dropdown-item" href="/navigates/formular_reco" target="_self" data-umami-event="Navigation-Formular-Reco">
+
+                    <i class="iconfont icon-a-checkformula"></i>
+                    <span>公式识别</span>
+                  </a>
+		</div>
+                
+              </div>
+            </li>
+          
+        
+        
+          <li class="nav-item" id="search-btn">
+            <a class="nav-link" target="_self" href="javascript:;" data-toggle="modal" data-target="#modalSearch" aria-label="Search">
+              <i class="iconfont icon-search"></i>
+            </a>
+          </li>
+          
+        
+        
+          <li class="nav-item" id="color-toggle-btn">
+            <a class="nav-link" target="_self" href="javascript:;" aria-label="Color Toggle">
+              <i class="iconfont icon-dark" id="color-toggle-icon"></i>
+            </a>
+          </li>
+        
+      </ul>
+    </div>
+  </div>
+</nav>
+
+  
+
+<div id="banner" class="banner" parallax=true
+     style="background: url('https://uipv4.zywvvd.com:33030/HexoFiles/new/bg-trans.png') no-repeat center center; background-size: cover;">
+  <div class="full-bg-img">
+    <div class="mask flex-center" style="background-color: rgba(0, 0, 0, 0)">
+      <div class="banner-text text-center fade-in-up">
+        <div class="h2">
+          
+            <span id="subtitle">DINOv2 与 AnyLoc：自监督基础模型与零训练位置检索</span>
+          
+        </div>
+
+        
+          
+  <div class="mt-3">
+    
+      <span class="post-meta mr-2">
+        <i class="iconfont icon-author" aria-hidden="true"></i>
+        Yiwei Zhang
+      </span>
+    
+    
+      <span class="post-meta">
+        <i class="iconfont icon-date-fill" aria-hidden="true"></i>
+        <time datetime="2026-07-07 14:50" pubdate>
+          2026年7月7日 下午
+        </time>
+      </span>
+    
+  </div>
+
+  <div class="mt-1">
+    
+      <span class="post-meta mr-2">
+        <i class="iconfont icon-chart"></i>
+        
+          <!-- compatible with older versions-->
+          5.8k 字
+        
+      </span>
+    
+
+    
+      <span class="post-meta mr-2">
+        <i class="iconfont icon-clock-fill"></i>
+        
+        
+        
+          <!-- compatible with older versions-->
+          49 分钟
+        
+      </span>
+    
+
+    
+    
+      
+        <span id="vvdpost_container_page_pvuv" style="display: none">
+          <i class="iconfont icon-eye" aria-hidden="true"></i>
+          <span id="vvdpost_value_page_pv">0</span> 次&nbsp&nbsp
+		  <i class="iconfont icon-users" aria-hidden="true"></i>
+		  <span id="vvdpost_value_page_uv">0</span> 人&nbsp&nbsp
+		  <i class="iconfont icon-comment" aria-hidden="true"></i>
+		  <span id="vvdpost_value_page_cn">0</span> 条
+        </span>
+
+    <script>
+    document.addEventListener("DOMContentLoaded", function() {
+	      console.log("PVUV_" + window.location.pathname);
+
+	      // 使用 fetch API 发送 POST 请求
+	      fetch('https://uipv4.zywvvd.com:33037/poststats', { 
+		  method: 'POST',
+		  headers: {
+		      'Content-Type': 'application/json'
+		  },
+		  body: JSON.stringify(window.location.pathname) // 将路径名作为对象发送，以便在服务器端更容易处理
+	      })
+	      .then(response => {
+		  // 检查响应状态
+		  if (!response.ok) {
+		      throw new Error('Network response was not ok ' + response.statusText);
+		  }
+		  return response.json(); // 解析 JSON 响应
+	      })
+	      .then(data => {
+		  // 处理解析后的数据
+		  console.log(data.pv);
+		  var pvCtn = document.querySelector('#vvdpost_container_page_pvuv');
+		  if (pvCtn) {
+		      var pvEle = document.querySelector('#vvdpost_value_page_pv');
+		      var uvEle = document.querySelector('#vvdpost_value_page_uv');
+		      var cnEle = document.querySelector('#vvdpost_value_page_cn');
+		      if (pvEle && uvEle) {
+		          pvEle.innerText = data.pv;
+		          uvEle.innerText = data.uv;
+		          cnEle.innerText = data.cn;
+		          pvCtn.style.display = 'inline';
+		      }
+		  }
+	      })
+	      .catch(error => {
+		  // 处理请求错误
+		  console.error('There has been a problem with your fetch operation:', error);
+	      });
+      });
+  </script>
+      
+    
+  </div>
+
+
+        
+      </div>
+
+      
+        <div class="scroll-down-bar">
+          <i class="iconfont icon-arrowdown"></i>
+        </div>
+      
+    </div>
+  </div>
+</div>
+
+</div>
+
+
+	<script type="text/javascript" src="/vvd_js/jquery.js"></script>
+	<script async src="https://uipv4.zywvvd.com:33039/script.js" data-website-id="dd4a05c6-dde2-4743-9c3a-a79d6bee0778"></script>
+	<div class="banner" id='banner' >
+
+		<div class="full-bg-img" >
+
+			
+				<script>
+					var ua = navigator.userAgent;
+					var ipad = ua.match(/(iPad).*OS\s([\d_]+)/),
+						isIphone = !ipad && ua.match(/(iPhone\sOS)\s([\d_]+)/),
+						isAndroid = ua.match(/(Android)\s+([\d.]+)/),
+						isMobile = isIphone || isAndroid;
+
+					function set_video_attr(id){
+						var height = document.body.clientHeight
+						var width = document.body.clientWidth
+						var video_item = document.getElementById(id);
+
+						if (height / width < 0.56){
+							video_item.setAttribute('width', '100%');
+							video_item.setAttribute('height', 'auto');
+						} else {
+							video_item.setAttribute('height', '100%');
+							video_item.setAttribute('width', 'auto');
+						}
+					}
+
+					fetch('https://uipv4.zywvvd.com:33037/wallpaper-pair')
+					  .then(response => response.json()) // 解析JSON数据
+					  .then(data => {
+						console.log('获取链接成功');
+						video_url = data[0][0]
+						pre_show_image_url = data[0][1]
+
+						banner_obj = document.getElementById("banner")
+						banner_obj.style.cssText = "background: url('" + pre_show_image_url + "') no-repeat;"
+
+						vvd_banner_obj = document.getElementById("vvd_banner_img")
+						vvd_banner_content = "<img id='banner_img_item' src='" + pre_show_image_url + "'style='position: fixed; z-index: -999'>"
+						vvd_banner_obj.innerHTML = vvd_banner_content 
+
+						if (!isMobile) {
+							video_html_res = "<video id='video_item' style='position: fixed; z-index: -888;'  muted='muted' src=" + video_url + " autoplay='autoplay' loop='loop'></video>"
+							document.getElementById("banner_video_insert").innerHTML = video_html_res;
+							set_video_attr('video_item')
+							set_video_attr('banner_img_item')
+						}
+					    
+					  })
+					  .catch((error) => {
+					    console.error('请求失败,尝试本地获取背景图像：', error);
+	    					$.getJSON('/vvd_js/video_url.json', function(data){
+
+							var video_list_length = data.length
+							var seed = Math.random()
+							index = Math.floor(seed * video_list_length)
+
+							video_url = data[index][0]
+							pre_show_image_url = data[index][1]
+
+							banner_obj = document.getElementById("banner")
+							banner_obj.style.cssText = "background: url('" + pre_show_image_url + "') no-repeat;"
+
+							vvd_banner_obj = document.getElementById("vvd_banner_img")
+							vvd_banner_content = "<img id='banner_img_item' src='" + pre_show_image_url + "'style='position: fixed; z-index: -999'>"
+							vvd_banner_obj.innerHTML = vvd_banner_content 
+
+							if (!isMobile) {
+								video_html_res = "<video id='video_item' style='position: fixed; z-index: -888;'  muted='muted' src=" + video_url + " autoplay='autoplay' loop='loop'></video>"
+								document.getElementById("banner_video_insert").innerHTML = video_html_res;
+								set_video_attr('video_item')
+								set_video_attr('banner_img_item')
+							}
+						});
+					  });
+
+
+
+
+
+
+					if (!isMobile){
+						window.onresize = function(){
+							set_video_attr('video_item')
+							set_video_attr('banner_img_item')
+							}
+						}
+				</script>
+
+			
+
+
+			
+			</div>
+		</div>
+    </div>
+
+  </header>
+
+  <main>
+    
+      
+
+
+
+<div class="container-fluid nopadding-x">
+  <div class="row nomargin-x">
+    <div class="side-col d-none d-lg-block col-lg-2">
+      
+
+    </div>
+
+    <div class="col-lg-8 nopadding-x-md">
+      <div class="container nopadding-x-md" id="board-ctn">
+        <div id="board">
+          <article class="post-content mx-auto">
+
+            <!-- <h1 id="seo-header">DINOv2 与 AnyLoc：自监督基础模型与零训练位置检索</h1> -->
+
+            
+              <p id="updated-time" class="note note-info" style="">
+                
+                  
+                    <!-- compatible with older versions-->
+                    本文最后更新于：2026年7月7日 下午
+                  
+                
+              </p>
+            
+            
+              <div class="markdown-body">
+                
+                <blockquote>
+<p>DINOv2（Meta AI，2023）是个自监督视觉基础模型——无标签训出对视角/光照/域惊人鲁棒的通用 patch 特征；AnyLoc（2023）把它和经典 VLAD 加按域适配组装起来，零 VPR 专属训练就拿到 SOTA 级的视觉位置检索。这篇拆解 DINOv2 怎么&quot;自己教自己&quot;（自蒸馏 DINO + 掩码 iBOT + 防塌缩）、AnyLoc 怎么零训练用上它，是 <a href="https://www.zywvvd.com/notes/study/SLAM/netvlad/netvlad/">NetVLAD</a> 那条线的终点。</p>
+</blockquote>
+<span id="more"></span>
+<h3 id="一句话定位与两者关系">一句话定位与两者关系</h3>
+<ul>
+<li><strong>DINOv2</strong>（Meta AI，2023，arXiv:2304.07193）= <strong>自监督视觉基础模型</strong>。一个无标签训练的 Vision Transformer，喂一张图吐出稠密的 patch 特征。它是<strong>通用特征引擎</strong>，不限于 VPR——分类、分割、深度、检索都能用。它解决的是&quot;<strong>好的视觉特征从哪来</strong>&quot;。</li>
+<li><strong>AnyLoc</strong>（2023，arXiv:2308.00688）= <strong>VPR 方法</strong>。配方极简：<strong>冻结 DINOv2 提稠密特征 + 经典 VLAD 聚合 + 按域词表与 PCA 白化</strong>，<strong>零 VPR 专属训练</strong>就拿到 SOTA 级表现。它解决的是&quot;<strong>怎么用这些特征认地方</strong>&quot;。</li>
+</ul>
+<figure class="highlight mipsasm"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><code class="hljs mipsasm">AnyLoc（VPR 方法）<br>   ├─ 特征来源 = <span class="hljs-keyword">DINOv2（基础模型，冻结不训练） </span>  ← 这一层贡献<span class="hljs-string">&quot;鲁棒特征&quot;</span><br>   ├─ 聚合方式  = VLAD（经典残差聚合，硬分配）     ← 这一层只是<span class="hljs-string">&quot;数残差&quot;</span><br>   └─ 适配方式  = 按域词表 + PCA 白化（无监督）   ← 这一层贴合具体场景<br></code></pre></td></tr></table></figure>
+<p>两者<strong>不同层、不同方法</strong>，但紧耦合：AnyLoc 的成功绝大部分来自 DINOv2 这块&quot;地基&quot;，VLAD 只是把它稳稳盖起来。下文先讲 DINOv2 这个地基，再讲 AnyLoc 怎么盖房子。</p>
+<h3 id="背景：为什么-VPR-需要-基础模型">背景：为什么 VPR 需要&quot;基础模型&quot;</h3>
+<p>回看 VPR 的主线（详见 <a href="https://www.zywvvd.com/notes/study/SLAM/netvlad/netvlad/">NetVLAD</a>）：<strong>BoW → VLAD → NetVLAD → GeM → 基础模型</strong>。每一步的进步几乎都集中在<strong>特征质量</strong>上——</p>
+<ul>
+<li>BoW 用手工 ORB/SIFT，对视角/光照不鲁棒；</li>
+<li>NetVLAD 用 CNN 特征，但那是有监督 ImageNet 预训练，<strong>特征带着&quot;分类偏置&quot;</strong>（为分 1000 类优化），而且只在自然图像上训过，换域（室内、航空、水下）就掉；</li>
+<li>GeM 证明&quot;聚合可以极简，特征才决定胜负&quot;。</li>
+</ul>
+<p>于是问题自然变成：<strong>能不能有一个不带分类偏置、在海量多样数据上训出来、对域变化鲁棒的通用特征源？</strong> 这就是<strong>自监督视觉基础模型</strong>的动机，DINOv2 是其代表。它的特征不依赖人工标签、见过上亿张多样图像，所以&quot;鲁棒性&quot;是白送的——而这正是 VPR 最想要的&quot;局部描述子&quot;性质。</p>
+<h3 id="DINOv2-工作原理">DINOv2 工作原理</h3>
+<h4 id="先想清目标：没有标签，怎么-学特征-？">先想清目标：没有标签，怎么&quot;学特征&quot;？</h4>
+<p>DINOv2 是个 Vision Transformer（ViT）：图像切成 patch（patch size = 14），线性嵌入，过 transformer，输出<strong>一堆 patch token（稠密局部特征）+ 一个 CLS token（全局特征）</strong>。模型有 ViT-S/14、ViT-B/14、ViT-L/14、ViT-g/14 几档。</p>
+<p>难的是<strong>怎么训练</strong>——它<strong>没有标签</strong>。监督学习里，标签告诉网络&quot;这两张是猫、那张是狗&quot;，网络据此学区分。没有标签，监督信号从哪来？</p>
+<p>DINOv2 的思路是<strong>自己造监督</strong>，核心就一句话：<strong>同一张图的不同视角（crop）应该映射到相近的特征；不同图应该映射到相远的特征。</strong> 这条规则不需要人标——&quot;是不是同一张图&quot;网络自己知道（crop 就是它自己切出来的）。只要逼网络遵守这条规则，它就不得不学出&quot;能区分不同图像内容&quot;的特征——而这正好是通用、与下游任务无关的好特征。</p>
+<p>但朴素按这条规则做会<strong>塌缩</strong>（见后文&quot;三道防线&quot;）——网络发现&quot;对所有图都输出同一个特征&quot;就能让&quot;同图 crop 一致&quot;轻松满足。所以需要一套机制：<strong>既传&quot;一致性&quot;信号、又防塌缩</strong>。DINOv2 的训练就是围绕这个设计的，下面逐块拆。</p>
+<h4 id="多-crop：人为造出-同一图的不同视角">多 crop：人为造出&quot;同一图的不同视角&quot;</h4>
+<p>先造训练样本。对一张图 $I$，切出两类 crop：</p>
+<ul>
+<li><strong>global views</strong>（几个）：大 crop，覆盖图像大部分（比如 &gt;50%），代表&quot;全景&quot;；</li>
+<li><strong>local views</strong>（很多个）：小 crop，覆盖一小块（比如 5%–25%），代表&quot;特写&quot;。</li>
+</ul>
+<p>所有这些 crop 都来自同一张 $I$，按上面的规则它们<strong>应该映射到相近的特征</strong>。多 crop 还有个额外红利：逼网络学&quot;<strong>一块局部细节和整张全景是同一个东西</strong>&quot;的局部-整体关系，这对学语义很有用。</p>
+<h4 id="自蒸馏：teacher-student-与-EMA（先解开-谁教谁-的疑惑）">自蒸馏：teacher / student 与 EMA（先解开&quot;谁教谁&quot;的疑惑）</h4>
+<p>要让网络对不同 crop 输出一致，但<strong>跟谁对齐</strong>？如果让 student 自己跟自己对齐（同一个网络、前后两次前向互相靠），梯度会震荡发散。DINO 的解法是<strong>自蒸馏</strong>：</p>
+<ul>
+<li>维护两个<strong>同结构</strong>网络：<strong>student</strong>（正常用梯度更新）和 <strong>teacher</strong>（不接梯度）。</li>
+<li><strong>teacher 的参数 = student 参数的指数滑动平均（EMA）</strong>：每次 student 更新后，teacher 按 $\theta_{\text{teacher}} \leftarrow \alpha\,\theta_{\text{teacher}} + (1-\alpha)\,\theta_{\text{student}}$ 慢慢朝 student 挪一小步（$\alpha$ 接近 1，挪得很慢）。</li>
+</ul>
+<p><strong>最容易卡的一个疑虑</strong>：teacher 是 student 的平均，那不就&quot;自己教自己&quot;、循环了吗？关键在<strong>慢</strong>：teacher 变化比 student 慢得多，所以任一时刻 teacher 代表的是&quot;<strong>student 最近一段时间的平滑共识——一个滞后但稳定的目标</strong>&quot;。student 追一个稳定的、稍微过时的自己，而不是追实时跳动的自己，这就稳了。</p>
+<blockquote>
+<p>直觉类比：像学生（student）对着&quot;自己过去讲话的慢镜头回放&quot;（teacher）做对齐——回放是滞后的、平滑的，反而成了稳定参考。实时对着自己当下对齐会震荡发散；对着平滑回放对齐反而能收敛。</p>
+</blockquote>
+<p>再加一道 <strong>stop-gradient</strong>：teacher 这条路上不算梯度（teacher 只靠 EMA 更新），保证 student 只被&quot;推向 teacher&quot;、不会被反过来拉。这个不对称是稳定性的关键。</p>
+<h4 id="输出是什么：prototype-分布-交叉熵（DINO-损失）">输出是什么：prototype 分布 + 交叉熵（DINO 损失）</h4>
+<p>student/teacher 怎么&quot;输出一致&quot;？不是直接比特征向量，而是比一个<strong>分布</strong>：</p>
+<ol>
+<li>取 CLS token（全局表征），过一个<strong>投影头</strong>压到低维，得 $g$；</li>
+<li>算 $g$ 与 $K$ 个可学的 <strong>prototype 向量</strong> $\{p_1,\dots,p_K\}$ 的相似度，softmax 成概率分布：</li>
+</ol>
+
+$$
+q = \mathrm{softmax}\big(\langle g, p_1\rangle/T,\ \langle g, p_2\rangle/T,\ \dots,\ \langle g, p_K\rangle/T\big)
+$$
+
+   $T$ 是温度。$q$ 就是"这张图最像哪个 prototype"的软分配（一个 $K$ 维概率向量）。
+<ol start="3">
+<li><strong>teacher 在 global view 上给 $q_t$，student 在所有 crop（global + local）上给 $q_s$</strong>，最小化交叉熵：</li>
+</ol>
+
+$$
+\mathcal{L}_{\text{DINO}} = -\sum_{k=1}^{K} q_t(k)\,\log q_s(k)
+$$
+
+<p><strong>一个具体小例子</strong>：假设 $K=3$ 个 prototype。对一张猫图的某个 global crop，teacher 输出 $q_t=(0.7, 0.2, 0.1)$（“主要像 prototype 1”）。那 student 看这张猫图的<strong>任何 crop</strong>（哪怕只截了猫耳朵的 local crop）都得输出接近 $(0.7, 0.2, 0.1)$。要满足这点，student 只能去学&quot;<strong>猫的各个部分/视角都指向同一个视觉概念</strong>&quot;——这就是视角不变性。prototype 会在训练中<strong>自己浮现</strong>成一组&quot;视觉概念&quot;，但训练完后<strong>投影头和 prototype 都扔掉</strong>，只留 ViT backbone——那才是 AnyLoc 真正用的特征源。</p>
+<blockquote>
+<p><strong>投影头、prototype 是什么</strong>：投影头是 backbone 特征和&quot;算损失的空间&quot;之间的 MLP 翻译（吸收损失偏置、保护 backbone 通用性）；prototype 是 $K$ 个学出来的参考向量，把特征变成&quot;对齐哪个参考点&quot;的软分布，好让交叉熵能算。两者都是<strong>训练脚手架</strong>，训完全扔，只留 backbone。这结构其实很像&quot;学习型、过完备、软分配的 BoW&quot;。</p>
+</blockquote>
+<h4 id="塌缩陷阱与三道防线（为什么网络不会-摆烂-）">塌缩陷阱与三道防线（为什么网络不会&quot;摆烂&quot;）</h4>
+<p>只看上面的损失，网络有个&quot;作弊&quot;捷径：<strong>对所有图都输出同一个分布</strong>（比如永远 $q=(1,0,0)$）。这样&quot;同图 crop 一致&quot;轻松 100% 满足、loss 为 0，但<strong>啥也没学</strong>。这叫<strong>塌缩</strong>（collapse）。DINOv2 用几道防线逼它&quot;老实学&quot;：</p>
+<ul>
+<li><strong>防线 1：teacher 只看 global、student 看 global+local（非对称）。</strong> student 没法靠&quot;塌成常数&quot;过关——它得从一个只截了猫耳朵的 local crop，猜出 teacher 看整只猫才给的分布。这逼它真的去理解内容，而不是输出常数。</li>
+<li><strong>防线 2：Sinkhorn-Knopp 平衡。</strong> 在每个 batch 里，对所有图的 prototype 分配做&quot;行 + 列归一化&quot;迭代，<strong>强制每个 prototype 分到大约等量的图</strong>。这从机制上堵死&quot;所有图都塌到 prototype 1&quot;——分配必须均衡。</li>
+<li><strong>防线 3：KoLeo 正则</strong> $\mathcal{L}_{\text{KoLeo}}$：鼓励特征向量在超球面上<strong>均匀铺开</strong>（最大化每个特征到最近邻的距离），防它们挤成一团。这让特征空间被充分利用、不堆在一个点。</li>
+<li>（DINO 原版还用 <strong>centering + sharpening</strong>——给 teacher 的输出减去一个滑动均值、用低温度锐化——也是防塌缩的经典招，DINOv2 一并继承。）</li>
+</ul>
+<p>合起来：<strong>一致性信号逼网络学不变性，三道防线逼它不能靠塌缩偷懒</strong>——剩下的唯一出路就是真的学出有区分力的特征。</p>
+<h4 id="iBOT：patch-级掩码预测（让-patch-特征也有语义）">iBOT：patch 级掩码预测（让 patch 特征也有语义）</h4>
+<p>前面的 DINO 只让 <strong>CLS 全局特征</strong>学到了东西。但 AnyLoc 用的是<strong>稠密 patch 特征</strong>，所以 patch 本身也得学好。这就靠 <strong>iBOT</strong>（patch 级的&quot;完形填空&quot;）：</p>
+<ul>
+<li>随机<strong>掩码一部分 patch</strong>（像 MAE/BERT 那样把一些 patch 涂掉）；</li>
+<li>student 看<strong>带掩码</strong>的图，要去预测<strong>那些被掩 patch 的表征</strong>；</li>
+<li>监督来自 <strong>teacher 看未掩码版本时、对同样那些 patch 给出的表征</strong>；</li>
+<li>损失 $\mathcal{L}_{\text{iBOT}}$ 是 patch 级的交叉熵。</li>
+</ul>
+<p><strong>直觉</strong>：被涂掉的 patch，student 只能从周围上下文&quot;猜&quot;它该是什么——这逼每个 patch 的特征<strong>承载足够语义</strong>（光靠颜色/纹理猜不出来，得理解&quot;这里大概是猫耳朵&quot;）。没有 iBOT，patch 特征会很单薄；有了它，DINOv2 的 patch token 才成为 AnyLoc 那种&quot;稠密检索&quot;能用的好描述子。</p>
+<blockquote>
+<p><strong>DINO + iBOT 的分工</strong>：DINO 让<strong>全局 CLS 特征</strong>学到视角不变性（对分类等全局任务好），iBOT 让<strong>每个 patch 特征</strong>也有语义（对分割、检索这种稠密任务好）。AnyLoc 用的是 patch 特征，所以 iBOT 这一半对它至关重要。</p>
+</blockquote>
+<p>总损失把三者加权：</p>
+
+$$
+\mathcal{L} = \lambda_1\,\mathcal{L}_{\text{DINO}} + \lambda_2\,\mathcal{L}_{\text{iBOT}} + \lambda_3\,\mathcal{L}_{\text{KoLeo}}
+$$
+
+<p>（Sinkhorn-Knopp 在算 $\mathcal{L}_{\text{DINO}}$ 的 prototype 分配时在线施加，不单列损失项。）</p>
+<h4 id="一个训练-step-的完整流程（把零件串起来）">一个训练 step 的完整流程（把零件串起来）</h4>
+<ol>
+<li><strong>采样</strong>一张图 $I$，切出 global views + local views；</li>
+<li><strong>teacher 前向</strong>（只喂 global views，且不掩码）→ 得 teacher 的 CLS 分布 $q_t$ 和各 patch 表征；</li>
+<li><strong>student 前向</strong>（喂所有 crops；对每个 crop 再做一次带掩码的版本供 iBOT）→ 得 student 的 $q_s$ 和被掩 patch 的预测；</li>
+<li><strong>算损失</strong> $\mathcal{L}=\lambda_1\mathcal{L}_{\text{DINO}}+\lambda_2\mathcal{L}_{\text{iBOT}}+\lambda_3\mathcal{L}_{\text{KoLeo}}$；</li>
+<li><strong>反传更新 student</strong>（teacher 那条路 stop-gradient，不回传）；</li>
+<li><strong>EMA 更新 teacher</strong>：$\theta_{\text{teacher}} \leftarrow \alpha\,\theta_{\text{teacher}}+(1-\alpha)\,\theta_{\text{student}}$。</li>
+</ol>
+<p>跨 1.42 亿张图反复跑很多 epoch，最后<strong>扔掉投影头、prototype、teacher</strong>，只留 <strong>student 的 ViT backbone</strong>——这就是 AnyLoc 加载的特征提取器。</p>
+<h4 id="数据：LVD-142M（数据策展是隐藏功臣）">数据：LVD-142M（数据策展是隐藏功臣）</h4>
+<p>DINOv2 的特征之所以强，<strong>数据</strong>和<strong>算法</strong>一样重要。它没用人有标签的 ImageNet，而是自建了 <strong>LVD-142M（1.42 亿张图）</strong>：</p>
+<ul>
+<li>从一个更大的爬取池（数十亿级原始图）里，<strong>去重 + 用一个初始视觉模型做相似检索</strong>，匹配一组精心选的&quot;种子&quot;图，筛出<strong>多样且相关</strong>的子集；</li>
+<li>全程无标签。</li>
+</ul>
+<p>这个&quot;<strong>大规模 + 干净 + 多样 + 无标签</strong>&quot;的数据，是 DINOv2 泛化能力的根源——它见过太多外观变化，鲁棒性自然就来了。数据策展是个常被低估的工程贡献。</p>
+<h4 id="为什么特征这么鲁棒（这正是-AnyLoc-要的）">为什么特征这么鲁棒（这正是 AnyLoc 要的）</h4>
+<p>三个原因叠加：</p>
+<ol>
+<li><strong>多 crop 自蒸馏</strong>：逼模型学&quot;同一物体不同视角 → 一致&quot;的不变性；</li>
+<li><strong>海量多样数据</strong>：见过各种光照/季节/域变化；</li>
+<li><strong>iBOT 的 patch 级监督</strong>：patch 特征携带丰富语义，而非只有 CLS 全局。</li>
+</ol>
+<p>结果：DINOv2 的 <strong>patch 特征对视角/光照/域变化惊人鲁棒</strong>——这正是 VPR 梦寐以求的&quot;局部描述子&quot;。也无怪 AnyLoc 直接把它当现成的特征源，连微调都不用。</p>
+<h3 id="AnyLoc-工作原理">AnyLoc 工作原理</h3>
+<h4 id="核心配方：冻结-DINOv2-VLAD，零-VPR-训练">核心配方：冻结 DINOv2 + VLAD，零 VPR 训练</h4>
+<p>AnyLoc 的全部配方：</p>
+<blockquote>
+<p><strong>冻结 DINOv2 提稠密 patch 特征 → 经典 VLAD 聚合 → 按域词表与 PCA 白化 → 检索。</strong></p>
+</blockquote>
+<p><strong>没有 NetVLAD 那种 ranking loss 微调、没有 VPR 标注</strong>——它纯粹是&quot;货架上的 DINOv2 + 老老的 VLAD + 两个无监督小适配&quot;。论文的哲学原话大意：对的<strong>不变性</strong>来自 DINOv2 的自监督特征，对的<strong>聚合</strong>来自无监督 VLAD 加按域适配。</p>
+<h4 id="关键一：用对层（deeper-layers）">关键一：用对层（deeper layers）</h4>
+<p>DINOv2 是深层 transformer，不同层的特征性质不同。AnyLoc 发现：<strong>不是用最后一层，而是用 deeper layers（靠后的几层）的 patch 特征</strong>做 VPR 效果最好——这些层携带更强的语义和不变性。论文做了层消融，层选择对 VPR 性能影响显著。</p>
+<h4 id="关键二：按域词表（per-domain-vocabulary）">关键二：按域词表（per-domain vocabulary）</h4>
+<p>这是 AnyLoc 性能的最大杠杆之一。VLAD 需要一组聚类中心（词表），AnyLoc 的做法是：</p>
+<ul>
+<li><strong>按场景域分别建词表</strong>：室内（indoor）、室外驾驶（outdoor driving）、航空（aerial）、水下（underwater）、对象中心（object）……每个域一套词表，而不是全局统一。</li>
+<li><strong>为什么按域</strong>：不同域的 DINOv2 特征分布差异大，一套全局词表谁都不贴合。按域词表比全局词表、比按地图（per-map）词表，<strong>Recall@1 高最多 4×</strong>。</li>
+<li><strong>词表怎么建（无监督）</strong>：用 DINOv2-GeM（GeM 池化的全局描述子）对域内图算全局向量，做<strong>无监督 PCA 投影</strong>，用投影空间来定义 VLAD 的聚类中心。这种&quot;<strong>vocabulary-independent</strong>&quot;构造（不直接对局部特征做 k-means，而是借全局描述子的主结构定词表）省事且贴合域。</li>
+</ul>
+<blockquote>
+<p>注：这里 “AnyLoc” 的 “Any” 就是这层意思——<strong>适配任意域</strong>，只要给少量该域的代表性图建词表即可。</p>
+</blockquote>
+<h4 id="关键三：PCA-白化">关键三：PCA 白化</h4>
+<p>VLAD 聚合出向量后，做 <strong>PCA 白化</strong>（whitening）：</p>
+<ul>
+<li><strong>降维 + 去相关</strong>：把 VLAD 向量投影到主成分空间、各维除以标准差，得到各维不相关、方差均衡的紧凑向量；</li>
+<li><strong>无监督</strong>，不需要度量学习/监督微调；</li>
+<li>白化后再 <strong>L2 归一化</strong>，得最终全局描述子。</li>
+</ul>
+<p>白化是经典图像检索的标准技巧（VLAD 时代就在用），AnyLoc 把它和按域 PCA 组合，进一步榨取判别力。</p>
+<h4 id="完整流水线">完整流水线</h4>
+<figure class="highlight glsl"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><code class="hljs glsl">输入图像<br>   │  冻结 DINOv2（deeper layers 的 <span class="hljs-keyword">patch</span> 特征）      ← 鲁棒局部特征，零训练<br>   ▼<br>稠密 <span class="hljs-keyword">patch</span> 特征 &#123;x_i&#125;（每位置一个 D 维）<br>   │  按域 VLAD（硬分配到域词表的簇，残差聚合）        ← V_k = Σ_i a_k(x_i)(x_i − c_k)<br>   ▼<br>KD 维 VLAD 向量<br>   │  PCA 白化（降维 + 去相关）+ L2 归一化<br>   ▼<br>紧凑全局描述子（一张图 → 一个向量）<br>   │  检索：FAISS / ANN，找最近邻图像<br>   ▼<br>匹配的数据库图像（同一处地方，跨视角/季节/光照）<br></code></pre></td></tr></table></figure>
+<p>注意 AnyLoc 用的是<strong>经典硬分配 VLAD</strong>（$a_k$ 是 0/1，不是 NetVLAD 的软分配）。连软分配都不需要——因为 DINOv2 特征已经足够好，硬分配的量化损失可以接受，省了 NetVLAD 那套可微软化的复杂度。</p>
+<h3 id="为什么这套能拿-SOTA-级表现（深度分析）">为什么这套能拿 SOTA 级表现（深度分析）</h3>
+<p>把胜负拆到三层：</p>
+<ul>
+<li><strong>特征层（决定性）</strong>：DINOv2 的 patch 特征鲁棒性碾压之前所有方案（手工 ORB/SIFT、有监督 CNN）。这是 AnyLoc 的地基。</li>
+<li><strong>聚合层</strong>：VLAD 残差聚合比简单池化保留更多信息；硬分配在特征够好时也够用。</li>
+<li><strong>适配层</strong>：按域词表 + 白化是&quot;小而关键&quot;的工程——用极低成本（少量域图，无监督）补上域差异。</li>
+</ul>
+<p>这套组合的优势：</p>
+<ul>
+<li><strong>零 VPR 训练</strong>：不依赖 VPR 标注或弱监督（GPS 共定位等），泛化到任何域只需少量该域图建词表；</li>
+<li><strong>强域迁移</strong>：换域（街景→室内→水下）只换词表，DINOv2 主干不动；</li>
+<li><strong>可解释</strong>：VLAD 的&quot;哪个簇贡献多少&quot;还能看，比纯黑箱全局描述子透明。</li>
+</ul>
+<p>这正是&quot;<strong>特征主导、聚合简化</strong>&quot;趋势的终点——特征好到极致时，聚合回到最朴素的经典 VLAD 就够，连 NetVLAD 的可微软化和 VPR 专属训练都不再需要。</p>
+<h3 id="与-BoW-NetVLAD-的对比（主线串联）">与 BoW / NetVLAD 的对比（主线串联）</h3>
+<table>
+<thead>
+<tr>
+<th>维度</th>
+<th>BoW（DBoW2）</th>
+<th>NetVLAD</th>
+<th>DINOv2 + AnyLoc</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>局部特征</strong></td>
+<td>手工 ORB/SIFT</td>
+<td>有监督 CNN（ImageNet）</td>
+<td><strong>自监督基础模型 DINOv2</strong></td>
+</tr>
+<tr>
+<td><strong>特征鲁棒性</strong></td>
+<td>弱</td>
+<td>中（有分类偏置）</td>
+<td><strong>强</strong>（视角/光照/域）</td>
+</tr>
+<tr>
+<td><strong>“词”/聚合</strong></td>
+<td>离线 k-means + 直方图</td>
+<td>学出来的软簇 + 软残差</td>
+<td><strong>按域 k-means + 硬残差 VLAD</strong></td>
+</tr>
+<tr>
+<td><strong>是否训练</strong></td>
+<td>无</td>
+<td>端到端（ranking loss）</td>
+<td><strong>零 VPR 训练</strong>（只用预训 DINOv2）</td>
+</tr>
+<tr>
+<td><strong>按域适配</strong></td>
+<td>无</td>
+<td>无</td>
+<td><strong>按域词表 + 白化</strong></td>
+</tr>
+<tr>
+<td><strong>位置处理</strong></td>
+<td>丢弃（袋）</td>
+<td>丢弃（袋）</td>
+<td>丢弃（袋，VLAD 也扔位置）</td>
+</tr>
+<tr>
+<td><strong>检索结构</strong></td>
+<td>倒排索引</td>
+<td>ANN/FAISS</td>
+<td>ANN/FAISS</td>
+</tr>
+<tr>
+<td><strong>推理成本</strong></td>
+<td>CPU 毫秒</td>
+<td>需 GPU（CNN）</td>
+<td><strong>需 GPU（ViT，更重）</strong></td>
+</tr>
+<tr>
+<td><strong>冷启动</strong></td>
+<td>加载词典</td>
+<td>加载权重（域要匹配）</td>
+<td>加载权重 + 少量域图建词表</td>
+</tr>
+</tbody>
+</table>
+<p><strong>一条主线</strong>：BoW（手工硬直方图）→ VLAD（手工残差）→ NetVLAD（学习特征 + 学习软 VLAD）→ GeM（学习特征 + 简单池化）→ <strong>DINOv2/AnyLoc（基础特征 + 经典 VLAD + 轻按域适配）</strong>。</p>
+<p><strong>三个清晰的趋势</strong>：(1) 特征质量持续上升、且越来越主导；(2) 聚合结构持续简化（学习的软 VLAD → 简单池化 → 回到经典硬 VLAD）；(3) VPR 专属训练量持续减少（端到端微调 → 只预训练 → <strong>零训练</strong>）。AnyLoc 是这三个趋势的交汇点。</p>
+<blockquote>
+<p><strong>呼应</strong>：三者（BoW、NetVLAD、AnyLoc）在&quot;位置处理&quot;上是<strong>同一招</strong>——都靠聚合丢弃位置换视角容忍（详见 <a href="https://www.zywvvd.com/notes/study/SLAM/netvlad/netvlad/">NetVLAD</a> 的&quot;全局描述子为什么位置无关&quot;一节）。AnyLoc 没有改变&quot;袋&quot;的哲学，它换的是袋里装的特征（DINOv2 patch 特征）和怎么数（按域 VLAD + 白化）。</p>
+</blockquote>
+<h3 id="局限与开放问题">局限与开放问题</h3>
+<ul>
+<li><strong>推理重</strong>：DINOv2 大模型（尤其 ViT-g/L）前向慢、要 GPU，边缘 SLAM 设备吃不消。</li>
+<li><strong>按域词表需要少量目标域图</strong>：虽小但有冷启动成本，且域定义模糊时词表质量不稳。</li>
+<li><strong>稠密描述子检索</strong>：全局描述子要存 + ANN，大库内存/延迟仍有压力。</li>
+<li><strong>完全没见过的域</strong>：基础模型也可能掉点（极端新域），不是万能。</li>
+<li><strong>实时性</strong>：仍是边缘 SLAM 的门槛，常需分级（BoW 粗筛 + AnyLoc 兜底）。</li>
+</ul>
+<h3 id="在-SLAM-回环-重定位里的角色">在 SLAM 回环/重定位里的角色</h3>
+<ul>
+<li><strong>重定位、跨季节/昼夜回环</strong>的最强前端：大视角/外观剧变下，DINOv2 特征的鲁棒性让 AnyLoc 在这些 BoW/NetVLAD 会失效的场景里仍能命中。</li>
+<li><strong>工程分级</strong>：边缘设备上，BoW 做毫秒级粗筛，难工况或 BoW 低置信时再调 AnyLoc（GPU 上跑）兜底。</li>
+<li><strong>落地</strong>：已有工作把 AnyLoc 直接集成进视觉 SLAM 做回环，如在 DPV-SLAM（Lipson et al., 2024 学习型单目 SLAM）上用 AnyLoc 替换原词袋回环（Zhang et al., 2026 预印本）。这类工作示范了&quot;基础模型 VPR 进 SLAM&quot;的方向，但多是小型应用/预印本，不代表 SLAM 整体 SOTA——真正的部署主力仍是 ORB-SLAM3 / VINS / FAST-LIO2 这些更成熟的系统。</li>
+</ul>
+<h3 id="深度思考">深度思考</h3>
+<h4 id="基础模型：VPR-的进步从-自己创新-转向-借红利">基础模型：VPR 的进步从&quot;自己创新&quot;转向&quot;借红利&quot;</h4>
+<p>NetVLAD 时代，VPR 进步靠 VPR 自己的架构/损失创新；DINOv2/AnyLoc 之后，VPR 的 SOTA 越来越靠&quot;<strong>借</strong>通用基础模型的红利&quot;——DINOv2 不是为 VPR 训的，但它的特征恰好最适合 VPR。这意味着 VPR 研究的重心从&quot;设计 VPR 专用网络&quot;转向&quot;<strong>怎么把通用基础模型用好</strong>&quot;（层选择、聚合、域适配）。</p>
+<h4 id="零训练-VPR-的意义">零训练 VPR 的意义</h4>
+<p>AnyLoc 打破了一个长期假设：“VPR 必须在 VPR 数据上训练。” 它证明：<strong>好的特征 + 经典聚合 + 轻适配就够</strong>，不需要 VPR 标注或弱监督。这降低了 VPR 的使用门槛（不用标数据、不用训模型），也让 VPR 更像&quot;即插即用&quot;的组件。</p>
+<h4 id="与-BoW-NetVLAD-的结构同构">与 BoW/NetVLAD 的结构同构</h4>
+<p>三者本质都是&quot;<strong>提特征 → 量化/聚合 → 比向量</strong>&quot;，且都靠<strong>聚合丢弃位置</strong>（“袋&quot;哲学）换视角容忍。AnyLoc 把每一步都推到极致：最强特征（DINOv2）+ 合适的经典聚合（按域硬 VLAD）+ 轻适配（PCA 白化）。位置无关性这条线，从 BoW 到 AnyLoc 一脉相承，没有本质变化——变的只是&quot;袋里装什么、怎么数”。</p>
+<h4 id="趋势的终点？特征够强时，-域先验-又回来了">趋势的终点？特征够强时，&quot;域先验&quot;又回来了</h4>
+<p>GeM 时代说&quot;聚合无差别，特征主导&quot;；但 AnyLoc 又发现&quot;<strong>按域词表</strong>&quot;是关键杠杆（4× 提升）。这说明：<strong>纯&quot;特征碾压&quot;还不够，场景先验（域）仍有价值</strong>。基础模型把&quot;通用鲁棒性&quot;解决了，但&quot;贴合具体场景&quot;仍需小工程。这或许指向下一步：基础模型 + 自动域发现/在线域适配，把&quot;按域&quot;也自动化。</p>
+<h4 id="工程权衡：SOTA-不等于最佳部署">工程权衡：SOTA 不等于最佳部署</h4>
+<p>AnyLoc 是 SOTA 级方法，但 ViT-g + ANN 的算力开销让它在边缘 SLAM 上未必最优。<strong>最好的部署往往是混合</strong>：BoW（快、CPU、可在线增量）做日常粗筛，AnyLoc（强、GPU）只在难工况兜底。&quot;研究 SOTA&quot;和&quot;工程最优解&quot;在资源受限场景里仍是两条线。</p>
+<h3 id="小结">小结</h3>
+<p><strong>DINOv2</strong> 用自监督（DINO 自蒸馏 + iBOT 掩码预测 + KoLeo/Sinkhorn 防塌缩）在 1.42 亿张策展数据上训出 ViT，产生对视角/光照/域惊人鲁棒的通用 patch 特征——这是 AnyLoc 的地基。<strong>AnyLoc</strong> 把冻结的 DINOv2 特征 + 经典硬 VLAD（按域词表）+ PCA 白化组装起来，<strong>零 VPR 专属训练</strong>就拿到 SOTA 级表现（发布时多项 VPR 基准 SOTA；后续 EffoVPR、OT-Aggregation 等 2024–2025 工作继续推高），尤其在非街景（室内/航空/水下）域上比 NetVLAD、CosPlace、MixVPR 等好最多 4×。</p>
+<p>它是&quot;<strong>特征主导、聚合简化、训练减少</strong>&quot;这条趋势的终点：当特征强到极致，聚合回到最朴素的经典 VLAD 就够，连 NetVLAD 的可微软化和 VPR 微调都不再必需。代价是 ViT 推理重、需 GPU，所以边缘 SLAM 里常与 BoW 分级互补。它的历史意义在于<strong>第一次证明&quot;零训练、纯基础特征&quot;能在 VPR 上碾压所有 VPR 专用方法</strong>，从此 VPR 的重心从&quot;设计专用网络&quot;转向&quot;用好通用基础模型&quot;。</p>
+<h3 id="参考资料">参考资料</h3>
+<ul>
+<li>M. Oquab et al., “DINOv2: Learning Robust Visual Features without Supervision,” arXiv:2304.07193, 2023.</li>
+<li>N. Keetha et al., “AnyLoc: Towards Universal Visual Place Recognition,” RA-L, 2024（arXiv:2308.00688）.</li>
+<li>M. Caron et al., “Emerging Properties in Self-Supervised Vision Transformers”（DINO）, ICCV, 2021.</li>
+<li>J. Zhou et al., “iBOT: Image BERT Pre-Training with Online Tokenizer”（iBOT）, ICLR, 2022.</li>
+<li>相关笔记：<a href="https://www.zywvvd.com/notes/study/SLAM/netvlad/netvlad/">NetVLAD：把 VLAD 可微化的端到端位置检索</a>（直接前驱）、<a href="https://www.zywvvd.com/notes/study/SLAM/bag-of-words/bag-of-words/">词袋模型 BoW 与回环检测</a>（VPR 主线起点）、<a href="https://www.zywvvd.com/notes/study/SLAM/slam-overview/slam-overview/">SLAM 全景</a>、<a href="https://www.zywvvd.com/notes/study/SLAM/loop-closure-sim3/loop-closure-sim3/">回环检测：候选之后</a></li>
+</ul>
+<link rel="stylesheet" href="/css/spoiler.css" type="text/css"><script src="/js/spoiler.js" type="text/javascript" async></script>
+                
+
+
+				<br /><br />
+				<blockquote>
+					<p>文章链接：<br /> 
+					<a style="font-size: 0.85rem" target="_blank" rel="noopener" href="https://www.zywvvd.com/notes/study/SLAM/dinov2-anyloc/dinov2-anyloc/">https://www.zywvvd.com/notes/study/SLAM/dinov2-anyloc/dinov2-anyloc/</a>
+					</p>
+				</blockquote>
+
+
+              </div>
+            
+            <hr/>
+			
+			<!-- 添加打赏模块 -->
+			<div class="reward-container">
+				
+					<button id="rewardBtn" class="reward-btn">
+						 
+							❤ 打赏
+							
+					</button>
+					<p class="tea">“觉得不错的话，给点打赏吧 ୧(๑•̀⌄•́๑)૭”</p>
+					<div id="rewardImgContainer" class="reward-img-container">
+						<div class="singleImgContainer">
+							<img id="wechatImg" class="reward-img" src="https://uipv4.zywvvd.com:33030/HexoFiles/vvd_pc_upload/wechatpay.png" srcset="/img/loading.gif" lazyload alt="微信二维码">
+							<p class="wechatPay">微信支付</p>
+						</div>
+						<div class="singleImgContainer">
+							<img id="alipayImg" class="reward-img" src="https://uipv4.zywvvd.com:33030/HexoFiles/vvd_pc_upload/alipay.png" srcset="/img/loading.gif" lazyload alt="支付宝二维码">
+							<p class="aliPay">支付宝支付</p>
+						</div>
+					</div>
+				
+			</div>
+			
+            <div>
+              <div class="post-metas my-3">
+  
+    <div class="post-meta mr-3 d-flex align-items-center">
+      <i class="iconfont icon-category"></i>
+      
+
+<span class="category-chains">
+  
+  
+    
+      <span class="category-chain">
+        
+  <a href="/categories/SLAM/" class="category-chain-item">SLAM</a>
+  
+  
+
+      </span>
+    
+  
+</span>
+
+    </div>
+  
+  
+    <div class="post-meta">
+      <i class="iconfont icon-tags"></i>
+      
+        <a href="/tags/SLAM/" class="print-no-link">#SLAM</a>
+      
+    </div>
+  
+</div>
+
+
+              
+  
+
+  <div class="license-box my-3">
+    <div class="license-title">
+      <div>DINOv2 与 AnyLoc：自监督基础模型与零训练位置检索</div>
+      <div>https://www.zywvvd.com/notes/study/SLAM/dinov2-anyloc/dinov2-anyloc/</div>
+    </div>
+    <div class="license-meta">
+      
+        <div class="license-meta-item">
+          <div>作者</div>
+          <div>Yiwei Zhang</div>
+        </div>
+      
+      
+        <div class="license-meta-item license-meta-date">
+          <div>发布于</div>
+          <div>2026年7月7日</div>
+        </div>
+      
+      
+      
+        <div class="license-meta-item">
+          <div>许可协议</div>
+          <div>
+            
+              
+              
+                <a class="print-no-link" target="_blank" href="https://creativecommons.org/licenses/by/4.0/">
+                  <span class="hint--top hint--rounded" aria-label="BY - 署名">
+                    <i class="iconfont icon-by"></i>
+                  </span>
+                </a>
+              
+            
+          </div>
+        </div>
+      
+    </div>
+    <div class="license-icon iconfont"></div>
+  </div>
+
+
+
+              
+                <div class="post-prevnext my-3">
+                  <article class="post-prev col-6">
+                    
+                    
+                  </article>
+                  <article class="post-next col-6">
+                    
+                    
+                      <a href="/notes/study/SLAM/netvlad/netvlad/" title="NetVLAD：把 VLAD 可微化的端到端位置检索">
+                        <span class="hidden-mobile">NetVLAD：把 VLAD 可微化的端到端位置检索</span>
+                        <span class="visible-mobile">下一篇</span>
+                        <i class="iconfont icon-arrowright"></i>
+                      </a>
+                    
+                  </article>
+                </div>
+              
+            </div>
+
+            
+  
+  
+    <article id="comments" lazyload>
+      
+  <div id="waline"></div>
+  <script type="text/javascript">
+    Fluid.utils.loadComments('#waline', function() {
+      Fluid.utils.createCssLink('https://lib.baomitu.com/waline/2.14.8/waline.min.css')
+      Fluid.utils.createScript('https://lib.baomitu.com/waline/2.14.8/waline.min.js', function() {
+        var options = Object.assign(
+          {"serverURL":"https://uipv4.zywvvd.com:33033/","path":"window.location.pathname","meta":["nick","mail","link"],"requiredMeta":["nick"],"lang":"zh-CN","emoji":["https://cdn.jsdelivr.net/gh/walinejs/emojis/weibo"],"dark":"html[data-user-color-scheme=\"dark\"]","wordLimit":0,"pageSize":10,"reaction":true,"locale":{"placeholder":"山高路远，常来玩吖 ~","reactionTitle":null}},
+          {
+            el: '#waline',
+            path: window.location.pathname
+          }
+        )
+        Waline.init(options);
+        Fluid.utils.waitElementVisible('#waline .vcontent', () => {
+          var imgSelector = '#waline .vcontent img:not(.vemoji)';
+          Fluid.plugins.imageCaption(imgSelector);
+          Fluid.plugins.fancyBox(imgSelector);
+        })
+      });
+    });
+  </script>
+  <noscript>Please enable JavaScript to view the comments</noscript>
+
+
+    </article>
+  
+
+
+          </article>
+        </div>
+      </div>
+    </div>
+
+    <div class="side-col d-none d-lg-block col-lg-2">
+      
+  <aside class="sidebar" style="margin-left: -1rem">
+    <div id="toc">
+  <p class="toc-header">
+    <i class="iconfont icon-list"></i>
+    <span>目录</span>
+  </p>
+  <div class="toc-body" id="toc-body"></div>
+</div>
+
+
+
+  </aside>
+
+
+    </div>
+  </div>
+</div>
+
+
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+  
+  
+
+
+
+
+
+  <script>
+  Fluid.utils.createScript('https://lib.baomitu.com/mermaid/8.14.0/mermaid.min.js', function() {
+    mermaid.initialize({"theme":"default"});
+
+    Fluid.utils.listenDOMLoaded(function() {
+      Fluid.events.registerRefreshCallback(function() {
+        if ('mermaid' in window) {
+          mermaid.init();
+        }
+      });
+    });
+  });
+</script>
+
+
+
+
+
+
+    
+
+    
+      <a id="scroll-top-button" aria-label="TOP" href="#" role="button">
+        <i class="iconfont icon-xiangshangjiantou" aria-hidden="true"></i>
+      </a>
+    
+
+    
+      <div class="modal fade" id="modalSearch" tabindex="-1" role="dialog" aria-labelledby="ModalLabel"
+     aria-hidden="true">
+  <div class="modal-dialog modal-dialog-scrollable modal-lg" role="document">
+    <div class="modal-content">
+      <div class="modal-header text-center">
+        <h4 class="modal-title w-100 font-weight-bold">搜索</h4>
+        <button type="button" id="local-search-close" class="close" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body mx-3">
+        <div class="md-form mb-5">
+          <input type="text" id="local-search-input" class="form-control validate">
+          <label data-error="x" data-success="v" for="local-search-input">关键词</label>
+        </div>
+        <div class="list-group" id="local-search-result"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+    
+
+    
+  </main>
+
+  <footer>
+    <div class="footer-inner">
+  
+    <div class="footer-content">
+       <div class="vvd_footer" style="font-size: 0.85rem;"> <a href="https://hexo.io" target="_blank" rel="nofollow noopener" color="#d7d8d9" data-umami-event="Footer-Hexo"><span class="umami--click--Footer-Hexo">Hexo</span></a> <i class="iconfont icon-love"></i> <a href="https://github.com/fluid-dev/hexo-theme-fluid" target="_blank" rel="nofollow noopener" data-umami-event="Footer-Fluid"><span class="umami--click--Footer-Fluid">Fluid</span></a> <i class="iconfont icon-love"></i> <a href="https://uipv4.zywvvd.com:33039/share/0zx3o21oIpZTZqwC/%E5%8F%88%E8%A7%81%E8%8B%8D%E5%B2%9A" target="_blank" rel="nofollow noopener" data-umami-event="Footer-Umami"><span class="umami--click--Footer-Umami">Umami</span></a> <div style="font-size: 0.85rem;"> <span id="timeDate">载入天数...</span> <span id="times">载入时分秒...</span> <script src="/vvd_js/duration.js"></script> </div> <div style="font-size: 0.85rem;"> <span> 总访问量 <span style="color: #d7d8d9;" id="PVstatic">0</span> 次&nbsp</span> <span> 总访客数 <span style="color: #d7d8d9;" id="UVstatic">0</span> 人&nbsp</span> <span> 当前在线 <span style="color: #d7d8d9;" id="ACTstatic">0</span> 人&nbsp</span> <script src="https://uipv4.zywvvd.com:33037/statistics" defer></script> </div> <div> <span> Copyright © 2020-2025. All Rights Reserved.</span> </div> <div style="font-size: 0.88rem;"> <a target="_blank" rel="noopener" href="https://developer.hitokoto.cn/" id="hitokoto_text"><span style="color: #d7d8d9;"  id="hitokoto"></span></a> <script src="https://uipv4.zywvvd.com:33044/?encode=js&select=%23hitokoto" defer></script> </div> <a href="https://icp.gov.moe/?keyword=20230615" target="_blank">萌ICP备20230615号</a>
+
+
+</div> 
+    </div>
+  
+  
+  
+  
+</div>
+
+  </footer>
+
+  <!-- Scripts -->
+  
+  <script  src="https://lib.baomitu.com/nprogress/0.2.0/nprogress.min.js" ></script>
+  <link  rel="stylesheet" href="https://lib.baomitu.com/nprogress/0.2.0/nprogress.min.css" />
+
+  <script>
+    NProgress.configure({"showSpinner":false,"trickleSpeed":100})
+    NProgress.start()
+    window.addEventListener('load', function() {
+      NProgress.done();
+    })
+  </script>
+
+
+<script  src="https://lib.baomitu.com/jquery/3.6.0/jquery.min.js" ></script>
+<script  src="https://lib.baomitu.com/twitter-bootstrap/4.6.1/js/bootstrap.min.js" ></script>
+<script  src="/js/events.js" ></script>
+<script  src="/js/plugins.js" ></script>
+
+
+
+
+
+  
+    <script  src="/js/img-lazyload.js" ></script>
+  
+
+
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/tocbot/4.18.2/tocbot.min.js', function() {
+    var toc = jQuery('#toc');
+    if (toc.length === 0 || !window.tocbot) { return; }
+    var boardCtn = jQuery('#board-ctn');
+    var boardTop = boardCtn.offset().top;
+
+    window.tocbot.init(Object.assign({
+      tocSelector     : '#toc-body',
+      contentSelector : '.markdown-body',
+      linkClass       : 'tocbot-link',
+      activeLinkClass : 'tocbot-active-link',
+      listClass       : 'tocbot-list',
+      isCollapsedClass: 'tocbot-is-collapsed',
+      collapsibleClass: 'tocbot-is-collapsible',
+      scrollSmooth    : true,
+      includeTitleTags: true,
+      headingsOffset  : -boardTop,
+    }, CONFIG.toc));
+    if (toc.find('.toc-list-item').length > 0) {
+      toc.css('visibility', 'visible');
+    }
+
+    Fluid.events.registerRefreshCallback(function() {
+      if ('tocbot' in window) {
+        tocbot.refresh();
+        var toc = jQuery('#toc');
+        if (toc.length === 0 || !tocbot) {
+          return;
+        }
+        if (toc.find('.toc-list-item').length > 0) {
+          toc.css('visibility', 'visible');
+        }
+      }
+    });
+  });
+</script>
+
+
+  <script src=https://lib.baomitu.com/clipboard.js/2.0.10/clipboard.min.js></script>
+
+  <script>Fluid.plugins.codeWidget();</script>
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/anchor-js/4.3.1/anchor.min.js', function() {
+    window.anchors.options = {
+      placement: CONFIG.anchorjs.placement,
+      visible  : CONFIG.anchorjs.visible
+    };
+    if (CONFIG.anchorjs.icon) {
+      window.anchors.options.icon = CONFIG.anchorjs.icon;
+    }
+    var el = (CONFIG.anchorjs.element || 'h1,h2,h3,h4,h5,h6').split(',');
+    var res = [];
+    for (var item of el) {
+      res.push('.markdown-body > ' + item.trim());
+    }
+    if (CONFIG.anchorjs.placement === 'left') {
+      window.anchors.options.class = 'anchorjs-link-left';
+    }
+    window.anchors.add(res.join(', '));
+
+    Fluid.events.registerRefreshCallback(function() {
+      if ('anchors' in window) {
+        anchors.removeAll();
+        var el = (CONFIG.anchorjs.element || 'h1,h2,h3,h4,h5,h6').split(',');
+        var res = [];
+        for (var item of el) {
+          res.push('.markdown-body > ' + item.trim());
+        }
+        if (CONFIG.anchorjs.placement === 'left') {
+          anchors.options.class = 'anchorjs-link-left';
+        }
+        anchors.add(res.join(', '));
+      }
+    });
+  });
+</script>
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/fancybox/3.5.7/jquery.fancybox.min.js', function() {
+    Fluid.plugins.fancyBox();
+  });
+</script>
+
+
+  <script>Fluid.plugins.imageCaption();</script>
+
+  
+      <script>
+        if (!window.MathJax) {
+          window.MathJax = {
+            tex    : {
+              inlineMath: { '[+]': [['$', '$']] }
+            },
+            options: {
+              renderActions: {
+                insertedScript: [200, () => {
+                  document.querySelectorAll('mjx-container').forEach(node => {
+                    let target = node.parentNode;
+                    if (target.nodeName.toLowerCase() === 'li') {
+                      target.parentNode.classList.add('has-jax');
+                    }
+                  });
+                }, '', false]
+              }
+            }
+          };
+        } else {
+          MathJax.startup.document.state(0);
+          MathJax.texReset();
+          MathJax.typeset();
+          MathJax.typesetPromise();
+        }
+
+        Fluid.events.registerRefreshCallback(function() {
+          if ('MathJax' in window && MathJax.startup.document && typeof MathJax.startup.document.state === 'function') {
+            MathJax.startup.document.state(0);
+            MathJax.texReset();
+            MathJax.typeset();
+            MathJax.typesetPromise();
+          }
+        });
+      </script>
+    
+
+  <script  src="https://lib.baomitu.com/mathjax/3.2.1/es5/tex-mml-chtml.js" ></script>
+
+  <script defer src="/js/leancloud.js" ></script>
+
+  <script  src="/js/local-search.js" ></script>
+
+
+
+
+  
+<script src="//cdn.jsdelivr.net/npm/aplayer/dist/APlayer.min.js"></script>
+<script src="//cdn.jsdelivr.net/gh/metowolf/MetingJS@1.2/dist/Meting.min.js"></script>
+<script src="/js/reward.js"></script>
+
+
+
+<!-- 主题的启动项，将它保持在最底部 -->
+<!-- the boot of the theme, keep it at the bottom -->
+<script  src="/js/boot.js" ></script>
+
+
+  <script type="text/javascript">
+    /*窗口监视*/
+    var originalTitle = document.title;
+    window.onblur = function(){document.title = "明眸如初"};
+    window.onfocus = function(){document.title = originalTitle};
+  </script>
+
+
+  <div id="tooltip-rightmenu" class="tooltip-rightmenu">如需原始右键菜单请按下 <strong>Ctrl+右键</strong></div>
+
+<div id="rightmenu-wrapper" style="">
+  <ul class="list-v rightmenu" id="rightmenu-content">
+	  <li class="navigation menuNavigation-Content">
+		<a class="nav icon-only fix-cursor-default" onclick="history.back()"><i class="iconfont icon-zuojiantou1"></i></a>
+		<a class="nav icon-only fix-cursor-default" onclick="history.forward()"><i class="iconfont icon-youjiantou1"></i></a>
+		<a class="nav icon-only fix-cursor-default" onclick="window.location.reload()"><i class="iconfont icon-shuaxin"></i></a>
+		<a  aria-label="TOP" href="#" role="button"><i class="iconfont icon-xiangshang"></i></a>
+	  </li>
+
+		<hr class="menuLoad-Content" style="display: block;">
+	  <li class="menuLoad-Content" style="display: block;">
+		<a class="vlts-menu fix-cursor-default" target="_self" href="javascript:;" data-toggle="modal" data-target="#modalSearch" aria-label="Search">
+		  <span>
+			  <i class="iconfont icon-sousuo1 rightmenu-icon"></i>
+			  站内搜索
+		  </span>
+		</a>
+	  </li>
+
+	  <li class="menuLoad-Content" style="display: block;">
+		<a class="vlts-menu fix-cursor-default"  href="https://www.zywvvd.com/messagebd/" data-group="link">
+		  <span>
+			  <i class="iconfont icon-yangshi_icon_tongyong_chat rightmenu-icon">  </i>
+			   留言吐槽 
+		   </span>
+		</a>
+	  </li>
+
+
+	  <li class="menuLoad-Content" style="display: block;">
+		<a class="vlts-menu fix-cursor-default" id="help" target="_blank" rel="noopener" href="https://www.foreverblog.cn/go.html" data-group="link">
+		<span>
+			  <i class="iconfont icon-a-BlackHole rightmenu-icon"></i>
+			  虫洞穿梭
+		  </span>
+		</a>
+	  </li>
+
+	<a id="scroll-top-button" aria-label="TOP" href="#" role="button" style="bottom: 20px; right: 52.6364px;">
+        <i class="iconfont icon-xiangshangjiantou" aria-hidden="true"></i>
+      </a>
+
+	<hr class="menuLoad-Content" style="display: block;">
+	
+	  <li class="menuLoad-Content" style="display: block;">
+		<a class="vlts-menu fix-cursor-default" id="destroy-airplane" target="_blank" rel="noopener"  data-group="link">
+		<span>
+			  <i class="iconfont icon-feiji rightmenu-icon"></i>
+			  破坏小飞机
+		  </span>
+		</a>
+	  </li>
+  </ul>
+</div>
+
+<script>
+	var ua = navigator.userAgent;
+	var ipad = ua.match(/(iPad).*OS\s([\d_]+)/),
+		isIphone = !ipad && ua.match(/(iPhone\sOS)\s([\d_]+)/),
+		isAndroid = ua.match(/(Android)\s+([\d.]+)/),
+		isMobile = isIphone || isAndroid;
+
+	if(!isMobile) {
+		// 为按钮添加事件处理器
+		document.getElementById('destroy-airplane').onclick = function() {
+		  console.log('飞机起飞！');
+		  // 定义要执行的JavaScript代码
+		var KICKASSVERSION='2.0';
+		var s = document.createElement('script');
+		s.type='text/javascript';
+		document.body.appendChild(s);
+		s.src='https://uipv4.zywvvd.com:33030/HexoFiles/js/games/airplane/airplane.js';
+		void(0);
+		};
+	}
+</script>
+
+
+
+
+
+<link href="/css/custom.css"type="text/css"rel="stylesheet"/>
+<script src="/vvd_js/right_menu.js" type="text/javascript"></script>
+<link href="/css/right_menu.css"type="text/css"rel="stylesheet"/>
+<script src="/vvd_js/go.js"></script>
+
+
+  <noscript>
+    <div class="noscript-warning">博客在允许 JavaScript 运行的环境下浏览效果更佳</div>
+  </noscript>
+<script src="/live2dw/lib/L2Dwidget.min.js?094cbace49a39548bed64abff5988b05"></script><script>L2Dwidget.init({"pluginRootPath":"live2dw/","pluginJsPath":"lib/","pluginModelPath":"assets/","tagMode":false,"log":false,"model":{"jsonPath":"/live2dw/assets/z16.model.json"},"display":{"position":"left","width":200,"height":400},"mobile":{"show":false},"react":{"opacity":0.9}});</script></body>
+</html>

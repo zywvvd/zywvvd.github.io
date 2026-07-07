@@ -25,7 +25,7 @@
 <meta property="og:description" content="NetVLAD（CVPR 2016）把经典 VLAD 聚合改造成一个可微的 CNN 层，接在卷积主干后面，把整张图端到端映射成紧凑的全局描述子，专门为位置检索&#x2F;回环训练。这篇梳理它的原理、核心的重参数化推导、训练如何端到端优化、相比 BoW 的利弊，以及一个关键反直觉点——全局描述子为什么位置无关。它是 词袋模型 BoW 的学习型后继。">
 <meta property="og:locale" content="zh_CN">
 <meta property="article:published_time" content="2026-07-07T01:56:40.000Z">
-<meta property="article:modified_time" content="2026-07-07T02:03:41.256Z">
+<meta property="article:modified_time" content="2026-07-07T06:50:15.707Z">
 <meta property="article:author" content="Yiwei Zhang">
 <meta property="article:tag" content="SLAM">
 <meta name="twitter:card" content="summary_large_image">
@@ -888,7 +888,7 @@ document.addEventListener("readystatechange", function() {
                 
                   
                     <!-- compatible with older versions-->
-                    本文最后更新于：2026年7月7日 上午
+                    本文最后更新于：2026年7月7日 下午
                   
                 
               </p>
@@ -1183,7 +1183,7 @@ $$
 <li><strong>GeM Pooling</strong>（Generalized Mean，Radenović 2018）：一个比 NetVLAD <strong>更简单的聚合</strong>——对每个通道做广义平均（$\ell_p$ 范数，p 可学）。出人意料的是，GeM 这种&quot;无结构&quot;聚合在很多 benchmark 上和 NetVLAD 打平甚至更好，说明<strong>特征质量比聚合结构更重要</strong>。现在很多 VPR 系统直接用 GeM 而非 NetVLAD。</li>
 <li><strong>CosPlace / EigenPlaces / MixVPR</strong>（2022-2023）：换主干（ResNet 等）、换聚合（MixVPR 用 token mixing）、换损失（classification proxy），把 VPR 推到更高精度。</li>
 <li><strong>DELG</strong>：把全局描述子（检索）和局部特征（几何验证）统一在一个网络里。</li>
-<li><strong>基础模型路线（当前 SOTA）</strong>：<strong>DINOv2</strong> 特征对视角/光照惊人鲁棒，<strong>AnyLoc</strong>（DINOv2 + VLAD）在非街景数据集上比之前方法好最多 4×。这条线进一步印证了 GeM 时代的结论——<strong>特征（基础模型）比聚合更重要</strong>。</li>
+<li><strong>基础模型路线（SOTA 级）</strong>：<strong>DINOv2</strong> 特征对视角/光照惊人鲁棒，<strong>AnyLoc</strong>（DINOv2 + VLAD）在非街景数据集上比之前方法好最多 4×。这条线进一步印证了 GeM 时代的结论——<strong>特征（基础模型）比聚合更重要</strong>。</li>
 </ul>
 <blockquote>
 <p>一个值得深思的趋势：从 NetVLAD（精心设计的可微 VLAD 层）到 GeM（极简的平均池化）到 DINOv2+VLAD（任意聚合都好），<strong>聚合结构在逐渐&quot;去精致化&quot;，胜负面越来越取决于特征本身</strong>。NetVLAD 的历史地位在于它<strong>第一次证明了&quot;端到端学习&quot;在 VPR 上能赢手工 BoW</strong>，从此这条路的重心从&quot;怎么聚合&quot;转向了&quot;特征从哪来&quot;。</p>
@@ -1195,7 +1195,7 @@ $$
 <li><strong>跨季节/昼夜回环</strong>：机器人白天建图、晚上回环，或春夏秋冬建了又回——BoW 在这类外观剧变下基本失效，学习型 VPR 是目前唯一可行的方案。</li>
 <li><strong>大尺度环境</strong>：城市级 SLAM 几十万关键帧，BoW 的倒排索引也会膨胀，而全局描述子 + FAISS 的 ANN 检索扩展性更好。</li>
 </ol>
-<p>但代价是<strong>实时性和部署门槛</strong>：SLAM 一般跑在边缘设备（无人机、机器人）上，GPU 资源有限，而 NetVLAD 推理要 CNN 前向。所以工程上常做<strong>分级</strong>：BoW 做毫秒级粗筛，仅当 BoW 给不出高置信候选、或场景被判定为难工况时，再调 NetVLAD 兜底。近期像 DPV-SLAM（2026）这类工作就是直接把 AnyLoc 集成进 SLAM 做回环，是这条线的最新落地。</p>
+<p>但代价是<strong>实时性和部署门槛</strong>：SLAM 一般跑在边缘设备（无人机、机器人）上，GPU 资源有限，而 NetVLAD 推理要 CNN 前向。所以工程上常做<strong>分级</strong>：BoW 做毫秒级粗筛，仅当 BoW 给不出高置信候选、或场景被判定为难工况时，再调 NetVLAD 兜底。近期有工作在 DPV-SLAM（Lipson et al., 2024，学习型单目 SLAM）上用 AnyLoc 替换原词袋回环（Zhang et al., 2026 预印本），示范了&quot;基础模型 VPR 进 SLAM&quot;的方向——但这是该方向的一篇小型演示，不代表 SLAM 整体 SOTA。</p>
 <h3 id="深度思考">深度思考</h3>
 <h4 id="NetVLAD-的真正贡献：把归纳偏置保留下来再学">NetVLAD 的真正贡献：把归纳偏置保留下来再学</h4>
 <p>一个容易忽略的设计哲学：NetVLAD <strong>没有</strong>用一个纯黑箱的 CNN+池化去硬学检索，而是<strong>把经典 VLAD 的结构（簇 + 残差）当先验嵌进网络</strong>，只把它软化、可学化。这比&quot;从零硬学&quot;好——VLAD 的残差结构是个好归纳偏置（保留了 BoW 直方图丢掉的幅度/方向信息），NetVLAD 把这个先验当热启动，再用数据精调。这是&quot;经典方法 + 深度学习&quot;融合的范本，而不是&quot;深度学习取代经典&quot;。</p>
@@ -1339,6 +1339,12 @@ $$
                 <div class="post-prevnext my-3">
                   <article class="post-prev col-6">
                     
+                    
+                      <a href="/notes/study/SLAM/dinov2-anyloc/dinov2-anyloc/" title="DINOv2 与 AnyLoc：自监督基础模型与零训练位置检索">
+                        <i class="iconfont icon-arrowleft"></i>
+                        <span class="hidden-mobile">DINOv2 与 AnyLoc：自监督基础模型与零训练位置检索</span>
+                        <span class="visible-mobile">上一篇</span>
+                      </a>
                     
                   </article>
                   <article class="post-next col-6">
