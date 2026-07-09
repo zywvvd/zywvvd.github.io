@@ -17,15 +17,15 @@
   <meta name="author" content="Yiwei Zhang">
   <meta name="keywords" content="人工智能, 深度学习, 个人博客, 机器学习">
   
-    <meta name="description" content="FoundationPose（CVPR 2024 Highlight，NVIDIA）把 6D 物体位姿估计做成了&quot;一个模型零样本泛化到新物体&quot;——给定 CAD 模型或几张参考照片即可，不重新训练。它的核心是 render-and-compare（渲染对比），把位姿估计从端到端回归转成带监督的图像判别问题。这篇记录它的算法原理和源码架构要点（不含具体代码）。">
+    <meta name="description" content="FoundationPose（CVPR 2024 Highlight，NVIDIA）用一个模型实现零样本泛化到新物体——给定 CAD 模型或几张参考照片即可，不重新训练。它的核心是 render-and-compare（渲染对比），把位姿估计从端到端回归转成带监督的图像判别问题。这篇记录它的算法原理和源码架构要点（不含具体代码）。">
 <meta property="og:type" content="article">
-<meta property="og:title" content="FoundationPose：渲染对比式 6D 位姿估计">
+<meta property="og:title" content="FoundationPose 6D 位姿估计">
 <meta property="og:url" content="https://www.zywvvd.com/notes/study/pose-estimation/foundationpose/foundationpose/index.html">
 <meta property="og:site_name" content="又见苍岚">
-<meta property="og:description" content="FoundationPose（CVPR 2024 Highlight，NVIDIA）把 6D 物体位姿估计做成了&quot;一个模型零样本泛化到新物体&quot;——给定 CAD 模型或几张参考照片即可，不重新训练。它的核心是 render-and-compare（渲染对比），把位姿估计从端到端回归转成带监督的图像判别问题。这篇记录它的算法原理和源码架构要点（不含具体代码）。">
+<meta property="og:description" content="FoundationPose（CVPR 2024 Highlight，NVIDIA）用一个模型实现零样本泛化到新物体——给定 CAD 模型或几张参考照片即可，不重新训练。它的核心是 render-and-compare（渲染对比），把位姿估计从端到端回归转成带监督的图像判别问题。这篇记录它的算法原理和源码架构要点（不含具体代码）。">
 <meta property="og:locale" content="zh_CN">
 <meta property="article:published_time" content="2026-06-25T01:38:46.000Z">
-<meta property="article:modified_time" content="2026-07-06T03:34:56.711Z">
+<meta property="article:modified_time" content="2026-07-09T02:14:37.658Z">
 <meta property="article:author" content="Yiwei Zhang">
 <meta property="article:tag" content="Deep_Learning">
 <meta property="article:tag" content="Pose_Estimation">
@@ -33,7 +33,7 @@
   
   
   
-  <title>FoundationPose：渲染对比式 6D 位姿估计 - 又见苍岚</title>
+  <title>FoundationPose 6D 位姿估计 - 又见苍岚</title>
 
   <link  rel="stylesheet" href="https://lib.baomitu.com/twitter-bootstrap/4.6.1/css/bootstrap.min.css" />
 
@@ -645,7 +645,7 @@ document.addEventListener("readystatechange", function() {
       <div class="banner-text text-center fade-in-up">
         <div class="h2">
           
-            <span id="subtitle">FoundationPose：渲染对比式 6D 位姿估计</span>
+            <span id="subtitle">FoundationPose 6D 位姿估计</span>
           
         </div>
 
@@ -674,7 +674,7 @@ document.addEventListener("readystatechange", function() {
         <i class="iconfont icon-chart"></i>
         
           <!-- compatible with older versions-->
-          1.3k 字
+          1.2k 字
         
       </span>
     
@@ -882,14 +882,14 @@ document.addEventListener("readystatechange", function() {
         <div id="board">
           <article class="post-content mx-auto">
 
-            <!-- <h1 id="seo-header">FoundationPose：渲染对比式 6D 位姿估计</h1> -->
+            <!-- <h1 id="seo-header">FoundationPose 6D 位姿估计</h1> -->
 
             
               <p id="updated-time" class="note note-info" style="">
                 
                   
                     <!-- compatible with older versions-->
-                    本文最后更新于：2026年7月6日 中午
+                    本文最后更新于：2026年7月9日 上午
                   
                 
               </p>
@@ -898,17 +898,17 @@ document.addEventListener("readystatechange", function() {
               <div class="markdown-body">
                 
                 <blockquote>
-<p>FoundationPose（CVPR 2024 Highlight，NVIDIA）把 6D 物体位姿估计做成了&quot;一个模型零样本泛化到新物体&quot;——给定 CAD 模型或几张参考照片即可，不重新训练。它的核心是 render-and-compare（渲染对比），把位姿估计从端到端回归转成带监督的图像判别问题。这篇记录它的算法原理和源码架构要点（不含具体代码）。</p>
+<p>FoundationPose（CVPR 2024 Highlight，NVIDIA）用一个模型实现零样本泛化到新物体——给定 CAD 模型或几张参考照片即可，不重新训练。它的核心是 render-and-compare（渲染对比），把位姿估计从端到端回归转成带监督的图像判别问题。这篇记录它的算法原理和源码架构要点（不含具体代码）。</p>
 </blockquote>
 <span id="more"></span>
-<h3 id="要解决什么问题">要解决什么问题</h3>
+<h3 id="问题">问题</h3>
 <p>传统 6D 位姿估计方法的痛点：PCA + ICP 需要好初值、对称物体主轴不唯一、对遮挡反光敏感；关键点 + PnP（如 PVN3D）每个物体要单独训练，换新物体要重新标注训练；直接回归（如 PoseCNN）旋转回归精度差、泛化弱。</p>
 <p>FoundationPose 的目标是：<strong>一个模型，零样本泛化到从未见过的新物体，不重新训练</strong>。同时支持两种输入——model-based（有 3D CAD 模型）和 model-free（只有几张参考照片，无 CAD）。</p>
-<h3 id="核心思想：渲染对比（Analysis-by-Synthesis）">核心思想：渲染对比（Analysis-by-Synthesis）</h3>
+<h3 id="核心思想">核心思想</h3>
 <p>不直接回归位姿，而是：生成多个候选位姿 → 在每个位姿下用网格渲染出&quot;物体应该长什么样&quot; → 和真实观测（RGB-D）对比 → 由网络回归位姿修正量、再打分挑出最优。这套范式叫 <strong>analysis-by-synthesis</strong>（或 render-and-compare），更接近&quot;人眼认物体&quot;的方式——“从这个角度看它应该长这样”。</p>
-<h4 id="一个关键澄清：不是可微渲染">一个关键澄清：不是可微渲染</h4>
+<h4 id="非可微渲染">非可微渲染</h4>
 <p>容易误解的一点：FoundationPose <strong>不做可微渲染优化</strong>。它不是把 loss 对位姿求梯度反传——渲染本身在 <code>@torch.inference_mode()</code> 下、不反传梯度。它做的是 DeepIM 风格的**“render → compare → 网络直接回归 Δpose”** 的迭代（5 次），每轮重新渲染构成闭环。这样既保留了 render-and-compare 的判别力，又避开了可微渲染梯度不稳、算力昂贵的坑。</p>
-<h4 id="与-ICP-的哲学对比">与 ICP 的哲学对比</h4>
+<h4 id="与-ICP-对比">与 ICP 对比</h4>
 <table>
 <thead>
 <tr>
@@ -946,10 +946,10 @@ document.addEventListener("readystatechange", function() {
 </tbody>
 </table>
 <p>核心转变：把&quot;位姿估计&quot;从<strong>几何优化</strong>变成<strong>图像判别</strong>——度量函数本身是被学出来的（而非手写的点到点距离），所以能学到&quot;哪些像素/通道对位姿敏感、哪些是噪声/遮挡&quot;。</p>
-<h3 id="极简架构：两个网络-一个渲染器">极简架构：两个网络 + 一个渲染器</h3>
+<h3 id="架构">架构</h3>
 <p>源码里只有两个可训练网络（RefineNet、ScoreNet）加一个不可微的 GPU 光栅化器（nvdiffrast）：</p>
 <figure class="highlight scss"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><code class="hljs scss">                ┌─────────────────────────────┐<br>网格 mesh ─────▶│   nvdiffrast 光栅化器          │<br>位姿 (R,t) ────▶│   (不可微, GPU, 支持光照)      │──▶ 渲染裁剪图 <span class="hljs-selector-tag">A</span> (RGB + xyz)<br>                └─────────────────────────────┘<br>                ┌─────────────────────────────┐<br>真实 RGB-D ────▶│ warp_perspective 裁剪对齐     │──▶ 观测裁剪图 <span class="hljs-selector-tag">B</span> (RGB + xyz)<br>                └─────────────────────────────┘<br>                              │<br>                              ▼<br>          ┌────────────────────────────────────────┐<br>          │  RefineNet:   回归 Δt, ΔR → 更新位姿     │  (迭代 <span class="hljs-number">5</span> 轮)<br>          │  ScoreNet:    回归标量分数 → 选最优      │  (仅 register 末轮)<br>          └────────────────────────────────────────┘<br></code></pre></td></tr></table></figure>
-<h3 id="位姿参数化与自我中心增量更新">位姿参数化与自我中心增量更新</h3>
+<h3 id="位姿参数化">位姿参数化</h3>
 <p>物体位姿 $T=(R,\mathbf{t})\in SE(3)$，表示物体坐标系到相机坐标系的刚体变换。物体的网格预先做一次<strong>居中</strong>（减去质心），让旋转的枢轴落在物体几何中心，使网络学到的增量在所有物体上对称、可归一化。</p>
 <p>RefineNet 输出<strong>相对当前位姿的增量</strong> $(\Delta\mathbf{t},\Delta R)$，按&quot;自我中心&quot;方式更新（在相机系下增量）：</p>
 
@@ -958,7 +958,7 @@ $$
 $$
 
 <p>注意旋转是<strong>左乘</strong>（相机系增量）。输出做限幅防止大跳变：平移用 $\tanh(\cdot)\odot\text{trans\_normalizer}$（逐通道），旋转 $\Delta\omega=\tanh(\cdot)\cdot\text{rot\_normalizer}$ 再经 so3 指数映射转旋转矩阵 $\Delta R=\exp_{SO(3)}(\Delta\omega^\wedge)$。<code>tanh</code> 把无界回归压到 $[-1,1]$ 乘以 normalizer 得到物理合理的最大步长——这是迭代收敛的工程保证（类似 trust-region），每轮只能做有限修正。</p>
-<h3 id="平移：从-mask-深度闭式估计（不搜索）">平移：从 mask + 深度闭式估计（不搜索）</h3>
+<h3 id="平移估计">平移估计</h3>
 <p>平移不需要全局采样，直接从 mask 闭式求：</p>
 
 $$
@@ -966,7 +966,7 @@ $$
 $$
 
 <p>所有候选位姿共享这一个 $\mathbf{t}$，只需对 $R$ 做全局假设采样。这是一个关键降维：从 $SE(3)$（6 维）降到 $SO(3)$（3 维）。</p>
-<h3 id="旋转：icosphere-视角网格采样-对称聚类">旋转：icosphere 视角网格采样 + 对称聚类</h3>
+<h3 id="旋转采样">旋转采样</h3>
 <p>绕物体的相机方向用<strong>正二十面体球面（icosphere）顶点</strong>离散采样：逐级细分直到顶点数 ≥ 40（约 42 个），每个顶点构造一个相机到物体的旋转（look-at），每个视角再叠加面内旋转 0°/60°/120°/180°/240°/300°（6 个）。裸候选约 $42\times6\approx252$ 个。</p>
 <p>裸候选里大量视角在对称物体下其实等价，需去重。判据：两个位姿 $T_1,T_2$ 同簇当且仅当存在对称变换 $S$ 使</p>
 
@@ -976,11 +976,11 @@ $$
 
 <p>其中 $d_{\text{geo}}(R_a,R_b)=\arccos\big(\tfrac{\operatorname{tr}(R_a^\top R_b)-1}{2}\big)$ 是旋转的测地距离，阈值约 30°。聚类后候选数随物体对称性降到几十到上百个。</p>
 <p>为什么用 icosphere 而非经纬度网格？icosphere 顶点在球面上近似均匀（每点占据的立体角近似相等），经纬度网格两极过密、赤道过稀。均匀采样保证最坏情况下的视角覆盖，用最少候选达到给定角度分辨率。</p>
-<h3 id="Register-模式：首帧全局定位流程">Register 模式：首帧全局定位流程</h3>
+<h3 id="Register-模式">Register 模式</h3>
 <p>首帧定位（不依赖初值）的完整流程：</p>
 <figure class="highlight routeros"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><code class="hljs routeros"><span class="hljs-keyword">Step</span> 0  深度预处理: erode → bilateral<span class="hljs-built_in"> filter </span>→ depth2xyz map<br><span class="hljs-keyword">Step</span> 1  guess_translation:   mask 质心 + 深度中位数 → t  (所有候选共享)<br><span class="hljs-keyword">Step</span> 2  generate_random_pose_hypo: icosphere×6 → 聚类 → N 个候选旋转 R_i<br>        候选 T_i = [R_i | t],  <span class="hljs-attribute">i</span>=1..N (典型 <span class="hljs-attribute">N</span>=几十~上百)<br><span class="hljs-keyword">Step</span> 3  RefineNet.predict(<span class="hljs-attribute">iteration</span>=5):  对全部 N 候选并行跑 5 轮细化<br><span class="hljs-keyword">Step</span> 4  ScoreNet.predict:  对细化后的 N 个位姿打标量分<br><span class="hljs-keyword">Step</span> 5  argsort 降序 → 取分数最高者作为最优位姿<br></code></pre></td></tr></table></figure>
 <p>N 个候选完全并行（网络前向 batch 可达 1024，渲染 batch 512），这是 register 模式虽慢但可接受的关键。</p>
-<h3 id="每轮细化内部的-render-and-compare">每轮细化内部的 render-and-compare</h3>
+<h3 id="细化流程">细化流程</h3>
 <p>对每个候选位姿 $T_k$ 执行以下流程：</p>
 <p><strong>(a) 计算 3D 包围盒裁剪窗口</strong>：以位姿中心为圆心、半径取物体直径的某个比例，投影到像素取外接矩形，再 warp 到固定输出尺寸（如 160×160）。这保证渲染图和观测图在同一个 2D 裁剪坐标系下对齐。</p>
 <p><strong>(b) 渲染图 A</strong>：用 nvdiffrast 对居中网格在位姿 $T_k$ 下做 GPU 光栅化，输出 RGB（带环境光加漫反射）和 3 通道 xyz_map（每像素的相机系 3D 坐标）。</p>
@@ -993,7 +993,7 @@ $$
 
 <p>每像素 3D 坐标减去当前位姿平移、除以物体半径，让不同大小、不同距离的物体的几何特征都落在相近量级。这是跨物体泛化的关键归一化。</p>
 <p><strong>(e) 网络输入</strong>：每张图 6 通道（RGB 3 加归一化 xyz 3）。用 3D xyz 而非单通道深度，是因为 xyz 保留了完整 3D 几何，网络能直接从几何偏移判读位姿误差。</p>
-<h3 id="RefineNet：从对比图对回归位姿增量">RefineNet：从对比图对回归位姿增量</h3>
+<h3 id="RefineNet">RefineNet</h3>
 <p>RefineNet 是<strong>双分支权重共享的 CNN + Transformer</strong>，把&quot;渲染图 A vs 观测图 B&quot;的差异编码成位姿修正量。</p>
 <p>关键技术点：</p>
 <ul>
@@ -1008,7 +1008,7 @@ $$
 \mathcal{L}_{\text{refine}}=\big\lVert\Delta\mathbf{t}_{\text{pred}}-\Delta\mathbf{t}_{\text{gt}}\big\rVert_2^2+\lambda\big\lVert\Delta\omega_{\text{pred}}-\Delta\omega_{\text{gt}}\big\rVert_2^2
 $$
 
-<h3 id="ScoreNet：候选间交叉注意力-锦标赛筛选">ScoreNet：候选间交叉注意力 + 锦标赛筛选</h3>
+<h3 id="ScoreNet">ScoreNet</h3>
 <p>RefineNet 是逐候选独立回归——它不知道别的候选长什么样。当初始假设离真值太远或物体严重遮挡时，5 轮迭代未必把每个候选都带到真值附近，此时需要一个看全局、做相对排序的网络。</p>
 <p>ScoreNet 与 RefineNet 的核心区别：多了一个<strong>候选间交叉注意力</strong>，让 L 个候选假设互相 attend——每个候选的分数是在&quot;看到其它候选长什么样&quot;之后才给出的。这让网络学到的不是绝对分数，而是<strong>相对判别</strong>（“这一堆里谁更像真的”）。</p>
 <p>对应的损失是对比损失族（pairwise / InfoNCE 风格）：给定一批候选和真值位姿 $T^*$，让最接近真值的那个候选 logit 最大：</p>
@@ -1018,10 +1018,10 @@ $$
 $$
 
 <p>其中 $d_{\text{ADD}}(T_a,T_b)=\tfrac{1}{M}\sum_m\|T_a x_m - T_b x_m\|$ 是 ADD（Average Distance of model points）位姿误差度量——物体 CAD 的 M 个顶点在两位姿下变换后的平均欧氏距离；$s_i$ 是 ScoreNet 给候选 i 的 logit。</p>
-<p>直接对全部 N 个候选做交叉注意力算力爆炸，所以用<strong>锦标赛淘汰</strong>：逐轮两两比较取胜者、败者淘汰，每轮减半直到只剩一个冠军，冠军给加分确保 argsort 后排第一。整个过程是 $O(\log N)$ 轮、共 $O(N)$ 次成对比较（每轮 $N/2, N/4, \ldots$，求和约 $N$ 次，每次一次网络前向），替代一次性 $O(N^2)$ 的全局注意力。</p>
-<h3 id="Track-模式：后续帧单假设跟踪">Track 模式：后续帧单假设跟踪</h3>
+<p>直接对全部 N 个候选做完整交叉注意力代价过高，所以用<strong>锦标赛淘汰</strong>：逐轮两两比较取胜者、败者淘汰，每轮减半直到只剩一个冠军，冠军给加分确保 argsort 后排第一。整个过程是 $O(\log N)$ 轮、共 $O(N)$ 次成对比较（每轮 $N/2, N/4, \ldots$，求和约 $N$ 次，每次一次网络前向），替代一次性 $O(N^2)$ 的全局注意力。</p>
+<h3 id="Track-模式">Track 模式</h3>
 <p>已知上一帧位姿后，每帧只用 RefineNet 在上一帧位姿附近单假设细化（不用 ScoreNet）。因为只剩 1 个假设，没有候选间比较的需求；帧间运动小，假设已在收敛域内。这就是 register 慢（全局搜索加评分）、track 快（单假设细化）的工程分工。</p>
-<h3 id="为什么能零样本泛化">为什么能零样本泛化</h3>
+<h3 id="零样本泛化">零样本泛化</h3>
 <p>FoundationPose 对新物体不微调，由四个机制共同保证：</p>
 <ol>
 <li><strong>网络只看&quot;渲染图 vs 真实图&quot;对，不看物体身份</strong>：RefineNet / ScoreNet 输入只有 A、B 两个张量，没有任何物体 ID 或嵌入向量。网络学的是通用的图像判别函数，对所有物体共享同一套权重。</li>
@@ -1125,7 +1125,7 @@ $$
 
   <div class="license-box my-3">
     <div class="license-title">
-      <div>FoundationPose：渲染对比式 6D 位姿估计</div>
+      <div>FoundationPose 6D 位姿估计</div>
       <div>https://www.zywvvd.com/notes/study/pose-estimation/foundationpose/foundationpose/</div>
     </div>
     <div class="license-meta">
@@ -1170,9 +1170,9 @@ $$
                   <article class="post-prev col-6">
                     
                     
-                      <a href="/notes/study/SLAM/slam-overview/slam-overview/" title="SLAM 全景：定位与建图的联合估计">
+                      <a href="/notes/study/SLAM/slam-overview/slam-overview/" title="SLAM 全景">
                         <i class="iconfont icon-arrowleft"></i>
-                        <span class="hidden-mobile">SLAM 全景：定位与建图的联合估计</span>
+                        <span class="hidden-mobile">SLAM 全景</span>
                         <span class="visible-mobile">上一篇</span>
                       </a>
                     
@@ -1180,8 +1180,8 @@ $$
                   <article class="post-next col-6">
                     
                     
-                      <a href="/notes/study/SLAM/loop-closure-sim3/loop-closure-sim3/" title="回环检测：候选之后（几何验证、Sim3 与全局校正）">
-                        <span class="hidden-mobile">回环检测：候选之后（几何验证、Sim3 与全局校正）</span>
+                      <a href="/notes/study/SLAM/loop-closure-sim3/loop-closure-sim3/" title="回环校正">
+                        <span class="hidden-mobile">回环校正</span>
                         <span class="visible-mobile">下一篇</span>
                         <i class="iconfont icon-arrowright"></i>
                       </a>

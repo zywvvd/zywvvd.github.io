@@ -19,13 +19,13 @@
   
     <meta name="description" content="COLMAP 的 PatchMatch Stereo 是 MVS 稠密重建的核心算法，通过随机初始化深度和法线、NCC 代价评估、空间传播与随机扰动迭代优化，估计每个像素的最优深度。本文记录算法原理与实现细节。">
 <meta property="og:type" content="article">
-<meta property="og:title" content="COLMAP PatchMatch Stereo 算法详解">
+<meta property="og:title" content="COLMAP PatchMatch Stereo">
 <meta property="og:url" content="https://www.zywvvd.com/notes/3d/colmap-patchmatch-stereo/colmap-patchmatch-stereo/index.html">
 <meta property="og:site_name" content="又见苍岚">
 <meta property="og:description" content="COLMAP 的 PatchMatch Stereo 是 MVS 稠密重建的核心算法，通过随机初始化深度和法线、NCC 代价评估、空间传播与随机扰动迭代优化，估计每个像素的最优深度。本文记录算法原理与实现细节。">
 <meta property="og:locale" content="zh_CN">
 <meta property="article:published_time" content="2026-05-16T02:00:00.000Z">
-<meta property="article:modified_time" content="2026-05-16T10:18:16.140Z">
+<meta property="article:modified_time" content="2026-07-09T02:27:06.438Z">
 <meta property="article:author" content="Yiwei Zhang">
 <meta property="article:tag" content="3D">
 <meta property="article:tag" content="Computer_Vision">
@@ -34,7 +34,7 @@
   
   
   
-  <title>COLMAP PatchMatch Stereo 算法详解 - 又见苍岚</title>
+  <title>COLMAP PatchMatch Stereo - 又见苍岚</title>
 
   <link  rel="stylesheet" href="https://lib.baomitu.com/twitter-bootstrap/4.6.1/css/bootstrap.min.css" />
 
@@ -646,7 +646,7 @@ document.addEventListener("readystatechange", function() {
       <div class="banner-text text-center fade-in-up">
         <div class="h2">
           
-            <span id="subtitle">COLMAP PatchMatch Stereo 算法详解</span>
+            <span id="subtitle">COLMAP PatchMatch Stereo</span>
           
         </div>
 
@@ -883,14 +883,14 @@ document.addEventListener("readystatechange", function() {
         <div id="board">
           <article class="post-content mx-auto">
 
-            <!-- <h1 id="seo-header">COLMAP PatchMatch Stereo 算法详解</h1> -->
+            <!-- <h1 id="seo-header">COLMAP PatchMatch Stereo</h1> -->
 
             
               <p id="updated-time" class="note note-info" style="">
                 
                   
                     <!-- compatible with older versions-->
-                    本文最后更新于：2026年5月16日 晚上
+                    本文最后更新于：2026年7月9日 上午
                   
                 
               </p>
@@ -1262,18 +1262,18 @@ document.addEventListener("readystatechange", function() {
 <p>一次 sweep 就是<strong>从一端扫到另一端</strong>，逐像素处理。以从上到下的 sweep 为例：</p>
 <figure class="highlight tap"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><code class="hljs tap">第 <span class="hljs-number"> 0 </span>行: 处理所有像素 (更新深度)<br>第 <span class="hljs-number"> 1 </span>行: 处理所有像素 (可以看第<span class="hljs-number"> 0 </span>行的结果)<br>第 <span class="hljs-number"> 2 </span>行: 处理所有像素 (可以看第<span class="hljs-number"> 1 </span>行的结果)<br>...<br>最后一行: 处理所有像素<br></code></pre></td></tr></table></figure>
 <p>扫一遍的过程中，每个像素都做了&quot;看看上面邻居的深度好不好，好就拿来用&quot;的操作。</p>
-<h4 id="为什么要多轮迭代">为什么要多轮迭代</h4>
+<h4 id="多轮迭代的目的">多轮迭代的目的</h4>
 <p>初始状态每个像素的深度都是随机猜的，全不对。靠传播让正确值从第 0 行逐行接力传到第 1536 行需要 1536 次 sweep，根本等不起。</p>
 <p>PatchMatch 的关键是不只依赖传播，还同时做随机扰动：</p>
 <figure class="highlight nestedtext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><code class="hljs nestedtext"><span class="hljs-attribute">每轮 sweep 做两件事</span><span class="hljs-punctuation">:</span><br><span class="hljs-punctuation"></span><br><span class="hljs-attribute">1. 传播</span><span class="hljs-punctuation">:</span> <span class="hljs-string">抄邻居的好结果 → 正确信息向前推进一步</span><br><span class="hljs-attribute">2. 随机扰动</span><span class="hljs-punctuation">:</span> <span class="hljs-string">每个像素自己也在探索新深度 → 可能直接猜中正确答案</span><br><br><span class="hljs-attribute">两个机制叠加</span><span class="hljs-punctuation">:</span><br>  传播让正确值稳步扩散（确定性推进）<br>  随机扰动让远处像素有机会自己找到正确答案（不需要等传播传过来）<br></code></pre></td></tr></table></figure>
 <p>类比一个教室里老师把答案告诉第一排，每个学生可以抄前一排的答案（传播），也可以自己猜（随机扰动），比较后留下更好的。几轮之后全班都有正确答案——不需要等第一排的答案逐排传到最后一排。</p>
 <p>所以 5 轮迭代 × 4 方向 = 20 次 sweep 就够了：</p>
 <figure class="highlight nestedtext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><code class="hljs nestedtext"><span class="hljs-attribute">初始</span><span class="hljs-punctuation">:</span> <span class="hljs-string"> 全部随机 → 全错</span><br><span class="hljs-attribute">第 1 轮</span><span class="hljs-punctuation">:</span> <span class="hljs-string"> 少数像素碰巧猜对 + 传播到邻居 → 只覆盖少数区域</span><br><span class="hljs-attribute">第 2 轮</span><span class="hljs-punctuation">:</span> <span class="hljs-string"> 更多像素自己猜对 + 传播继续扩散 → 覆盖更多区域</span><br><span class="hljs-attribute">...</span><br><span class="hljs-attribute">第 5 轮</span><span class="hljs-punctuation">:</span> <span class="hljs-string"> 大部分像素已收敛，只剩微调</span><br></code></pre></td></tr></table></figure>
-<h4 id="为什么要-4-个方向扫描">为什么要 4 个方向扫描</h4>
+<h4 id="4-方向扫描的目的">4 方向扫描的目的</h4>
 <p>只从上往下扫，信息只能<strong>向下传播</strong>，下方的正确值永远传不到上方。所以扫 4 个方向，让信息从四面八方传播：</p>
 <figure class="highlight apache"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><code class="hljs apache"><span class="hljs-attribute">sweep</span> <span class="hljs-number">0</span>: 上→下   （上方好结果往下传）<br><span class="hljs-attribute">sweep</span> <span class="hljs-number">1</span>: 右→左   （右方好结果往左传）<br><span class="hljs-attribute">sweep</span> <span class="hljs-number">2</span>: 下→上   （下方好结果往上传）<br><span class="hljs-attribute">sweep</span> <span class="hljs-number">3</span>: 左→右   （左方好结果往右传）<br></code></pre></td></tr></table></figure>
 <p>4 个方向扫完 = 信息在上下左右都传播了一轮。5 次迭代 × 4 方向 = 20 轮扫描。</p>
-<h4 id="为什么用-旋转-90°-实现-4-方向">为什么用&quot;旋转 90°&quot;实现 4 方向</h4>
+<h4 id="用旋转-90°-实现-4-方向">用旋转 90° 实现 4 方向</h4>
 <p>最直觉的做法是写 4 个不同的 kernel：<code>SweepDown()</code>、<code>SweepRight()</code>、<code>SweepUp()</code>、<code>SweepLeft()</code>。</p>
 <p>COLMAP 只写了 <strong>1 个 kernel</strong>（<code>SweepFromTopToBottom</code>），永远只从上往下扫。每扫完一次把整张图旋转 90°——kernel 还是同一个，但效果等价于换了方向扫原图：</p>
 <figure class="highlight gcode"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><code class="hljs gcode">原始图:           旋转 <span class="hljs-number">90</span>° 后:      再旋转 <span class="hljs-number">90</span>°:      再旋转 <span class="hljs-number">90</span>°:<br>┌──────┐         ┌──────┐        ┌──────┐        ┌──────┐<br>│↓ ↓ ↓ │         │↓ ↓ ↓ │        │↓ ↓ ↓ │        │↓ ↓ ↓ │<br>│↓ ↓ ↓ │  →      │↓ ↓ ↓ │  →     │↓ ↓ ↓ │  →     │↓ ↓ ↓ │<br>│↓ ↓ ↓ │         │↓ ↓ ↓ │        │↓ ↓ ↓ │        │↓ ↓ ↓ │<br>└──────┘         └──────┘        └──────┘        └──────┘<br>上→下            上→下            上→下            上→下<br><span class="hljs-comment">(实际:上→下)</span>    <span class="hljs-comment">(实际:右→左)</span>    <span class="hljs-comment">(实际:下→上)</span>    <span class="hljs-comment">(实际:左→右)</span><br></code></pre></td></tr></table></figure>
@@ -1657,7 +1657,7 @@ document.addEventListener("readystatechange", function() {
 <li><strong>始终保留 5% 新信息</strong>：即使到最后也不完全锁定，保留对局部异常的响应能力</li>
 </ul>
 <h3 id="深度与法线参数化">深度与法线参数化</h3>
-<h4 id="为什么用-depth-normal-而非其他参数化">为什么用 (depth, normal) 而非其他参数化</h4>
+<h4 id="depth-normal-参数化的选择">(depth, normal) 参数化的选择</h4>
 <p>MVS 算法需要对每个像素估计一个 3D 位置。常见的参数化选择：</p>
 <table>
 <thead>
@@ -2078,7 +2078,7 @@ document.addEventListener("readystatechange", function() {
 
   <div class="license-box my-3">
     <div class="license-title">
-      <div>COLMAP PatchMatch Stereo 算法详解</div>
+      <div>COLMAP PatchMatch Stereo</div>
       <div>https://www.zywvvd.com/notes/3d/colmap-patchmatch-stereo/colmap-patchmatch-stereo/</div>
     </div>
     <div class="license-meta">
@@ -2123,9 +2123,9 @@ document.addEventListener("readystatechange", function() {
                   <article class="post-prev col-6">
                     
                     
-                      <a href="/notes/study/camera-imaging/focal-sensor-fov/focal-sensor-fov/" title="焦距、传感器与 FOV：物理到像素的完整关系链">
+                      <a href="/notes/study/camera-imaging/focal-sensor-fov/focal-sensor-fov/" title="焦距、传感器与 FOV">
                         <i class="iconfont icon-arrowleft"></i>
-                        <span class="hidden-mobile">焦距、传感器与 FOV：物理到像素的完整关系链</span>
+                        <span class="hidden-mobile">焦距、传感器与 FOV</span>
                         <span class="visible-mobile">上一篇</span>
                       </a>
                     
@@ -2133,8 +2133,8 @@ document.addEventListener("readystatechange", function() {
                   <article class="post-next col-6">
                     
                     
-                      <a href="/notes/coding/design-pattern/event-driven-state-machine/event-driven-state-machine/" title="事件驱动的状态机框架：从理论到工程实践">
-                        <span class="hidden-mobile">事件驱动的状态机框架：从理论到工程实践</span>
+                      <a href="/notes/coding/design-pattern/event-driven-state-machine/event-driven-state-machine/" title="事件驱动的状态机框架">
+                        <span class="hidden-mobile">事件驱动的状态机框架</span>
                         <span class="visible-mobile">下一篇</span>
                         <i class="iconfont icon-arrowright"></i>
                       </a>

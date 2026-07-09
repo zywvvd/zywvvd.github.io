@@ -19,20 +19,20 @@
   
     <meta name="description" content="SLAM（Simultaneous Localization And Mapping，同时定位与建图）要求移动平台在未知环境、无先验地图的前提下，一边估计自身位姿、一边构建环境地图。这篇梳理 SLAM 的整体框架、数学本质与关键脉络，把前端跟踪、后端优化、回环检测、建图四个模块拧成一个整体来看。">
 <meta property="og:type" content="article">
-<meta property="og:title" content="SLAM 全景：定位与建图的联合估计">
+<meta property="og:title" content="SLAM 全景">
 <meta property="og:url" content="https://www.zywvvd.com/notes/study/SLAM/slam-overview/slam-overview/index.html">
 <meta property="og:site_name" content="又见苍岚">
 <meta property="og:description" content="SLAM（Simultaneous Localization And Mapping，同时定位与建图）要求移动平台在未知环境、无先验地图的前提下，一边估计自身位姿、一边构建环境地图。这篇梳理 SLAM 的整体框架、数学本质与关键脉络，把前端跟踪、后端优化、回环检测、建图四个模块拧成一个整体来看。">
 <meta property="og:locale" content="zh_CN">
 <meta property="article:published_time" content="2026-06-30T02:19:32.000Z">
-<meta property="article:modified_time" content="2026-07-06T02:15:53.406Z">
+<meta property="article:modified_time" content="2026-07-09T02:16:07.372Z">
 <meta property="article:author" content="Yiwei Zhang">
 <meta property="article:tag" content="SLAM">
 <meta name="twitter:card" content="summary_large_image">
   
   
   
-  <title>SLAM 全景：定位与建图的联合估计 - 又见苍岚</title>
+  <title>SLAM 全景 - 又见苍岚</title>
 
   <link  rel="stylesheet" href="https://lib.baomitu.com/twitter-bootstrap/4.6.1/css/bootstrap.min.css" />
 
@@ -644,7 +644,7 @@ document.addEventListener("readystatechange", function() {
       <div class="banner-text text-center fade-in-up">
         <div class="h2">
           
-            <span id="subtitle">SLAM 全景：定位与建图的联合估计</span>
+            <span id="subtitle">SLAM 全景</span>
           
         </div>
 
@@ -673,7 +673,7 @@ document.addEventListener("readystatechange", function() {
         <i class="iconfont icon-chart"></i>
         
           <!-- compatible with older versions-->
-          2.7k 字
+          2.6k 字
         
       </span>
     
@@ -685,7 +685,7 @@ document.addEventListener("readystatechange", function() {
         
         
           <!-- compatible with older versions-->
-          23 分钟
+          22 分钟
         
       </span>
     
@@ -881,14 +881,14 @@ document.addEventListener("readystatechange", function() {
         <div id="board">
           <article class="post-content mx-auto">
 
-            <!-- <h1 id="seo-header">SLAM 全景：定位与建图的联合估计</h1> -->
+            <!-- <h1 id="seo-header">SLAM 全景</h1> -->
 
             
               <p id="updated-time" class="note note-info" style="">
                 
                   
                     <!-- compatible with older versions-->
-                    本文最后更新于：2026年7月6日 上午
+                    本文最后更新于：2026年7月9日 上午
                   
                 
               </p>
@@ -900,7 +900,7 @@ document.addEventListener("readystatechange", function() {
 <p>SLAM（Simultaneous Localization And Mapping，同时定位与建图）要求移动平台在未知环境、无先验地图的前提下，一边估计自身位姿、一边构建环境地图。这篇梳理 SLAM 的整体框架、数学本质与关键脉络，把前端跟踪、后端优化、回环检测、建图四个模块拧成一个整体来看。</p>
 </blockquote>
 <span id="more"></span>
-<h3 id="定位与建图的-鸡生蛋">定位与建图的&quot;鸡生蛋&quot;</h3>
+<h3 id="定位与建图">定位与建图</h3>
 <p>SLAM 要同时完成两件事：估计自身位姿（Localization），构建环境地图（Mapping）。这里有个看似死锁的矛盾——</p>
 <ul>
 <li>定位需要地图：要知道自己在哪，先得有地图当参照；</li>
@@ -908,7 +908,7 @@ document.addEventListener("readystatechange", function() {
 </ul>
 <p>解法是<strong>联合估计</strong>：把&quot;位姿轨迹&quot;和&quot;地图&quot;当作一个联合状态，用所有传感观测同时约束两者，迭代收敛到一致的解。不是&quot;先有鸡还是先有蛋&quot;，而是两者一起长出来。</p>
 <p>几个容易混淆的概念要分清：已知地图的定位叫 Tracking（如 ARKit 在已知空间里跟踪）；已知位姿的建图叫 Reconstruction（如离线 SfM 重建）；SLAM 是两者都未知，而且要求实时、在线、增量。</p>
-<h3 id="数学本质：一个贝叶斯状态估计问题">数学本质：一个贝叶斯状态估计问题</h3>
+<h3 id="数学本质">数学本质</h3>
 <p>在贝叶斯框架下，SLAM 是个后验概率估计：</p>
 
 $$
@@ -925,7 +925,7 @@ $$
 
 <p>其中 $\mathbf{r}_i$ 是第 i 个约束的残差（重投影误差 / 里程计误差 / 回环误差），用 LM 或 Gauss-Newton 求解。优点是精度高、可全局一致（回环后整体调整）；代价是计算量大，需要工程优化（滑窗、边缘化、稀疏求解）。</p>
 <p>现代 SLAM（ORB-SLAM2/3、VINS、LIO-SAM）几乎都是&quot;滤波式前端 + 优化式后端&quot;的混合。</p>
-<h4 id="关键追问：为什么图优化取代了纯滤波">关键追问：为什么图优化取代了纯滤波</h4>
+<h4 id="图优化与滤波">图优化与滤波</h4>
 <p>这是理解现代 SLAM 演化的一个关键点。EKF-SLAM 衰退有两个结构性原因：一是它在<strong>线性化点处做一阶近似</strong>，误差随时间累积，大场景下发散；二是协方差矩阵 $O(n^2)$ 增长，路标一多就扛不住。图优化胜出的本质，是 SLAM 的约束图<strong>稀疏</strong>（每个路标只被少数相机看到、每个相机只看少数路标），稀疏矩阵的 LM 求解加 Schur 补消元，让全局优化在工程上可行；而且它保留全部历史，回环时能把误差沿图重新分配，得到全局一致解——这是纯滤波给不了的。</p>
 <h3 id="传感器与前端分类">传感器与前端分类</h3>
 <table>
@@ -971,19 +971,19 @@ $$
 </tbody>
 </table>
 <p>多传感器融合（视觉-惯性 VIO、激光-惯性 LIO）是工业主流，互补短板：IMU 提供高频运动先验和尺度，相机 / LiDAR 提供低频但精确的观测修正。</p>
-<h3 id="经典四模块框架">经典四模块框架</h3>
+<h3 id="四模块框架">四模块框架</h3>
 <p>主流视觉 SLAM 基本遵循&quot;前端跟踪 + 后端优化 + 回环检测 + 建图&quot;四模块：</p>
 <figure class="highlight css"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><code class="hljs css">传感器数据 → <span class="hljs-selector-attr">[前端 Tracking]</span> → <span class="hljs-selector-attr">[后端 Optimization]</span> → <span class="hljs-selector-attr">[回环 Loop Closing]</span> → <span class="hljs-selector-attr">[建图 Mapping]</span><br>                ↑                    ↑                     ↑<br>          逐帧位姿            局部/全局一致性       累积漂移校正<br></code></pre></td></tr></table></figure>
-<h3 id="前端-Tracking：逐帧估计相机运动">前端 Tracking：逐帧估计相机运动</h3>
+<h3 id="前端-Tracking">前端 Tracking</h3>
 <p>前端按已知信息递进，分三个层次：</p>
-<p><strong>① 2D-2D：对极几何</strong>（第一帧或丢失跟踪时）。两帧特征点对应，用本质矩阵 E / 基础矩阵 F 约束（对极约束 $\mathbf{x}_2^\top F\,\mathbf{x}_1=0$）。用 5/8 点法加 RANSAC 估 F，再从 E 分解 R, t。致命缺陷是纯旋转退化（平移为零时 E 不可观），且只有相对尺度。</p>
-<p><strong>② 3D-2D：PnP</strong>（已有局部地图时，最常用）。已知 3D 路标点和当前帧 2D 像素，求相机位姿 $\lambda\mathbf{p}=K(RX+\mathbf{t})$。算法有 EPnP / P3P / DLT / 迭代 LM，工程标配 EPnP 加 RANSAC。PnP 是&quot;相机定位&quot;最核心的姿态求解，其本质（射线交汇、EPnP 控制点推导）另文展开。</p>
+<p><strong>① 2D-2D：对极几何</strong>（第一帧或丢失跟踪时）。两帧特征点对应，用本质矩阵 E / 基础矩阵 F 约束（对极约束 $\mathbf{x}_2^\top F\,\mathbf{x}_1=0$）。用 5/8 点法加 RANSAC 估 F，再从 E 分解 R, t。主要缺陷是纯旋转退化（平移为零时 E 不可观），且只有相对尺度。</p>
+<p><strong>② 3D-2D：PnP</strong>（已有局部地图时，最常用）。已知 3D 路标点和当前帧 2D 像素，求相机位姿 $\lambda\mathbf{p}=K(RX+\mathbf{t})$。算法有 EPnP / P3P / DLT / 迭代 LM，工程标配 EPnP 加 RANSAC。PnP 是相机定位里核心的姿态求解，其本质（射线交汇、EPnP 控制点推导）另文展开。</p>
 <p><strong>③ 3D-3D：ICP</strong>（有深度图 / 点云时）。两组 3D 点云求 R, t：$\min_{R,\mathbf{t}}\sum_i\|Rp_i+\mathbf{t}-q_i\|^2$，点到点用 SVD 闭式解、点到面用 Gauss-Newton 迭代。多用于 RGBD / LiDAR SLAM。</p>
-<h3 id="后端-Optimization：求全局一致">后端 Optimization：求全局一致</h3>
+<h3 id="后端-Optimization">后端 Optimization</h3>
 <ul>
 <li><strong>局部 BA</strong>：维护当前帧加共视关键帧加它们的路标，做窗口内光束法平差，保证局部一致性。</li>
 <li><strong>全局位姿图优化</strong>：回环触发后，把回环约束加入图，全局调整所有关键帧位姿（不优化路标，快）。</li>
-<li><strong>全局 BA</strong>：关键帧位姿固定后，全量 BA 优化所有位姿加路标（最精、最贵）。</li>
+<li><strong>全局 BA</strong>：关键帧位姿固定后，全量 BA 优化所有位姿加路标（精度最高、也最耗时）。</li>
 </ul>
 <p>BA 的本质是最小化重投影误差：</p>
 
@@ -992,13 +992,13 @@ $$
 $$
 
 <p>其中 $\pi$ 是投影函数、$\rho$ 是鲁棒核（Huber / Cauchy 抑制外点）。解法是 LM 加 Schur 补：路标数远多于相机数，雅可比稀疏，消掉路标变量后只解相机位姿，大幅降维。工具用 Ceres、g2o、GTSAM。BA 的工程实现另有专文。</p>
-<h3 id="IMU-预积分：视觉-惯性融合的关键">IMU 预积分：视觉-惯性融合的关键</h3>
+<h3 id="IMU-预积分">IMU 预积分</h3>
 <p>IMU 高频（200-1000Hz），相机低频（30Hz）。朴素做法是把 IMU 逐次积分到相机帧，但位姿变量一旦改变就要重新积分，开销大。Forster 2015 的<strong>预积分</strong>把两帧间的 IMU 积分表达成<strong>与起点状态解耦的预积分量</strong>——它只依赖两帧间的 IMU 数据；优化时位姿改变，预积分项加一阶偏差修正即可，无需重积分。由此得到两帧间的相对运动约束加协方差，加入后端因子图。代表系统是 VINS-Mono/Fusion、OKVIS。</p>
-<h3 id="回环检测：消除累积漂移">回环检测：消除累积漂移</h3>
+<h3 id="回环检测">回环检测</h3>
 <p>SLAM 长时间运行会累积漂移。回环检测识别&quot;机器人回到了以前去过的地方&quot;，用这个约束做全局优化消除漂移。核心是词袋模型（DBoW2）做粗筛找候选，再用几何验证加 Sim3 校正确认——这是 SLAM 区别于纯里程计的关键。词袋与回环的完整流程分两篇展开：<a href="https://www.zywvvd.com/notes/study/SLAM/bag-of-words/bag-of-words/">词袋模型</a>负责检索候选，<a href="https://www.zywvvd.com/notes/study/SLAM/loop-closure-sim3/loop-closure-sim3/">回环检测：候选之后</a>负责候选之后的几何验证与全局校正。</p>
 <h3 id="建图">建图</h3>
 <p>建图模块按用途产出不同形式的地图：稀疏点云（定位用）、稠密点云 / 网格（导航 / 重建用）、八叉树栅格（避障用）、语义地图（语义 SLAM）。需要注意，3D 占据地图的表示（如 OctoMap 的八叉树加概率占据加 ray-casting）本身是个独立的大话题，和 SLAM 的位姿估计主线相对解耦——它消费 SLAM 输出的位姿去构建可执行的持久地图。</p>
-<h3 id="SLAM-的难点">SLAM 的难点</h3>
+<h3 id="难点">难点</h3>
 <table>
 <thead>
 <tr>
@@ -1051,7 +1051,7 @@ $$
 </tbody>
 </table>
 <h3 id="代表性系统">代表性系统</h3>
-<p><strong>视觉 SLAM</strong>：PTAM（2007，首提 keyframe 加 BA 分前后端）；ORB-SLAM2/3（ORB 特征加三线程；v2 支持单目/双目/RGBD，v3 再纳入视觉惯性与多地图 atlas，最经典教学范本）；VINS-Mono/Fusion（视觉-惯性紧耦合加滑窗加 IMU 预积分，工业 VIO 标杆）；DSO/LSD-SLAM（直接法，不提特征直接用像素灰度）；DROID-SLAM / NICE-SLAM / 3DGS-SLAM（学习端到端 / NeRF / 高斯泼溅建图，前端趋势）。</p>
+<p><strong>视觉 SLAM</strong>：PTAM（2007，首提 keyframe 加 BA 分前后端）；ORB-SLAM2/3（ORB 特征加三线程；v2 支持单目/双目/RGBD，v3 再纳入视觉惯性与多地图 atlas，常用的教学范本）；VINS-Mono/Fusion（视觉-惯性紧耦合加滑窗加 IMU 预积分，工业上常用的 VIO 方案）；DSO/LSD-SLAM（直接法，不提特征直接用像素灰度）；DROID-SLAM / NICE-SLAM / 3DGS-SLAM（学习端到端 / NeRF / 高斯泼溅建图，前端趋势）。</p>
 <p><strong>LiDAR SLAM</strong>：LOAM（2014，激光特征加高低频里程计分离，奠基）；LIO-SAM（LiDAR-IMU 紧耦合加因子图）；FAST-LIO2（LiDAR-IMU 加 IESKF 加 ikd-Tree，当前主流）。</p>
 <p><strong>工程框架</strong>：g2o（图优化）、GTSAM（因子图加 iSAM2 增量平滑）、Ceres（通用非线性最小二乘）。</p>
 <h3 id="小结">小结</h3>
@@ -1144,7 +1144,7 @@ $$
 
   <div class="license-box my-3">
     <div class="license-title">
-      <div>SLAM 全景：定位与建图的联合估计</div>
+      <div>SLAM 全景</div>
       <div>https://www.zywvvd.com/notes/study/SLAM/slam-overview/slam-overview/</div>
     </div>
     <div class="license-meta">
@@ -1199,8 +1199,8 @@ $$
                   <article class="post-next col-6">
                     
                     
-                      <a href="/notes/study/pose-estimation/foundationpose/foundationpose/" title="FoundationPose：渲染对比式 6D 位姿估计">
-                        <span class="hidden-mobile">FoundationPose：渲染对比式 6D 位姿估计</span>
+                      <a href="/notes/study/pose-estimation/foundationpose/foundationpose/" title="FoundationPose 6D 位姿估计">
+                        <span class="hidden-mobile">FoundationPose 6D 位姿估计</span>
                         <span class="visible-mobile">下一篇</span>
                         <i class="iconfont icon-arrowright"></i>
                       </a>

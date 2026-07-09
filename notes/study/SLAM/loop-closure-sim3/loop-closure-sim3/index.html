@@ -19,20 +19,20 @@
   
     <meta name="description" content="词袋模型（DBoW2）给出了回环的&quot;候选&quot;——当前帧可能和某个历史关键帧拍的是同一个地方。但候选只是开始：单帧命中不可靠，真假回环必须经过几何验证、尺度校正、全局优化三步才能确认并消除漂移。这篇接在词袋模型之后，记录&quot;候选之后&quot;的完整流程。">
 <meta property="og:type" content="article">
-<meta property="og:title" content="回环检测：候选之后（几何验证、Sim3 与全局校正）">
+<meta property="og:title" content="回环校正">
 <meta property="og:url" content="https://www.zywvvd.com/notes/study/SLAM/loop-closure-sim3/loop-closure-sim3/index.html">
 <meta property="og:site_name" content="又见苍岚">
 <meta property="og:description" content="词袋模型（DBoW2）给出了回环的&quot;候选&quot;——当前帧可能和某个历史关键帧拍的是同一个地方。但候选只是开始：单帧命中不可靠，真假回环必须经过几何验证、尺度校正、全局优化三步才能确认并消除漂移。这篇接在词袋模型之后，记录&quot;候选之后&quot;的完整流程。">
 <meta property="og:locale" content="zh_CN">
 <meta property="article:published_time" content="2026-06-18T11:58:47.000Z">
-<meta property="article:modified_time" content="2026-07-03T05:37:07.433Z">
+<meta property="article:modified_time" content="2026-07-09T02:17:18.367Z">
 <meta property="article:author" content="Yiwei Zhang">
 <meta property="article:tag" content="SLAM">
 <meta name="twitter:card" content="summary_large_image">
   
   
   
-  <title>回环检测：候选之后（几何验证、Sim3 与全局校正） - 又见苍岚</title>
+  <title>回环校正 - 又见苍岚</title>
 
   <link  rel="stylesheet" href="https://lib.baomitu.com/twitter-bootstrap/4.6.1/css/bootstrap.min.css" />
 
@@ -644,7 +644,7 @@ document.addEventListener("readystatechange", function() {
       <div class="banner-text text-center fade-in-up">
         <div class="h2">
           
-            <span id="subtitle">回环检测：候选之后（几何验证、Sim3 与全局校正）</span>
+            <span id="subtitle">回环校正</span>
           
         </div>
 
@@ -881,14 +881,14 @@ document.addEventListener("readystatechange", function() {
         <div id="board">
           <article class="post-content mx-auto">
 
-            <!-- <h1 id="seo-header">回环检测：候选之后（几何验证、Sim3 与全局校正）</h1> -->
+            <!-- <h1 id="seo-header">回环校正</h1> -->
 
             
               <p id="updated-time" class="note note-info" style="">
                 
                   
                     <!-- compatible with older versions-->
-                    本文最后更新于：2026年7月3日 下午
+                    本文最后更新于：2026年7月9日 上午
                   
                 
               </p>
@@ -900,19 +900,19 @@ document.addEventListener("readystatechange", function() {
 <p><a href="https://www.zywvvd.com/notes/study/SLAM/bag-of-words/bag-of-words/">词袋模型（DBoW2）</a>给出了回环的&quot;候选&quot;——当前帧可能和某个历史关键帧拍的是同一个地方。但候选只是开始：单帧命中不可靠，真假回环必须经过几何验证、尺度校正、全局优化三步才能确认并消除漂移。这篇接在词袋模型之后，记录&quot;候选之后&quot;的完整流程。</p>
 </blockquote>
 <span id="more"></span>
-<h3 id="候选只是开始：为什么-BoW-给的候选不够">候选只是开始：为什么 BoW 给的候选不够</h3>
+<h3 id="候选的不足">候选的不足</h3>
 <p>词袋检索给出的是&quot;单帧命中&quot;的候选，但单帧命中不可靠。原因有两层：</p>
 <ul>
 <li><strong>感知偏差（perceptual aliasing）</strong>：不同位置看起来可能很像（走廊、农田、幕墙），BoW 相似度高，但根本不是同一处。词袋本身解决不了——它衡量的就是&quot;看起来像&quot;。</li>
 <li><strong>单帧巧合</strong>：光照、视角偶然相似，让一帧误命中。</li>
 </ul>
 <p>真回环和假阳在<strong>时间行为</strong>和<strong>几何一致性</strong>上有本质区别，这正是后续三步过滤的依据。</p>
-<h3 id="第一步：时序一致性-空间一致性（廉价预过滤）">第一步：时序一致性 + 空间一致性（廉价预过滤）</h3>
+<h3 id="时序与空间一致性">时序与空间一致性</h3>
 <p>倒排索引给出的候选先过两道廉价判据，避免把昂贵的几何验证浪费在偶然命中上：</p>
 <p><strong>时序一致性</strong>：真回环在连续多帧里持续命中同一片历史区域；假阳只偶然命中一次、位置跳变。DBoW2 原文的做法是维护一个滑动窗口，对候选 $(q_t,d_t)$（当前帧及其最佳匹配历史帧），回看前几帧的匹配结果，要求它们都落在 $d_t$ 的邻域里。连续几帧都&quot;钉在同一区域&quot;才升级为稳定候选。</p>
 <p><strong>空间一致性</strong>：回环不应在刚走过的地方检测到（那是前端跟踪的活）。ORB-SLAM 的做法是把互相共视的历史关键帧聚成&quot;组&quot;、候选以组为单位比较，并要求候选在连续 3 个关键帧的候选列表里都出现，才送去做几何验证；同时要求候选离当前帧的图上距离足够远。</p>
 <p>这两步把&quot;单帧误报&quot;压到极低，是几何验证之前的廉价过滤器。整体是个三级漏斗：倒排检索命中（多）→ 时序/空间一致性（少）→ 几何验证（极少），每一级用更贵但更准的判据逐级过滤。</p>
-<h3 id="第二步：几何验证（RANSAC-位姿一致性）">第二步：几何验证（RANSAC 位姿一致性）</h3>
+<h3 id="几何验证">几何验证</h3>
 <p>几何验证是判定的本质。当前帧和候选历史帧做特征匹配（用直接索引只在同词组内匹配，加速），然后 RANSAC 求一个能解释大量匹配的统一几何模型：</p>
 <ul>
 <li>一般 3D 场景 → 基础矩阵 F（对极约束 $\mathbf{x}_B^\top F\,\mathbf{x}_A=0$）；</li>
@@ -921,7 +921,7 @@ document.addEventListener("readystatechange", function() {
 </ul>
 <p>错误匹配是随机散落的，不服从任何单一变换；正确匹配服从同一个几何模型。RANSAC 反复采样最小点集估模型、数内点，内点数（或比例）超阈值就判&quot;同一场景&quot;。再配合 cheirality 检查（三角化几个点确认都在相机前方），排除镜像误报。</p>
 <p>判定同场景的原子标准是&quot;<strong>存在一个能解释大量匹配的统一几何模型</strong>&quot;，而不是匹配的绝对数量——一面满是相同窗户的墙能匹配上千个但不服从单一几何，内点反而少。这一条是回环检测最根本的判据。</p>
-<h3 id="第三步：Sim3-校正——为什么是相似变换不是刚体">第三步：Sim3 校正——为什么是相似变换不是刚体</h3>
+<h3 id="Sim3-校正">Sim3 校正</h3>
 <p>确认回环后，要把当前帧位姿和历史帧位姿对齐。这里有个单目 SLAM 特有的问题：<strong>尺度漂移</strong>。</p>
 <p>单目 SLAM 的尺度不可观——本质矩阵只有 5 个自由度，平移方向已知但长度未知。不同时间段的局部地图可能建立在<strong>不同尺度</strong>上：时刻 $T_0$ 的局部地图尺度是 $s_1$，时刻 $T$ 的是 $s_2$。若 $s_1\ne s_2$，用刚体变换 SE(3)（只有 R, t）对齐就错了，必须用<strong>相似变换 Sim3</strong>（含尺度因子 s）：</p>
 
@@ -930,16 +930,16 @@ $$
 $$
 
 <p>Sim3 同时估计旋转 R、平移 t、尺度 s，把回环两端的局部地图对齐到同一尺度。双目 / RGBD / 有 IMU 的系统提供了绝对尺度，理论上可以用 SE(3)，但工程上 Sim3 对残余尺度误差更稳健，所以也常用。</p>
-<h3 id="第四步：全局优化——把漂移沿图拉直">第四步：全局优化——把漂移沿图拉直</h3>
+<h3 id="全局优化">全局优化</h3>
 <p>Sim3 校正只对齐了回环两端，但中间整条轨迹的累积漂移还在。消除它的办法是把回环约束加进位姿图，做全局优化：</p>
 <ul>
 <li><strong>位姿图优化</strong>：只优化相机位姿（3D 点固定），把回环约束作为一条边加入图，全局调整所有关键帧位姿。秒级，精度中等，用于快速消除漂移。</li>
 <li><strong>全局 BA</strong>：优化全部相机位姿加全部 3D 点，最精但最贵（分钟级）。实际策略是先位姿图优化快速拉直，再全局 BA 精化。</li>
 </ul>
 <p>优化后，原本漂移的轨迹被&quot;拉回&quot;对齐到回环点，整条轨迹全局一致。如果有双目/RGBD/GPS 提供的绝对约束，也一并加入因子图。</p>
-<h3 id="第五步：地图融合">第五步：地图融合</h3>
+<h3 id="地图融合">地图融合</h3>
 <p>全局优化调整了位姿后，原本因漂移而&quot;分裂&quot;的重复观测需要合并：把回环两端对应的重复 3D 路标融合为同一个，并对之前因漂移三角化失败的点做<strong>重三角化</strong>（回环校正后视角关系变好，原本失败的三角化可能成功）。这一步让地图也变得全局一致，不只是位姿。</p>
-<h3 id="完整的回环线程流程">完整的回环线程流程</h3>
+<h3 id="完整流程">完整流程</h3>
 <p>以 ORB-SLAM 为例，回环线程（与跟踪、局部映射并行的第三个线程）的完整流程：</p>
 <figure class="highlight css"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><code class="hljs css">当前关键帧<br>  → 算 BoW 向量，倒排索引检索 → 候选相似帧 + 得分            <span class="hljs-selector-attr">[词袋干的部分]</span><br>  → 得分超阈值 + 时序一致性（连续多帧命中同一候选）<br>  → 空间一致性（距离够远、共视图分组、<span class="hljs-number">3</span> 连续关键帧）           <span class="hljs-selector-attr">[廉价预过滤]</span><br>  → 几何验证：特征匹配（直接索引加速）+ RANSAC 求 Sim3 位姿<br>  → 内点足够 → 接受回环                                      <span class="hljs-selector-attr">[判定]</span><br>  → Sim3 校正（含尺度）对齐回环两端<br>  → 位姿图优化沿共视图传播，全局拉直<br>  → 全局 BA 精化所有位姿 + 路标<br>  → 地图融合（合并重复点、重三角化）                          <span class="hljs-selector-attr">[校正]</span><br></code></pre></td></tr></table></figure>
 <p>关键分工是：词袋负责&quot;粗筛、快速找候选&quot;，时序/空间一致性加几何验证负责&quot;精筛、确认&quot;，Sim3 加全局优化负责&quot;校正、消漂移&quot;。粗筛只保召回（不漏真回环），精筛只保精度（不误报假阳），两者缺一不可——单靠词袋阈值同时保召回和精度理论上不可能，所以必须级联。</p>
@@ -1032,7 +1032,7 @@ $$
 
   <div class="license-box my-3">
     <div class="license-title">
-      <div>回环检测：候选之后（几何验证、Sim3 与全局校正）</div>
+      <div>回环校正</div>
       <div>https://www.zywvvd.com/notes/study/SLAM/loop-closure-sim3/loop-closure-sim3/</div>
     </div>
     <div class="license-meta">
@@ -1077,9 +1077,9 @@ $$
                   <article class="post-prev col-6">
                     
                     
-                      <a href="/notes/study/pose-estimation/foundationpose/foundationpose/" title="FoundationPose：渲染对比式 6D 位姿估计">
+                      <a href="/notes/study/pose-estimation/foundationpose/foundationpose/" title="FoundationPose 6D 位姿估计">
                         <i class="iconfont icon-arrowleft"></i>
-                        <span class="hidden-mobile">FoundationPose：渲染对比式 6D 位姿估计</span>
+                        <span class="hidden-mobile">FoundationPose 6D 位姿估计</span>
                         <span class="visible-mobile">上一篇</span>
                       </a>
                     
@@ -1087,8 +1087,8 @@ $$
                   <article class="post-next col-6">
                     
                     
-                      <a href="/notes/study/camera-imaging/pnp-essence/pnp-essence/" title="PnP 算法的本质：射线交汇与 EPnP 推导">
-                        <span class="hidden-mobile">PnP 算法的本质：射线交汇与 EPnP 推导</span>
+                      <a href="/notes/study/camera-imaging/pnp-essence/pnp-essence/" title="PnP 算法的本质">
+                        <span class="hidden-mobile">PnP 算法的本质</span>
                         <span class="visible-mobile">下一篇</span>
                         <i class="iconfont icon-arrowright"></i>
                       </a>
