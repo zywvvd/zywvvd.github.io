@@ -1,0 +1,2242 @@
+
+
+<!DOCTYPE html>
+<html lang="zh-CN" data-default-color-scheme=auto>
+
+
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="baidu-site-verification" content="codeva-rLWafCJGYc" />
+  <link rel="apple-touch-icon" sizes="76x76" href="/image/avatar.png">
+  <link rel="icon" href="/image/avatar.png">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, shrink-to-fit=no">
+  <meta http-equiv="x-ua-compatible" content="ie=edge">
+  
+  <meta name="theme-color" content="#2f4154">
+  <meta name="author" content="Yiwei Zhang">
+  <meta name="keywords" content="人工智能, 深度学习, 个人博客, 机器学习">
+  
+    <meta name="description" content="相机标定估出内参后，这些估计准到什么程度？本文用 Fisher 信息算出每个内参的精度下界（CRLB）——不管用什么算法，误差都不可能小于它，而且拍照前就能算。理论推导见《Fisher 信息与精度下界》。">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Fisher 信息：相机标定仿真实操">
+<meta property="og:url" content="https://www.zywvvd.com/notes/study/camera-imaging/fisher-information-calib/fisher-information-calib/index.html">
+<meta property="og:site_name" content="又见苍岚">
+<meta property="og:description" content="相机标定估出内参后，这些估计准到什么程度？本文用 Fisher 信息算出每个内参的精度下界（CRLB）——不管用什么算法，误差都不可能小于它，而且拍照前就能算。理论推导见《Fisher 信息与精度下界》。">
+<meta property="og:locale" content="zh_CN">
+<meta property="article:published_time" content="2026-07-17T03:00:00.000Z">
+<meta property="article:modified_time" content="2026-07-17T05:46:57.865Z">
+<meta property="article:author" content="Yiwei Zhang">
+<meta property="article:tag" content="Camera">
+<meta name="twitter:card" content="summary_large_image">
+  
+  
+  
+  <title>Fisher 信息：相机标定仿真实操 - 又见苍岚</title>
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/twitter-bootstrap/4.6.1/css/bootstrap.min.css" />
+
+
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/github-markdown-css/4.0.0/github-markdown.min.css" />
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/hint.css/2.7.0/hint.min.css" />
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/fancybox/3.5.7/jquery.fancybox.min.css" />
+
+
+
+<!-- 主题依赖的图标库，不要自行修改 -->
+<!-- Do not modify the link that theme dependent icons -->
+
+<link rel="stylesheet" href="//at.alicdn.com/t/font_1749284_hj8rtnfg7um.css">
+
+
+
+<link rel="stylesheet" href="//at.alicdn.com/t/font_1736178_lbnruvf0jn.css">
+
+
+<link  rel="stylesheet" href="/css/main.css" />
+
+
+  <link id="highlight-css" rel="stylesheet" href="/css/highlight.css" />
+  
+    <link id="highlight-css-dark" rel="stylesheet" href="/css/highlight-dark.css" />
+  
+
+
+
+  
+<link rel="stylesheet" href="/css/custom.css">
+<link rel="stylesheet" href="/css/reward.css">
+<link rel="stylesheet" href="//cdn.jsdelivr.net/npm/aplayer/dist/APlayer.min.css">
+
+
+
+  <script id="fluid-configs">
+    var Fluid = window.Fluid || {};
+    Fluid.ctx = Object.assign({}, Fluid.ctx)
+    var CONFIG = {"hostname":"www.zywvvd.com","root":"/","version":"1.9.7","typing":{"enable":true,"typeSpeed":90,"cursorChar":"_","loop":false,"scope":["home"]},"anchorjs":{"enable":true,"element":"h1,h2,h3,h4,h5,h6","placement":"left","visible":"hover","icon":""},"progressbar":{"enable":true,"height_px":3,"color":"#29d","options":{"showSpinner":false,"trickleSpeed":100}},"code_language":{"enable":true,"default":"TEXT"},"copy_btn":true,"image_caption":{"enable":true},"image_zoom":{"enable":true,"img_url_replace":["",""]},"toc":{"enable":true,"placement":"right","headingSelector":"h1,h2,h3,h4,h5,h6","collapseDepth":0},"lazyload":{"enable":true,"loading_img":"/img/loading.gif","onlypost":false,"offset_factor":2},"web_analytics":{"enable":true,"follow_dnt":true,"baidu":null,"google":null,"tencent":{"sid":null,"cid":null},"woyaola":null,"cnzz":null,"leancloud":{"app_id":"Cv0XNeBSBdAPAIuVj3PsyM3R-MdYXbMMI","app_key":"4PU1rNlGrqXWzhfW3dgq98oX","server_url":null,"path":"window.location.pathname","ignore_local":false},"gtag":null},"search_path":"/local-search.xml","include_content_in_search":true};
+
+    if (CONFIG.web_analytics.follow_dnt) {
+      var dntVal = navigator.doNotTrack || window.doNotTrack || navigator.msDoNotTrack;
+      Fluid.ctx.dnt = dntVal && (dntVal.startsWith('1') || dntVal.startsWith('yes') || dntVal.startsWith('on'));
+    }
+  </script>
+  <script  src="/js/utils.js" ></script>
+  <script  src="/js/color-schema.js" ></script>
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+    
+  
+
+
+
+  
+<meta name="generator" content="Hexo 7.2.0"><link rel="alternate" href="/atom.xml" title="又见苍岚" type="application/atom+xml">
+</head>
+
+<script>
+// 页面加载完成后隐藏加载动画
+document.addEventListener("readystatechange", function() {
+    const loader = document.getElementById('Loadanimation');
+    if (loader) {
+        // 停留1秒后开始淡出
+        setTimeout(function() {
+            loader.style.transition = 'opacity 1.2s';
+            loader.style.opacity = '0';
+            // 淡出完成后隐藏
+            setTimeout(() => {
+                loader.style.display = 'none';
+            }, 1000); // 等待淡出动画完成
+        }, 700); // 停留0.8秒
+    }
+});
+</script>
+
+
+
+<body>
+  
+<div id="Loadanimation" style="z-index:999999;">
+<div id="Loadanimation-center">
+   <div id="Loadanimation-center-absolute">
+       <div class="xccx_object" id="xccx_four"></div>
+       <div class="xccx_object" id="xccx_three"></div>
+       <div class="xccx_object" id="xccx_two"></div>
+       <div class="xccx_object" id="xccx_one"></div>
+   </div>
+</div>
+</div>
+
+<link href="/css/loading.css"type="text/css"rel="stylesheet"/>
+
+
+
+
+
+
+<div>
+	<div class='real_mask' style="
+		background-color: rgba(0,0,0,0.4);
+		width: 100%;
+		height: 100%;
+		position: fixed;
+		z-index: -777;
+	"></div>
+	<div id="banner_video_insert">
+	</div>	
+	<div id='vvd_banner_img'>
+	</div>
+</div>
+<div id="banner"></div>
+
+
+
+
+
+
+
+  <header>
+    
+
+<div class="header-inner" style="height: 80vh;">
+  <nav id="navbar" class="navbar fixed-top  navbar-expand-lg navbar-dark scrolling-navbar">
+  <div class="container">
+    <a class="navbar-brand" href="/">
+      <strong>CangLan</strong>
+    </a>
+
+    <button id="navbar-toggler-btn" class="navbar-toggler" type="button" data-toggle="collapse"
+            data-target="#navbarSupportedContent"
+            aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
+      <div class="animated-icon"><span></span><span></span><span></span></div>
+    </button>
+
+    <!-- Collapsible content -->
+    <div class="collapse navbar-collapse" id="navbarSupportedContent">
+      <ul class="navbar-nav ml-auto text-center">
+        
+          
+          
+          
+          
+            <li class="nav-item">
+		<div >
+		      <a class="nav-link" href="/" target="_self" data-umami-event="Navigation-Homepage">
+
+		        <i class="iconfont icon-home-fill"></i>
+		        <span>首页</span>
+		      </a>
+		</div>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item dropdown">
+              <a class="nav-link dropdown-toggle" target="_self" href="javascript:;" role="button"
+                 data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                <i class="iconfont icon-shuji1"></i>
+                <span>文章</span>
+              </a>
+              <div class="dropdown-menu" aria-labelledby="navbarDropdown">
+                
+                  
+                  
+                  
+		<div >
+
+                  <a class="dropdown-item" href="/archives/" target="_self" data-umami-event="Navigation-Archive">
+
+                    <i class="iconfont icon-archive-fill"></i>
+                    <span>归档</span>
+                  </a>
+		</div>
+                
+                  
+                  
+                  
+		<div >
+
+                  <a class="dropdown-item" href="/categories/" target="_self" data-umami-event="Navigation-Category">
+
+                    <i class="iconfont icon-category-fill"></i>
+                    <span>分类</span>
+                  </a>
+		</div>
+                
+                  
+                  
+                  
+		<div >
+
+                  <a class="dropdown-item" href="/tags/" target="_self" data-umami-event="Navigation-Tag">
+
+                    <i class="iconfont icon-tags-fill"></i>
+                    <span>标签</span>
+                  </a>
+		</div>
+                
+                  
+                  
+                  
+		<div >
+
+                  <a class="dropdown-item" href="/shuoshuo/" target="_self" data-umami-event="Navigation-Shuoshuo">
+
+                    <i class="iconfont icon-24gf-bubblesDots4"></i>
+                    <span>说说</span>
+                  </a>
+		</div>
+                
+              </div>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item dropdown">
+              <a class="nav-link dropdown-toggle" target="_self" href="javascript:;" role="button"
+                 data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                <i class="iconfont icon-momo"></i>
+                <span>社交</span>
+              </a>
+              <div class="dropdown-menu" aria-labelledby="navbarDropdown">
+                
+                  
+                  
+                  
+		<div >
+
+                  <a class="dropdown-item" href="/links/" target="_self" data-umami-event="Navigation-Friends">
+
+                    <i class="iconfont icon-link-fill"></i>
+                    <span>友链</span>
+                  </a>
+		</div>
+                
+                  
+                  
+                  
+		<div >
+
+                  <a class="dropdown-item" href="/messagebd/" target="_self" data-umami-event="Navigation-MessageBoard">
+
+                    <i class="iconfont icon-comment"></i>
+                    <span>留言板</span>
+                  </a>
+		</div>
+                
+                  
+                  
+                  
+		<div >
+
+                  <a class="dropdown-item" href="/atom.xml" target="_self" data-umami-event="Navigation-RSS">
+
+                    <i class="iconfont icon-dingyue"></i>
+                    <span>RSS订阅</span>
+                  </a>
+		</div>
+                
+                  
+                  
+                  
+		<div >
+
+                  <a class="dropdown-item" href="/reccomments/" target="_self" data-umami-event="Navigation-Recent-Comments">
+
+                    <i class="iconfont icon-icon-pinglunguanli-pinglunliebiao"></i>
+                    <span>近期评论</span>
+                  </a>
+		</div>
+                
+              </div>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item dropdown">
+              <a class="nav-link dropdown-toggle" target="_self" href="javascript:;" role="button"
+                 data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                <i class="iconfont icon-user-fill"></i>
+                <span>个人</span>
+              </a>
+              <div class="dropdown-menu" aria-labelledby="navbarDropdown">
+                
+                  
+                  
+                  
+		<div >
+
+                  <a class="dropdown-item" href="/about/" target="_self" data-umami-event="Navigation-AboutMe">
+
+                    <i class="iconfont icon-guanyuwomen"></i>
+                    <span>关于</span>
+                  </a>
+		</div>
+                
+                  
+                  
+                  
+		<div >
+
+                  <a class="dropdown-item" href="/playlist/" target="_self" data-umami-event="Navigation-Music">
+
+                    <i class="iconfont icon-music"></i>
+                    <span>歌单</span>
+                  </a>
+		</div>
+                
+                  
+                  
+                  
+		<div >
+
+                  <a class="dropdown-item" href="https://uipv4.zywvvd.com:33035" target="_self" data-umami-event="Navigation-Nextcloud">
+
+                    <i class="iconfont icon-xuniyingpan"></i>
+                    <span>网盘</span>
+                  </a>
+		</div>
+                
+                  
+                  
+                  
+		<div >
+
+                  <a class="dropdown-item" href="https://uipv4.zywvvd.com:33036" target="_self" data-umami-event="Navigation-OneDev">
+
+                    <i class="iconfont icon-git"></i>
+                    <span>仓库</span>
+                  </a>
+		</div>
+                
+                  
+                  
+                  
+		<div >
+
+                  <a class="dropdown-item" href="https://uipv4.zywvvd.com:33041" target="_self" data-umami-event="Navigation-Wiki">
+
+                    <i class="iconfont icon-wiki"></i>
+                    <span>百科</span>
+                  </a>
+		</div>
+                
+              </div>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item dropdown">
+              <a class="nav-link dropdown-toggle" target="_self" href="javascript:;" role="button"
+                 data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                <i class="iconfont icon-ic_fly"></i>
+                <span>导航</span>
+              </a>
+              <div class="dropdown-menu" aria-labelledby="navbarDropdown">
+                
+                  
+                  
+                  
+		<div >
+
+                  <a class="dropdown-item" href="/site-map/" target="_self" data-umami-event="Navigation-SiteMap">
+
+                    <i class="iconfont icon-lianjie"></i>
+                    <span>链接</span>
+                  </a>
+		</div>
+                
+                  
+                  
+                  
+		<div >
+
+                  <a class="dropdown-item" href="/nodeppt/hexo/snavigation/" target="_self" data-umami-event="Navigation-Search">
+
+                    <i class="iconfont icon-sousuo"></i>
+                    <span>搜索</span>
+                  </a>
+		</div>
+                
+              </div>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item dropdown">
+              <a class="nav-link dropdown-toggle" target="_self" href="javascript:;" role="button"
+                 data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                <i class="iconfont icon-wangzhan"></i>
+                <span>站点</span>
+              </a>
+              <div class="dropdown-menu" aria-labelledby="navbarDropdown">
+                
+                  
+                  
+                  
+		<div >
+
+                  <a class="dropdown-item" href="https://uipv4.zywvvd.com:33039/share/0zx3o21oIpZTZqwC/%E5%8F%88%E8%A7%81%E8%8B%8D%E5%B2%9A" target="_self" data-umami-event="Navigation-Umami">
+
+                    <i class="iconfont icon-tongji2"></i>
+                    <span>站点分析</span>
+                  </a>
+		</div>
+                
+                  
+                  
+                  
+		<div >
+
+                  <a class="dropdown-item" href="/earth_sta/" target="_self" data-umami-event="Navigation-Globe">
+
+                    <i class="iconfont icon-tongjifenxi-xiangmubiaogetongji"></i>
+                    <span>访问统计</span>
+                  </a>
+		</div>
+                
+                  
+                  
+                  
+		<div >
+
+                  <a class="dropdown-item" href="https://uipv4.zywvvd.com:33034/status/show" target="_self" data-umami-event="Navigation-Monitor">
+
+                    <i class="iconfont icon-jiankong"></i>
+                    <span>站点监控</span>
+                  </a>
+		</div>
+                
+              </div>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item dropdown">
+              <a class="nav-link dropdown-toggle" target="_self" href="javascript:;" role="button"
+                 data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                <i class="iconfont icon-chuansong"></i>
+                <span>传送</span>
+              </a>
+              <div class="dropdown-menu" aria-labelledby="navbarDropdown">
+                
+                  
+                  
+                  
+		<div >
+
+                  <a class="dropdown-item" href="https://www.foreverblog.cn/go.html" target="_self" data-umami-event="Navigation-ForeverBolg">
+
+                    <i class="iconfont icon-a-BlackHole"></i>
+                    <span>十年之约</span>
+                  </a>
+		</div>
+                
+                  
+                  
+                  
+		<div >
+
+                  <a class="dropdown-item" href="https://www.travellings.cn/go.html" target="_self" data-umami-event="Navigation-DriveTo">
+
+                    <i class="iconfont icon-train1"></i>
+                    <span>开往</span>
+                  </a>
+		</div>
+                
+                  
+                  
+                  
+		<div >
+
+                  <a class="dropdown-item" href="https://bf.zzxworld.com/" target="_self" data-umami-event="Navigation-BlogFinder">
+
+                    <i class="iconfont icon-icon-"></i>
+                    <span>BlogFinder</span>
+                  </a>
+		</div>
+                
+                  
+                  
+                  
+		<div >
+
+                  <a class="dropdown-item" href="https://www.perass.com/" target="_self" data-umami-event="Navigation-Bloghome">
+
+                    <i class="iconfont icon-home-fill"></i>
+                    <span>博客之家</span>
+                  </a>
+		</div>
+                
+              </div>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item dropdown">
+              <a class="nav-link dropdown-toggle" target="_self" href="javascript:;" role="button"
+                 data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                <i class="iconfont icon-gongju"></i>
+                <span>工具</span>
+              </a>
+              <div class="dropdown-menu" aria-labelledby="navbarDropdown">
+                
+                  
+                  
+                  
+		<div >
+
+                  <a class="dropdown-item" href="/navigates/calculator" target="_self" data-umami-event="Navigation-Calculator">
+
+                    <i class="iconfont icon-jisuan"></i>
+                    <span>计算器</span>
+                  </a>
+		</div>
+                
+                  
+                  
+                  
+		<div >
+
+                  <a class="dropdown-item" href="/navigates/webgraphviz" target="_self" data-umami-event="Navigation-WebGtaphviz">
+
+                    <i class="iconfont icon-tongyong-huatugongju2"></i>
+                    <span>Graphviz</span>
+                  </a>
+		</div>
+                
+                  
+                  
+                  
+		<div >
+
+                  <a class="dropdown-item" href="/navigates/formular_reco" target="_self" data-umami-event="Navigation-Formular-Reco">
+
+                    <i class="iconfont icon-a-checkformula"></i>
+                    <span>公式识别</span>
+                  </a>
+		</div>
+                
+              </div>
+            </li>
+          
+        
+        
+          <li class="nav-item" id="search-btn">
+            <a class="nav-link" target="_self" href="javascript:;" data-toggle="modal" data-target="#modalSearch" aria-label="Search">
+              <i class="iconfont icon-search"></i>
+            </a>
+          </li>
+          
+        
+        
+          <li class="nav-item" id="color-toggle-btn">
+            <a class="nav-link" target="_self" href="javascript:;" aria-label="Color Toggle">
+              <i class="iconfont icon-dark" id="color-toggle-icon"></i>
+            </a>
+          </li>
+        
+      </ul>
+    </div>
+  </div>
+</nav>
+
+  
+
+<div id="banner" class="banner" parallax=true
+     style="background: url('https://uipv4.zywvvd.com:33030/HexoFiles/new/bg-trans.png') no-repeat center center; background-size: cover;">
+  <div class="full-bg-img">
+    <div class="mask flex-center" style="background-color: rgba(0, 0, 0, 0)">
+      <div class="banner-text text-center fade-in-up">
+        <div class="h2">
+          
+            <span id="subtitle">Fisher 信息：相机标定仿真实操</span>
+          
+        </div>
+
+        
+          
+  <div class="mt-3">
+    
+      <span class="post-meta mr-2">
+        <i class="iconfont icon-author" aria-hidden="true"></i>
+        Yiwei Zhang
+      </span>
+    
+    
+      <span class="post-meta">
+        <i class="iconfont icon-date-fill" aria-hidden="true"></i>
+        <time datetime="2026-07-17 11:00" pubdate>
+          2026年7月17日 上午
+        </time>
+      </span>
+    
+  </div>
+
+  <div class="mt-1">
+    
+      <span class="post-meta mr-2">
+        <i class="iconfont icon-chart"></i>
+        
+          <!-- compatible with older versions-->
+          12k 字
+        
+      </span>
+    
+
+    
+      <span class="post-meta mr-2">
+        <i class="iconfont icon-clock-fill"></i>
+        
+        
+        
+          <!-- compatible with older versions-->
+          102 分钟
+        
+      </span>
+    
+
+    
+    
+      
+        <span id="vvdpost_container_page_pvuv" style="display: none">
+          <i class="iconfont icon-eye" aria-hidden="true"></i>
+          <span id="vvdpost_value_page_pv">0</span> 次&nbsp&nbsp
+		  <i class="iconfont icon-users" aria-hidden="true"></i>
+		  <span id="vvdpost_value_page_uv">0</span> 人&nbsp&nbsp
+		  <i class="iconfont icon-comment" aria-hidden="true"></i>
+		  <span id="vvdpost_value_page_cn">0</span> 条
+        </span>
+
+    <script>
+    document.addEventListener("DOMContentLoaded", function() {
+	      console.log("PVUV_" + window.location.pathname);
+
+	      // 使用 fetch API 发送 POST 请求
+	      fetch('https://uipv4.zywvvd.com:33037/poststats', { 
+		  method: 'POST',
+		  headers: {
+		      'Content-Type': 'application/json'
+		  },
+		  body: JSON.stringify(window.location.pathname) // 将路径名作为对象发送，以便在服务器端更容易处理
+	      })
+	      .then(response => {
+		  // 检查响应状态
+		  if (!response.ok) {
+		      throw new Error('Network response was not ok ' + response.statusText);
+		  }
+		  return response.json(); // 解析 JSON 响应
+	      })
+	      .then(data => {
+		  // 处理解析后的数据
+		  console.log(data.pv);
+		  var pvCtn = document.querySelector('#vvdpost_container_page_pvuv');
+		  if (pvCtn) {
+		      var pvEle = document.querySelector('#vvdpost_value_page_pv');
+		      var uvEle = document.querySelector('#vvdpost_value_page_uv');
+		      var cnEle = document.querySelector('#vvdpost_value_page_cn');
+		      if (pvEle && uvEle) {
+		          pvEle.innerText = data.pv;
+		          uvEle.innerText = data.uv;
+		          cnEle.innerText = data.cn;
+		          pvCtn.style.display = 'inline';
+		      }
+		  }
+	      })
+	      .catch(error => {
+		  // 处理请求错误
+		  console.error('There has been a problem with your fetch operation:', error);
+	      });
+      });
+  </script>
+      
+    
+  </div>
+
+
+        
+      </div>
+
+      
+        <div class="scroll-down-bar">
+          <i class="iconfont icon-arrowdown"></i>
+        </div>
+      
+    </div>
+  </div>
+</div>
+
+</div>
+
+
+	<script type="text/javascript" src="/vvd_js/jquery.js"></script>
+	<script async src="https://uipv4.zywvvd.com:33039/script.js" data-website-id="dd4a05c6-dde2-4743-9c3a-a79d6bee0778"></script>
+	<div class="banner" id='banner' >
+
+		<div class="full-bg-img" >
+
+			
+				<script>
+					var ua = navigator.userAgent;
+					var ipad = ua.match(/(iPad).*OS\s([\d_]+)/),
+						isIphone = !ipad && ua.match(/(iPhone\sOS)\s([\d_]+)/),
+						isAndroid = ua.match(/(Android)\s+([\d.]+)/),
+						isMobile = isIphone || isAndroid;
+
+					function set_video_attr(id){
+						var height = document.body.clientHeight
+						var width = document.body.clientWidth
+						var video_item = document.getElementById(id);
+
+						if (height / width < 0.56){
+							video_item.setAttribute('width', '100%');
+							video_item.setAttribute('height', 'auto');
+						} else {
+							video_item.setAttribute('height', '100%');
+							video_item.setAttribute('width', 'auto');
+						}
+					}
+
+					fetch('https://uipv4.zywvvd.com:33037/wallpaper-pair')
+					  .then(response => response.json()) // 解析JSON数据
+					  .then(data => {
+						console.log('获取链接成功');
+						video_url = data[0][0]
+						pre_show_image_url = data[0][1]
+
+						banner_obj = document.getElementById("banner")
+						banner_obj.style.cssText = "background: url('" + pre_show_image_url + "') no-repeat;"
+
+						vvd_banner_obj = document.getElementById("vvd_banner_img")
+						vvd_banner_content = "<img id='banner_img_item' src='" + pre_show_image_url + "'style='position: fixed; z-index: -999'>"
+						vvd_banner_obj.innerHTML = vvd_banner_content 
+
+						if (!isMobile) {
+							video_html_res = "<video id='video_item' style='position: fixed; z-index: -888;'  muted='muted' src=" + video_url + " autoplay='autoplay' loop='loop'></video>"
+							document.getElementById("banner_video_insert").innerHTML = video_html_res;
+							set_video_attr('video_item')
+							set_video_attr('banner_img_item')
+						}
+					    
+					  })
+					  .catch((error) => {
+					    console.error('请求失败,尝试本地获取背景图像：', error);
+	    					$.getJSON('/vvd_js/video_url.json', function(data){
+
+							var video_list_length = data.length
+							var seed = Math.random()
+							index = Math.floor(seed * video_list_length)
+
+							video_url = data[index][0]
+							pre_show_image_url = data[index][1]
+
+							banner_obj = document.getElementById("banner")
+							banner_obj.style.cssText = "background: url('" + pre_show_image_url + "') no-repeat;"
+
+							vvd_banner_obj = document.getElementById("vvd_banner_img")
+							vvd_banner_content = "<img id='banner_img_item' src='" + pre_show_image_url + "'style='position: fixed; z-index: -999'>"
+							vvd_banner_obj.innerHTML = vvd_banner_content 
+
+							if (!isMobile) {
+								video_html_res = "<video id='video_item' style='position: fixed; z-index: -888;'  muted='muted' src=" + video_url + " autoplay='autoplay' loop='loop'></video>"
+								document.getElementById("banner_video_insert").innerHTML = video_html_res;
+								set_video_attr('video_item')
+								set_video_attr('banner_img_item')
+							}
+						});
+					  });
+
+
+
+
+
+
+					if (!isMobile){
+						window.onresize = function(){
+							set_video_attr('video_item')
+							set_video_attr('banner_img_item')
+							}
+						}
+				</script>
+
+			
+
+
+			
+			</div>
+		</div>
+    </div>
+
+  </header>
+
+  <main>
+    
+      
+
+
+
+<div class="container-fluid nopadding-x">
+  <div class="row nomargin-x">
+    <div class="side-col d-none d-lg-block col-lg-2">
+      
+
+    </div>
+
+    <div class="col-lg-8 nopadding-x-md">
+      <div class="container nopadding-x-md" id="board-ctn">
+        <div id="board">
+          <article class="post-content mx-auto">
+
+            <!-- <h1 id="seo-header">Fisher 信息：相机标定仿真实操</h1> -->
+
+            
+              <p id="updated-time" class="note note-info" style="">
+                
+                  
+                    <!-- compatible with older versions-->
+                    本文最后更新于：2026年7月17日 下午
+                  
+                
+              </p>
+            
+            
+              <div class="markdown-body">
+                
+                <blockquote>
+<p>相机标定估出内参后，这些估计准到什么程度？本文用 Fisher 信息算出每个内参的精度下界（CRLB）——不管用什么算法，误差都不可能小于它，而且拍照前就能算。理论推导见《<a href="/notes/study/camera-imaging/fisher-information/fisher-information/">Fisher 信息与精度下界</a>》。</p>
+</blockquote>
+<span id="more"></span>
+<h3 id="问题描述">问题描述</h3>
+<p>标定给出一组内参（焦距、主点、畸变系数），但估得准不准、误差能有多大，通常只能凭重投影残差粗略感受。我们想要一个更根本的量：在既定的拍摄条件下，内参估计的精度极限是多少。</p>
+<p>这个极限由 Fisher 信息给出，叫 Cramér–Rao 下界（CRLB）。它只依赖观测方程和噪声，与具体算法无关，因此可以在拍照之前就算出来——用来规划拍多少张、什么角度；拍完也能反过来检验标定是否真的逼近了理论极限。</p>
+<p>只关心内参时，第 k 个内参的精度下界是</p>
+
+$$
+\mathrm{CRLB}_k=\sqrt{[\mathcal I_\beta^{-1}]_{kk}}
+$$
+
+<p>其中 $\mathcal I_\beta$ 是扣掉外参之后、只关于内参的信息矩阵。整套推导见理论篇，下面只说怎么把它一步步算出来。</p>
+<h3 id="解决思路">解决思路</h3>
+<p>高斯噪声下，信息矩阵只看雅可比——每个像素对各参数的偏导有多灵敏：</p>
+
+$$
+\mathcal I=\mathbf J^\top\boldsymbol\Sigma^{-1}\mathbf J
+$$
+
+<p>这一行把&quot;算精度下界&quot;拆成三件事：</p>
+<ol>
+<li><strong>雅可比 $\mathbf J$</strong>：参数如何影响像素。数值差分就能算，不必手推偏导。</li>
+<li><strong>噪声 $\boldsymbol\Sigma$</strong>：角点检测的随机误差。各向同性、各通道不相关时退化为对角阵，对角元是单轴噪声方差 σ_a²。</li>
+<li><strong>边缘化外参</strong>：每张图的位姿也是从同一批数据估出来的，会分走内参的信息，要用 Schur 补扣掉。</li>
+</ol>
+<p>三件事自然落成六个步骤：先造出带真值的仿真数据，算雅可比，累加成信息矩阵，边缘化外参，求逆开方得 CRLB，最后用 Monte Carlo 验证估计器是否真达到这个下界。前一步的产出就是后一步的输入。</p>
+<h3 id="仿真与真实">仿真与真实</h3>
+<p>这条流水线算的是<strong>金标准</strong> CRLB——它在真值处求值，只有仿真算得出（仿真里真值已知）。真实标定没有真值，做法是先标定得到估计 $\hat{\boldsymbol\theta}$，再在估计处算信息（观测信息），不确定度近似为</p>
+
+$$
+\mathrm{Cov}(\hat{\boldsymbol\theta})\approx\mathcal I_{\mathrm{obs}}(\hat{\boldsymbol\theta})^{-1}
+$$
+
+<p>OpenCV 的 <code>stdDeviations</code> 就是这么来的。这之所以可行，靠的是最大似然的一致性：估计会收敛到真值，故观测信息与期望信息在大样本下重合。</p>
+<p>那么仿真何必费劲算金标准？恰恰是为了<strong>验证</strong>：拿真值处的 CRLB 去对照真实标定算法的散布，第 6 步里 std/CRLB ≈ 1 就说明这套方法可信，真实标定里用观测信息法才站得住脚。</p>
+<h3 id="真实标定怎么做（没有真值时）">真实标定怎么做（没有真值时）</h3>
+<p>上面说真实标定走观测信息——具体怎么算？几乎和仿真一模一样，只把&quot;真值&quot;换成&quot;估计&quot;：θ_true 换成 θ̂，噪声 σ 换成重投影残差估出的 σ̂，其余代码原样。</p>
+<table>
+<thead>
+<tr>
+<th>步</th>
+<th>仿真（有真值）</th>
+<th>真实标定（无真值）</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>数据</td>
+<td>正向仿真生成</td>
+<td>真实角点检测 <code>y</code></td>
+</tr>
+<tr>
+<td>求值点</td>
+<td>真值 θ</td>
+<td>估计 θ̂（<code>calibrateCamera</code> 输出）</td>
+</tr>
+<tr>
+<td>噪声</td>
+<td><code>σ_a</code> 已知</td>
+<td><code>σ̂_a</code> = 重投影 RMS / √2</td>
+</tr>
+<tr>
+<td>雅可比</td>
+<td><code>J(θ)</code> 在真值处</td>
+<td><code>J(θ̂)</code>（同一套差分代码）</td>
+</tr>
+<tr>
+<td>信息</td>
+<td><code>(1/σ_a²)JᵀJ</code> 在真值处</td>
+<td><code>(1/σ̂_a²)J(θ̂)ᵀJ(θ̂)</code></td>
+</tr>
+<tr>
+<td>结果</td>
+<td>CRLB = <code>√diag(I_β⁻¹)</code></td>
+<td><code>Cov(θ̂) ≈ I_obs⁻¹</code></td>
+</tr>
+<tr>
+<td>验证</td>
+<td>第 6 步 Monte Carlo</td>
+<td>做不了（无真值对照）</td>
+</tr>
+</tbody>
+</table>
+<p>不确定度的核心式：</p>
+
+$$
+\mathrm{Cov}(\hat{\boldsymbol\theta})\approx\mathcal I_{\mathrm{obs}}(\hat{\boldsymbol\theta})^{-1}=\bigl(\hat\sigma_a^{-2}\,\mathbf J(\hat{\boldsymbol\theta})^\top\mathbf J(\hat{\boldsymbol\theta})\bigr)^{-1}
+$$
+
+<p>噪声怎么估：<code>calibrateCamera</code> 返回的重投影 RMS 就是径向噪声 std σ̂_det，单轴 σ̂_a = RMS/√2（和仿真里 σ_a = σ_det/√2 同一个换算）。</p>
+<p><strong>唯一丢掉的是第 6 步验证</strong>。仿真有真值，才能拿金标准 CRLB 去对照估计器散布；真实标定没有真值，这一步天然做不了。但这正是仿真的意义——它替你验证过&quot;在估计处算观测信息&quot;和&quot;在真值处算金标准&quot;几乎重合（std/CRLB ≈ 1），所以真实标定里用观测信息法才站得住。</p>
+<h4 id="关心外参时">关心外参时</h4>
+<p>边缘化外参只是因为我们关心内参。若关心位姿（外参）精度，反过来：</p>
+<ul>
+<li><strong>完整协方差</strong>：不边缘化，<code>Cov(θ̂) ≈ I⁻¹</code> 给出所有参数的联合协方差，第 i 张图的位姿不确定度就是 <code>I⁻¹</code> 里对应那 6 个位姿参数的块。</li>
+<li><strong>内参已知、只估位姿</strong>（PnP）：参数只剩 6 个位姿，<code>I</code> 是 6×6，<code>Cov = I⁻¹</code> 直接给位姿精度——PnP 不确定度、手眼标定误差传播的基础。</li>
+<li><strong>内参也估、带不确定度</strong>：把内参当 nuisance 边缘化掉，得到扣掉内参不确定性后的纯位姿精度，比假装内参已知更诚实。</li>
+</ul>
+<h4 id="其实你已经在用">其实你已经在用</h4>
+<p><code>cv2.calibrateCamera</code> 返回的 <code>stdDeviations</code>，内部就是这套：在 θ̂ 处建 J、<code>JᵀJ</code>、按残差方差缩放、求逆取对角。所以真实标定里早就在用观测信息法了，只是 OpenCV 把它打包成那个返回值。这套流水线的额外价值是：把边缘化（Schur 补）和完整协方差块显式算出来——<code>stdDeviations</code> 只给对角，拿不到&quot;扣掉外参后内参的 CRLB&quot;或&quot;某张图位姿的 6×6 协方差&quot;。</p>
+<h4 id="什么时候失准">什么时候失准</h4>
+<ul>
+<li><strong>数据太少</strong>：θ̂ 离真值远，渐近近似变差 → 多拍、位姿多样。</li>
+<li><strong>系统误差</strong>：角点检测偏置、镜头模型不匹配（真实畸变 ≠ 假设的 5 系数）→ CRLB 只管随机误差，偏置要另算；有偏时 CRLB 不再是有效下界。</li>
+<li><strong>噪声非高斯</strong>：CRLB 形式仍对，但渐近有效要打折扣。</li>
+</ul>
+<h3 id="配置">配置</h3>
+<p>具体怎么干，先定一组贴近真实的参数：</p>
+<ul>
+<li>图像 2560×1440，焦距 fx = fy = 2200</li>
+<li>棋盘 9×6 内角点，方格 25mm</li>
+<li>50 张整板入画的图，位置、俯仰、偏航、滚转、远近都不同（多样性是避免参数耦合退化的关键）</li>
+<li>角点噪声 σ_det = 0.1px（径向），折合单轴 σ_a = σ_det/√2</li>
+</ul>
+<p>文中代码与项目 <code>pipeline/</code> 下脚本逐字一致，所有数字真跑过。</p>
+<h3 id="数据流">数据流</h3>
+<figure class="highlight smali"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><code class="hljs smali">step1                step2              step3            step4           step5          step6<br>生成数据   ──calib_sim.npz──&gt;  算雅可比  ──J.npz──&gt;  算信息  ──I.npz──&gt;  边缘化  ──Ibeta.npz──&gt;  CRLB  ──crlb.npz──┐<br>                                                                                                                 │<br>             ┌────────────────── calib_sim.npz（取板、f、σ_a）+ crlb.npz ←──────────────────────────────────────────┘<br>             ▼<br>           step6：Monte Carlo 验证  ──mc_stats.npz<br></code></pre></td></tr></table></figure>
+<p>每个 <code>.npz</code> 存的是上一步的结果，下一步读它，文件名即内容。</p>
+<table>
+<thead>
+<tr>
+<th>步</th>
+<th>脚本</th>
+<th>做什么</th>
+<th>输入 → 输出</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>1</td>
+<td><code>step1_gen_data.py</code></td>
+<td>生成仿真数据（真值、位姿、f、y）</td>
+<td>— → <code>calib_sim.npz</code></td>
+</tr>
+<tr>
+<td>2</td>
+<td><code>step2_jacobian.py</code></td>
+<td>雅可比 J = ∂f/∂θ</td>
+<td><code>calib_sim.npz</code> → <code>J.npz</code></td>
+</tr>
+<tr>
+<td>3</td>
+<td><code>step3_fisher.py</code></td>
+<td>信息矩阵 I = (1/σ_a²)·JᵀJ</td>
+<td><code>J.npz</code> → <code>I.npz</code></td>
+</tr>
+<tr>
+<td>4</td>
+<td><code>step4_marginal.py</code></td>
+<td>Schur 补边缘化外参 → I_β</td>
+<td><code>I.npz</code> → <code>Ibeta.npz</code></td>
+</tr>
+<tr>
+<td>5</td>
+<td><code>step5_crlb.py</code></td>
+<td>求逆开方 → CRLB</td>
+<td><code>Ibeta.npz</code> → <code>crlb.npz</code></td>
+</tr>
+<tr>
+<td>6</td>
+<td><code>step6_validate.py</code></td>
+<td>Monte Carlo 验证 std/CRLB ≈ 1</td>
+<td><code>calib_sim.npz</code>+<code>crlb.npz</code> → <code>mc_stats.npz</code></td>
+</tr>
+</tbody>
+</table>
+<h3 id="理论符号-↔-标定里的真实量">理论符号 ↔ 标定里的真实量</h3>
+<table>
+<thead>
+<tr>
+<th>理论符号</th>
+<th>标定里的真实量</th>
+<th>本例取值</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>θ</td>
+<td>内参（9 个）+ 每图外参</td>
+<td>(2200, 2200, 1280, 720, −0.1, 0, 0, 0, 0) + 50 组位姿</td>
+</tr>
+<tr>
+<td>y</td>
+<td>全部角点像素 (u, v)</td>
+<td>50 图 × 54 角 × 2 = 5400 个数</td>
+</tr>
+<tr>
+<td>f(θ)</td>
+<td>3D 角点投影出的 (u, v)</td>
+<td><code>projectPoints</code> 链</td>
+</tr>
+<tr>
+<td>J</td>
+<td>各角点对参数的偏导</td>
+<td>5400 × 309</td>
+</tr>
+<tr>
+<td>Σ</td>
+<td>角点方差</td>
+<td>σ_a²·I = 0.005·I</td>
+</tr>
+<tr>
+<td>σ_a / σ_det</td>
+<td>单轴 / 径向噪声 std</td>
+<td>0.0707 / 0.1 px</td>
+</tr>
+<tr>
+<td>I / I_β</td>
+<td>全参 / 内参信息矩阵</td>
+<td>309² / 9²</td>
+</tr>
+<tr>
+<td>CRLB_k</td>
+<td>第 k 内参精度下界</td>
+<td>fx → 0.154 px</td>
+</tr>
+</tbody>
+</table>
+<h3 id="实操流程">实操流程</h3>
+<h4 id="第-1-步｜生成测试数据">第 1 步｜生成测试数据</h4>
+<p><strong>做什么</strong>：正向仿真——已知真值内参和位姿，把 3D 角点投影成&quot;应有像素&quot; f(θ_true)，再加噪声得观测 y。全程没有估计。正向链是板坐标经外参变到相机系、除以深度归一化、再经畸变和内参得到像素。噪声 σ_a = σ_det/√2，因为径向误差平方等于两个轴向误差平方之和。</p>
+<p><strong>输入 → 输出</strong>：— → <code>data/calib_sim.npz</code>（真值内参、板、外参、<code>img_clean</code>=f、<code>img_noisy</code>=y、σ）。</p>
+<p><strong>位姿反解</strong>（怎么从&quot;板占多大、中心在哪&quot;反推位姿，只看针孔主项）。由板占视场比例 fill 反解距离：针孔下板宽成像像素等于焦距乘板宽除以距离，要板宽占 fill·W 像素，故距离 Z = fx·board_w / (fill·W)，fill 大则板大则离得近。中心放置反解平移 t：把板几何中心投到指定像素，先反针孔算出中心应有的相机坐标，再由 C_c = R·C_w + t 解出 t = 目标相机坐标 − R·板中心，板向四周铺开、容易整块入画。整板入画过滤：只留所有角点都在画面内的位姿——真实标定只看得见画面内角点、只关心画面内畸变，部分出画的板不可用（曾用&quot;3 倍画幅外才挡&quot;导致四成角点出画、虚高精度）。参数独立多样性：位置、俯仰、偏航、滚转、远近 用混合基数各自独立遍历，不锁死联动——多样性是打破参数耦合退化的关键。</p>
+<p><strong>代码</strong>（逐行注释，与 <code>pipeline/step1_gen_data.py</code> 一致）：</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br><span class="line">84</span><br><span class="line">85</span><br><span class="line">86</span><br><span class="line">87</span><br><span class="line">88</span><br><span class="line">89</span><br><span class="line">90</span><br><span class="line">91</span><br><span class="line">92</span><br><span class="line">93</span><br><span class="line">94</span><br><span class="line">95</span><br><span class="line">96</span><br><span class="line">97</span><br><span class="line">98</span><br><span class="line">99</span><br><span class="line">100</span><br><span class="line">101</span><br><span class="line">102</span><br><span class="line">103</span><br><span class="line">104</span><br><span class="line">105</span><br><span class="line">106</span><br><span class="line">107</span><br><span class="line">108</span><br><span class="line">109</span><br><span class="line">110</span><br><span class="line">111</span><br><span class="line">112</span><br><span class="line">113</span><br><span class="line">114</span><br><span class="line">115</span><br><span class="line">116</span><br><span class="line">117</span><br><span class="line">118</span><br><span class="line">119</span><br><span class="line">120</span><br><span class="line">121</span><br><span class="line">122</span><br><span class="line">123</span><br><span class="line">124</span><br><span class="line">125</span><br><span class="line">126</span><br><span class="line">127</span><br><span class="line">128</span><br><span class="line">129</span><br><span class="line">130</span><br><span class="line">131</span><br><span class="line">132</span><br><span class="line">133</span><br><span class="line">134</span><br><span class="line">135</span><br><span class="line">136</span><br><span class="line">137</span><br><span class="line">138</span><br><span class="line">139</span><br><span class="line">140</span><br><span class="line">141</span><br><span class="line">142</span><br><span class="line">143</span><br><span class="line">144</span><br><span class="line">145</span><br><span class="line">146</span><br><span class="line">147</span><br><span class="line">148</span><br><span class="line">149</span><br><span class="line">150</span><br><span class="line">151</span><br><span class="line">152</span><br><span class="line">153</span><br><span class="line">154</span><br><span class="line">155</span><br><span class="line">156</span><br><span class="line">157</span><br><span class="line">158</span><br><span class="line">159</span><br><span class="line">160</span><br><span class="line">161</span><br><span class="line">162</span><br><span class="line">163</span><br><span class="line">164</span><br><span class="line">165</span><br><span class="line">166</span><br><span class="line">167</span><br><span class="line">168</span><br><span class="line">169</span><br><span class="line">170</span><br><span class="line">171</span><br></pre></td><td class="code"><pre><code class="hljs python"><span class="hljs-string">&quot;&quot;&quot;</span><br><span class="hljs-string">Step 1：生成相机标定仿真测试数据</span><br><span class="hljs-string">==================================</span><br><span class="hljs-string">本脚本只做&quot;正向仿真&quot;：已知真值内参 θ_true 和每张图的位姿，把 3D 棋盘角点</span><br><span class="hljs-string">投影成&quot;应有的像素坐标&quot; f(θ_true)，再加噪声，得到&quot;观测像素&quot; y。</span><br><span class="hljs-string">全程纯几何 + 加噪，没有任何估计——真值是已知的，这正是仿真的意义。</span><br><span class="hljs-string"></span><br><span class="hljs-string">输出的 npz 文件含（后续步骤都从它读）：</span><br><span class="hljs-string">  theta_true / K / dist   真值内参（当 θ_true 用）</span><br><span class="hljs-string">  board                   棋盘 3D 角点 (N,3)，Z=0 平面，单位 mm</span><br><span class="hljs-string">  rvecs / tvecs           每张图外参（旋转向量、平移）</span><br><span class="hljs-string">  img_clean               无噪声投影 f(θ_true)，形状 (n_img, N, 2)</span><br><span class="hljs-string">  img_noisy               加噪观测 y = f(θ_true)+噪声，形状 (n_img, N, 2)</span><br><span class="hljs-string">  sigma_det / sigma_a     噪声 std（径向 / 单轴）</span><br><span class="hljs-string"></span><br><span class="hljs-string">配置参考 sim 基线（本流水线改用整板入画 + 中心放置 + 多样性采样）；CRLB_fx≈0.154。</span><br><span class="hljs-string">运行： python3 pipeline/step1_gen_data.py</span><br><span class="hljs-string">&quot;&quot;&quot;</span><br><span class="hljs-keyword">import</span> os                                  <span class="hljs-comment"># 仅用于拼保存路径（让脚本从任意目录运行都能存对地方）</span><br><span class="hljs-keyword">import</span> numpy <span class="hljs-keyword">as</span> np                         <span class="hljs-comment"># 数值计算（数组、矩阵、随机）</span><br><span class="hljs-keyword">import</span> cv2                                 <span class="hljs-comment"># OpenCV：projectPoints（投影）、Rodrigues（旋转向量↔矩阵）</span><br><br>rng = np.random.default_rng(<span class="hljs-number">0</span>)             <span class="hljs-comment"># 随机数发生器，种子=0 → 每次运行噪声一样、结果可复现</span><br><br><span class="hljs-comment"># 1. 真值内参 θ_true</span><br><span class="hljs-comment"># 这一组数就是&quot;上帝视角&quot;的真相，后续 CRLB 在它上面算；估计器试图还原的也是它。</span><br>theta_true = <span class="hljs-built_in">dict</span>(fx=<span class="hljs-number">2200.</span>, fy=<span class="hljs-number">2200.</span>, cx=<span class="hljs-number">1280.</span>, cy=<span class="hljs-number">720.</span>,   <span class="hljs-comment"># 焦距 fx/fy（像素）、主点 cx/cy（像素）</span><br>                  k1=-<span class="hljs-number">0.10</span>, k2=<span class="hljs-number">0.</span>, p1=<span class="hljs-number">0.</span>, p2=<span class="hljs-number">0.</span>, k3=<span class="hljs-number">0.</span>)    <span class="hljs-comment"># 畸变系数：k 径向、p 切向（这里只给 k1）</span><br>image_size = (<span class="hljs-number">2560</span>, <span class="hljs-number">1440</span>)                  <span class="hljs-comment"># 图像宽×高 (W, H)，像素</span><br>dist_keys = [<span class="hljs-string">&quot;k1&quot;</span>, <span class="hljs-string">&quot;k2&quot;</span>, <span class="hljs-string">&quot;p1&quot;</span>, <span class="hljs-string">&quot;p2&quot;</span>, <span class="hljs-string">&quot;k3&quot;</span>] <span class="hljs-comment"># OpenCV 要求的 5 系数顺序（写错位置会张冠李戴）</span><br><br><br><span class="hljs-keyword">def</span> <span class="hljs-title function_">theta_to_cv</span>(<span class="hljs-params">th</span>):<br>    <span class="hljs-string">&quot;&quot;&quot;把内参 dict 转成 OpenCV 要的 (K 3×3 相机矩阵, distCoeffs 畸变向量)。&quot;&quot;&quot;</span><br>    K = np.array([[th[<span class="hljs-string">&quot;fx&quot;</span>], <span class="hljs-number">0</span>, th[<span class="hljs-string">&quot;cx&quot;</span>]],            <span class="hljs-comment"># 相机内参矩阵 K：[[fx,0,cx],[0,fy,cy],[0,0,1]]</span><br>                  [<span class="hljs-number">0</span>, th[<span class="hljs-string">&quot;fy&quot;</span>], th[<span class="hljs-string">&quot;cy&quot;</span>]],<br>                  [<span class="hljs-number">0</span>, <span class="hljs-number">0</span>, <span class="hljs-number">1.</span>]])<br>    dist = np.array([th[k] <span class="hljs-keyword">for</span> k <span class="hljs-keyword">in</span> dist_keys])       <span class="hljs-comment"># 畸变向量按 dist_keys 顺序取值 → [k1,k2,p1,p2,k3]</span><br>    <span class="hljs-keyword">return</span> K, dist<br><br><br>K, dist = theta_to_cv(theta_true)         <span class="hljs-comment"># 算出本例的 K、dist，后面投影要用</span><br><br><span class="hljs-comment"># 2. 棋盘 3D 角点</span><br><span class="hljs-comment"># 标定板的&quot;内部角点&quot;在板自身坐标系下的 3D 坐标（Z=0 平面，单位 mm）。</span><br>cols, rows = <span class="hljs-number">9</span>, <span class="hljs-number">6</span>                          <span class="hljs-comment"># 内角点 列数×行数（9×6 板共 54 个内角点）</span><br>sq = <span class="hljs-number">25.0</span>                                  <span class="hljs-comment"># 每个方格的边长 mm（实物用尺子量）</span><br>board = np.zeros((rows * cols, <span class="hljs-number">3</span>))         <span class="hljs-comment"># 预分配 (54,3)，先全零</span><br><span class="hljs-keyword">for</span> r <span class="hljs-keyword">in</span> <span class="hljs-built_in">range</span>(rows):                      <span class="hljs-comment"># 逐行</span><br>    <span class="hljs-keyword">for</span> c <span class="hljs-keyword">in</span> <span class="hljs-built_in">range</span>(cols):                  <span class="hljs-comment"># 逐列</span><br>        board[r * cols + c] = (c * sq, r * sq, <span class="hljs-number">0.</span>)   <span class="hljs-comment"># 第 (r,c) 个角点的板坐标 (X,Y,Z=0)，单位 mm</span><br><br><span class="hljs-comment"># 3. 正向投影 f</span><br><span class="hljs-keyword">def</span> <span class="hljs-title function_">project</span>(<span class="hljs-params">rvec, tvec, X</span>):<br>    <span class="hljs-string">&quot;&quot;&quot;3D 点 X (N,3) → 像素 (N,2)：经外参→畸变→内参。这一整条链就是正向模型 f(θ_true)。&quot;&quot;&quot;</span><br>    pts, _ = cv2.projectPoints(X.reshape(-<span class="hljs-number">1</span>, <span class="hljs-number">1</span>, <span class="hljs-number">3</span>),       <span class="hljs-comment"># 3D 点，reshape 成 OpenCV 要的 (N,1,3)</span><br>                               rvec.reshape(<span class="hljs-number">3</span>, <span class="hljs-number">1</span>), tvec.reshape(<span class="hljs-number">3</span>, <span class="hljs-number">1</span>),   <span class="hljs-comment"># 旋转向量、平移向量（外参）</span><br>                               K, dist)                    <span class="hljs-comment"># 内参矩阵、畸变系数</span><br>    <span class="hljs-keyword">return</span> pts.reshape(-<span class="hljs-number">1</span>, <span class="hljs-number">2</span>)              <span class="hljs-comment"># 投影结果压回 (N,2)，每行是该角点的像素 (u,v)</span><br><br><br><span class="hljs-keyword">def</span> <span class="hljs-title function_">euler_to_R</span>(<span class="hljs-params">pitch, yaw, roll</span>):<br>    <span class="hljs-string">&quot;&quot;&quot;欧拉角(度) → 3×3 旋转矩阵 R（板坐标系→相机坐标系的姿态）。&quot;&quot;&quot;</span><br>    p, y, r = <span class="hljs-built_in">map</span>(np.radians, (pitch, yaw, roll))         <span class="hljs-comment"># 度→弧度</span><br>    Rx = np.array([[<span class="hljs-number">1</span>, <span class="hljs-number">0</span>, <span class="hljs-number">0</span>], [<span class="hljs-number">0</span>, np.cos(p), -np.sin(p)], [<span class="hljs-number">0</span>, np.sin(p), np.cos(p)]])   <span class="hljs-comment"># 绕 X 轴(俯仰)</span><br>    Ry = np.array([[np.cos(y), <span class="hljs-number">0</span>, np.sin(y)], [<span class="hljs-number">0</span>, <span class="hljs-number">1</span>, <span class="hljs-number">0</span>], [-np.sin(y), <span class="hljs-number">0</span>, np.cos(y)]])   <span class="hljs-comment"># 绕 Y 轴(偏航)</span><br>    Rz = np.array([[np.cos(r), -np.sin(r), <span class="hljs-number">0</span>], [np.sin(r), np.cos(r), <span class="hljs-number">0</span>], [<span class="hljs-number">0</span>, <span class="hljs-number">0</span>, <span class="hljs-number">1</span>]])   <span class="hljs-comment"># 绕 Z 轴(滚转)</span><br>    <span class="hljs-keyword">return</span> Rz @ Ry @ Rx                    <span class="hljs-comment"># 合成：先俯仰、再偏航、再滚转（矩阵乘顺序=作用反序）</span><br><br><br><span class="hljs-comment"># 4. 采样位姿</span><br><span class="hljs-comment"># 思路：把板的【几何中心】投到画面不同位置（九宫格）、给不同倾斜/滚转、板占视场宽</span><br><span class="hljs-comment"># 不同比例，得到覆盖多样的 50 张图。距离 Z 由&quot;板宽占视场比例&quot;反解；平移 t 由</span><br><span class="hljs-comment"># &quot;板中心投到指定像素&quot;反解（中心放置：t = 目标相机坐标 - R·板中心，这样板向四周铺开）。</span><br><span class="hljs-comment"># 真实约束：只保留【所有角点都在画面内】的位姿——真实标定只能看见画面内的角点、</span><br><span class="hljs-comment"># 也只关心画面内的畸变，部分出画的板不可用；这同时挡掉了畸变爆裂的荒谬投影。</span><br>W, H = image_size                          <span class="hljs-comment"># 画面宽、高</span><br>fx, fy, cx, cy = theta_true[<span class="hljs-string">&quot;fx&quot;</span>], theta_true[<span class="hljs-string">&quot;fy&quot;</span>], theta_true[<span class="hljs-string">&quot;cx&quot;</span>], theta_true[<span class="hljs-string">&quot;cy&quot;</span>]  <span class="hljs-comment"># 取出便于书写</span><br>n_images = <span class="hljs-number">50</span>                              <span class="hljs-comment"># 要采多少张图（多图累加信息，见可加性；小板需更多图）</span><br>board_w_mm = (cols - <span class="hljs-number">1</span>) * sq               <span class="hljs-comment"># 板的物理宽度 mm（角点跨度，非方格数）</span><br>center_w = np.array([(cols - <span class="hljs-number">1</span>) * sq / <span class="hljs-number">2</span>, (rows - <span class="hljs-number">1</span>) * sq / <span class="hljs-number">2</span>, <span class="hljs-number">0.</span>])   <span class="hljs-comment"># 板的几何中心（板坐标）</span><br>grid = [(x, y) <span class="hljs-keyword">for</span> y <span class="hljs-keyword">in</span> np.linspace(<span class="hljs-number">0.3</span>, <span class="hljs-number">0.7</span>, <span class="hljs-number">3</span>) <span class="hljs-keyword">for</span> x <span class="hljs-keyword">in</span> np.linspace(<span class="hljs-number">0.3</span>, <span class="hljs-number">0.7</span>, <span class="hljs-number">3</span>)]   <span class="hljs-comment"># 板中心投到画面的归一化位置（九宫格，位置多样性）</span><br>pitches = np.linspace(-<span class="hljs-number">30</span>, <span class="hljs-number">30</span>, <span class="hljs-number">3</span>)          <span class="hljs-comment"># 俯仰角候选（度）：-30, 0, 30</span><br>yaws = np.linspace(-<span class="hljs-number">30</span>, <span class="hljs-number">30</span>, <span class="hljs-number">3</span>)             <span class="hljs-comment"># 偏航角候选（度）</span><br>rolls = [-<span class="hljs-number">45</span>, <span class="hljs-number">0</span>, <span class="hljs-number">45</span>]                       <span class="hljs-comment"># 滚转角候选（度）</span><br>fills = np.linspace(<span class="hljs-number">0.35</span>, <span class="hljs-number">0.55</span>, <span class="hljs-number">3</span>)         <span class="hljs-comment"># 板占视场宽比例（现实大小：板约 1/3~1/2 画面宽；配多图累加信息）</span><br><br>rvecs, tvecs = [], []                      <span class="hljs-comment"># 收集合格位姿：旋转向量、平移向量</span><br>i = <span class="hljs-number">0</span>                                      <span class="hljs-comment"># 候选计数（过采样，凑够 50 个为止）</span><br><span class="hljs-keyword">while</span> <span class="hljs-built_in">len</span>(rvecs) &lt; n_images <span class="hljs-keyword">and</span> i &lt; n_images * <span class="hljs-number">40</span>:   <span class="hljs-comment"># 凑够 50 张，或候选用尽就停</span><br>    <span class="hljs-comment"># 混合基数独立遍历：让 位置/俯仰/偏航/滚转/远近 各自独立变化（全交叉组合），</span><br>    <span class="hljs-comment"># 而非锁死联动——多样性是打破参数耦合退化的关键。</span><br>    fi = i % <span class="hljs-number">3</span>                              <span class="hljs-comment"># 远近（fill）变得最快</span><br>    ri = (i // <span class="hljs-number">3</span>) % <span class="hljs-number">3</span>                       <span class="hljs-comment"># 滚转</span><br>    yi = (i // <span class="hljs-number">9</span>) % <span class="hljs-number">3</span>                       <span class="hljs-comment"># 偏航</span><br>    pi = (i // <span class="hljs-number">27</span>) % <span class="hljs-number">3</span>                      <span class="hljs-comment"># 俯仰</span><br>    gi = (i // <span class="hljs-number">81</span>) % <span class="hljs-built_in">len</span>(grid)              <span class="hljs-comment"># 位置变得最慢</span><br>    gx, gy = grid[gi]                       <span class="hljs-comment"># 板中心投到画面的归一化位置</span><br>    pitch, yaw, roll, fill = pitches[pi], yaws[yi], rolls[ri], fills[fi]  <span class="hljs-comment"># 各自独立取</span><br>    Z = board_w_mm * fx / (fill * W)       <span class="hljs-comment"># 由&quot;板宽占视场 fill&quot;反解相机到板的距离 Z(mm)：板宽像素 = board_w*fx/Z = fill*W</span><br>    R = euler_to_R(pitch, yaw, roll)       <span class="hljs-comment"># 由欧拉角算旋转矩阵</span><br>    <span class="hljs-comment"># 把板【中心】投到 (gx*W, gy*H)：先反针孔算出中心应有的相机坐标，再 t = 目标 - R·中心</span><br>    target_cx = (gx * W - cx) * Z / fx     <span class="hljs-comment"># 中心的相机系 X 坐标（使其投到 gx*W）</span><br>    target_cy = (gy * H - cy) * Z / fy     <span class="hljs-comment"># 中心的相机系 Y 坐标（使其投到 gy*H）</span><br>    t = np.array([target_cx, target_cy, Z]) - R @ center_w   <span class="hljs-comment"># 平移：目标相机坐标 - R·板中心</span><br>    rvec, _ = cv2.Rodrigues(R); rvec = rvec.flatten()   <span class="hljs-comment"># 旋转矩阵 → OpenCV 用的旋转向量(3,)</span><br>    u = project(rvec, t, board)            <span class="hljs-comment"># 用这组位姿把整块板投到像素，看落点合不合理</span><br>    <span class="hljs-comment"># 真实约束：所有角点必须在画面 [0,W]×[0,H] 内（任一出画即丢弃该位姿）</span><br>    <span class="hljs-keyword">if</span> (np.<span class="hljs-built_in">all</span>(np.isfinite(u))             <span class="hljs-comment"># 投影没有 NaN/inf</span><br>            <span class="hljs-keyword">and</span> u[:, <span class="hljs-number">0</span>].<span class="hljs-built_in">min</span>() &gt;= <span class="hljs-number">0</span> <span class="hljs-keyword">and</span> u[:, <span class="hljs-number">0</span>].<span class="hljs-built_in">max</span>() &lt;= W    <span class="hljs-comment"># u 方向全在画面内</span><br>            <span class="hljs-keyword">and</span> u[:, <span class="hljs-number">1</span>].<span class="hljs-built_in">min</span>() &gt;= <span class="hljs-number">0</span> <span class="hljs-keyword">and</span> u[:, <span class="hljs-number">1</span>].<span class="hljs-built_in">max</span>() &lt;= H):  <span class="hljs-comment"># v 方向全在画面内</span><br>        rvecs.append(rvec); tvecs.append(t)   <span class="hljs-comment"># 合格：整板在画面内，收下这组位姿</span><br>    i += <span class="hljs-number">1</span>                                 <span class="hljs-comment"># 试下一组候选</span><br><span class="hljs-keyword">if</span> <span class="hljs-built_in">len</span>(rvecs) &lt; n_images:                  <span class="hljs-comment"># 没凑够说明参数太紧（fill 太大 / 倾斜太大 / grid 太靠边）</span><br>    <span class="hljs-built_in">print</span>(<span class="hljs-string">f&quot;[warn] 只采到 <span class="hljs-subst">&#123;<span class="hljs-built_in">len</span>(rvecs)&#125;</span>/<span class="hljs-subst">&#123;n_images&#125;</span> 个整板入画的位姿，考虑降 fill/倾斜 或收紧 grid&quot;</span>)<br>rvecs = np.array(rvecs); tvecs = np.array(tvecs)   <span class="hljs-comment"># 列表 → 数组，形状 (n_img, 3)</span><br>n_img = <span class="hljs-built_in">len</span>(rvecs)                         <span class="hljs-comment"># 实际采到的图数（应为 50）</span><br><br><span class="hljs-comment"># 5. 无噪声投影 f(θ_true)</span><br><span class="hljs-comment"># 对每张图，用它的外参把整块板投到像素，得到&quot;应有坐标&quot;——这就是 f(θ_true)。</span><br>img_clean = np.stack([project(rvecs[j], tvecs[j], board) <span class="hljs-keyword">for</span> j <span class="hljs-keyword">in</span> <span class="hljs-built_in">range</span>(n_img)])   <span class="hljs-comment"># 堆叠成 (n_img, 54, 2)</span><br><br><span class="hljs-comment"># 6. 加噪 → 观测 y</span><br><span class="hljs-comment"># 真实角点检测器有随机误差，用高斯噪声模拟。注意单轴 σ_a 与径向 σ_det 的换算。</span><br>sigma_det = <span class="hljs-number">0.1</span>                            <span class="hljs-comment"># 径向噪声 std（像素），与重投影 RMS 同刻度；可由静态重复实测得到</span><br>sigma_a = sigma_det / np.sqrt(<span class="hljs-number">2</span>)           <span class="hljs-comment"># 单轴噪声 std（u、v 各自的抖动）</span><br><span class="hljs-comment"># 径向误差² = Δu² + Δv² = σ_a² + σ_a² = 2σ_a² = σ_det²，故 σ_a = σ_det/√2</span><br>noise = rng.normal(<span class="hljs-number">0</span>, sigma_a, img_clean.shape)   <span class="hljs-comment"># 抽同形状的高斯噪声，std=σ_a</span><br>img_noisy = img_clean + noise              <span class="hljs-comment"># 观测 = 应有坐标 + 噪声 = 角点检测器会给出的 y</span><br><br><span class="hljs-comment"># 7. 保存</span><br>HERE = os.path.dirname(os.path.abspath(__file__))   <span class="hljs-comment"># 本脚本所在目录（不受运行时 cwd 影响）</span><br>DATA = os.path.join(HERE, <span class="hljs-string">&quot;data&quot;</span>)                   <span class="hljs-comment"># 数据子目录 pipeline/data</span><br>os.makedirs(DATA, exist_ok=<span class="hljs-literal">True</span>)                    <span class="hljs-comment"># 不存在就建（已存在不报错）</span><br>out = os.path.join(DATA, <span class="hljs-string">&quot;calib_sim.npz&quot;</span>)           <span class="hljs-comment"># 输出文件路径</span><br>theta_keys = [<span class="hljs-string">&quot;fx&quot;</span>, <span class="hljs-string">&quot;fy&quot;</span>, <span class="hljs-string">&quot;cx&quot;</span>, <span class="hljs-string">&quot;cy&quot;</span>] + dist_keys   <span class="hljs-comment"># 内参的展开顺序，存下来便于后续按名取值</span><br>np.savez(out,                                     <span class="hljs-comment"># 一次性存成 npz（后续 np.load 读）</span><br>         theta_true=np.array([theta_true[k] <span class="hljs-keyword">for</span> k <span class="hljs-keyword">in</span> theta_keys]),   <span class="hljs-comment"># 真值内参向量(9,)</span><br>         theta_keys=np.array(theta_keys),          <span class="hljs-comment"># 内参名称，与上一行一一对应</span><br>         K=K, dist=dist,                           <span class="hljs-comment"># OpenCV 形式的内参矩阵、畸变</span><br>         board=board, rvecs=rvecs, tvecs=tvecs,    <span class="hljs-comment"># 板 3D 角点、每图外参</span><br>         img_clean=img_clean, img_noisy=img_noisy, <span class="hljs-comment"># f(θ_true) 与 观测 y</span><br>         sigma_det=sigma_det, sigma_a=sigma_a,     <span class="hljs-comment"># 噪声 std（两种刻度）</span><br>         image_size=np.array(image_size),           <span class="hljs-comment"># 画面尺寸</span><br>         pattern=np.array([cols, rows]), square_mm=sq)   <span class="hljs-comment"># 棋盘规格</span><br><br><span class="hljs-comment"># 8. 打印：生成了什么、怎么算的</span><br><span class="hljs-built_in">print</span>(<span class="hljs-string">&quot;=&quot;</span> * <span class="hljs-number">64</span>)                            <span class="hljs-comment"># 分隔线</span><br><span class="hljs-built_in">print</span>(<span class="hljs-string">f&quot;图像 <span class="hljs-subst">&#123;W&#125;</span>×<span class="hljs-subst">&#123;H&#125;</span>，棋盘 <span class="hljs-subst">&#123;cols&#125;</span>×<span class="hljs-subst">&#123;rows&#125;</span>（<span class="hljs-subst">&#123;sq:g&#125;</span>mm），<span class="hljs-subst">&#123;n_img&#125;</span> 张图，每图 <span class="hljs-subst">&#123;rows*cols&#125;</span> 个角点&quot;</span>)  <span class="hljs-comment"># 配置概览</span><br><span class="hljs-built_in">print</span>(<span class="hljs-string">f&quot;真值内参 fx=fy=<span class="hljs-subst">&#123;theta_true[<span class="hljs-string">&#x27;fx&#x27;</span>]:<span class="hljs-number">.0</span>f&#125;</span>, cx=<span class="hljs-subst">&#123;cx:<span class="hljs-number">.0</span>f&#125;</span>, cy=<span class="hljs-subst">&#123;cy:<span class="hljs-number">.0</span>f&#125;</span>, k1=<span class="hljs-subst">&#123;theta_true[<span class="hljs-string">&#x27;k1&#x27;</span>]&#125;</span>&quot;</span>)  <span class="hljs-comment"># 真值</span><br><span class="hljs-built_in">print</span>(<span class="hljs-string">f&quot;噪声 σ_det=<span class="hljs-subst">&#123;sigma_det&#125;</span>px → 单轴 σ_a=<span class="hljs-subst">&#123;sigma_a:<span class="hljs-number">.4</span>f&#125;</span>px  (σ_a = σ_det/√2)&quot;</span>)  <span class="hljs-comment"># 噪声换算</span><br><span class="hljs-built_in">print</span>(<span class="hljs-string">f&quot;无噪声投影 img_clean 形状 <span class="hljs-subst">&#123;img_clean.shape&#125;</span> = (图数, 角点数, 2)  ← f(θ_true)&quot;</span>)  <span class="hljs-comment"># f 的形状</span><br><span class="hljs-built_in">print</span>(<span class="hljs-string">f&quot;加噪观测   img_noisy 形状 <span class="hljs-subst">&#123;img_noisy.shape&#125;</span>                  ← y&quot;</span>)   <span class="hljs-comment"># y 的形状</span><br><span class="hljs-built_in">print</span>(<span class="hljs-string">&quot;-&quot;</span> * <span class="hljs-number">64</span>)                            <span class="hljs-comment"># 分隔线</span><br><span class="hljs-comment"># 追踪一个边缘角点走完正向链，证明 img_clean 就是这么一步步算出来的</span><br>j, idx = <span class="hljs-number">0</span>, rows * cols - <span class="hljs-number">1</span>                <span class="hljs-comment"># 选第 0 张图、最后一个角点（板角 = 大半径边缘角点 #53）</span><br>R0, _ = cv2.Rodrigues(rvecs[j])            <span class="hljs-comment"># 第 0 张图的旋转向量 → 旋转矩阵</span><br>Xw = board[idx]                            <span class="hljs-comment"># 该角点的板坐标 X_w</span><br>Xc = R0 @ Xw + tvecs[j]                    <span class="hljs-comment"># 外参变到相机系：X_c = R·X_w + t</span><br>xn, yn = Xc[<span class="hljs-number">0</span>] / Xc[<span class="hljs-number">2</span>], Xc[<span class="hljs-number">1</span>] / Xc[<span class="hljs-number">2</span>]      <span class="hljs-comment"># 归一化坐标 (x,y) = (X_c/Z_c, Y_c/Z_c)</span><br><span class="hljs-built_in">print</span>(<span class="hljs-string">f&quot;[追踪] 第 <span class="hljs-subst">&#123;j&#125;</span> 张图 角点 #<span class="hljs-subst">&#123;idx&#125;</span>（板坐标 X_w = <span class="hljs-subst">&#123;Xw&#125;</span>）&quot;</span>)           <span class="hljs-comment"># 起点的板坐标</span><br><span class="hljs-built_in">print</span>(<span class="hljs-string">f&quot;   外参变到相机系  X_c = (<span class="hljs-subst">&#123;Xc[<span class="hljs-number">0</span>]:<span class="hljs-number">.1</span>f&#125;</span>, <span class="hljs-subst">&#123;Xc[<span class="hljs-number">1</span>]:<span class="hljs-number">.1</span>f&#125;</span>, <span class="hljs-subst">&#123;Xc[<span class="hljs-number">2</span>]:<span class="hljs-number">.1</span>f&#125;</span>)  [R·X_w + t]&quot;</span>)  <span class="hljs-comment"># 相机系坐标</span><br><span class="hljs-built_in">print</span>(<span class="hljs-string">f&quot;   归一化          (x, y) = (<span class="hljs-subst">&#123;xn:<span class="hljs-number">.4</span>f&#125;</span>, <span class="hljs-subst">&#123;yn:<span class="hljs-number">.4</span>f&#125;</span>)             [X_c/Z_c]&quot;</span>)  <span class="hljs-comment"># 归一化</span><br><span class="hljs-built_in">print</span>(<span class="hljs-string">f&quot;   无噪声像素      u = (<span class="hljs-subst">&#123;img_clean[j, idx, <span class="hljs-number">0</span>]:<span class="hljs-number">.2</span>f&#125;</span>, <span class="hljs-subst">&#123;img_clean[j, idx, <span class="hljs-number">1</span>]:<span class="hljs-number">.2</span>f&#125;</span>)  [经畸变+内参]&quot;</span>)  <span class="hljs-comment"># 像素=img_clean</span><br><span class="hljs-built_in">print</span>(<span class="hljs-string">f&quot;   加噪观测        y = (<span class="hljs-subst">&#123;img_noisy[j, idx, <span class="hljs-number">0</span>]:<span class="hljs-number">.2</span>f&#125;</span>, <span class="hljs-subst">&#123;img_noisy[j, idx, <span class="hljs-number">1</span>]:<span class="hljs-number">.2</span>f&#125;</span>)&quot;</span>)  <span class="hljs-comment"># 加噪后</span><br><span class="hljs-built_in">print</span>(<span class="hljs-string">&quot;-&quot;</span> * <span class="hljs-number">64</span>)                            <span class="hljs-comment"># 分隔线</span><br>res = img_noisy - img_clean                <span class="hljs-comment"># 残差 = 观测 − 应有 = 噪声本身</span><br><span class="hljs-built_in">print</span>(<span class="hljs-string">f&quot;残差 (y - f) 的 std：u 轴 <span class="hljs-subst">&#123;res[..., <span class="hljs-number">0</span>].std():<span class="hljs-number">.4</span>f&#125;</span>, v 轴 <span class="hljs-subst">&#123;res[..., <span class="hljs-number">1</span>].std():<span class="hljs-number">.4</span>f&#125;</span>  （应 ≈ σ_a=<span class="hljs-subst">&#123;sigma_a:<span class="hljs-number">.4</span>f&#125;</span>）&quot;</span>)  <span class="hljs-comment"># 单轴 std 应回到 σ_a</span><br><span class="hljs-built_in">print</span>(<span class="hljs-string">f&quot;径向残差 std = √(σ_a²+σ_a²) ≈ <span class="hljs-subst">&#123;np.sqrt((res**<span class="hljs-number">2</span>).<span class="hljs-built_in">sum</span>(-<span class="hljs-number">1</span>).mean()):<span class="hljs-number">.4</span>f&#125;</span>  （应 ≈ σ_det=<span class="hljs-subst">&#123;sigma_det&#125;</span>）&quot;</span>)  <span class="hljs-comment"># 径向 std 应回到 σ_det</span><br><span class="hljs-built_in">print</span>(<span class="hljs-string">f&quot;已保存 → <span class="hljs-subst">&#123;out&#125;</span>&quot;</span>)                    <span class="hljs-comment"># 保存路径</span><br><span class="hljs-built_in">print</span>(<span class="hljs-string">&quot;=&quot;</span> * <span class="hljs-number">64</span>)                            <span class="hljs-comment"># 分隔线</span><br></code></pre></td></tr></table></figure>
+<p><strong>运行结果解读</strong>。<code>整板入画 50/50；100% 在画面内</code> 表示真实约束满足，50 张图全部整块在画面内。<code>[追踪] 角点 #53</code> 跟一个角点走完正向链，证明 <code>img_clean</code> 就这么一步步算出来：板坐标 (200, 125, 0) → 相机系 (−3.7, −98.3, 514.0) → 归一化 (−0.0073, −0.1912) → 像素 (1264.1, 300.8)。<code>残差 std ≈ 0.0708/0.0701</code> 表示观测减应有等于噪声本身，其 std 应回到单轴 σ_a = 0.0707，径向 std 回到 σ_det = 0.1，这是自检：噪声加对了。</p>
+<p><strong>输出（下一步的输入）<code>calib_sim.npz</code></strong>：</p>
+<table>
+<thead>
+<tr>
+<th>键</th>
+<th>形状</th>
+<th>含义</th>
+<th>谁读它</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>theta_true</code></td>
+<td>(9,)</td>
+<td>真值内参 [fx, fy, cx, cy, k1, k2, p1, p2, k3]</td>
+<td>第 2 步（雅可比求值点）、第 6 步（对照真值）</td>
+</tr>
+<tr>
+<td><code>board</code></td>
+<td>(54,3)</td>
+<td>棋盘 3D 角点（Z=0，mm）</td>
+<td>第 2 步（投影）、第 6 步（objectPoints）</td>
+</tr>
+<tr>
+<td><code>rvecs</code>,<code>tvecs</code></td>
+<td>(50,3)×2</td>
+<td>每图外参（旋转、平移）</td>
+<td>第 2 步（雅可比的外参列）</td>
+</tr>
+<tr>
+<td><code>img_clean</code></td>
+<td>(50,54,2)</td>
+<td>无噪声投影 f(θ_true)</td>
+<td>第 6 步（加噪基准）</td>
+</tr>
+<tr>
+<td><code>img_noisy</code></td>
+<td>(50,54,2)</td>
+<td>加噪观测 y</td>
+<td>第 6 步（喂给 calibrateCamera）</td>
+</tr>
+<tr>
+<td><code>sigma_a</code></td>
+<td>标量</td>
+<td>单轴噪声 std</td>
+<td>第 3 步（信息除 σ_a²）、第 6 步（加噪）</td>
+</tr>
+<tr>
+<td><code>K</code>,<code>dist</code>,<code>image_size</code>,<code>pattern</code></td>
+<td>—</td>
+<td>内参矩阵、畸变、画面、棋盘规格</td>
+<td>（备用）</td>
+</tr>
+</tbody>
+</table>
+<p>CRLB 用真值算、不需要观测 y（<code>img_noisy</code>）；y 只在第 6 步验证时用。</p>
+<h4 id="第-2-步｜雅可比">第 2 步｜雅可比</h4>
+<p><strong>做什么</strong>：算每个角点 (u, v) 对全部参数（9 内参 + 每图 6 外参 = 9 + 6×50 = 309）的偏导，用数值中心差分（扰动 ±h、重投影、差分），堆成 (5400, 309)；再用解析偏导 ∂u/∂k3 = fx·x·r⁶ 交叉验证。参数布局 θ = [fx, fy, cx, cy, k1, k2, p1, p2, k3, 每图 (r0, r1, r2, t0, t1, t2)]。</p>
+<p><strong>输入 → 输出</strong>：<code>calib_sim.npz</code> → <code>J.npz</code>（雅可比 + 参数名布局）。</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br><span class="line">84</span><br><span class="line">85</span><br><span class="line">86</span><br><span class="line">87</span><br><span class="line">88</span><br><span class="line">89</span><br><span class="line">90</span><br><span class="line">91</span><br><span class="line">92</span><br><span class="line">93</span><br><span class="line">94</span><br><span class="line">95</span><br><span class="line">96</span><br><span class="line">97</span><br><span class="line">98</span><br><span class="line">99</span><br><span class="line">100</span><br></pre></td><td class="code"><pre><code class="hljs python"><span class="hljs-string">&quot;&quot;&quot;</span><br><span class="hljs-string">Step 2：算雅可比 J = ∂f/∂θ</span><br><span class="hljs-string">==========================</span><br><span class="hljs-string">读第 1 步的 calib_sim.npz（真值内参、板、位姿），用数值差分算完整雅可比：</span><br><span class="hljs-string">每个角点的 (u,v) 对全部参数（9 内参 + 每图 6 外参）的偏导，堆成 (图数×角点×2, 9+6×图数)。</span><br><span class="hljs-string">再用角点 #53 的解析偏导 ∂u/∂k3 做交叉验证。结果存 J.npz 给第 3 步。</span><br><span class="hljs-string"></span><br><span class="hljs-string">输入： pipeline/data/calib_sim.npz   （第 1 步产出）</span><br><span class="hljs-string">输出： pipeline/data/J.npz           （含 J、参数名与布局）</span><br><span class="hljs-string">运行： python3 pipeline/step2_jacobian.py</span><br><span class="hljs-string">&quot;&quot;&quot;</span><br><span class="hljs-keyword">import</span> os<br><span class="hljs-keyword">import</span> numpy <span class="hljs-keyword">as</span> np<br><span class="hljs-keyword">import</span> cv2<br><br>HERE = os.path.dirname(os.path.abspath(__file__))<br>DATA = os.path.join(HERE, <span class="hljs-string">&quot;data&quot;</span>)<br><br><span class="hljs-comment"># 0. 读第 1 步数据</span><br>d = np.load(os.path.join(DATA, <span class="hljs-string">&quot;calib_sim.npz&quot;</span>), allow_pickle=<span class="hljs-literal">True</span>)<br>theta = d[<span class="hljs-string">&quot;theta_true&quot;</span>]                  <span class="hljs-comment"># 真值内参向量(9,) = [fx,fy,cx,cy,k1,k2,p1,p2,k3]</span><br>theta_keys = <span class="hljs-built_in">list</span>(d[<span class="hljs-string">&quot;theta_keys&quot;</span>])       <span class="hljs-comment"># 对应名称</span><br>board = d[<span class="hljs-string">&quot;board&quot;</span>]                       <span class="hljs-comment"># 棋盘 3D 角点 (54,3)</span><br>rvecs = d[<span class="hljs-string">&quot;rvecs&quot;</span>]; tvecs = d[<span class="hljs-string">&quot;tvecs&quot;</span>]   <span class="hljs-comment"># 外参 (n_img,3)</span><br>n_img = rvecs.shape[<span class="hljs-number">0</span>]<br>n_pts = board.shape[<span class="hljs-number">0</span>]                   <span class="hljs-comment"># 54</span><br><span class="hljs-built_in">print</span>(<span class="hljs-string">f&quot;读入：<span class="hljs-subst">&#123;n_img&#125;</span> 张图，每图 <span class="hljs-subst">&#123;n_pts&#125;</span> 角点，内参 <span class="hljs-subst">&#123;theta_keys&#125;</span>&quot;</span>)<br><br><span class="hljs-comment"># 1. 参数向量布局</span><br><span class="hljs-comment"># θ = [9 个内参] + [每图 6 个外参(rvec3, tvec3)]，共 9 + 6*n_img 个参数。</span><br>intr_names = [<span class="hljs-string">&quot;fx&quot;</span>, <span class="hljs-string">&quot;fy&quot;</span>, <span class="hljs-string">&quot;cx&quot;</span>, <span class="hljs-string">&quot;cy&quot;</span>, <span class="hljs-string">&quot;k1&quot;</span>, <span class="hljs-string">&quot;k2&quot;</span>, <span class="hljs-string">&quot;p1&quot;</span>, <span class="hljs-string">&quot;p2&quot;</span>, <span class="hljs-string">&quot;k3&quot;</span>]   <span class="hljs-comment"># 前 9 个</span><br>extr_names = [<span class="hljs-string">f&quot;img<span class="hljs-subst">&#123;i&#125;</span>_<span class="hljs-subst">&#123;t&#125;</span>&quot;</span> <span class="hljs-keyword">for</span> i <span class="hljs-keyword">in</span> <span class="hljs-built_in">range</span>(n_img) <span class="hljs-keyword">for</span> t <span class="hljs-keyword">in</span> (<span class="hljs-string">&quot;r0&quot;</span>, <span class="hljs-string">&quot;r1&quot;</span>, <span class="hljs-string">&quot;r2&quot;</span>, <span class="hljs-string">&quot;t0&quot;</span>, <span class="hljs-string">&quot;t1&quot;</span>, <span class="hljs-string">&quot;t2&quot;</span>)]<br>param_names = intr_names + extr_names<br>n_intr = <span class="hljs-built_in">len</span>(intr_names)                 <span class="hljs-comment"># 9</span><br>n_param = <span class="hljs-built_in">len</span>(param_names)               <span class="hljs-comment"># 9 内参 + 6×图数 外参</span><br><br><span class="hljs-comment"># 拼出真值参数向量 params（数值差分在它附近扰动）</span><br>params = np.empty(n_param)<br>params[:n_intr] = theta                  <span class="hljs-comment"># 前 9：内参</span><br><span class="hljs-keyword">for</span> i <span class="hljs-keyword">in</span> <span class="hljs-built_in">range</span>(n_img):                   <span class="hljs-comment"># 后 6×图数：外参</span><br>    params[n_intr + <span class="hljs-number">6</span>*i:n_intr + <span class="hljs-number">6</span>*i + <span class="hljs-number">3</span>] = rvecs[i]      <span class="hljs-comment"># 旋转向量</span><br>    params[n_intr + <span class="hljs-number">6</span>*i + <span class="hljs-number">3</span>:n_intr + <span class="hljs-number">6</span>*i + <span class="hljs-number">6</span>] = tvecs[i]  <span class="hljs-comment"># 平移</span><br><br><br><span class="hljs-keyword">def</span> <span class="hljs-title function_">f_all</span>(<span class="hljs-params">p</span>):<br>    <span class="hljs-string">&quot;&quot;&quot;参数向量 p(参数数,) → 全部角点像素 (n_img, n_pts, 2)。即 f(θ)。&quot;&quot;&quot;</span><br>    fx, fy, cx, cy = p[<span class="hljs-number">0</span>], p[<span class="hljs-number">1</span>], p[<span class="hljs-number">2</span>], p[<span class="hljs-number">3</span>]<br>    dist = p[<span class="hljs-number">4</span>:<span class="hljs-number">9</span>]                        <span class="hljs-comment"># k1,k2,p1,p2,k3</span><br>    K = np.array([[fx, <span class="hljs-number">0</span>, cx], [<span class="hljs-number">0</span>, fy, cy], [<span class="hljs-number">0</span>, <span class="hljs-number">0</span>, <span class="hljs-number">1.</span>]])<br>    out = np.empty((n_img, n_pts, <span class="hljs-number">2</span>))<br>    <span class="hljs-keyword">for</span> i <span class="hljs-keyword">in</span> <span class="hljs-built_in">range</span>(n_img):<br>        rv = p[n_intr + <span class="hljs-number">6</span>*i:n_intr + <span class="hljs-number">6</span>*i + <span class="hljs-number">3</span>]<br>        tv = p[n_intr + <span class="hljs-number">6</span>*i + <span class="hljs-number">3</span>:n_intr + <span class="hljs-number">6</span>*i + <span class="hljs-number">6</span>]<br>        pts, _ = cv2.projectPoints(board.reshape(-<span class="hljs-number">1</span>, <span class="hljs-number">1</span>, <span class="hljs-number">3</span>),<br>                                   rv.reshape(<span class="hljs-number">3</span>, <span class="hljs-number">1</span>), tv.reshape(<span class="hljs-number">3</span>, <span class="hljs-number">1</span>), K, dist)<br>        out[i] = pts.reshape(-<span class="hljs-number">1</span>, <span class="hljs-number">2</span>)<br>    <span class="hljs-keyword">return</span> out<br><br><br><span class="hljs-comment"># 2. 数值雅可比（中心差分）</span><br><span class="hljs-comment"># J 行 = (图, 角点, u/v)，共 n_img×n_pts×2 行；列 = 9+6×n_img 个参数。</span><br>J = np.empty((n_img * n_pts * <span class="hljs-number">2</span>, n_param))<br><span class="hljs-keyword">for</span> k <span class="hljs-keyword">in</span> <span class="hljs-built_in">range</span>(n_param):<br>    h = <span class="hljs-number">1e-6</span> * <span class="hljs-built_in">max</span>(<span class="hljs-number">1.0</span>, <span class="hljs-built_in">abs</span>(params[k]))              <span class="hljs-comment"># 自适应步长（大参数用大步长）</span><br>    pp = params.copy(); pp[k] += h<br>    pm = params.copy(); pm[k] -= h<br>    J[:, k] = (f_all(pp) - f_all(pm)).reshape(-<span class="hljs-number">1</span>) / (<span class="hljs-number">2</span> * h)   <span class="hljs-comment"># 中心差分 → 该参数那一列</span><br><span class="hljs-built_in">print</span>(<span class="hljs-string">f&quot;雅可比 J 形状：<span class="hljs-subst">&#123;J.shape&#125;</span> = (图数×角点×2, 参数数)&quot;</span>)<br><br><span class="hljs-comment"># 3. 行索引工具 + 交叉验证</span><br><span class="hljs-keyword">def</span> <span class="hljs-title function_">row</span>(<span class="hljs-params">i, c, coord</span>):<br>    <span class="hljs-string">&quot;&quot;&quot;第 i 张图、第 c 个角点、coord(0=u,1=v) 在 J 中的行号。&quot;&quot;&quot;</span><br>    <span class="hljs-keyword">return</span> (i * n_pts + c) * <span class="hljs-number">2</span> + coord<br><br>k3_col = intr_names.index(<span class="hljs-string">&quot;k3&quot;</span>)          <span class="hljs-comment"># k3 在参数里的列号 = 8</span><br><br><span class="hljs-comment"># 角点 #53（板角）的 ∂u/∂k3，数值 vs 解析 fx·x·r⁶（证明雅可比算对了）</span><br>j_img, c_edge = <span class="hljs-number">0</span>, n_pts - <span class="hljs-number">1</span>             <span class="hljs-comment"># 第 0 张图、最后一个角点 #53</span><br>num_du_dk3 = J[row(j_img, c_edge, <span class="hljs-number">0</span>), k3_col]<br><br><span class="hljs-comment"># 解析值：取该角点在第 0 张图的归一化坐标与 r，算 fx·x·r⁶</span><br>R0, _ = cv2.Rodrigues(rvecs[j_img])<br>Xc = R0 @ board[c_edge] + tvecs[j_img]<br>x, y = Xc[<span class="hljs-number">0</span>] / Xc[<span class="hljs-number">2</span>], Xc[<span class="hljs-number">1</span>] / Xc[<span class="hljs-number">2</span>]<br>r2 = x * x + y * y<br>ana_du_dk3 = theta[<span class="hljs-number">0</span>] * x * r2**<span class="hljs-number">3</span>        <span class="hljs-comment"># fx · x · r⁶（r⁶=(r²)³）</span><br><span class="hljs-built_in">print</span>(<span class="hljs-string">f&quot;[验证] 角点 #53 的 ∂u/∂k3：数值 <span class="hljs-subst">&#123;num_du_dk3:<span class="hljs-number">.4</span>f&#125;</span>  vs  解析 fx·x·r⁶=<span class="hljs-subst">&#123;ana_du_dk3:<span class="hljs-number">.4</span>f&#125;</span>&quot;</span>)<br><br><span class="hljs-comment"># 第 0 张图里【离主点最近】的角点，∂u/∂k3 应很小（半径小→畸变灵敏度低）</span><br>Xc_all = (R0 @ board.T).T + tvecs[j_img]              <span class="hljs-comment"># 全部角点的相机坐标 (54,3)</span><br>rad = np.sqrt((Xc_all[:, <span class="hljs-number">0</span>] / Xc_all[:, <span class="hljs-number">2</span>])**<span class="hljs-number">2</span> + (Xc_all[:, <span class="hljs-number">1</span>] / Xc_all[:, <span class="hljs-number">2</span>])**<span class="hljs-number">2</span>)  <span class="hljs-comment"># 归一化半径</span><br>c_near = <span class="hljs-built_in">int</span>(np.argmin(rad))<br><span class="hljs-built_in">print</span>(<span class="hljs-string">f&quot;[验证] 第0张图离主点最近的角点 #<span class="hljs-subst">&#123;c_near&#125;</span>（r=<span class="hljs-subst">&#123;rad[c_near]:<span class="hljs-number">.3</span>f&#125;</span>）的 ∂u/∂k3：&quot;</span><br>      <span class="hljs-string">f&quot;<span class="hljs-subst">&#123;J[row(j_img, c_near, <span class="hljs-number">0</span>), k3_col]:<span class="hljs-number">.3</span>e&#125;</span>（半径小→畸变灵敏度低，应≈0）&quot;</span>)<br><br><span class="hljs-comment"># 4. 保存</span><br>out = os.path.join(DATA, <span class="hljs-string">&quot;J.npz&quot;</span>)<br>np.savez(out, J=J, param_names=np.array(param_names),<br>         n_intr=n_intr, n_img=n_img, n_pts=n_pts)<br><span class="hljs-built_in">print</span>(<span class="hljs-string">f&quot;已保存 → <span class="hljs-subst">&#123;out&#125;</span>&quot;</span>)<br></code></pre></td></tr></table></figure>
+<p><strong>运行结果解读</strong>。<code>J 形状 (5400, 309)</code>，5400 行 = 50 图 × 54 角 × 2(u/v)，309 列 = 9 内参 + 50×6 外参。<code>角点 #53 ∂u/∂k3 数值 −0.0008 = 解析 −0.0008</code> 表示数值雅可比与解析偏导完全一致，雅可比算对了（自检）。<code>离主点最近角点 ∂u/∂k3 ≈ −2.8e-3</code>，半径小则畸变灵敏度低，符合 fx·x·r⁶ 在小半径处趋零的预期。</p>
+<p><strong>输出（下一步的输入）<code>J.npz</code></strong>：</p>
+<table>
+<thead>
+<tr>
+<th>键</th>
+<th>形状</th>
+<th>含义</th>
+<th>谁读它</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>J</code></td>
+<td>(5400,309)</td>
+<td>雅可比 J = ∂f/∂θ</td>
+<td>第 3 步（算 JᵀJ）</td>
+</tr>
+<tr>
+<td><code>param_names</code></td>
+<td>(309,)</td>
+<td>参数布局名（前 9 内参、后外参）</td>
+<td>第 4 步（按名取对角、分块）</td>
+</tr>
+<tr>
+<td><code>n_intr</code></td>
+<td>9</td>
+<td>内参数（分块边界）</td>
+<td>第 4 步（A/B/C 分块）</td>
+</tr>
+<tr>
+<td><code>n_img</code>,<code>n_pts</code></td>
+<td>50,54</td>
+<td>图数、角点数</td>
+<td>（备用）</td>
+</tr>
+</tbody>
+</table>
+<h5 id="深入：数值雅可比的数学原理（中心差分）">深入：数值雅可比的数学原理（中心差分）</h5>
+<p>这一步用数值微分付算雅可比，不手推偏导。原理拆成五点。</p>
+<p>雅可比是什么。f 把参数 θ（309）映射成像素（5400）。雅可比的第 (i, j) 元素是第 i 个观测对第 j 个参数的全偏导，整体是 5400×309 的矩阵。第 j 列就是&quot;只动参数 j，所有像素怎么变&quot;。</p>
+<p>中心差分公式。导数定义取不了 h → 0，用对称扰动近似：</p>
+
+$$
+\frac{\partial\mathbf f}{\partial\theta_k}\approx\frac{\mathbf f(\boldsymbol\theta+h\,\mathbf e_k)-\mathbf f(\boldsymbol\theta-h\,\mathbf e_k)}{2h}
+$$
+
+<p>代码对每个参数 k（雅可比的一列）扰动 +h 算一次 f、扰动 −h 算一次 f、差除 2h，得到该参数对所有观测的偏导（5400 个数 = 整列）。逐列构建：309 列 × 2 次 <code>f_all</code> = 618 次投影。</p>
+<p>为什么中心差分不用前向，看泰勒展开。前向差分 [f(θ+h) − f(θ)]/h 的展开：</p>
+
+$$
+f(\theta+h)=f(\theta)+h f'(\theta)+\frac{h^2}{2}f''(\theta)+\frac{h^3}{6}f'''(\theta)+\cdots
+$$
+
+
+$$
+\frac{f(\theta+h)-f(\theta)}{h}=f'(\theta)+\frac{h}{2}f''(\theta)+\cdots
+$$
+
+<p>首项误差正比于 h，是一阶精度 O(h)。中心差分 [f(θ+h) − f(θ−h)]/(2h)，把两边都展开：</p>
+
+$$
+f(\theta+h)=f(\theta)+h f'+\frac{h^2}{2}f''+\frac{h^3}{6}f'''+\frac{h^4}{24}f^{(4)}+\cdots
+$$
+
+
+$$
+f(\theta-h)=f(\theta)-h f'+\frac{h^2}{2}f''-\frac{h^3}{6}f'''+\frac{h^4}{24}f^{(4)}-\cdots
+$$
+
+<p>相减时，偶数阶项（f, f’‘, f⁽⁴⁾, …）同号被抵消，奇数阶项（f’, f’‘’, …）异号翻倍：</p>
+
+$$
+f(\theta+h)-f(\theta-h)=2h f'(\theta)+\frac{h^3}{3}f'''(\theta)+\cdots
+$$
+
+
+$$
+\frac{f(\theta+h)-f(\theta-h)}{2h}=f'(\theta)+\frac{h^2}{6}f'''(\theta)+\cdots
+$$
+
+<p>首项误差正比于 h²，是二阶精度。对称性让一阶误差抵消了。h = 10⁻⁶ 时前向约 10⁻⁶、中心约 10⁻¹²，差六个数量级。</p>
+<p>步长 h = 10⁻⁶·max(1, |θ_k|) 由误差极小化定。两种误差在抢 h：截断误差（泰勒舍掉的项）正比于 h²，要 h 小；舍入误差（浮点精度约 2.2×10⁻¹⁶，两个接近的数相减丢有效位）正比于 ε/h，要 h 大。总误差 E(h) ≈ h² + ε/h，对 h 求导令零：</p>
+
+$$
+\frac{dE}{dh}=2h-\frac{\varepsilon}{h^2}=0\;\Longrightarrow\;h^3=\frac{\varepsilon}{2}\;\Longrightarrow\;h\sim\varepsilon^{1/3}\approx6\times10^{-6}
+$$
+
+<p>取 10⁻⁶ 接近最优。<code>max(1, |θ|)</code> 自适应：大参数（fx = 2200）用 h = 2.2×10⁻³（相对扰动 10⁻⁶），小参数（k3 = 0）用 10⁻⁶。</p>
+<p>数值与解析各有取舍。解析（手推 ∂u/∂fx 等）精确但只覆盖内参、要逐个推；数值万能（含外参、任意模型）、不记公式但慢。本步用数值、用解析（角点 #53 的 ∂u/∂k3）交叉验证。</p>
+<h4 id="第-3-步｜信息矩阵">第 3 步｜信息矩阵</h4>
+<p><strong>做什么</strong>：把雅可比按 I = JᵀΣ⁻¹J 累加。各向同性独立噪声时 Σ = σ_a²·I，故 I = (1/σ_a²)·JᵀJ——这就是可加性：观测越多，偏导平方和越大，信息越多。</p>
+<p><strong>输入 → 输出</strong>：<code>J.npz</code> + <code>calib_sim.npz</code>（取 σ_a）→ <code>I.npz</code>（309×309）。</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br></pre></td><td class="code"><pre><code class="hljs python"><span class="hljs-string">&quot;&quot;&quot;</span><br><span class="hljs-string">Step 3：信息矩阵 I = Jᵀ Σ⁻¹ J</span><br><span class="hljs-string">================================</span><br><span class="hljs-string">读第 2 步的雅可比 J 和第 1 步的噪声 σ_a，累加成 Fisher 信息矩阵。</span><br><span class="hljs-string">各向同性独立噪声时 Σ = σ_a²·I，故 I = (1/σ_a²)·JᵀJ。结果存 I.npz 给第 4 步。</span><br><span class="hljs-string"></span><br><span class="hljs-string">输入： pipeline/data/J.npz            （第 2 步的雅可比）</span><br><span class="hljs-string">       pipeline/data/calib_sim.npz    （取 σ_a）</span><br><span class="hljs-string">输出： pipeline/data/I.npz            （信息矩阵）</span><br><span class="hljs-string">运行： python3 pipeline/step3_fisher.py</span><br><span class="hljs-string">&quot;&quot;&quot;</span><br><span class="hljs-keyword">import</span> os<br><span class="hljs-keyword">import</span> numpy <span class="hljs-keyword">as</span> np<br><br>HERE = os.path.dirname(os.path.abspath(__file__))<br>DATA = os.path.join(HERE, <span class="hljs-string">&quot;data&quot;</span>)<br><br><span class="hljs-comment"># 0. 读输入</span><br>Jd = np.load(os.path.join(DATA, <span class="hljs-string">&quot;J.npz&quot;</span>), allow_pickle=<span class="hljs-literal">True</span>)<br>J = Jd[<span class="hljs-string">&quot;J&quot;</span>]                              <span class="hljs-comment"># 雅可比 (n_img×n_pts×2, 参数数)</span><br>param_names = <span class="hljs-built_in">list</span>(Jd[<span class="hljs-string">&quot;param_names&quot;</span>])<br>n_intr = <span class="hljs-built_in">int</span>(Jd[<span class="hljs-string">&quot;n_intr&quot;</span>])<br><br>cd = np.load(os.path.join(DATA, <span class="hljs-string">&quot;calib_sim.npz&quot;</span>), allow_pickle=<span class="hljs-literal">True</span>)<br>sigma_a = <span class="hljs-built_in">float</span>(cd[<span class="hljs-string">&quot;sigma_a&quot;</span>])          <span class="hljs-comment"># 单轴噪声 std</span><br><span class="hljs-built_in">print</span>(<span class="hljs-string">f&quot;读入：J <span class="hljs-subst">&#123;J.shape&#125;</span>，σ_a=<span class="hljs-subst">&#123;sigma_a:<span class="hljs-number">.6</span>f&#125;</span>（σ_a²=<span class="hljs-subst">&#123;sigma_a**<span class="hljs-number">2</span>:<span class="hljs-number">.6</span>f&#125;</span>）&quot;</span>)<br><br><span class="hljs-comment"># 1. 信息矩阵 I = (1/σ_a²) JᵀJ</span><br><span class="hljs-comment"># JᵀJ[i,j] = Σ_m J[m,i]·J[m,j]：对角(i=j)=参数i的偏导平方和(自信息)，非对角(i≠j)=i,j的交叉积(耦合)；除 σ_a² 折入噪声刻度。</span><br>JtJ = J.T @ J                            <span class="hljs-comment"># 无噪声刻度的信息（JᵀJ）</span><br>I = JtJ / (sigma_a ** <span class="hljs-number">2</span>)                 <span class="hljs-comment"># Fisher 信息矩阵</span><br><span class="hljs-built_in">print</span>(<span class="hljs-string">f&quot;信息矩阵 I 形状：<span class="hljs-subst">&#123;I.shape&#125;</span>&quot;</span>)<br><br><span class="hljs-comment"># 2. 验证关键对角元</span><br><span class="hljs-keyword">def</span> <span class="hljs-title function_">diag</span>(<span class="hljs-params">name</span>):<br>    <span class="hljs-keyword">return</span> I[param_names.index(name), param_names.index(name)]<br><br><span class="hljs-comment"># 验证关键对角元（值随配置变，这里只打印、不硬编码期望）</span><br><span class="hljs-built_in">print</span>(<span class="hljs-string">f&quot;I[k3,k3] = <span class="hljs-subst">&#123;diag(<span class="hljs-string">&#x27;k3&#x27;</span>):<span class="hljs-number">.4</span>e&#125;</span>&quot;</span>)<br><span class="hljs-built_in">print</span>(<span class="hljs-string">f&quot;I[fx,fx] = <span class="hljs-subst">&#123;diag(<span class="hljs-string">&#x27;fx&#x27;</span>):<span class="hljs-number">.1</span>f&#125;</span>  (未边缘化)&quot;</span>)<br><br><span class="hljs-comment"># 3. 保存</span><br>out = os.path.join(DATA, <span class="hljs-string">&quot;I.npz&quot;</span>)<br>np.savez(out, I=I, param_names=np.array(param_names), n_intr=n_intr, sigma_a=sigma_a)<br><span class="hljs-built_in">print</span>(<span class="hljs-string">f&quot;已保存 → <span class="hljs-subst">&#123;out&#125;</span>&quot;</span>)<br></code></pre></td></tr></table></figure>
+<p><strong>运行结果解读</strong>。<code>I 形状 (309, 309)</code> 是方阵，行列都是 309 个参数。<code>I[k3,k3] = 1.54e7</code> 是 k3 的信息：所有角点偏导平方和除以 σ_a²。<code>I[fx,fx] = 25362</code> 是 fx 的信息，但这是未边缘化外参时的表观值，第 4 步会缩水。</p>
+<p>JᵀJ 怎么把每个参数的&quot;所有观测偏导平方和&quot;累起来，看一行。JᵀJ 的第 (i, j) 元素是对所有观测 m 求和 J[m,i]·J[m,j]。对角元（i = j）是参数 i 各偏导的平方和，即该参数的自信息；非对角元（i ≠ j）是参数 i、j 偏导的交叉积，刻画两个参数的耦合。整个矩阵除以 σ_a² 折入噪声刻度。</p>
+<p><strong>输出（下一步的输入）<code>I.npz</code></strong>：</p>
+<table>
+<thead>
+<tr>
+<th>键</th>
+<th>形状</th>
+<th>含义</th>
+<th>谁读它</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>I</code></td>
+<td>(309,309)</td>
+<td>信息矩阵 I = (1/σ_a²)·JᵀJ</td>
+<td>第 4 步（分块边缘化）</td>
+</tr>
+<tr>
+<td><code>param_names</code></td>
+<td>(309,)</td>
+<td>参数布局</td>
+<td>第 4 步（分块边界 n_intr）</td>
+</tr>
+<tr>
+<td><code>n_intr</code></td>
+<td>9</td>
+<td>内参数（前 9 行列是内参）</td>
+<td>第 4 步（A/B/C 分块）</td>
+</tr>
+</tbody>
+</table>
+<h4 id="第-4-步｜边缘化外参">第 4 步｜边缘化外参</h4>
+<p><strong>做什么</strong>：外参（nuisance）也从同一批数据估、带不确定度，会&quot;吃掉&quot;内参表观信息。按内参、外参分块，Schur 补扣掉外参，得 9×9 内参信息：</p>
+
+$$
+\mathcal I=\begin{pmatrix}\mathbf A&\mathbf B\\ \mathbf B^\top&\mathbf C\end{pmatrix},\qquad \mathcal I_\beta=\mathbf A-\mathbf B\mathbf C^{-1}\mathbf B^\top
+$$
+
+<p>其中 C⁻¹Bᵀ 用 <code>np.linalg.solve</code> 解方程，比直接求逆稳。</p>
+<p><strong>输入 → 输出</strong>：<code>I.npz</code> → <code>Ibeta.npz</code>（9×9）。</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br></pre></td><td class="code"><pre><code class="hljs python"><span class="hljs-string">&quot;&quot;&quot;</span><br><span class="hljs-string">Step 4：边缘化外参 → 内参信息矩阵 I_β</span><br><span class="hljs-string">======================================</span><br><span class="hljs-string">读第 3 步的信息矩阵 I，按 内参(9)/外参(6×图数) 分块，用 Schur 补把外参这个</span><br><span class="hljs-string">nuisance 参数的不确定性扣掉，得到只关于内参的 9×9 信息矩阵 I_β。</span><br><span class="hljs-string">为什么必须做：外参也是从同一批数据估的、带不确定度，会&quot;吃掉&quot;内参的表观信息。</span><br><span class="hljs-string">结果存 Ibeta.npz 给第 5 步。</span><br><span class="hljs-string"></span><br><span class="hljs-string">输入： pipeline/data/I.npz   （第 3 步的信息矩阵）</span><br><span class="hljs-string">输出： pipeline/data/Ibeta.npz （9×9 内参信息矩阵）</span><br><span class="hljs-string">运行： python3 pipeline/step4_marginal.py</span><br><span class="hljs-string">&quot;&quot;&quot;</span><br><span class="hljs-keyword">import</span> os<br><span class="hljs-keyword">import</span> numpy <span class="hljs-keyword">as</span> np<br><br>HERE = os.path.dirname(os.path.abspath(__file__))<br>DATA = os.path.join(HERE, <span class="hljs-string">&quot;data&quot;</span>)<br><br><span class="hljs-comment"># 0. 读输入</span><br>Id = np.load(os.path.join(DATA, <span class="hljs-string">&quot;I.npz&quot;</span>), allow_pickle=<span class="hljs-literal">True</span>)<br>I = Id[<span class="hljs-string">&quot;I&quot;</span>]                              <span class="hljs-comment"># 信息矩阵</span><br>param_names = <span class="hljs-built_in">list</span>(Id[<span class="hljs-string">&quot;param_names&quot;</span>])<br>n_intr = <span class="hljs-built_in">int</span>(Id[<span class="hljs-string">&quot;n_intr&quot;</span>])               <span class="hljs-comment"># 9</span><br>intr_names = param_names[:n_intr]<br><span class="hljs-built_in">print</span>(<span class="hljs-string">f&quot;读入：I <span class="hljs-subst">&#123;I.shape&#125;</span>，内参数 <span class="hljs-subst">&#123;n_intr&#125;</span>（<span class="hljs-subst">&#123;intr_names&#125;</span>）&quot;</span>)<br><br><span class="hljs-comment"># 1. 分块</span><br><span class="hljs-comment"># I = [[A, B], [Bᵀ, C]]：A=内参×内参，C=外参×外参，B=内参×外参的耦合。</span><br>A = I[:n_intr, :n_intr]                  <span class="hljs-comment"># (9,9)</span><br>B = I[:n_intr, n_intr:]                  <span class="hljs-comment"># 内参×外参（耦合）</span><br>C = I[n_intr:, n_intr:]                  <span class="hljs-comment"># 外参×外参</span><br><br><span class="hljs-comment"># 2. Schur 补：I_β = A - B·C⁻¹·Bᵀ</span><br><span class="hljs-comment"># C⁻¹·Bᵀ 用解线性方程（比直接求逆更稳）：解 C·X = Bᵀ，得 X = C⁻¹Bᵀ</span><br>CinvBT = np.linalg.solve(C, B.T)         <span class="hljs-comment"># = C⁻¹ Bᵀ</span><br>Ibeta = A - B @ CinvBT                   <span class="hljs-comment"># (9,9) 内参信息矩阵（扣掉外参不确定性后）</span><br><span class="hljs-built_in">print</span>(<span class="hljs-string">f&quot;内参信息矩阵 I_β 形状：<span class="hljs-subst">&#123;Ibeta.shape&#125;</span>&quot;</span>)<br><br><span class="hljs-comment"># 3. 验证：fx 信息边缘化前后对比</span><br>fx = intr_names.index(<span class="hljs-string">&quot;fx&quot;</span>)<br>before = I[fx, fx]                       <span class="hljs-comment"># 未边缘化时 fx 的信息（来自全 I 的对角）</span><br>after = Ibeta[fx, fx]                    <span class="hljs-comment"># 边缘化后</span><br><span class="hljs-built_in">print</span>(<span class="hljs-string">f&quot;I_β[fx,fx]：<span class="hljs-subst">&#123;before:<span class="hljs-number">.0</span>f&#125;</span> → <span class="hljs-subst">&#123;after:<span class="hljs-number">.0</span>f&#125;</span>（缩 <span class="hljs-subst">&#123;before/after:<span class="hljs-number">.1</span>f&#125;</span> 倍）&quot;</span>)<br><br><span class="hljs-comment"># 4. 保存</span><br>out = os.path.join(DATA, <span class="hljs-string">&quot;Ibeta.npz&quot;</span>)<br>np.savez(out, Ibeta=Ibeta, intr_names=np.array(intr_names))<br><span class="hljs-built_in">print</span>(<span class="hljs-string">f&quot;已保存 → <span class="hljs-subst">&#123;out&#125;</span>&quot;</span>)<br></code></pre></td></tr></table></figure>
+<p><strong>运行结果解读</strong>。<code>I_β 形状 (9, 9)</code> 只剩内参的信息矩阵，外参 nuisance 已扣掉。<code>I_β[fx,fx] 25362 → 532（缩 47.7 倍）</code> 表示边缘化掉 50 组外参后，fx 的表观信息被外参不确定性吃掉绝大部分；不边缘化、假装外参已知，CRLB 会假性乐观约 √48 ≈ 7 倍。</p>
+<p>I_β 是个对称阵、且有负数，正常吗。正常。对称来自 JᵀΣ⁻¹J 的构造（J 的列两两内积，可交换）；非对角元为负表示该对内参负相关（如 fx 与 cx：沿对角线方向的偏导一正一负，交叉积为负）；矩阵整体仍正定，对任意非零向量 v 都有 vᵀI_βv &gt; 0，这是 CRLB 能求逆的前提。负的耦合元不意味着信息为负，只表示参数间互相牵制。</p>
+<p><strong>输出（下一步的输入）<code>Ibeta.npz</code></strong>：</p>
+<table>
+<thead>
+<tr>
+<th>键</th>
+<th>形状</th>
+<th>含义</th>
+<th>谁读它</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>Ibeta</code></td>
+<td>(9,9)</td>
+<td>内参信息矩阵（边缘化外参后）I_β</td>
+<td>第 5 步（求逆开方得 CRLB）</td>
+</tr>
+<tr>
+<td><code>intr_names</code></td>
+<td>(9,)</td>
+<td>内参名 [fx, fy, cx, cy, k1, k2, p1, p2, k3]</td>
+<td>第 5 步（按名打印/对齐）</td>
+</tr>
+</tbody>
+</table>
+<h5 id="深入：np-linalg-solve-C-B-T-是什么、为什么不用-inv">深入：<code>np.linalg.solve(C, B.T)</code> 是什么、为什么不用 <code>inv</code></h5>
+<p>代码里 <code>np.linalg.solve(C, B.T)</code> 解的是线性方程组 C·X = Bᵀ，求 X。</p>
+<p>C（300×300）是外参信息块，Bᵀ（300×9）是耦合块转置。结果 X = C⁻¹Bᵀ（300×9），然后 B·X = BC⁻¹Bᵀ（9×9），就是从 A 扣掉的渗透量。</p>
+<p>两种写法数学等价，但 <code>solve</code> 更好：</p>
+<table>
+<thead>
+<tr>
+<th></th>
+<th><code>solve(C, B.T)</code></th>
+<th><code>inv(C) @ B.T</code></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>内部</td>
+<td>LU 分解 + 前代/回代，不显式构造 C⁻¹</td>
+<td>先求完整 300×300 逆矩阵，再乘</td>
+</tr>
+<tr>
+<td>稳定性</td>
+<td>更稳（带部分选主元，避免逆放大舍入）</td>
+<td>C 病态时显式逆误差大</td>
+</tr>
+<tr>
+<td>速度</td>
+<td>快（只解方程）</td>
+<td>慢（多算完整逆）</td>
+</tr>
+</tbody>
+</table>
+<p>类比解 3x = 6。<code>inv</code> 法先算 1/3 = 0.333… 再乘 6（多一步中间量，精度损失）；<code>solve</code> 法直接 6/3 = 2（不经过 0.333…，更准）。能解方程就别显式求逆，是数值线性代数的标准实践。</p>
+<h4 id="第-5-步｜CRLB">第 5 步｜CRLB</h4>
+<p><strong>做什么</strong>：对 I_β 求逆、取对角、开方，得到每个内参的精度下界：</p>
+
+$$
+\mathrm{CRLB}_k=\sqrt{[\mathcal I_\beta^{-1}]_{kk}}
+$$
+
+<p><strong>输入 → 输出</strong>：<code>Ibeta.npz</code> → <code>crlb.npz</code>。</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br></pre></td><td class="code"><pre><code class="hljs python"><span class="hljs-string">&quot;&quot;&quot;</span><br><span class="hljs-string">Step 5：CRLB = √diag(inv(I_β))</span><br><span class="hljs-string">===============================</span><br><span class="hljs-string">读第 4 步的内参信息矩阵 I_β，求逆、取对角、开方，得到每个内参的精度下界</span><br><span class="hljs-string">（Cramér–Rao 下界）：任何无偏估计算法，该参数的 1σ 误差都不可能小于它。</span><br><span class="hljs-string">结果存 crlb.npz 给第 6 步做对照。</span><br><span class="hljs-string"></span><br><span class="hljs-string">输入： pipeline/data/Ibeta.npz   （第 4 步的 9×9 内参信息矩阵）</span><br><span class="hljs-string">输出： pipeline/data/crlb.npz    （每个内参的精度下界）</span><br><span class="hljs-string">运行： python3 pipeline/step5_crlb.py</span><br><span class="hljs-string">&quot;&quot;&quot;</span><br><span class="hljs-keyword">import</span> os<br><span class="hljs-keyword">import</span> numpy <span class="hljs-keyword">as</span> np<br><br>HERE = os.path.dirname(os.path.abspath(__file__))<br>DATA = os.path.join(HERE, <span class="hljs-string">&quot;data&quot;</span>)<br><br><span class="hljs-comment"># 0. 读输入</span><br>Bd = np.load(os.path.join(DATA, <span class="hljs-string">&quot;Ibeta.npz&quot;</span>), allow_pickle=<span class="hljs-literal">True</span>)<br>Ibeta = Bd[<span class="hljs-string">&quot;Ibeta&quot;</span>]                      <span class="hljs-comment"># (9,9)</span><br>intr_names = <span class="hljs-built_in">list</span>(Bd[<span class="hljs-string">&quot;intr_names&quot;</span>])<br><span class="hljs-built_in">print</span>(<span class="hljs-string">f&quot;读入：I_β <span class="hljs-subst">&#123;Ibeta.shape&#125;</span>（内参 <span class="hljs-subst">&#123;intr_names&#125;</span>）&quot;</span>)<br><br><span class="hljs-comment"># 1. 求精度下界</span><br><span class="hljs-comment"># Cov(θ̂) ≥ I_β⁻¹；第 k 个参数的方差下界 = [I_β⁻¹]_kk，std 下界 = √之。</span><br>cov_lb = np.linalg.inv(Ibeta)            <span class="hljs-comment"># 内参协方差矩阵的下界 (9,9)</span><br>crlb = np.sqrt(np.diag(cov_lb))          <span class="hljs-comment"># 每个内参的 std 下界 (9,)</span><br><br><span class="hljs-comment"># 2. 打印 + 验证</span><br><span class="hljs-built_in">print</span>(<span class="hljs-string">&quot;内参精度下界 CRLB（1σ，像素 / 无量纲）：&quot;</span>)<br><span class="hljs-keyword">for</span> name, v <span class="hljs-keyword">in</span> <span class="hljs-built_in">zip</span>(intr_names, crlb):<br>    <span class="hljs-built_in">print</span>(<span class="hljs-string">f&quot;   <span class="hljs-subst">&#123;name:&gt;<span class="hljs-number">3</span>&#125;</span> : <span class="hljs-subst">&#123;v:<span class="hljs-number">.4</span>g&#125;</span>&quot;</span>)<br><br>fx = intr_names.index(<span class="hljs-string">&quot;fx&quot;</span>)<br><span class="hljs-built_in">print</span>(<span class="hljs-string">f&quot;\nCRLB_fx = <span class="hljs-subst">&#123;crlb[fx]:<span class="hljs-number">.4</span>f&#125;</span> px&quot;</span>)<br><span class="hljs-comment"># 关键：CRLB 来自完整逆，不是对角元倒数（因内参强耦合）</span><br>diag_recip = <span class="hljs-number">1.0</span> / np.sqrt(Ibeta[fx, fx])<br><span class="hljs-built_in">print</span>(<span class="hljs-string">f&quot;1/√I_β[fx,fx] = <span class="hljs-subst">&#123;diag_recip:<span class="hljs-number">.4</span>f&#125;</span>  ← 错（假性偏小），CRLB 须用完整逆 → <span class="hljs-subst">&#123;crlb[fx]:<span class="hljs-number">.4</span>f&#125;</span>&quot;</span>)<br><br><span class="hljs-comment"># 3. 保存</span><br>out = os.path.join(DATA, <span class="hljs-string">&quot;crlb.npz&quot;</span>)<br>np.savez(out, crlb=crlb, cov_lb=cov_lb, intr_names=np.array(intr_names))<br><span class="hljs-built_in">print</span>(<span class="hljs-string">f&quot;\n已保存 → <span class="hljs-subst">&#123;out&#125;</span>&quot;</span>)<br></code></pre></td></tr></table></figure>
+<p><strong>运行结果</strong>：</p>
+<figure class="highlight apache"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><code class="hljs apache">  <span class="hljs-attribute">fx</span>: <span class="hljs-number">0</span>.<span class="hljs-number">1542</span>   fy: <span class="hljs-number">0</span>.<span class="hljs-number">1579</span>   cx: <span class="hljs-number">0</span>.<span class="hljs-number">2548</span>   cy: <span class="hljs-number">0</span>.<span class="hljs-number">1998</span><br>  <span class="hljs-attribute">k1</span>: <span class="hljs-number">3</span>.<span class="hljs-number">25</span>e-<span class="hljs-number">4</span>  k2: <span class="hljs-number">1</span>.<span class="hljs-number">91</span>e-<span class="hljs-number">3</span>  p1: <span class="hljs-number">2</span>.<span class="hljs-number">20</span>e-<span class="hljs-number">5</span>  p2: <span class="hljs-number">2</span>.<span class="hljs-number">87</span>e-<span class="hljs-number">5</span>  k3: <span class="hljs-number">3</span>.<span class="hljs-number">49</span>e-<span class="hljs-number">3</span><br><span class="hljs-attribute">CRLB_fx</span> = <span class="hljs-number">0</span>.<span class="hljs-number">154</span> px；<span class="hljs-number">1</span>/√I_β[fx,fx] = <span class="hljs-number">0</span>.<span class="hljs-number">0434</span>（错，须用完整逆）<br></code></pre></td></tr></table></figure>
+<p>为什么是对角线之逆、不是逆对角线，这是最容易搞错的地方。直觉上&quot;信息越大精度越高&quot;，让人以为 CRLB_k = 1/√I_β[k,k]。用 2×2 的例子看清：</p>
+
+$$
+\mathcal I_\beta=\begin{pmatrix}a&b\\b&c\end{pmatrix},\qquad \mathcal I_\beta^{-1}=\frac{1}{ac-b^2}\begin{pmatrix}c&-b\\-b&a\end{pmatrix}
+$$
+
+<p>第 (1,1) 元素是 c/(ac − b²)，而不是 1/a。只有 b = 0（无耦合、对角阵）时才等于 1/a。耦合 b ≠ 0 时通过行列式 ac − b² 改变了每个参数的方差下界。标定实例：1/√I_β[fx,fx] = 0.043px（错，假性偏小），√[I_β⁻¹][fx,fx] = 0.154px（对，完整逆），差 3.5 倍。</p>
+<h5 id="深入：条件数与数值稳定（为什么求逆会出-NaN）">深入：条件数与数值稳定（为什么求逆会出 NaN）</h5>
+<p>求 CRLB 要对 I_β 求逆。条件数衡量矩阵有多病态：</p>
+
+$$
+\mathrm{cond}(\mathcal I_\beta)=\frac{\lambda_{\max}}{\lambda_{\min}}\quad(\text{最大/最小特征值；np.linalg.cond 默认即此})
+$$
+
+<p>对 Fisher 信息，λ_max 是最易辨识方向的信息（如畸变 k3），λ_min 是最难辨识方向的信息（如 fx、cy 耦合方向）。</p>
+<p>为什么条件数大会让求逆出 NaN。求逆时 λ_min 方向的方差是 1/λ_min（很大），而浮点精度 ε ≈ 2.2×10⁻¹⁶，相对 λ_max 的舍入&quot;地板&quot;是 ε·λ_max。一旦 λ_min &lt; ε·λ_max，λ_min 落在地板之下，算出来可能接近零甚至为负，求逆爆炸，再开方就是 NaN。</p>
+<table>
+<thead>
+<tr>
+<th>配置</th>
+<th>λ_max</th>
+<th>λ_min</th>
+<th>cond</th>
+<th>ε·λ_max</th>
+<th>结果</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>旧（角点出画面、参数锁死联动）</td>
+<td>~10¹⁴</td>
+<td>~10⁻⁴</td>
+<td>~10¹⁸</td>
+<td>~2×10⁻²</td>
+<td>NaN</td>
+</tr>
+<tr>
+<td>本例（整板入画、独立多样性）</td>
+<td>8.1×10⁹</td>
+<td>15.3</td>
+<td>5.3×10⁸</td>
+<td>~1.8×10⁻⁶</td>
+<td>正常</td>
+</tr>
+</tbody>
+</table>
+<p>本例三件事让条件数可控：整板入画压低 λ_max（不再有出画面的大半径角点把畸变撑到 10¹⁴）；参数独立多样性打破 fx、cy 耦合退化、抬高 λ_min；多图累加各方向信息。</p>
+<p><strong>运行结果解读</strong>。每行是一个内参的 CRLB（1σ 精度下界，像素/无量纲）：焦距 fx 0.154、fy 0.158，主点 cx 0.255、cy 0.200，畸变系数更小（k1 3.2e-4、k3 3.5e-3），畸变估得比焦距更准。<code>CRLB_fx = 0.154</code> 表示任何算法估 fx 的 1σ 误差都不可能小于 0.154px，这是精度天花板。<code>1/√I_β[fx,fx] = 0.0434（错）</code> 是警示：CRLB 来自完整逆、不是对角元倒数，差 3.5 倍，因内参强耦合。</p>
+<p><strong>输出（下一步的输入）<code>crlb.npz</code></strong>：</p>
+<table>
+<thead>
+<tr>
+<th>键</th>
+<th>形状</th>
+<th>含义</th>
+<th>谁读它</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>crlb</code></td>
+<td>(9,)</td>
+<td>每个内参精度下界 √[I_β⁻¹]_kk（金标准，真值处算）</td>
+<td>第 6 步（对照实测 std）</td>
+</tr>
+<tr>
+<td><code>cov_lb</code></td>
+<td>(9,9)</td>
+<td>内参协方差下界 I_β⁻¹</td>
+<td>（备用：完整协方差）</td>
+</tr>
+<tr>
+<td><code>intr_names</code></td>
+<td>(9,)</td>
+<td>内参名</td>
+<td>第 6 步（按名对齐）</td>
+</tr>
+</tbody>
+</table>
+<h4 id="第-6-步｜Monte-Carlo-验证">第 6 步｜Monte Carlo 验证</h4>
+<p><strong>做什么</strong>：检验真实标定算法（<code>cv2.calibrateCamera</code>，高斯噪声下等价 MLE）的散布是否真达到第 5 步的金标准 CRLB。固定几何，换噪声种子重复 N 次——每次加新噪声、跑标定、收下内参；算每个内参跨多次的 std，除以 CRLB，应接近 1。这正是&quot;仿真有真值&quot;的价值：用真值处的 CRLB 验证估计器（也即验证真实标定里要用的观测信息法）靠谱。</p>
+<p><strong>输入 → 输出</strong>：<code>calib_sim.npz</code>（取板、f、σ_a）+ <code>crlb.npz</code> → <code>mc_stats.npz</code>。</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br></pre></td><td class="code"><pre><code class="hljs python"><span class="hljs-string">&quot;&quot;&quot;</span><br><span class="hljs-string">Step 6：Monte Carlo 验证 std / CRLB ≈ 1</span><br><span class="hljs-string">=========================================</span><br><span class="hljs-string">前 5 步在真值上算出了精度下界 CRLB。这一步反过来检验：真实标定算法</span><br><span class="hljs-string">（cv2.calibrateCamera，高斯噪声下等价于 MLE）的散布是否真的达到这个下界。</span><br><span class="hljs-string">做法：固定几何（板、位姿），换不同噪声种子重复 N 次——每次给角点加新噪声、</span><br><span class="hljs-string">跑一遍 calibrateCamera，收下估出的内参；最后算每个内参跨多次估计的 std，</span><br><span class="hljs-string">除以 CRLB。≈1 → 估计器最优（达到下界）；≫1 → 低效或退化。</span><br><span class="hljs-string"></span><br><span class="hljs-string">输入： pipeline/data/calib_sim.npz   （取板、位姿、img_clean=f、σ_a）</span><br><span class="hljs-string">       pipeline/data/crlb.npz        （第 5 步的精度下界）</span><br><span class="hljs-string">输出： pipeline/data/mc_stats.npz    （每个内参的 std、std/CRLB）</span><br><span class="hljs-string">运行： python3 pipeline/step6_validate.py</span><br><span class="hljs-string">&quot;&quot;&quot;</span><br><span class="hljs-keyword">import</span> os<br><span class="hljs-keyword">import</span> numpy <span class="hljs-keyword">as</span> np<br><span class="hljs-keyword">import</span> cv2<br><br>HERE = os.path.dirname(os.path.abspath(__file__))<br>DATA = os.path.join(HERE, <span class="hljs-string">&quot;data&quot;</span>)<br>N_RUNS = <span class="hljs-number">60</span>                               <span class="hljs-comment"># Monte Carlo 次数（越多 std 估得越稳，但更慢）</span><br><br><span class="hljs-comment"># 0. 读输入</span><br>cd = np.load(os.path.join(DATA, <span class="hljs-string">&quot;calib_sim.npz&quot;</span>), allow_pickle=<span class="hljs-literal">True</span>)<br>board = cd[<span class="hljs-string">&quot;board&quot;</span>].astype(np.float64)            <span class="hljs-comment"># (54,3)</span><br>img_clean = cd[<span class="hljs-string">&quot;img_clean&quot;</span>]                       <span class="hljs-comment"># (n_img,54,2) = f(θ_true)</span><br>sigma_a = <span class="hljs-built_in">float</span>(cd[<span class="hljs-string">&quot;sigma_a&quot;</span>])<br>W, H = <span class="hljs-built_in">int</span>(cd[<span class="hljs-string">&quot;image_size&quot;</span>][<span class="hljs-number">0</span>]), <span class="hljs-built_in">int</span>(cd[<span class="hljs-string">&quot;image_size&quot;</span>][<span class="hljs-number">1</span>])<br>n_img = img_clean.shape[<span class="hljs-number">0</span>]<br>n_pts = board.shape[<span class="hljs-number">0</span>]<br><br>Cd = np.load(os.path.join(DATA, <span class="hljs-string">&quot;crlb.npz&quot;</span>), allow_pickle=<span class="hljs-literal">True</span>)<br>crlb = Cd[<span class="hljs-string">&quot;crlb&quot;</span>]                                 <span class="hljs-comment"># (9,) 第 5 步的精度下界</span><br>intr_names = <span class="hljs-built_in">list</span>(Cd[<span class="hljs-string">&quot;intr_names&quot;</span>])<br><span class="hljs-built_in">print</span>(<span class="hljs-string">f&quot;读入：<span class="hljs-subst">&#123;n_img&#125;</span> 图，每图 <span class="hljs-subst">&#123;n_pts&#125;</span> 角点，σ_a=<span class="hljs-subst">&#123;sigma_a:<span class="hljs-number">.4</span>f&#125;</span>，CRLB 已就绪。Monte Carlo <span class="hljs-subst">&#123;N_RUNS&#125;</span> 次。&quot;</span>)<br><br><span class="hljs-comment"># cv2 要的输入格式：每图一份 objectPoints(54,1,3 float32) 与 imagePoints(54,1,2 float32)</span><br>obj = [np.ascontiguousarray(board.astype(np.float32).reshape(-<span class="hljs-number">1</span>, <span class="hljs-number">1</span>, <span class="hljs-number">3</span>)) <span class="hljs-keyword">for</span> _ <span class="hljs-keyword">in</span> <span class="hljs-built_in">range</span>(n_img)]<br><br><span class="hljs-comment"># 1. Monte Carlo：换噪声种子重复标定</span><br>est = []                                  <span class="hljs-comment"># 收每次估计出的 9 个内参 [fx,fy,cx,cy,k1,k2,p1,p2,k3]</span><br><span class="hljs-keyword">for</span> s <span class="hljs-keyword">in</span> <span class="hljs-built_in">range</span>(N_RUNS):<br>    rng = np.random.default_rng(<span class="hljs-number">1000</span> + s)             <span class="hljs-comment"># 每次换种子 → 新噪声</span><br>    noisy = img_clean + rng.normal(<span class="hljs-number">0</span>, sigma_a, img_clean.shape)<br>    img = [np.ascontiguousarray(noisy[i].astype(np.float32).reshape(-<span class="hljs-number">1</span>, <span class="hljs-number">1</span>, <span class="hljs-number">2</span>)) <span class="hljs-keyword">for</span> i <span class="hljs-keyword">in</span> <span class="hljs-built_in">range</span>(n_img)]<br>    K0 = np.zeros((<span class="hljs-number">3</span>, <span class="hljs-number">3</span>)); K0[<span class="hljs-number">2</span>, <span class="hljs-number">2</span>] = <span class="hljs-number">1.0</span>; dist0 = np.zeros(<span class="hljs-number">5</span>)<br>    <span class="hljs-comment"># 不给内参先验（纯标定），让 cv2 自己初估；估 5 系数畸变（与生成模型一致）</span><br>    ok, K_est, dist_est, r_, t_ = cv2.calibrateCamera(obj, img, (W, H), K0, dist0,<br>                                                      flags=<span class="hljs-number">0</span>)<br>    <span class="hljs-keyword">if</span> <span class="hljs-keyword">not</span> ok:<br>        <span class="hljs-keyword">continue</span><br>    p = [K_est[<span class="hljs-number">0</span>, <span class="hljs-number">0</span>], K_est[<span class="hljs-number">1</span>, <span class="hljs-number">1</span>], K_est[<span class="hljs-number">0</span>, <span class="hljs-number">2</span>], K_est[<span class="hljs-number">1</span>, <span class="hljs-number">2</span>]] + <span class="hljs-built_in">list</span>(dist_est[:<span class="hljs-number">5</span>])<br>    est.append(p)<br>est = np.array(est)                       <span class="hljs-comment"># (n_ok, 9)</span><br><span class="hljs-built_in">print</span>(<span class="hljs-string">f&quot;成功 <span class="hljs-subst">&#123;est.shape[<span class="hljs-number">0</span>]&#125;</span>/<span class="hljs-subst">&#123;N_RUNS&#125;</span> 次。&quot;</span>)<br><br><span class="hljs-comment"># 2. 实测统计：bias（估计均值−真值，判无偏）+ std vs CRLB（判有效）</span><br>mean_est = est.mean(axis=<span class="hljs-number">0</span>)                <span class="hljs-comment"># 多次估计的均值</span><br>theta_true = cd[<span class="hljs-string">&quot;theta_true&quot;</span>]<br>bias = mean_est - theta_true               <span class="hljs-comment"># bias = 均值 − 真值（应≈0）</span><br>std = est.std(axis=<span class="hljs-number">0</span>)                      <span class="hljs-comment"># 跨多次估计的 std</span><br>ratio = std / crlb                         <span class="hljs-comment"># std/CRLB（应≈1 → 有效）</span><br>bias_ratio = bias / crlb                   <span class="hljs-comment"># bias/CRLB（应≪1 → 无偏）</span><br><span class="hljs-built_in">print</span>(<span class="hljs-string">&quot;\n内参   真值        估计均值      bias        bias/CRLB   实测std    CRLB      std/CRLB&quot;</span>)<br><span class="hljs-keyword">for</span> k, name <span class="hljs-keyword">in</span> <span class="hljs-built_in">enumerate</span>(intr_names):<br>    <span class="hljs-built_in">print</span>(<span class="hljs-string">f&quot;  <span class="hljs-subst">&#123;name:&gt;<span class="hljs-number">3</span>&#125;</span>  <span class="hljs-subst">&#123;theta_true[k]:&gt;<span class="hljs-number">10.4</span>g&#125;</span>  <span class="hljs-subst">&#123;mean_est[k]:&gt;<span class="hljs-number">10.4</span>g&#125;</span>  <span class="hljs-subst">&#123;bias[k]:&gt;+<span class="hljs-number">10.3</span>e&#125;</span>  <span class="hljs-subst">&#123;bias_ratio[k]:&gt;<span class="hljs-number">8.2</span>f&#125;</span>   <span class="hljs-subst">&#123;std[k]:<span class="hljs-number">.4</span>g&#125;</span>   <span class="hljs-subst">&#123;crlb[k]:<span class="hljs-number">.4</span>g&#125;</span>   <span class="hljs-subst">&#123;ratio[k]:<span class="hljs-number">.2</span>f&#125;</span>&quot;</span>)<br><span class="hljs-built_in">print</span>(<span class="hljs-string">f&quot;\nbias/CRLB 最大 = <span class="hljs-subst">&#123;np.<span class="hljs-built_in">abs</span>(bias_ratio).<span class="hljs-built_in">max</span>():<span class="hljs-number">.2</span>f&#125;</span>（应≪1 → 无偏）；std/CRLB 均值 ≈ <span class="hljs-subst">&#123;ratio.mean():<span class="hljs-number">.2</span>f&#125;</span>（应≈1 → 有效）&quot;</span>)<br><br><span class="hljs-comment"># 3. 保存</span><br>out = os.path.join(DATA, <span class="hljs-string">&quot;mc_stats.npz&quot;</span>)<br>np.savez(out, est=est, mean_est=mean_est, bias=bias, std=std, crlb=crlb,<br>         ratio=ratio, bias_ratio=bias_ratio, intr_names=np.array(intr_names))<br><span class="hljs-built_in">print</span>(<span class="hljs-string">f&quot;已保存 → <span class="hljs-subst">&#123;out&#125;</span>&quot;</span>)<br></code></pre></td></tr></table></figure>
+<p><strong>运行结果</strong>（完整输出）：</p>
+<figure class="highlight subunit"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><code class="hljs subunit">成功 60/60 次。<br><br>内参   真值        估计均值      bias        bias/CRLB   实测std    CRLB      std/CRLB<br>   fx        2200        2200  <span class="hljs-string">+6</span>.400e<span class="hljs-string">-03</span>      0.04   0.1255   0.1542   0.81<br>   fy        2200        2200  <span class="hljs-string">+1</span>.352e<span class="hljs-string">-02</span>      0.09   0.1287   0.1579   0.81<br>   cx        1280        1280  <span class="hljs-string">-3</span>.122e<span class="hljs-string">-02</span>     <span class="hljs-string">-0</span>.12   0.2539   0.2548   1.00<br>   cy         720         720  <span class="hljs-string">-1</span>.462e<span class="hljs-string">-02</span>     <span class="hljs-string">-0</span>.07   0.1989   0.1998   1.00<br>   k1        <span class="hljs-string">-0</span>.1        <span class="hljs-string">-0</span>.1  <span class="hljs-string">-1</span>.098e<span class="hljs-string">-05</span>     <span class="hljs-string">-0</span>.03   0.0003282   0.0003248   1.01<br>   k2           0   4.603e<span class="hljs-string">-05</span>  <span class="hljs-string">+4</span>.603e<span class="hljs-string">-05</span>      0.02   0.001933   0.001905   1.01<br>   p1           0  <span class="hljs-string">-8</span>.597e<span class="hljs-string">-07</span>  <span class="hljs-string">-8</span>.597e<span class="hljs-string">-07</span>     <span class="hljs-string">-0</span>.04   2.345e<span class="hljs-string">-05</span>   2.203e<span class="hljs-string">-05</span>   1.06<br>   p2           0  <span class="hljs-string">-2</span>.517e<span class="hljs-string">-06</span>  <span class="hljs-string">-2</span>.517e<span class="hljs-string">-06</span>     <span class="hljs-string">-0</span>.09   2.489e<span class="hljs-string">-05</span>   2.866e<span class="hljs-string">-05</span>   0.87<br>   k3           0  <span class="hljs-string">-2</span>.172e<span class="hljs-string">-05</span>  <span class="hljs-string">-2</span>.172e<span class="hljs-string">-05</span>     <span class="hljs-string">-0</span>.01   0.003633   0.00349   1.04<br><br>bias/CRLB 最大 = 0.12（应≪1 → 无偏）；std/CRLB 均值 ≈ 0.96（应≈1 → 有效）<br></code></pre></td></tr></table></figure>
+<p><strong>逐列含义</strong>：</p>
+<table>
+<thead>
+<tr>
+<th>列</th>
+<th>含义</th>
+<th>作用</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>真值</td>
+<td>仿真里设的真值（上帝知道、估计器不知道）</td>
+<td>对照基准</td>
+</tr>
+<tr>
+<td>估计均值</td>
+<td>60 次标定结果取平均</td>
+<td>应接近真值</td>
+</tr>
+<tr>
+<td>bias</td>
+<td>估计均值 − 真值</td>
+<td>应接近 0，正负表示偏高偏低</td>
+</tr>
+<tr>
+<td>bias/CRLB</td>
+<td>bias 除以 CRLB</td>
+<td>应远小于 1（偏差远小于随机散布，判无偏）</td>
+</tr>
+<tr>
+<td>实测 std</td>
+<td>60 次估计的散布（标准差）</td>
+<td>应接近 CRLB</td>
+</tr>
+<tr>
+<td>CRLB</td>
+<td>第 5 步算出的金标准下界</td>
+<td>理论最优 std</td>
+</tr>
+<tr>
+<td>std/CRLB</td>
+<td>实测散布 ÷ 理论下界</td>
+<td>应接近 1（达到下界，判有效）</td>
+</tr>
+</tbody>
+</table>
+<p>fx、fy（焦距）bias 极小（+0.006、+0.014px，不到散布的 4%–9%），无偏；std/CRLB = 0.81，实测散布略小于理论下界，可能因 60 次样本估 std 有轻微下偏，或高斯下界稍保守（渐近成立、有限样本有波动）。cx、cy（主点）bias/CRLB = −0.12、−0.07（最大的一项绝对值 0.12），偏差仍远小于散布（bias 0.03px 对 CRLB 0.25px），可接受；std/CRLB = 1.00，主点估计恰好达到下界。k1（一阶径向畸变）bias/CRLB = −0.03、std/CRLB = 1.01，几乎完美。k2、p1、p2、k3（高阶畸变，真值 = 0）bias/CRLB 绝对值都不超过 0.09，无偏；std/CRLB 在 0.87–1.06，有效。</p>
+<p><strong>总结判据</strong>：</p>
+<table>
+<thead>
+<tr>
+<th>判据</th>
+<th>公式</th>
+<th>标准</th>
+<th>本例结果</th>
+<th>结论</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>无偏性</td>
+<td></td>
+<td>bias/CRLB</td>
+<td></td>
+<td>远小于 1</td>
+</tr>
+<tr>
+<td>有效性</td>
+<td>std/CRLB</td>
+<td>接近 1</td>
+<td>均值 0.96</td>
+<td>有效</td>
+</tr>
+</tbody>
+</table>
+<p>无偏加有效，是最优估计器。这验证了两件事：整条 Fisher 信息到雅可比到信息到边缘化到 CRLB 的流水线，推导和代码都对；真实标定里用的观测信息法（在估计处算、而非真值处）也能给出正确的不确定度——仿真替你验证过了。</p>
+<p><strong>输出 <code>mc_stats.npz</code></strong>：</p>
+<table>
+<thead>
+<tr>
+<th>键</th>
+<th>形状</th>
+<th>含义</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>est</code></td>
+<td>(60,9)</td>
+<td>每次 Monte Carlo 估出的 9 个内参</td>
+</tr>
+<tr>
+<td><code>mean_est</code></td>
+<td>(9,)</td>
+<td>跨 60 次的估计均值</td>
+</tr>
+<tr>
+<td><code>bias</code></td>
+<td>(9,)</td>
+<td>bias = 估计均值 − 真值（应接近 0）</td>
+</tr>
+<tr>
+<td><code>bias_ratio</code></td>
+<td>(9,)</td>
+<td>bias/CRLB（应远小于 1，判无偏）</td>
+</tr>
+<tr>
+<td><code>std</code></td>
+<td>(9,)</td>
+<td>跨 60 次的实测 std</td>
+</tr>
+<tr>
+<td><code>crlb</code></td>
+<td>(9,)</td>
+<td>金标准（复制自第 5 步）</td>
+</tr>
+<tr>
+<td><code>ratio</code></td>
+<td>(9,)</td>
+<td>std/crlb（应接近 1，判有效）</td>
+</tr>
+</tbody>
+</table>
+<h3 id="结果一览">结果一览</h3>
+<table>
+<thead>
+<tr>
+<th>结果</th>
+<th>数值</th>
+<th>说明什么</th>
+<th>出处</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>fx 的 CRLB</td>
+<td>0.154 px</td>
+<td>任何算法估 fx 的 1σ 下限，精度天花板，拍照前可算（仿真里）；真实标定用观测信息近似此值</td>
+<td>CRLB</td>
+</tr>
+<tr>
+<td>边缘化缩减</td>
+<td>25362 → 532（48 倍）</td>
+<td>外参 nuisance 吃掉 fx 表观信息；不边缘化 CRLB 假性乐观约 7 倍</td>
+<td>Schur 补</td>
+</tr>
+<tr>
+<td>CRLB ≠ 对角倒数</td>
+<td>0.154 ≠ 0.043</td>
+<td>内参强耦合，精度来自完整逆</td>
+<td>CRLB</td>
+</tr>
+<tr>
+<td>条件数</td>
+<td>cond(I_β) = 5.3×10⁸</td>
+<td>整板入画加多样性把 cond 压到可控；过大则求逆 NaN</td>
+<td>第 5 步</td>
+</tr>
+<tr>
+<td>std / CRLB ≈ 1</td>
+<td>Monte Carlo 实测</td>
+<td>估计器达下界（渐近有效），验证观测信息法可靠</td>
+<td>MLE 渐近</td>
+</tr>
+</tbody>
+</table>
+<h3 id="踩过的坑">踩过的坑</h3>
+<p>仿真用真值、真实用估计。CRLB 在真值处算（期望信息，金标准，仅仿真可得）；真实标定在估计 θ̂ 处算观测信息、取其逆作不确定度（渐近等价）。</p>
+<p>整板必须入画。真实标定只看得见画面内角点，部分出画会虚高精度。</p>
+<p>位姿参数要独立多样。锁死联动会让 fx、cy 退化、条件数爆、CRLB 出 NaN。用混合基数独立遍历。</p>
+<p>σ_a = σ_det/√2。公式里用 σ_a²，否则偏 √2 倍。径向误差平方是两个轴向平方和，故 σ_det² = 2σ_a²。</p>
+<p>外参必须边缘化。Schur 掉 nuisance，否则内参 CRLB 假性偏小。</p>
+<p>CRLB 不是对角元倒数。内参强耦合，来自完整逆，差可达数倍。</p>
+<p>条件数大时 CRLB 不可信。λ_min &lt; ε·λ_max 会让求逆出 NaN；靠入画（压 λ_max）、多样性（抬 λ_min）、多图控制。</p>
+<p>cv2 要 float32。<code>calibrateCamera</code> 的点须 <code>float32</code> 加 <code>ascontiguousarray</code>，float64 会出错。</p>
+<p>σ_det 要实测。静态重复法：相机加板静止采 100 帧，取角点径向 RMS。</p>
+<h3 id="参考资料">参考资料</h3>
+<ul>
+<li><a target="_blank" rel="noopener" href="https://docs.opencv.org/4.x/d9/d0c/group__calib3d.html#ga3207604e4b1a1758aa66acb6ed5aa65d">cv::calibrateCamera — OpenCV 文档</a></li>
+<li><a target="_blank" rel="noopener" href="https://en.wikipedia.org/wiki/Fisher_information">Fisher information — Wikipedia</a></li>
+<li><a target="_blank" rel="noopener" href="https://en.wikipedia.org/wiki/Cram%C3%A9r%E2%80%93Rao_bound">Cramér–Rao bound — Wikipedia</a></li>
+<li>理论推导：《<a href="/notes/study/camera-imaging/fisher-information/fisher-information/">Fisher 信息与精度下界</a>》</li>
+</ul>
+<link rel="stylesheet" href="/css/spoiler.css" type="text/css"><script src="/js/spoiler.js" type="text/javascript" async></script>
+                
+
+
+				<br /><br />
+				<blockquote>
+					<p>文章链接：<br /> 
+					<a style="font-size: 0.85rem" target="_blank" rel="noopener" href="https://www.zywvvd.com/notes/study/camera-imaging/fisher-information-calib/fisher-information-calib/">https://www.zywvvd.com/notes/study/camera-imaging/fisher-information-calib/fisher-information-calib/</a>
+					</p>
+				</blockquote>
+
+
+              </div>
+            
+            <hr/>
+			
+			<!-- 添加打赏模块 -->
+			<div class="reward-container">
+				
+					<button id="rewardBtn" class="reward-btn">
+						 
+							❤ 打赏
+							
+					</button>
+					<p class="tea">“觉得不错的话，给点打赏吧 ୧(๑•̀⌄•́๑)૭”</p>
+					<div id="rewardImgContainer" class="reward-img-container">
+						<div class="singleImgContainer">
+							<img id="wechatImg" class="reward-img" src="https://uipv4.zywvvd.com:33030/HexoFiles/vvd_pc_upload/wechatpay.png" srcset="/img/loading.gif" lazyload alt="微信二维码">
+							<p class="wechatPay">微信支付</p>
+						</div>
+						<div class="singleImgContainer">
+							<img id="alipayImg" class="reward-img" src="https://uipv4.zywvvd.com:33030/HexoFiles/vvd_pc_upload/alipay.png" srcset="/img/loading.gif" lazyload alt="支付宝二维码">
+							<p class="aliPay">支付宝支付</p>
+						</div>
+					</div>
+				
+			</div>
+			
+            <div>
+              <div class="post-metas my-3">
+  
+    <div class="post-meta mr-3 d-flex align-items-center">
+      <i class="iconfont icon-category"></i>
+      
+
+<span class="category-chains">
+  
+  
+    
+      <span class="category-chain">
+        
+  <a href="/categories/Camera/" class="category-chain-item">Camera</a>
+  
+  
+
+      </span>
+    
+  
+</span>
+
+    </div>
+  
+  
+    <div class="post-meta">
+      <i class="iconfont icon-tags"></i>
+      
+        <a href="/tags/Camera/" class="print-no-link">#Camera</a>
+      
+    </div>
+  
+</div>
+
+
+              
+  
+
+  <div class="license-box my-3">
+    <div class="license-title">
+      <div>Fisher 信息：相机标定仿真实操</div>
+      <div>https://www.zywvvd.com/notes/study/camera-imaging/fisher-information-calib/fisher-information-calib/</div>
+    </div>
+    <div class="license-meta">
+      
+        <div class="license-meta-item">
+          <div>作者</div>
+          <div>Yiwei Zhang</div>
+        </div>
+      
+      
+        <div class="license-meta-item license-meta-date">
+          <div>发布于</div>
+          <div>2026年7月17日</div>
+        </div>
+      
+      
+      
+        <div class="license-meta-item">
+          <div>许可协议</div>
+          <div>
+            
+              
+              
+                <a class="print-no-link" target="_blank" href="https://creativecommons.org/licenses/by/4.0/">
+                  <span class="hint--top hint--rounded" aria-label="BY - 署名">
+                    <i class="iconfont icon-by"></i>
+                  </span>
+                </a>
+              
+            
+          </div>
+        </div>
+      
+    </div>
+    <div class="license-icon iconfont"></div>
+  </div>
+
+
+
+              
+                <div class="post-prevnext my-3">
+                  <article class="post-prev col-6">
+                    
+                    
+                  </article>
+                  <article class="post-next col-6">
+                    
+                    
+                      <a href="/notes/study/camera-imaging/fisher-information/fisher-information/" title="Fisher 信息与精度下界">
+                        <span class="hidden-mobile">Fisher 信息与精度下界</span>
+                        <span class="visible-mobile">下一篇</span>
+                        <i class="iconfont icon-arrowright"></i>
+                      </a>
+                    
+                  </article>
+                </div>
+              
+            </div>
+
+            
+  
+  
+    <article id="comments" lazyload>
+      
+  <div id="waline"></div>
+  <script type="text/javascript">
+    Fluid.utils.loadComments('#waline', function() {
+      Fluid.utils.createCssLink('https://lib.baomitu.com/waline/2.14.8/waline.min.css')
+      Fluid.utils.createScript('https://lib.baomitu.com/waline/2.14.8/waline.min.js', function() {
+        var options = Object.assign(
+          {"serverURL":"https://uipv4.zywvvd.com:33033/","path":"window.location.pathname","meta":["nick","mail","link"],"requiredMeta":["nick"],"lang":"zh-CN","emoji":["https://cdn.jsdelivr.net/gh/walinejs/emojis/weibo"],"dark":"html[data-user-color-scheme=\"dark\"]","wordLimit":0,"pageSize":10,"reaction":true,"locale":{"placeholder":"山高路远，常来玩吖 ~","reactionTitle":null}},
+          {
+            el: '#waline',
+            path: window.location.pathname
+          }
+        )
+        Waline.init(options);
+        Fluid.utils.waitElementVisible('#waline .vcontent', () => {
+          var imgSelector = '#waline .vcontent img:not(.vemoji)';
+          Fluid.plugins.imageCaption(imgSelector);
+          Fluid.plugins.fancyBox(imgSelector);
+        })
+      });
+    });
+  </script>
+  <noscript>Please enable JavaScript to view the comments</noscript>
+
+
+    </article>
+  
+
+
+          </article>
+        </div>
+      </div>
+    </div>
+
+    <div class="side-col d-none d-lg-block col-lg-2">
+      
+  <aside class="sidebar" style="margin-left: -1rem">
+    <div id="toc">
+  <p class="toc-header">
+    <i class="iconfont icon-list"></i>
+    <span>目录</span>
+  </p>
+  <div class="toc-body" id="toc-body"></div>
+</div>
+
+
+
+  </aside>
+
+
+    </div>
+  </div>
+</div>
+
+
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+  
+  
+
+
+
+
+
+  <script>
+  Fluid.utils.createScript('https://lib.baomitu.com/mermaid/8.14.0/mermaid.min.js', function() {
+    mermaid.initialize({"theme":"default"});
+
+    Fluid.utils.listenDOMLoaded(function() {
+      Fluid.events.registerRefreshCallback(function() {
+        if ('mermaid' in window) {
+          mermaid.init();
+        }
+      });
+    });
+  });
+</script>
+
+
+
+
+
+
+    
+
+    
+      <a id="scroll-top-button" aria-label="TOP" href="#" role="button">
+        <i class="iconfont icon-xiangshangjiantou" aria-hidden="true"></i>
+      </a>
+    
+
+    
+      <div class="modal fade" id="modalSearch" tabindex="-1" role="dialog" aria-labelledby="ModalLabel"
+     aria-hidden="true">
+  <div class="modal-dialog modal-dialog-scrollable modal-lg" role="document">
+    <div class="modal-content">
+      <div class="modal-header text-center">
+        <h4 class="modal-title w-100 font-weight-bold">搜索</h4>
+        <button type="button" id="local-search-close" class="close" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body mx-3">
+        <div class="md-form mb-5">
+          <input type="text" id="local-search-input" class="form-control validate">
+          <label data-error="x" data-success="v" for="local-search-input">关键词</label>
+        </div>
+        <div class="list-group" id="local-search-result"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+    
+
+    
+  </main>
+
+  <footer>
+    <div class="footer-inner">
+  
+    <div class="footer-content">
+       <div class="vvd_footer" style="font-size: 0.85rem;"> <a href="https://hexo.io" target="_blank" rel="nofollow noopener" color="#d7d8d9" data-umami-event="Footer-Hexo"><span class="umami--click--Footer-Hexo">Hexo</span></a> <i class="iconfont icon-love"></i> <a href="https://github.com/fluid-dev/hexo-theme-fluid" target="_blank" rel="nofollow noopener" data-umami-event="Footer-Fluid"><span class="umami--click--Footer-Fluid">Fluid</span></a> <i class="iconfont icon-love"></i> <a href="https://uipv4.zywvvd.com:33039/share/0zx3o21oIpZTZqwC/%E5%8F%88%E8%A7%81%E8%8B%8D%E5%B2%9A" target="_blank" rel="nofollow noopener" data-umami-event="Footer-Umami"><span class="umami--click--Footer-Umami">Umami</span></a> <div style="font-size: 0.85rem;"> <span id="timeDate">载入天数...</span> <span id="times">载入时分秒...</span> <script src="/vvd_js/duration.js"></script> </div> <div style="font-size: 0.85rem;"> <span> 总访问量 <span style="color: #d7d8d9;" id="PVstatic">0</span> 次&nbsp</span> <span> 总访客数 <span style="color: #d7d8d9;" id="UVstatic">0</span> 人&nbsp</span> <span> 当前在线 <span style="color: #d7d8d9;" id="ACTstatic">0</span> 人&nbsp</span> <script src="https://uipv4.zywvvd.com:33037/statistics" defer></script> </div> <div> <span> Copyright © 2020-2025. All Rights Reserved.</span> </div> <div style="font-size: 0.88rem;"> <a target="_blank" rel="noopener" href="https://developer.hitokoto.cn/" id="hitokoto_text"><span style="color: #d7d8d9;"  id="hitokoto"></span></a> <script src="https://uipv4.zywvvd.com:33044/?encode=js&select=%23hitokoto" defer></script> </div> <a href="https://icp.gov.moe/?keyword=20230615" target="_blank">萌ICP备20230615号</a>
+
+
+</div> 
+    </div>
+  
+  
+  
+  
+</div>
+
+  </footer>
+
+  <!-- Scripts -->
+  
+  <script  src="https://lib.baomitu.com/nprogress/0.2.0/nprogress.min.js" ></script>
+  <link  rel="stylesheet" href="https://lib.baomitu.com/nprogress/0.2.0/nprogress.min.css" />
+
+  <script>
+    NProgress.configure({"showSpinner":false,"trickleSpeed":100})
+    NProgress.start()
+    window.addEventListener('load', function() {
+      NProgress.done();
+    })
+  </script>
+
+
+<script  src="https://lib.baomitu.com/jquery/3.6.0/jquery.min.js" ></script>
+<script  src="https://lib.baomitu.com/twitter-bootstrap/4.6.1/js/bootstrap.min.js" ></script>
+<script  src="/js/events.js" ></script>
+<script  src="/js/plugins.js" ></script>
+
+
+
+
+
+  
+    <script  src="/js/img-lazyload.js" ></script>
+  
+
+
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/tocbot/4.18.2/tocbot.min.js', function() {
+    var toc = jQuery('#toc');
+    if (toc.length === 0 || !window.tocbot) { return; }
+    var boardCtn = jQuery('#board-ctn');
+    var boardTop = boardCtn.offset().top;
+
+    window.tocbot.init(Object.assign({
+      tocSelector     : '#toc-body',
+      contentSelector : '.markdown-body',
+      linkClass       : 'tocbot-link',
+      activeLinkClass : 'tocbot-active-link',
+      listClass       : 'tocbot-list',
+      isCollapsedClass: 'tocbot-is-collapsed',
+      collapsibleClass: 'tocbot-is-collapsible',
+      scrollSmooth    : true,
+      includeTitleTags: true,
+      headingsOffset  : -boardTop,
+    }, CONFIG.toc));
+    if (toc.find('.toc-list-item').length > 0) {
+      toc.css('visibility', 'visible');
+    }
+
+    Fluid.events.registerRefreshCallback(function() {
+      if ('tocbot' in window) {
+        tocbot.refresh();
+        var toc = jQuery('#toc');
+        if (toc.length === 0 || !tocbot) {
+          return;
+        }
+        if (toc.find('.toc-list-item').length > 0) {
+          toc.css('visibility', 'visible');
+        }
+      }
+    });
+  });
+</script>
+
+
+  <script src=https://lib.baomitu.com/clipboard.js/2.0.10/clipboard.min.js></script>
+
+  <script>Fluid.plugins.codeWidget();</script>
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/anchor-js/4.3.1/anchor.min.js', function() {
+    window.anchors.options = {
+      placement: CONFIG.anchorjs.placement,
+      visible  : CONFIG.anchorjs.visible
+    };
+    if (CONFIG.anchorjs.icon) {
+      window.anchors.options.icon = CONFIG.anchorjs.icon;
+    }
+    var el = (CONFIG.anchorjs.element || 'h1,h2,h3,h4,h5,h6').split(',');
+    var res = [];
+    for (var item of el) {
+      res.push('.markdown-body > ' + item.trim());
+    }
+    if (CONFIG.anchorjs.placement === 'left') {
+      window.anchors.options.class = 'anchorjs-link-left';
+    }
+    window.anchors.add(res.join(', '));
+
+    Fluid.events.registerRefreshCallback(function() {
+      if ('anchors' in window) {
+        anchors.removeAll();
+        var el = (CONFIG.anchorjs.element || 'h1,h2,h3,h4,h5,h6').split(',');
+        var res = [];
+        for (var item of el) {
+          res.push('.markdown-body > ' + item.trim());
+        }
+        if (CONFIG.anchorjs.placement === 'left') {
+          anchors.options.class = 'anchorjs-link-left';
+        }
+        anchors.add(res.join(', '));
+      }
+    });
+  });
+</script>
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/fancybox/3.5.7/jquery.fancybox.min.js', function() {
+    Fluid.plugins.fancyBox();
+  });
+</script>
+
+
+  <script>Fluid.plugins.imageCaption();</script>
+
+  
+      <script>
+        if (!window.MathJax) {
+          window.MathJax = {
+            tex    : {
+              inlineMath: { '[+]': [['$', '$']] }
+            },
+            options: {
+              renderActions: {
+                insertedScript: [200, () => {
+                  document.querySelectorAll('mjx-container').forEach(node => {
+                    let target = node.parentNode;
+                    if (target.nodeName.toLowerCase() === 'li') {
+                      target.parentNode.classList.add('has-jax');
+                    }
+                  });
+                }, '', false]
+              }
+            }
+          };
+        } else {
+          MathJax.startup.document.state(0);
+          MathJax.texReset();
+          MathJax.typeset();
+          MathJax.typesetPromise();
+        }
+
+        Fluid.events.registerRefreshCallback(function() {
+          if ('MathJax' in window && MathJax.startup.document && typeof MathJax.startup.document.state === 'function') {
+            MathJax.startup.document.state(0);
+            MathJax.texReset();
+            MathJax.typeset();
+            MathJax.typesetPromise();
+          }
+        });
+      </script>
+    
+
+  <script  src="https://lib.baomitu.com/mathjax/3.2.1/es5/tex-mml-chtml.js" ></script>
+
+  <script defer src="/js/leancloud.js" ></script>
+
+  <script  src="/js/local-search.js" ></script>
+
+
+
+
+  
+<script src="//cdn.jsdelivr.net/npm/aplayer/dist/APlayer.min.js"></script>
+<script src="//cdn.jsdelivr.net/gh/metowolf/MetingJS@1.2/dist/Meting.min.js"></script>
+<script src="/js/reward.js"></script>
+
+
+
+<!-- 主题的启动项，将它保持在最底部 -->
+<!-- the boot of the theme, keep it at the bottom -->
+<script  src="/js/boot.js" ></script>
+
+
+  <script type="text/javascript">
+    /*窗口监视*/
+    var originalTitle = document.title;
+    window.onblur = function(){document.title = "明眸如初"};
+    window.onfocus = function(){document.title = originalTitle};
+  </script>
+
+
+  <div id="tooltip-rightmenu" class="tooltip-rightmenu">如需原始右键菜单请按下 <strong>Ctrl+右键</strong></div>
+
+<div id="rightmenu-wrapper" style="">
+  <ul class="list-v rightmenu" id="rightmenu-content">
+	  <li class="navigation menuNavigation-Content">
+		<a class="nav icon-only fix-cursor-default" onclick="history.back()"><i class="iconfont icon-zuojiantou1"></i></a>
+		<a class="nav icon-only fix-cursor-default" onclick="history.forward()"><i class="iconfont icon-youjiantou1"></i></a>
+		<a class="nav icon-only fix-cursor-default" onclick="window.location.reload()"><i class="iconfont icon-shuaxin"></i></a>
+		<a  aria-label="TOP" href="#" role="button"><i class="iconfont icon-xiangshang"></i></a>
+	  </li>
+
+		<hr class="menuLoad-Content" style="display: block;">
+	  <li class="menuLoad-Content" style="display: block;">
+		<a class="vlts-menu fix-cursor-default" target="_self" href="javascript:;" data-toggle="modal" data-target="#modalSearch" aria-label="Search">
+		  <span>
+			  <i class="iconfont icon-sousuo1 rightmenu-icon"></i>
+			  站内搜索
+		  </span>
+		</a>
+	  </li>
+
+	  <li class="menuLoad-Content" style="display: block;">
+		<a class="vlts-menu fix-cursor-default"  href="https://www.zywvvd.com/messagebd/" data-group="link">
+		  <span>
+			  <i class="iconfont icon-yangshi_icon_tongyong_chat rightmenu-icon">  </i>
+			   留言吐槽 
+		   </span>
+		</a>
+	  </li>
+
+
+	  <li class="menuLoad-Content" style="display: block;">
+		<a class="vlts-menu fix-cursor-default" id="help" target="_blank" rel="noopener" href="https://www.foreverblog.cn/go.html" data-group="link">
+		<span>
+			  <i class="iconfont icon-a-BlackHole rightmenu-icon"></i>
+			  虫洞穿梭
+		  </span>
+		</a>
+	  </li>
+
+	<a id="scroll-top-button" aria-label="TOP" href="#" role="button" style="bottom: 20px; right: 52.6364px;">
+        <i class="iconfont icon-xiangshangjiantou" aria-hidden="true"></i>
+      </a>
+
+	<hr class="menuLoad-Content" style="display: block;">
+	
+	  <li class="menuLoad-Content" style="display: block;">
+		<a class="vlts-menu fix-cursor-default" id="destroy-airplane" target="_blank" rel="noopener"  data-group="link">
+		<span>
+			  <i class="iconfont icon-feiji rightmenu-icon"></i>
+			  破坏小飞机
+		  </span>
+		</a>
+	  </li>
+  </ul>
+</div>
+
+<script>
+	var ua = navigator.userAgent;
+	var ipad = ua.match(/(iPad).*OS\s([\d_]+)/),
+		isIphone = !ipad && ua.match(/(iPhone\sOS)\s([\d_]+)/),
+		isAndroid = ua.match(/(Android)\s+([\d.]+)/),
+		isMobile = isIphone || isAndroid;
+
+	if(!isMobile) {
+		// 为按钮添加事件处理器
+		document.getElementById('destroy-airplane').onclick = function() {
+		  console.log('飞机起飞！');
+		  // 定义要执行的JavaScript代码
+		var KICKASSVERSION='2.0';
+		var s = document.createElement('script');
+		s.type='text/javascript';
+		document.body.appendChild(s);
+		s.src='https://uipv4.zywvvd.com:33030/HexoFiles/js/games/airplane/airplane.js';
+		void(0);
+		};
+	}
+</script>
+
+
+
+
+
+<link href="/css/custom.css"type="text/css"rel="stylesheet"/>
+<script src="/vvd_js/right_menu.js" type="text/javascript"></script>
+<link href="/css/right_menu.css"type="text/css"rel="stylesheet"/>
+<script src="/vvd_js/go.js"></script>
+
+
+  <noscript>
+    <div class="noscript-warning">博客在允许 JavaScript 运行的环境下浏览效果更佳</div>
+  </noscript>
+<script src="/live2dw/lib/L2Dwidget.min.js?094cbace49a39548bed64abff5988b05"></script><script>L2Dwidget.init({"pluginRootPath":"live2dw/","pluginJsPath":"lib/","pluginModelPath":"assets/","tagMode":false,"log":false,"model":{"jsonPath":"/live2dw/assets/z16.model.json"},"display":{"position":"left","width":200,"height":400},"mobile":{"show":false},"react":{"opacity":0.9}});</script></body>
+</html>
