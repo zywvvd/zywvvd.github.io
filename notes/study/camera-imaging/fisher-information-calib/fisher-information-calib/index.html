@@ -25,7 +25,7 @@
 <meta property="og:description" content="相机标定估出内参后，这些估计准到什么程度？本文用 Fisher 信息算出每个内参的精度下界（CRLB）——不管用什么算法，误差都不可能小于它，而且拍照前就能算。理论推导见《Fisher 信息与精度下界》。">
 <meta property="og:locale" content="zh_CN">
 <meta property="article:published_time" content="2026-07-17T03:00:00.000Z">
-<meta property="article:modified_time" content="2026-07-17T06:25:35.041Z">
+<meta property="article:modified_time" content="2026-07-17T06:35:05.285Z">
 <meta property="article:author" content="Yiwei Zhang">
 <meta property="article:tag" content="Camera">
 <meta name="twitter:card" content="summary_large_image">
@@ -673,7 +673,7 @@ document.addEventListener("readystatechange", function() {
         <i class="iconfont icon-chart"></i>
         
           <!-- compatible with older versions-->
-          14k 字
+          15k 字
         
       </span>
     
@@ -685,7 +685,7 @@ document.addEventListener("readystatechange", function() {
         
         
           <!-- compatible with older versions-->
-          114 分钟
+          122 分钟
         
       </span>
     
@@ -1764,6 +1764,68 @@ $$
 <li>畸变方向退化 → 多拍<strong>大半径（板占满画面）+ 倾斜</strong>的图。</li>
 </ul>
 <p>补齐后 cond(I_β)、stdDeviations 会一起回落，就是修好了的信号。</p>
+<h3 id="可靠标定的标准流程">可靠标定的标准流程</h3>
+<p>前面用仿真验证了方法、用退化实验看清了坑。把结论收拢成一条可照着做的标准流程：<strong>多样的采集 + 恰当的模型 + 自检诊断闭环</strong>，目标是让 I_β 良态、stdDeviations 小到够用、且无系统偏差。Fisher 信息把每一步都变成可量化、可验证的事。</p>
+<h4 id="采集：多样覆盖，让-I-β-良态">采集：多样覆盖，让 I_β 良态</h4>
+<p>这是决定成败、也最难补救的一步。本质是在参数空间里给每个特征方向喂够信息——信息是各图累加、并按噪声缩放的：</p>
+
+$$
+\mathcal I=\sum_{\text{图}}\frac{1}{\sigma_a^{2}}\,\mathbf J^\top\mathbf J
+$$
+
+<p>所以&quot;图越多越好&quot;只在<strong>新方向</strong>上成立（雷同图在已覆盖方向上重复累加，是浪费），而 σ_a 越小（图越清晰）每个角点贡献越大。每维多样性对应它撑起的参数方向：</p>
+<table>
+<thead>
+<tr>
+<th>采集维度</th>
+<th>撑起的参数方向</th>
+<th>缺了会怎样</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>板多向倾斜（pitch/yaw 正负都覆盖）</td>
+<td>焦距（破 f↔Z 尺度）、主点、切向畸变</td>
+<td>焦距/主点退化（实验里 ±30° 够，=0 崩）</td>
+</tr>
+<tr>
+<td>板偏离中心、拍到画面角落</td>
+<td>主点、大半径径向畸变</td>
+<td>主点和 k1/k2/k3 定不准</td>
+</tr>
+<tr>
+<td>不同距离（板占画面 1/3~1/2）</td>
+<td>分开焦距与畸变（角点扫不同半径）</td>
+<td>焦距畸变耦合</td>
+</tr>
+<tr>
+<td>板自身滚转</td>
+<td>解耦面内参数</td>
+<td>部分参数强相关</td>
+</tr>
+<tr>
+<td>覆盖全视场（尤其边缘）</td>
+<td>径向畸变（要大半径角点）</td>
+<td>高阶畸变测不到</td>
+</tr>
+</tbody>
+</table>
+<p>清单：倾斜全方向、位置铺满含角落、远近多样、滚转有；图清晰对焦光照足；板要平、方格尺寸量准（翘曲或错尺寸是 CRLB 看不见的系统偏差）。数量服从多样性——20 张充分错开胜过 100 张雷同正面；实际 15–30 张高质量全覆盖通常够。</p>
+<h4 id="检测与求解">检测与求解</h4>
+<p><code>findChessboardCorners</code> + <code>cornerSubPix</code> 亚像素细化；检测差的图（模糊、反光、遮挡）剔除——它们抬高 σ 还可能引偏。求解用 <code>cv2.calibrateCamera</code>，<strong>畸变模型别过度参数化</strong>：镜头若 5 系数够用就别上 8/14，多出来的弱约束参数会变成新的近零特征方向，反而让 I_β 病态。按镜头实际畸变量级选阶数。</p>
+<h4 id="验证诊断（闭环，别跳过）">验证诊断（闭环，别跳过）</h4>
+<p>把&quot;看着不错&quot;变成&quot;确实可靠&quot;，就是上一节的诊断套件，按代价从低到高：重投影 RMS 接近 σ_a（亚像素，好检测 &lt; 0.3px，但<strong>必要不充分</strong>）→ 逐图误差看分布、剔除离群 → <strong>stdDeviations</strong> 每个内参都小到合理（fx 的不能是几万，最省事最该盯）→ 子集复现性 / leave-one-out 看稳定性 → cond(I_β) + 特征分解看退化与缺维 → 物理交叉校验（fx ≈ 焦距(mm)/像元(mm)、主点 ≈ 画面中心）挡系统偏差 → 留出图重投影测泛化。</p>
+<h4 id="精度预算与定稿">精度预算与定稿</h4>
+<p>内参要<strong>连同 stdDeviations 一起</strong>报告，不能只给一个数。按下游任务反查：需要 fx 准到 0.1px 而 stdDev 是 0.15px → 这组不够，回去补数据；够用才定稿。Fisher 信息把&quot;精度预算&quot;变成拍前能估、拍后能验的量。</p>
+<h4 id="几条原理">几条原理</h4>
+<ol>
+<li><strong>多样性 &gt; 数量</strong>：信息只在新的参数方向上累加。</li>
+<li><strong>条件数是命脉</strong>：目标是 I_β 良态，λ_min 远高于 ε·λ_max 地板。</li>
+<li><strong>噪声是地板</strong>：σ_a 决定单角点信息，清晰图 + 亚像素检测最划算。</li>
+<li><strong>CRLB 只管随机误差</strong>：系统偏差靠物理控制和交叉校验。</li>
+<li><strong>闭环验证</strong>：每改采集或模型，都用 stdDev + 特征分解 + 物理校验重新确认。</li>
+</ol>
+<p>最后记住：真实流程里 Fisher 信息是在估计 θ̂ 处算的（观测信息），渐近等价于真值处的金标准。本文那条仿真流水线的价值，正是先用真值验证了&quot;观测信息法可靠&quot;（std/CRLB≈1），才敢把它用在上面这套真实诊断里——仿真不是玩具，是真实流程的计量校准。</p>
 <h3 id="参考资料">参考资料</h3>
 <ul>
 <li><a target="_blank" rel="noopener" href="https://docs.opencv.org/4.x/d9/d0c/group__calib3d.html#ga3207604e4b1a1758aa66acb6ed5aa65d">cv::calibrateCamera — OpenCV 文档</a></li>
