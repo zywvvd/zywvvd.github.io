@@ -25,7 +25,7 @@
 <meta property="og:description" content="相机标定估出内参后，这些估计准到什么程度？本文用 Fisher 信息算出每个内参的精度下界（CRLB）——不管用什么算法，误差都不可能小于它，而且拍照前就能算。理论推导见《Fisher 信息与精度下界》。">
 <meta property="og:locale" content="zh_CN">
 <meta property="article:published_time" content="2026-07-17T03:00:00.000Z">
-<meta property="article:modified_time" content="2026-07-17T06:35:05.285Z">
+<meta property="article:modified_time" content="2026-07-17T08:03:51.167Z">
 <meta property="article:author" content="Yiwei Zhang">
 <meta property="article:tag" content="Camera">
 <meta name="twitter:card" content="summary_large_image">
@@ -685,7 +685,7 @@ document.addEventListener("readystatechange", function() {
         
         
           <!-- compatible with older versions-->
-          122 分钟
+          129 分钟
         
       </span>
     
@@ -1764,6 +1764,40 @@ $$
 <li>畸变方向退化 → 多拍<strong>大半径（板占满画面）+ 倾斜</strong>的图。</li>
 </ul>
 <p>补齐后 cond(I_β)、stdDeviations 会一起回落，就是修好了的信号。</p>
+<h3 id="采集前的准备">采集前的准备</h3>
+<p>正经采集前，核心是把会改变内参的变量锁死、系统误差源提前排除——而且可以用仿真在拍之前就预估精度够不够。这份准备清单决定了整轮采集能不能用。</p>
+<h4 id="锁死相机的几何相关设置">锁死相机的几何相关设置</h4>
+<p>内参是&quot;这台相机在这个设置下&quot;的属性，设置一变就作废：</p>
+<ul>
+<li><strong>手动对焦并锁定</strong>：标定中绝不能让自动对焦跑——焦距变了，每张图的内参都不同，标定无意义。在工作距离对实。</li>
+<li><strong>固定焦距</strong>（变焦别动 zoom），定焦最好。</li>
+<li><strong>固定光圈</strong>（中段 f/5.6~f/8 通常最锐、像差最小）。</li>
+<li><strong>关掉机内畸变/镜头校正</strong>（数字变焦、畸变校正 profile 都关），否则标定的是校正后的图，不是镜头本身。</li>
+<li><strong>用实际处理的分辨率拍</strong>：fx/fy/cx/cy 是像素单位、和分辨率绑定，别满分辨率标定再降采样。</li>
+<li>固定 ISO/曝光选低噪声档，相机热稳定后再开拍。</li>
+</ul>
+<h4 id="标定板">标定板</h4>
+<ul>
+<li><strong>平</strong>：翘曲是 CRLB 看不见的系统偏差。用铝板/玻璃背衬的刚性板，别用软纸或易翘覆膜，拿直尺验。</li>
+<li><strong>方格尺寸量准</strong>：数显卡尺量多个方格取平均。它决定物理尺度（fx 像素值不受影响，但外参和物理解读依赖它）。</li>
+<li><strong>大小匹配 FOV/工作距离</strong>：板要能在工作距离占画面约 1/3~1/2；广角要大板，长焦要小板。</li>
+<li>清洁、无反光、黑白高对比。</li>
+</ul>
+<h4 id="环境与拍摄">环境与拍摄</h4>
+<p>匀光漫射光，避免反光和强阴影；防抖（三脚架或高速快门，运动模糊直接抬高 σ_a）；每个曝光内板和相机静止。</p>
+<h4 id="先测噪声底，再预估精度（最值钱的一步）">先测噪声底，再预估精度（最值钱的一步）</h4>
+<p>整套理论最实在的落地——<strong>拍之前就能知道够不够</strong>：</p>
+<ul>
+<li><strong>静态重复测 σ_a</strong>：相机和板都不动，连拍约 100 帧，检测角点，算角点位置跨帧的 std → 得径向 σ_det，单轴 σ_a = σ_det/√2。这就是你的噪声底。</li>
+<li><strong>仿真预估 CRLB</strong>：把计划好的板、规划的位姿覆盖、测到的 σ_a 喂进本文流水线（第 1~5 步），算出预期 CRLB。满足下游精度 → 放心拍；不满足 → 先调（加图、加多样性、降噪声）再拍，省下一整轮废采集。</li>
+</ul>
+<p>这一步把&quot;实验设计&quot;变成可计算的：拍前估、拍后验，是 Fisher 信息的核心用途，也是本文仿真流水线最实在的价值。</p>
+<h4 id="规划覆盖、流程就绪、记元数据">规划覆盖、流程就绪、记元数据</h4>
+<ul>
+<li><strong>列位姿清单</strong>，确保倾斜全方向、位置含角落、远近多样、滚转都有（对应那张&quot;多样性↔参数方向&quot;表）。</li>
+<li><strong>管线先测通</strong>：先拍 1~2 张跑检测+标定，确认角点检测稳、代码能跑、现场能即时查 RMS/stdDeviations。</li>
+<li><strong>记元数据</strong>：相机型号、镜头、标称焦距、光圈、对焦、分辨率、工作距离、板型号与实测方格尺寸、光照。</li>
+</ul>
 <h3 id="可靠标定的标准流程">可靠标定的标准流程</h3>
 <p>前面用仿真验证了方法、用退化实验看清了坑。把结论收拢成一条可照着做的标准流程：<strong>多样的采集 + 恰当的模型 + 自检诊断闭环</strong>，目标是让 I_β 良态、stdDeviations 小到够用、且无系统偏差。Fisher 信息把每一步都变成可量化、可验证的事。</p>
 <h4 id="采集：多样覆盖，让-I-β-良态">采集：多样覆盖，让 I_β 良态</h4>
