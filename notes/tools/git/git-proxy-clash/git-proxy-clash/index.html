@@ -25,7 +25,7 @@
 <meta property="og:description" content="在国内服务器上开发时，git push 突然超时，SSH&#x2F;HTTPS 全部连不上 GitHub。本文记录从诊断到修复的完整过程，核心原因是本地有 Clash 代理但 Git 和 SSH 没有配置使用它。">
 <meta property="og:locale" content="zh_CN">
 <meta property="article:published_time" content="2026-04-17T11:30:00.000Z">
-<meta property="article:modified_time" content="2026-07-17T05:51:48.874Z">
+<meta property="article:modified_time" content="2026-07-17T05:58:49.013Z">
 <meta property="article:author" content="Yiwei Zhang">
 <meta property="article:tag" content="Tools">
 <meta property="article:tag" content="Git">
@@ -674,7 +674,7 @@ document.addEventListener("readystatechange", function() {
         <i class="iconfont icon-chart"></i>
         
           <!-- compatible with older versions-->
-          1.6k 字
+          1.2k 字
         
       </span>
     
@@ -686,7 +686,7 @@ document.addEventListener("readystatechange", function() {
         
         
           <!-- compatible with older versions-->
-          14 分钟
+          10 分钟
         
       </span>
     
@@ -954,49 +954,46 @@ document.addEventListener("readystatechange", function() {
 <p><strong>SOCKS5 vs HTTP</strong>：经测试当前 Clash 的 SOCKS5 端口不可用（<code>socks5://127.0.0.1:7890</code> 超时），只有 HTTP 代理端口可用，实际使用时需确认自己代理工具的有效端口和协议。</p>
 </li>
 </ul>
-<h3 id="续：代理配好后三个月，SSH-又开始抽风（2026-07-更新）">续：代理配好后三个月，SSH 又开始抽风（2026-07 更新）</h3>
+<h3 id="续：配好代理后-SSH-改走-443（2026-07）">续：配好代理后 SSH 改走 443（2026-07）</h3>
 <blockquote>
-<p>上一篇记的是「没挂代理、GitHub 完全连不上」，于是配了 Clash + socat 让 SSH 经代理走 <code>github.com:22</code>。三个月后这套配置突然失灵，<code>hexo d</code> 又抛 <code>Spawn failed</code>——但这次的现象和根因跟上次都不一样：<strong>代理是好的，坏的是 GitHub 的 22 端口这条 SSH 链路本身。</strong></p>
+<p>上一篇配的是让 SSH 经 Clash 代理走 <code>github.com:22</code>。三个月后 <code>hexo d</code> 又报 <code>Spawn failed</code>，这次不同：代理正常，22 端口的 SSH 连不上，443 可以。</p>
 </blockquote>
 <h4 id="现象">现象</h4>
-<p><code>hexo d</code> 本地生成一切正常，最后 push 那步炸了：</p>
-<figure class="highlight subunit"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><code class="hljs subunit">kex_exchange_identification: Connection closed by remote host<br>Connection closed by UNKNOWN port 65535<br>fatal: Could not read from remote repository.<br>FATAL Something&#x27;s wrong. ...<br><span class="hljs-keyword">Error: </span>Spawn failed<br></code></pre></td></tr></table></figure>
-<p><code>kex_exchange_identification</code> 出现在 SSH 握手的密钥交换阶段。这行的潜台词是：<strong>TCP 已经连上了，但在 SSH 协议刚开口的那一刻，对端把连接掐了。</strong> 和上一篇「直接 <code>Connection timed out</code>」是两种不同的死法——上次是「到不了」，这次是「到了但被甩了」，所以排查思路得反过来：先确认代理没坏。</p>
+<p><code>hexo d</code> 本地生成正常，push 时报错：</p>
+<figure class="highlight subunit"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><code class="hljs subunit">kex_exchange_identification: Connection closed by remote host<br>Connection closed by UNKNOWN port 65535<br>fatal: Could not read from remote repository.<br><br>Please make sure you have the correct access rights<br>and the repository exists.<br>FATAL Something&#x27;s wrong. Maybe you can find the solution here: https://hexo.io/docs/troubleshooting.html<br><span class="hljs-keyword">Error: </span>Spawn failed<br>    at ChildProcess.&lt;anonymous&gt; (/home/vvd/VVD/VVD_Hexo/node_modules/hexo-deployer-git/node_modules/hexo-util/lib/spawn.js:51:21)<br>    at ChildProcess.emit (node:events:517:28)<br>    at ChildProcess._handle.onexit (node:internal/child_process:292:12)<br></code></pre></td></tr></table></figure>
+<p><code>kex_exchange_identification</code> 出现在 SSH 握手阶段。和上一篇的 <code>Connection timed out</code> 不同，这次是握手过程中连接被关闭。先确认是不是代理的问题。</p>
 <h4 id="逐步排查-2">逐步排查</h4>
-<p><strong>1. 代理和 socat 还在不在</strong></p>
+<p><strong>1. 代理和 socat 是否正常</strong></p>
 <figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><code class="hljs bash">$ <span class="hljs-built_in">which</span> socat<br>/usr/bin/socat<br><br>$ ss -tlnp | grep 7890<br>LISTEN 0 4096 *:7890 *:* <span class="hljs-built_in">users</span>:((&quot;clash-linux&quot;,pid=<span class="hljs-number">150594</span>,fd=<span class="hljs-number">10</span>))<br></code></pre></td></tr></table></figure>
-<p><code>socat</code> 装着，Clash 还在 7890 上跑。基础设施没掉。</p>
+<p><code>socat</code> 和 Clash（7890）都在。</p>
 <p><strong>2. 走代理访问 GitHub（HTTPS）</strong></p>
 <figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><code class="hljs bash">$ curl -s -o /dev/null -w <span class="hljs-string">&quot;HTTP %&#123;http_code&#125;  time %&#123;time_total&#125;s\n&quot;</span> -x http://127.0.0.1:7890 https://github.com<br>HTTP 200  time 1.247209s<br></code></pre></td></tr></table></figure>
-<p>HTTP 200，秒回。<strong>代理不仅能用，而且通得很顺。</strong> 到这一步基本可以排除「代理不行」了。</p>
-<p><strong>3. 走代理做 SSH 呢</strong></p>
+<p>代理可用，问题不在代理本身。</p>
+<p><strong>3. 走代理做 SSH</strong></p>
 <figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><code class="hljs bash">$ ssh -T -o ConnectTimeout=8 github.com<br>Connection timed out during banner exchange<br>Connection to UNKNOWN port 65535 timed out<br></code></pre></td></tr></table></figure>
-<p>同一条代理隧道，HTTPS 活得好好的，SSH 却在 banner 交换阶段超时——握手刚开个头对端就不吭声了。这跟 <code>hexo d</code> 报的 <code>kex_exchange_identification: Connection closed by remote host</code> 是同一个病根（一个超时、一个被关，差别只是当时链路的瞬态）。</p>
-<p>再试一把 443（沿用<a href="/2024/01/16/git-ssh-443/">更早那篇</a>的套路）：</p>
+<p>同一条代理，HTTPS 正常，SSH 在 banner 交换阶段超时。换成 443 再试（参考<a href="/2024/01/16/git-ssh-443/">更早那篇</a>）：</p>
 <figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><code class="hljs bash">$ ssh -T -o HostName=ssh.github.com -o Port=443 -o ProxyCommand=<span class="hljs-string">&quot;socat - PROXY:127.0.0.1:%h:%p,proxyport=7890&quot;</span> git@github.com<br>Hi zywvvd! You<span class="hljs-string">&#x27;ve successfully authenticated, but GitHub does not provide shell access.</span><br></code></pre></td></tr></table></figure>
-<p>认证成功。破案了。</p>
+<p>443 可以。</p>
 <h4 id="结论">结论</h4>
-<p><strong>不是代理不行，是 GitHub 的 22 端口 SSH 经这条代理出口不稳定。</strong></p>
-<p>同一时刻、同一条代理：443（HTTPS）畅通，22（SSH）被干扰。这恰好和上一篇里「443 也超时」的结论相反——上一篇是<strong>没挂代理直连</strong>，所以 22 和 443 一起死；这次是<strong>挂了代理</strong>，所以 22 死、443 活。一句话总结：<strong>「443 通不通」取决于你有没有挂代理。</strong></p>
-<p>既然代理下 443 这条道是通的，那就让 SSH 也去挤 443——只不过这次要在<strong>代理之上</strong>再叠一层 443。</p>
-<h4 id="修复：在代理的-Host-块里改走-443">修复：在代理的 Host 块里改走 443</h4>
-<p>之前那篇配的 <code>~/.ssh/config</code> 是让 SSH 经代理去 <code>github.com:22</code>：</p>
+<p>代理正常，22 端口的 SSH 经代理握手失败，443 可以。让 SSH 也走 443。</p>
+<h4 id="修复：把代理的-Host-块改走-443">修复：把代理的 Host 块改走 443</h4>
+<p>之前 <code>~/.ssh/config</code> 里是经代理连 <code>github.com:22</code>：</p>
 <figure class="highlight elixir"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><code class="hljs elixir"><span class="hljs-title class_">Host</span> github.com<br>    <span class="hljs-title class_">HostName</span> github.com<br>    <span class="hljs-title class_">User</span> git<br>    <span class="hljs-title class_">ProxyCommand</span> socat - <span class="hljs-symbol">PROXY:</span><span class="hljs-number">127.0</span>.<span class="hljs-number">0.1</span><span class="hljs-symbol">:%h</span><span class="hljs-symbol">:%p</span>,proxyport=<span class="hljs-number">7890</span><br></code></pre></td></tr></table></figure>
-<p>把目的地从 <code>github.com:22</code> 换成 <code>ssh.github.com:443</code>，SSH 就会经代理走那条已经验证过通畅的 443 通道。改两行即可：</p>
+<p>把目标改成 <code>ssh.github.com:443</code>：</p>
 <figure class="highlight elixir"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><code class="hljs elixir"><span class="hljs-title class_">Host</span> github.com<br>    <span class="hljs-title class_">HostName</span> ssh.github.com<br>    <span class="hljs-title class_">User</span> git<br>    <span class="hljs-title class_">Port</span> <span class="hljs-number">443</span><br>    <span class="hljs-title class_">ProxyCommand</span> socat - <span class="hljs-symbol">PROXY:</span><span class="hljs-number">127.0</span>.<span class="hljs-number">0.1</span><span class="hljs-symbol">:%h</span><span class="hljs-symbol">:%p</span>,proxyport=<span class="hljs-number">7890</span><br></code></pre></td></tr></table></figure>
 <blockquote>
-<p><code>ProxyCommand</code> 里的 <code>%h</code>/<code>%p</code> 会自动取上面的 <code>HostName</code> 和 <code>Port</code>，所以 socat 实际连的是 <code>ssh.github.com:443</code>，ProxyCommand 这行不用动。</p>
+<p><code>ProxyCommand</code> 里的 <code>%h</code>/<code>%p</code> 取上面的 <code>HostName</code> 和 <code>Port</code>，所以 socat 实际连的是 <code>ssh.github.com:443</code>，ProxyCommand 不用改。</p>
 </blockquote>
-<p>用 <code>github.com</code> 别名（也就是 <code>git push</code> 实际用的入口）验证：</p>
+<p>验证：</p>
 <figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><code class="hljs bash">$ ssh -T github.com<br>Hi zywvvd! You<span class="hljs-string">&#x27;ve successfully authenticated, but GitHub does not provide shell access.</span><br></code></pre></td></tr></table></figure>
-<p>通了。改完直接 <code>hexo g -d</code> 重新部署就行，这次 push 会顺。</p>
-<h4 id="小结：三次踩坑的递进">小结：三次踩坑的递进</h4>
+<p>SSH 通了，<code>hexo g -d</code> 重新部署即可。</p>
+<h4 id="三次记录对比">三次记录对比</h4>
 <table>
 <thead>
 <tr>
 <th>时间</th>
 <th>现象</th>
-<th>根因</th>
+<th>原因</th>
 <th>修复</th>
 </tr>
 </thead>
@@ -1004,24 +1001,23 @@ document.addEventListener("readystatechange", function() {
 <tr>
 <td>2024-01</td>
 <td>直连 SSH 22 超时</td>
-<td>22 端口被封</td>
-<td>改走 <code>ssh.github.com:443</code></td>
+<td>22 端口连不上</td>
+<td>走 <code>ssh.github.com:443</code></td>
 </tr>
 <tr>
 <td>2026-04</td>
-<td>直连 22、443 全超时</td>
-<td>GitHub 整个被阻断</td>
+<td>直连 22、443 都超时</td>
+<td>GitHub 不可达</td>
 <td>挂 Clash + socat 让 SSH 走代理</td>
 </tr>
 <tr>
 <td>2026-07</td>
-<td>走代理后 SSH 22 握手被掐</td>
-<td>代理出口下 22 不稳、443 稳</td>
-<td>代理 + 443 <strong>叠加</strong></td>
+<td>走代理后 SSH 22 握手失败</td>
+<td>22 握手失败，443 可用</td>
+<td>代理 + 443</td>
 </tr>
 </tbody>
 </table>
-<p>最终的配置其实是前两次方案的和：<strong>代理（socat）负责把流量送出去，443 负责避开 22 这条不稳的链路。</strong> 两者缺一不可——只挂代理不走 443，22 会抽风；只走 443 不挂代理，在国内又根本到不了 GitHub。</p>
 <h3 id="参考资料">参考资料</h3>
 <ul>
 <li><a href="/2024/01/16/git-ssh-443/">Git 链接超时 - 通过 Https 端口进行 SSH 链接</a></li>
