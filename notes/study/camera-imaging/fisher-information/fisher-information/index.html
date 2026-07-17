@@ -17,12 +17,12 @@
   <meta name="author" content="Yiwei Zhang">
   <meta name="keywords" content="人工智能, 深度学习, 个人博客, 机器学习">
   
-    <meta name="description" content="本文记录 Fisher 信息（Fisher Information）的定义、等价形式、计算方法，以及它作为参数估计精度下界（Cramér–Rao 不等式）的含义，从温度计、抛硬币等例子出发逐步推导。">
+    <meta name="description" content="Fisher 信息（Fisher Information）刻画观测数据对参数的敏感程度，给出任何无偏估计的精度下界（Cramér–Rao 不等式）。本文从温度计、抛硬币等例子出发，记录它的定义、等价形式与计算方法。">
 <meta property="og:type" content="article">
 <meta property="og:title" content="Fisher 信息与精度下界">
 <meta property="og:url" content="https://www.zywvvd.com/notes/study/camera-imaging/fisher-information/fisher-information/index.html">
 <meta property="og:site_name" content="又见苍岚">
-<meta property="og:description" content="本文记录 Fisher 信息（Fisher Information）的定义、等价形式、计算方法，以及它作为参数估计精度下界（Cramér–Rao 不等式）的含义，从温度计、抛硬币等例子出发逐步推导。">
+<meta property="og:description" content="Fisher 信息（Fisher Information）刻画观测数据对参数的敏感程度，给出任何无偏估计的精度下界（Cramér–Rao 不等式）。本文从温度计、抛硬币等例子出发，记录它的定义、等价形式与计算方法。">
 <meta property="og:locale" content="zh_CN">
 <meta property="og:image" content="https://uipv4.zywvvd.com:33030/HexoFiles/files/fisher_figs/01_likelihood_curvature.png">
 <meta property="og:image" content="https://uipv4.zywvvd.com:33030/HexoFiles/files/fisher_figs/02_score_variance.png">
@@ -31,7 +31,7 @@
 <meta property="og:image" content="https://uipv4.zywvvd.com:33030/HexoFiles/files/fisher_figs/03_kl_distinguishability.png">
 <meta property="og:image" content="https://uipv4.zywvvd.com:33030/HexoFiles/files/fisher_figs/06_fisher_rao.png">
 <meta property="article:published_time" content="2026-07-14T08:00:00.000Z">
-<meta property="article:modified_time" content="2026-07-15T01:33:17.576Z">
+<meta property="article:modified_time" content="2026-07-17T03:41:46.659Z">
 <meta property="article:author" content="Yiwei Zhang">
 <meta property="article:tag" content="Camera">
 <meta name="twitter:card" content="summary_large_image">
@@ -680,7 +680,7 @@ document.addEventListener("readystatechange", function() {
         <i class="iconfont icon-chart"></i>
         
           <!-- compatible with older versions-->
-          3.9k 字
+          4.4k 字
         
       </span>
     
@@ -692,7 +692,7 @@ document.addEventListener("readystatechange", function() {
         
         
           <!-- compatible with older versions-->
-          33 分钟
+          37 分钟
         
       </span>
     
@@ -895,7 +895,7 @@ document.addEventListener("readystatechange", function() {
                 
                   
                     <!-- compatible with older versions-->
-                    本文最后更新于：2026年7月15日 上午
+                    本文最后更新于：2026年7月17日 中午
                   
                 
               </p>
@@ -904,170 +904,292 @@ document.addEventListener("readystatechange", function() {
               <div class="markdown-body">
                 
                 <blockquote>
-<p>本文记录 Fisher 信息（Fisher Information）的定义、等价形式、计算方法，以及它作为参数估计精度下界（Cramér–Rao 不等式）的含义，从温度计、抛硬币等例子出发逐步推导。</p>
+<p>Fisher 信息（Fisher Information）刻画观测数据对参数的敏感程度，给出任何无偏估计的精度下界（Cramér–Rao 不等式）。本文从温度计、抛硬币等例子出发，记录它的定义、等价形式与计算方法。</p>
 </blockquote>
 <span id="more"></span>
-<h2 id="参数估计与两个问题">参数估计与两个问题</h2>
-<p>设要估计未知参数 $\theta$，观测到带噪随机量 $X=h(\theta)+\mu$，做 $n$ 次独立观测得到 $x_1,\dots,x_n$。参数估计面对两个问题：用什么方法估（矩估计、最小二乘、最大似然、卡尔曼滤波等），以及需要观测多少次。前者算法众多，后者常被忽略。</p>
-<p>Fisher 信息 $I(\theta)$ 同时约束二者。它给出任何无偏估计精度的上限，且只依赖观测方程 $h$ 与噪声方差，因此可以在观测之前计算，用于实验设计。下文从最朴素的例子出发，逐层把它精确化。</p>
-<h2 id="几种估计方法">几种估计方法</h2>
+<h3 id="简介">简介</h3>
+<p>设要估计未知参数 $\theta$，做了 $n$ 次独立观测得到 $x_1,\dots,x_n$，每次观测满足 $X=h(\theta)+\mu$。参数估计面对两个问题：用什么方法估，以及需要观测多少次。前者算法众多（矩估计、最小二乘、最大似然、卡尔曼滤波等），后者常被忽略。</p>
+<p><strong>Fisher 信息</strong> $I(\theta)$ 同时约束二者。它给出任何无偏估计精度的上限，且只依赖观测方程 $h$ 与噪声方差，因此可以在观测之前计算，用于实验设计。下文从最朴素的例子出发，逐层把它精确化。</p>
+<h3 id="几种估计方法">几种估计方法</h3>
 <p>第一个问题&quot;用什么方法估&quot;，常见有四种，区别在于各自利用了数据的什么信息、最优化什么准则。</p>
-<p><strong>矩估计</strong>让样本矩等于理论矩。这里的关键是：理论矩不是从数据测出来的，而是由假设的分布模型积分求得，是参数的函数；样本矩由数据算出。令两者相等、反解出参数即可。例如假设数据服从区间 $[0,\theta]$ 上的均匀分布，理论均值为 $\theta/2$（由密度积分得到），令它等于样本均值便解出 $\theta$。矩估计只用前几阶矩、不需要完整分布，简单、常有闭式解，但一般不是最优，方差通常比最大似然大。</p>
-<p><strong>最小二乘</strong>最小化残差平方和，不需要概率分布，只要观测模型，几何上是把观测投影到模型子空间。当噪声独立同分布且服从正态分布时，最小二乘等价于最大似然。</p>
-<p><strong>最大似然</strong>选择使观测数据出现概率最大的参数，利用完整分布。大样本下它一致、渐近正态、渐近有效，方差达到 Cramér–Rao 下界，是精度的金标准。</p>
-<p><strong>卡尔曼滤波</strong>是线性高斯动态系统的递推贝叶斯估计，每来一帧新观测就增量更新状态的均值与协方差，适用于随时间变化的状态（实时跟踪、导航）。它本质上是动态系统下的递推最小二乘或序贯最大似然。</p>
+<ul>
+<li><strong>矩估计</strong>让样本矩等于理论矩。这里的关键是：理论矩不是从数据测出来的，而是由假设的分布模型积分求得，是参数的函数；样本矩由数据算出。令两者相等、反解出参数即可。例如假设数据服从区间 $[0,\theta]$ 上的均匀分布，理论均值为 $\theta/2$（由密度积分得到），令它等于样本均值便解出 $\theta$。矩估计只用前几阶矩、不需要完整分布，简单、常有闭式解，但一般不是最优，方差通常比最大似然大。</li>
+<li><strong>最小二乘</strong>最小化残差平方和，不需要概率分布，只要观测模型，几何上是把观测投影到模型子空间。当噪声独立同分布且服从正态分布时，最小二乘等价于最大似然。</li>
+<li><strong>最大似然</strong>选择使观测数据出现概率最大的参数，利用完整分布。大样本下它一致、渐近正态、渐近有效，方差达到 Cramér–Rao 下界，是精度的金标准。</li>
+<li><strong>卡尔曼滤波</strong>是线性高斯动态系统的递推贝叶斯估计，每来一帧新观测就增量更新状态的均值与协方差，适用于随时间变化的状态（实时跟踪、导航）。它本质上是动态系统下的递推最小二乘或序贯最大似然。</li>
+</ul>
 <p>四者的关系：最小二乘是正态噪声下最大似然的特例；卡尔曼滤波是动态系统下的递推版；矩估计常作最大似然的初值；最大似然的精度极限由 Fisher 信息决定。高斯噪声下的非线性最小二乘等价于最大似然，其精度同样可用 Fisher 信息刻画。</p>
-<h2 id="两个温度计例子">两个温度计例子</h2>
+<h3 id="两个温度计例子">两个温度计例子</h3>
 <p>恒温房间里有一支温度计，估真实温度 $\theta$，读数满足 $X=\theta+\mu$，噪声 $\mu$ 服从零均值、方差为 σ² 的正态分布，多次取平均即可。若温度计有固定偏差 $b$、房间温度已知，读数变为 $X=\theta+b+\mu$，要估的就是偏差 $b$。两种情形里&quot;参数&quot;都是某个未知量。</p>
 <p>直觉上，普通温度计 $\sigma$ 大，测一两次不准、需多次平均；精密温度计 $\sigma$ 小，测一两次即准。即噪声方差越大，单次观测包含的信息越少。这是高斯情形的特例，一般分布下方差并不直接等于信息。</p>
-<h2 id="似然峰的曲率">似然峰的曲率</h2>
+<h3 id="似然峰的曲率">似然峰的曲率</h3>
 <p>$n$ 次独立观测的似然为各单次密度之积，取对数后变为求和。最大似然估计是使似然最大的 $\hat\theta$。温度计例子中真值取 $\theta_0=2$，$\sigma$ 小时似然高而窄，$\theta$ 稍偏概率骤降；$\sigma$ 大时似然平而宽。</p>
 <p><img src="https://uipv4.zywvvd.com:33030/HexoFiles/files/fisher_figs/01_likelihood_curvature.png" srcset="/img/loading.gif" lazyload alt="似然峰曲率"></p>
-<p>峰尖锐程度由峰顶曲率刻画，Fisher 信息即对数似然在峰顶的负曲率。图中虚线间距对应估计精度尺度，峰越尖越窄。该结论不能简单等价为&quot;信息等于 1/方差&quot;，这只在高斯且参数线性进入均值时成立；若参数影响的是分布形状、或噪声非高斯，方差就不再等于信息量，需要更普适的度量。</p>
-<h2 id="score-函数">score 函数</h2>
-<p>对数似然的一阶导称为 score 函数：</p>
+<p>峰尖锐程度由峰顶曲率刻画，<strong>Fisher 信息即对数似然在峰顶的负曲率</strong>。图中虚线间距对应估计精度尺度，峰越尖越窄。</p>
+<blockquote>
+<p>该结论不能简单等价为&quot;信息等于 1/方差&quot;，这只在高斯且参数线性进入均值时成立；若参数影响的是分布形状、或噪声非高斯，方差就不再等于信息量，需要更普适的度量。</p>
+</blockquote>
+<h3 id="score-函数">score 函数</h3>
+<p>对数似然的一阶导称为 <strong>score 函数</strong>：</p>
 
-$$S(\theta)=\frac{\partial\ln L}{\partial\theta}=\sum_{i=1}^{n}\frac{\partial\ln f(x_i;\theta)}{\partial\theta}$$
+$$
+S(\theta)=\frac{\partial\ln L}{\partial\theta}=\sum_{i=1}^{n}\frac{\partial\ln f(x_i;\theta)}{\partial\theta}
+$$
 
 <p>似然是平是尖，看它变化快不快，即一阶导的大小。固定真值 $\theta_0$、更换数据集，$S(\theta_0)$ 取值不同，因此 score 跨数据集是一个随机量。它有两个性质：在最大似然估计处取值为零（峰顶斜率为零）；期望恒为零。后者可直接积出：</p>
 
-$$\mathbb E[S]=\int f\cdot\frac{\partial\ln f}{\partial\theta}\,dx=\int\frac{\partial f}{\partial\theta}\,dx=\frac{\partial}{\partial\theta}\!\int f\,dx=\frac{\partial}{\partial\theta}\,1=0$$
+$$
+\mathbb E[S]=\int f\cdot\frac{\partial\ln f}{\partial\theta}\,dx=\int\frac{\partial f}{\partial\theta}\,dx=\frac{\partial}{\partial\theta}\!\int f\,dx=\frac{\partial}{\partial\theta}\,1=0
+$$
 
 <p>其中用到对数求导的链式法则、积分与求导可交换、概率密度积分为 1。既然 score 均值为零，其离散程度由方差刻画。固定真值、反复抽取由 $n$ 次观测组成的数据集，每个数据集算一个总 score，分布如下。</p>
 <p><img src="https://uipv4.zywvvd.com:33030/HexoFiles/files/fisher_figs/02_score_variance.png" srcset="/img/loading.gif" lazyload alt="得分方差"></p>
 <p>图中 $n$ 为每个数据集的观测次数，总 score 是 $n$ 次得分之和，$n$ 越大分布越宽、方差越大。需注意 score 的方差与估计量 $\hat\theta$ 的方差方向相反：前者即信息 $I$，后者为精度下界 $1/I$，随信息增大而减小。</p>
-<h2 id="两种等价定义">两种等价定义</h2>
+<h3 id="两种等价定义">两种等价定义</h3>
 <p>由 $\mathbb E[S]=0$，方差等于二阶矩，Fisher 信息有两个等价写法：</p>
 
-$$I(\theta)=\mathbb E[S^2]=-\mathbb E\!\left[\frac{\partial^2\ln L}{\partial\theta^2}\right]$$
+$$
+I(\theta)=\mathbb E[S^2]=-\mathbb E\!\left[\frac{\partial^2\ln L}{\partial\theta^2}\right]
+$$
 
 <p>左侧为 score 的方差，右侧为对数似然的负曲率。二者相等可证：对 $S=(1/f),\partial f/\partial\theta$ 再求一次导，由商法则得</p>
 
-$$\frac{\partial^2\ln f}{\partial\theta^2}=\frac{1}{f}\frac{\partial^2 f}{\partial\theta^2}-S^2$$
+$$
+\frac{\partial^2\ln f}{\partial\theta^2}=\frac{1}{f}\frac{\partial^2 f}{\partial\theta^2}-S^2
+$$
 
-<p>两边取期望，第一项是概率密度二阶导的积分，而密度积分为 1、其二阶导为零；剩余一项即负的 score 二阶矩，故负曲率的期望等于 score 的方差。换言之，斜率的方差就是曲率，是同一个量的两种读法。结合后面的结果，Fisher 信息有三层等价含义：score 的方差、似然的负曲率、最大似然估计渐近方差的倒数。</p>
-<h2 id="高斯情形的计算">高斯情形的计算</h2>
+<p>两边取期望，第一项是概率密度二阶导的积分，而密度积分为 1、其二阶导为零；剩余一项即负的 score 二阶矩，故负曲率的期望等于 score 的方差。换言之，斜率的方差就是曲率，是同一个量的两种读法。</p>
+<p>结合后面的结果，Fisher 信息有三层等价含义：</p>
+<ol>
+<li>score 的方差；</li>
+<li>似然的负曲率；</li>
+<li>最大似然估计渐近方差的倒数。</li>
+</ol>
+<h3 id="高斯情形的计算">高斯情形的计算</h3>
 <p>温度计例子中 $X$ 服从均值为 $\theta$、方差为 σ² 的正态分布，对数似然为</p>
 
-$$\ln L=-n\ln(\sqrt{2\pi}\sigma)-\frac{1}{2\sigma^2}\sum_{i=1}^{n}(x_i-\theta)^2$$
+$$
+\ln L=-n\ln(\sqrt{2\pi}\sigma)-\frac{1}{2\sigma^2}\sum_{i=1}^{n}(x_i-\theta)^2
+$$
 
 <p>两次求导，二阶导为常数（取负期望即下面的信息）：</p>
 
-$$I(\theta)=\frac{n}{\sigma^2}$$
+$$
+I(\theta)=\frac{n}{\sigma^2}
+$$
 
 <p>$\sigma$ 越大信息越小，与直觉一致。推广到 $X=h(\theta)+\mu$ 的一般高斯情形，按如下五步推导（残差 $r_i=x_i-h(\theta)$，它对参数求导即观测函数导数的相反数，含二阶导的项稍后会因残差均值为零而消失）。</p>
 <p>第一步，对数似然：</p>
 
-$$\ln L=-n\ln(\sqrt{2\pi}\sigma)-\frac{1}{2\sigma^2}\sum_{i=1}^{n}\bigl(x_i-h(\theta)\bigr)^2$$
+$$
+\ln L=-n\ln(\sqrt{2\pi}\sigma)-\frac{1}{2\sigma^2}\sum_{i=1}^{n}\bigl(x_i-h(\theta)\bigr)^2
+$$
 
 <p>第二步，score：</p>
 
-$$S(\theta)=\frac{h'(\theta)}{\sigma^2}\sum_{i=1}^{n}\bigl(x_i-h(\theta)\bigr)$$
+$$
+S(\theta)=\frac{h'(\theta)}{\sigma^2}\sum_{i=1}^{n}\bigl(x_i-h(\theta)\bigr)
+$$
 
 <p>第三步，二阶导。注意第二步 score 里的前因子也含 $\theta$（它由观测函数的导数与噪声方差构成），故需用乘积法则：</p>
 
-$$\frac{\partial^2\ln L}{\partial\theta^2}=\underbrace{\frac{h''(\theta)}{\sigma^2}\sum_{i=1}^{n}\bigl(x_i-h(\theta)\bigr)}_{\text{A 项}}-\underbrace{\frac{n\,(h'(\theta))^2}{\sigma^2}}_{\text{B 项}}$$
+$$
+\frac{\partial^2\ln L}{\partial\theta^2}=\underbrace{\frac{h''(\theta)}{\sigma^2}\sum_{i=1}^{n}\bigl(x_i-h(\theta)\bigr)}_{\text{A 项}}-\underbrace{\frac{n\,(h'(\theta))^2}{\sigma^2}}_{\text{B 项}}
+$$
 
 <p>第四步，取期望。A 项中 $\mathbb E[x_i-h(\theta)]=0$（残差均值为零），整项消失；只剩 B 项。第五步得</p>
 
-$$I(\theta)=\sum_{i=1}^{n}\frac{(h'(\theta))^2}{\sigma^2}$$
+$$
+I(\theta)=\sum_{i=1}^{n}\frac{(h'(\theta))^2}{\sigma^2}
+$$
 
 <p>信息只取决于 $h$ 的导数与噪声方差，与 $h$ 本身是否弯曲无关，即高斯情形只看雅可比。这正是后面矩阵形式只依赖雅可比、不依赖海森的原因。</p>
 <p>多参数、多观测时写成矩阵形式。设观测方程 $\mathbf x=\mathbf f(\boldsymbol\theta)+\boldsymbol\mu$，雅可比 $\mathbf J=\partial\mathbf f/\partial\boldsymbol\theta$，噪声协方差 $\boldsymbol\Sigma$，则</p>
 
-$$\mathcal I=\mathbf J^\top\boldsymbol\Sigma^{-1}\mathbf J$$
+$$
+\mathcal I=\mathbf J^\top\boldsymbol\Sigma^{-1}\mathbf J
+$$
 
 <p>从标量到矩阵的推广是直接的：标量情形的灵敏度、噪声方差、信息三项，分别对应雅可比矩阵 $\mathbf J$、噪声协方差 $\boldsymbol\Sigma$、以及上面的加权二次型，即把标量除法换成矩阵乘逆。</p>
-<h3 id="权重矩阵">权重矩阵</h3>
+<h4 id="权重矩阵">权重矩阵</h4>
 <p>信息矩阵的逆在二次型里起权重作用：对角项按各通道精度的比例加权（噪声大的通道少听），非对角项扣除相关通道间的信息重叠，避免把冗余信息数两遍。后者用一个两通道的例子看最清楚。估一个均值 $\theta$，两个观测相关系数为 $\rho$，雅可比为全 1 向量，协方差及其逆为</p>
 
-$$\boldsymbol\Sigma=\begin{pmatrix}\sigma^2&\rho\sigma^2\\ \rho\sigma^2&\sigma^2\end{pmatrix},\qquad \boldsymbol\Sigma^{-1}=\frac{1}{\sigma^2(1-\rho^2)}\begin{pmatrix}1&-\rho\\ -\rho&1\end{pmatrix}$$
+$$
+\boldsymbol\Sigma=\begin{pmatrix}\sigma^2&\rho\sigma^2\\ \rho\sigma^2&\sigma^2\end{pmatrix},\qquad \boldsymbol\Sigma^{-1}=\frac{1}{\sigma^2(1-\rho^2)}\begin{pmatrix}1&-\rho\\ -\rho&1\end{pmatrix}
+$$
 
 <p>代入信息公式，先算矩阵乘列向量：</p>
 
-$$\boldsymbol\Sigma^{-1}\mathbf J=\frac{1}{\sigma^2(1-\rho^2)}\begin{pmatrix}1-\rho\\ 1-\rho\end{pmatrix}$$
+$$
+\boldsymbol\Sigma^{-1}\mathbf J=\frac{1}{\sigma^2(1-\rho^2)}\begin{pmatrix}1-\rho\\ 1-\rho\end{pmatrix}
+$$
 
 <p>再左乘转置做点积，并用平方差公式约分：</p>
 
-$$\mathcal I=\frac{2(1-\rho)}{\sigma^2(1-\rho^2)}=\frac{2}{\sigma^2(1+\rho)}$$
+$$
+\mathcal I=\frac{2(1-\rho)}{\sigma^2(1-\rho^2)}=\frac{2}{\sigma^2(1+\rho)}
+$$
 
-<p>$\rho=0$（独立）时信息为 2/σ²，两次独立测量信息翻倍；$\rho=1$（完全相关）时退回 1/σ²，平均毫无帮助，等同单次。非对角项 $-\rho$ 正是用来扣两个通道的重叠。若忽略相关、只用对角，会恒得 2/σ²，在 $\rho&gt;0$ 时高估信息、低估误差。</p>
+<p>$\rho=0$（独立）时信息为 2/σ²，两次独立测量信息翻倍；$\rho=1$（完全相关）时退回 1/σ²，平均毫无帮助，等同单次。非对角项 $-\rho$ 正是用来扣两个通道的重叠。</p>
+<blockquote>
+<p>若忽略相关、只用对角，会恒得 2/σ²，在 $\rho&gt;0$ 时高估信息、低估误差。</p>
+</blockquote>
 <p>最简单的特例是噪声各向同性且各通道不相关，此时协方差矩阵为 σ² 乘单位阵，信息化为</p>
 
-$$\mathcal I=\frac{1}{\sigma^2}\mathbf J^\top\mathbf J$$
+$$
+\mathcal I=\frac{1}{\sigma^2}\mathbf J^\top\mathbf J
+$$
 
-<h3 id="非高斯例子：抛硬币">非高斯例子：抛硬币</h3>
+<h4 id="非高斯例子：抛硬币">非高斯例子：抛硬币</h4>
 <p>偏心硬币正面概率为 $\theta$，单次试验结果取 0 或 1，密度为</p>
 
-$$f(x;\theta)=\theta^{x}(1-\theta)^{1-x}$$
+$$
+f(x;\theta)=\theta^{x}(1-\theta)^{1-x}
+$$
 
 <p>两次求导取期望（用 $\mathbb E[X]=\theta$）：</p>
 
-$$I(\theta)=-\mathbb E\!\left[\frac{\partial^2\ln f}{\partial\theta^2}\right]=\frac{1}{\theta}+\frac{1}{1-\theta}=\frac{1}{\theta(1-\theta)}$$
+$$
+I(\theta)=-\mathbb E\!\left[\frac{\partial^2\ln f}{\partial\theta^2}\right]=\frac{1}{\theta}+\frac{1}{1-\theta}=\frac{1}{\theta(1-\theta)}
+$$
 
 <p><img src="https://uipv4.zywvvd.com:33030/HexoFiles/files/fisher_figs/04_bernoulli_crlb.png" srcset="/img/loading.gif" lazyload alt="Bernoulli 信息与 CRLB"></p>
-<p>该函数呈 U 形，$\theta=0.5$ 处最小（4），边界 $\theta\to0,1$ 处趋于无穷。硬币几乎总出同一面时，一旦出现反常结果就是强信号，似然对参数极敏感。$n$ 次独立试验的信息为 $n/[\theta(1-\theta)]$。此处&quot;信息&quot;指似然区分 $\theta$ 的锐度，与结果不确定性（熵）不同。</p>
-<h2 id="Cramer–Rao-下界">Cramér–Rao 下界</h2>
+<p>该函数呈 U 形，$\theta=0.5$ 处最小（4），边界 $\theta\to0,1$ 处趋于无穷。硬币几乎总出同一面时，一旦出现反常结果就是强信号，似然对参数极敏感。$n$ 次独立试验的信息为 $n/[\theta(1-\theta)]$。</p>
+<blockquote>
+<p>此处&quot;信息&quot;指似然区分 $\theta$ 的锐度，与结果不确定性（熵）不同。</p>
+</blockquote>
+<h3 id="Cramer–Rao-下界">Cramér–Rao 下界</h3>
 <p>衡量估计器通常看无偏性、有效性、一致性三项。Cramér–Rao 不等式给出一个硬约束：任何无偏估计 $\hat\theta$ 的方差有下限</p>
 
-$$\mathrm{Var}(\hat\theta)\ge\frac{1}{I(\theta)}$$
+$$
+\mathrm{Var}(\hat\theta)\ge\frac{1}{I(\theta)}
+$$
 
 <p>多参数时，估计量的协方差矩阵以信息矩阵的逆为下界，第 $k$ 个分量的精度下界为</p>
 
-$$\mathrm{CRLB}_k=\sqrt{[\mathcal I^{-1}]_{kk}}$$
+$$
+\mathrm{CRLB}_k=\sqrt{[\mathcal I^{-1}]_{kk}}
+$$
 
 <p>证明要点：无偏估计与 score 的互协方差恰好是单位阵，二者联合协方差半正定，对信息块取 Schur 补，得到协方差矩阵减去信息矩阵的逆仍半正定。温度计例子中信息为 n/σ²，下界为 σ²/n，恰为样本均值的方差，即样本均值达到下界、是最优估计器。</p>
 <p>当只关心内参而外参也是从同一批数据估出时，需用 Schur 补把外参这个 nuisance 参数边缘化掉。设信息矩阵按内参、外参分块为</p>
 
-$$\mathcal I=\begin{pmatrix}\mathbf A&\mathbf B\\ \mathbf B^\top&\mathbf C\end{pmatrix}$$
+$$
+\mathcal I=\begin{pmatrix}\mathbf A&\mathbf B\\ \mathbf B^\top&\mathbf C\end{pmatrix}
+$$
 
-<p>则内参信息矩阵为</p>
+<p>为什么是这个公式——分块矩阵的逆。设逆也按同结构分块，左上块记为 $\mathbf X$。由 $\mathcal I$ 乘逆等于单位阵展开块方程，取其中两个：</p>
 
-$$\mathcal I_\beta=\mathbf A-\mathbf B\mathbf C^{-1}\mathbf B^\top$$
+$$
+\mathbf{AX}+\mathbf{BY}^\top=\mathbf I\qquad(1)
+$$
 
-<p>内参的精度下界用内参信息矩阵的逆取对角开方。不边缘化、假装外参已知，内参 CRLB 会偏小。</p>
-<h2 id="最大似然的渐近精度">最大似然的渐近精度</h2>
+
+$$
+\mathbf B^\top\mathbf X+\mathbf C\mathbf Y^\top=\mathbf 0\qquad(3)
+$$
+
+<p>从 (3) 把外参消元，解出 $\mathbf Y$ 代回 (1)，便得到内参块的逆：</p>
+
+$$
+\mathbf X=(\mathbf A-\mathbf B\mathbf C^{-1}\mathbf B^\top)^{-1}
+$$
+
+<p>$\mathbf X$ 就是 $\mathcal I$ 之逆的左上块、即内参的协方差下界。内参的有效信息矩阵（Schur 补）为：</p>
+
+$$
+\mathcal I_\beta=\mathbf A-\mathbf B\mathbf C^{-1}\mathbf B^\top
+$$
+
+<p>这就像高斯消元——从方程 (3) 把外参部分消掉，代回 (1) 得到只关于内参的方程。消元扣掉的，正是上面 $\mathcal I_\beta$ 公式里从 $\mathbf A$ 减去的那一项，即外参不确定度经耦合 $\mathbf B$ 渗透进内参的部分。$\mathbf A$（内参自信息）扣掉它，才是内参的净信息。</p>
+<blockquote>
+<p>不边缘化、假装外参已知（只用 $\mathbf A$ 求逆），精度下界会假性偏小。</p>
+</blockquote>
+<p>有了内参信息矩阵 $\mathcal I_\beta$，CRLB 的计算就三步——求逆、取对角、开方：</p>
+
+$$
+\mathrm{CRLB}_k=\sqrt{[\mathcal I_\beta^{-1}]_{kk}}
+$$
+
+<p>求逆是把信息（精度）翻成协方差下界（不精度）；取对角是提取第 $k$ 个参数的方差下界；开方把方差换成标准差（$\pm$ 多少）。如 $\mathrm{CRLB}_{f_x}=0.154$px 意味着：不管用什么算法，$f_x$ 的估计误差（1σ）都不可能小于 0.154px。这是实验设计（位姿、板、噪声）的属性，拍照前就能算。</p>
+<p>为什么是对角线之逆、不是逆对角线，这是最容易搞错的地方。直觉上&quot;信息越大精度越高&quot;让人以为 $\mathrm{CRLB}<em>k=1/\sqrt{\mathcal I</em>\beta[k,k]}$。用 2×2 的例子看清：</p>
+
+$$
+\mathcal I_\beta=\begin{pmatrix}a&b\\b&c\end{pmatrix},\qquad \mathcal I_\beta^{-1}=\frac{1}{ac-b^2}\begin{pmatrix}c&-b\\-b&a\end{pmatrix}
+$$
+
+<p>看上面 2×2 逆矩阵的左上块：它是 c/(ac − b²)，而不是 1/a。只有 b = 0（无耦合、对角阵）时才等于 1/a。耦合 b ≠ 0 时，行列式 ac − b² 改变了每个参数的方差下界。标定实例：只取对角元倒数约为 0.043px（错，假性偏小），取完整逆的对角约为 0.154px（对），差 3.5 倍。</p>
+<h3 id="最大似然的渐近精度">最大似然的渐近精度</h3>
 <p>下界是理论极限，最大似然估计实际能逼近它。大样本下</p>
 
-$$\sqrt{n}\,(\hat\theta_{\mathrm{MLE}}-\theta)\ \xrightarrow{\;d\;}\ \mathcal N\!\left(0,\ I_1^{-1}\right)$$
+$$
+\sqrt{n}\,(\hat\theta_{\mathrm{MLE}}-\theta)\ \xrightarrow{\;d\;}\ \mathcal N\!\left(0,\ I_1^{-1}\right)
+$$
 
 <p>其中 $I_1$ 为单次观测的信息。推导由泰勒展开：最大似然估计满足 $S(\hat\theta)=0$，在真值处展开得</p>
 
-$$\sqrt{n}\,(\hat\theta-\theta)\approx-\left(\tfrac{1}{n}H\right)^{-1}\!\cdot\,\tfrac{1}{\sqrt{n}}S$$
+$$
+\sqrt{n}\,(\hat\theta-\theta)\approx-\left(\tfrac{1}{n}H\right)^{-1}\!\cdot\,\tfrac{1}{\sqrt{n}}S
+$$
 
 <p>其中 $H$ 为对数似然的海森。由中心极限定理，标准化后的 score 收敛到均值为零、方差为 $I_1$ 的正态分布（$I_1$ 出现在分子，即 score 的方差）；由大数定律，海森的均值依概率收敛到 $-I_1$（$I_1$ 出现在分母，即海森的期望）。同一个 $I_1$ 在分子与分母各出现一次，相约后只剩它的逆。</p>
 <p><img src="https://uipv4.zywvvd.com:33030/HexoFiles/files/fisher_figs/05_mle_funnel.png" srcset="/img/loading.gif" lazyload alt="MLE 渐近正态"></p>
 <p>因此信息越大，最大似然估计越准，且大样本下达到 Cramér–Rao 下界（渐近有效）。高斯噪声下的非线性最小二乘等价于最大似然估计，其输出的不确定度近似为信息矩阵的逆。</p>
-<h2 id="可区分性与-KL-散度">可区分性与 KL 散度</h2>
+<h3 id="可区分性与-KL-散度">可区分性与 KL 散度</h3>
 <p>Fisher 信息可理解为参数变化引起的分布变化程度，即邻近两个参数有多容易区分。用 KL 散度严格化，真值参数与邻近参数各自对应的分布，在二者重合处的二阶展开为</p>
 
-$$D_{\mathrm{KL}}(p_\theta\,\|\,p_{\theta+\Delta\theta})\approx\frac{1}{2}\,\Delta\theta^\top\mathcal I\,\Delta\theta$$
+$$
+D_{\mathrm{KL}}(p_\theta\,\|\,p_{\theta+\Delta\theta})\approx\frac{1}{2}\,\Delta\theta^\top\mathcal I\,\Delta\theta
+$$
 
-<p>即 Fisher 信息是 KL 散度的 Hessian。证明依据一个细节：期望是对固定的第一个分布取的，与第二个分布的参数无关，故求导可自由进出期望。展开 KL 散度：</p>
+<p>即 <strong>Fisher 信息是 KL 散度的 Hessian</strong>。证明依据一个细节：期望是对固定的第一个分布取的，与第二个分布的参数无关，故求导可自由进出期望。展开 KL 散度：</p>
 
-$$D_{\mathrm{KL}}(p_\theta\,\|\,p_{\theta'})=\mathbb E_{p_\theta}\!\left[\ln\frac{p_\theta}{p_{\theta'}}\right]=\mathbb E_{p_\theta}[\ln p_\theta]-\mathbb E_{p_\theta}[\ln p_{\theta'}]$$
+$$
+D_{\mathrm{KL}}(p_\theta\,\|\,p_{\theta'})=\mathbb E_{p_\theta}\!\left[\ln\frac{p_\theta}{p_{\theta'}}\right]=\mathbb E_{p_\theta}[\ln p_\theta]-\mathbb E_{p_\theta}[\ln p_{\theta'}]
+$$
 
 <p>对第二个分布的参数求一阶导，第一项因不含该参数而为零；再求一次取期望，并令两个分布重合，二阶导即化为负曲率形式，也就是 $\mathcal I$。</p>
 <p><img src="https://uipv4.zywvvd.com:33030/HexoFiles/files/fisher_figs/03_kl_distinguishability.png" srcset="/img/loading.gif" lazyload alt="KL 可区分性"></p>
-<p>沿某方向的二次型接近零，表示该方向分布几乎不变、参数不可定，称为退化，对应信息矩阵的近零特征方向，此时该参数不可辨识。</p>
-<h2 id="作为度量的信息几何">作为度量的信息几何</h2>
+<p>沿某方向的二次型接近零，表示该方向分布几乎不变、参数不可定，称为<strong>退化</strong>，对应信息矩阵的近零特征方向，此时该参数不可辨识。</p>
+<h3 id="作为度量的信息几何">作为度量的信息几何</h3>
 <p>把不同 $\boldsymbol\theta$ 对应的分布视为流形上的点（参数为坐标），则 $\mathcal I$ 在每点定义内积：</p>
 
-$$\langle\Delta\boldsymbol\theta_1,\Delta\boldsymbol\theta_2\rangle=\Delta\boldsymbol\theta_1^\top\mathcal I\,\Delta\boldsymbol\theta_2$$
+$$
+\langle\Delta\boldsymbol\theta_1,\Delta\boldsymbol\theta_2\rangle=\Delta\boldsymbol\theta_1^\top\mathcal I\,\Delta\boldsymbol\theta_2
+$$
 
-<p>这正是黎曼几何里的度量张量，称为 Fisher-Rao 度量。</p>
+<p>这正是黎曼几何里的度量张量，称为 <strong>Fisher-Rao 度量</strong>。</p>
 <p><img src="https://uipv4.zywvvd.com:33030/HexoFiles/files/fisher_figs/06_fisher_rao.png" srcset="/img/loading.gif" lazyload alt="Fisher-Rao 度量"></p>
 <p>换参数化时，Fisher 信息按协变张量变换，分布间的距离不变，因此它属于模型本身的几何，与坐标选择无关。具体地，从参数 $\boldsymbol\theta$ 换到 $\boldsymbol\varphi$ 时，</p>
 
-$$\mathcal I_\varphi=\mathbf T^\top\mathcal I_\theta\mathbf T$$
+$$
+\mathcal I_\varphi=\mathbf T^\top\mathcal I_\theta\mathbf T
+$$
 
 <p>其中 $\mathbf T$ 为雅可比。自然梯度法以信息矩阵的逆作预条件：</p>
 
-$$\boldsymbol\theta\leftarrow\boldsymbol\theta-\eta\,\mathcal I^{-1}\nabla\mathcal L$$
+$$
+\boldsymbol\theta\leftarrow\boldsymbol\theta-\eta\,\mathcal I^{-1}\nabla\mathcal L
+$$
 
 <p>Jeffreys 先验正比于信息矩阵行列式的平方根，都是这一层几何的应用。</p>
-<h2 id="小结">小结</h2>
-<p>Fisher 信息是同一个量的多种等价表述：score 的方差、对数似然的负曲率、最大似然估计渐近方差的倒数、KL 散度的 Hessian、概率模型的 Fisher-Rao 度量。在高斯模型下它化为雅可比的加权二次型，只依赖雅可比与噪声协方差，因此可在观测前计算。它给出任何无偏估计的精度下界（Cramér–Rao 下界），大样本下估计器的不确定度近似为信息矩阵的逆，而退化方向（信息近零）对应不可辨识的参数。</p>
+<h3 id="小结">小结</h3>
+<p>Fisher 信息是同一个量的多种等价表述：</p>
+<ol>
+<li>score 的方差；</li>
+<li>对数似然的负曲率；</li>
+<li>最大似然估计渐近方差的倒数；</li>
+<li>KL 散度的 Hessian；</li>
+<li>概率模型的 Fisher-Rao 度量。</li>
+</ol>
+<p>在高斯模型下它化为雅可比的加权二次型，只依赖雅可比与噪声协方差，因此可在观测前计算。它给出任何无偏估计的精度下界（Cramér–Rao 下界），大样本下估计器的不确定度近似为信息矩阵的逆，而退化方向（信息近零）对应不可辨识的参数。</p>
+<p>相机标定的具体应用与可运行流水线，见《<a href="/notes/study/camera-imaging/fisher-information-calib/fisher-information-calib/">Fisher 信息：相机标定实操</a>》。</p>
+<h3 id="参考资料">参考资料</h3>
+<ul>
+<li><a target="_blank" rel="noopener" href="https://en.wikipedia.org/wiki/Fisher_information">Fisher information - Wikipedia</a></li>
+<li><a target="_blank" rel="noopener" href="https://en.wikipedia.org/wiki/Cram%C3%A9r%E2%80%93Rao_bound">Cramér–Rao bound - Wikipedia</a></li>
+<li>Cover T M, Thomas J A. <em>Elements of Information Theory</em>, Ch. 11</li>
+</ul>
 <link rel="stylesheet" href="/css/spoiler.css" type="text/css"><script src="/js/spoiler.js" type="text/javascript" async></script>
                 
 
@@ -1190,6 +1312,12 @@ $$\boldsymbol\theta\leftarrow\boldsymbol\theta-\eta\,\mathcal I^{-1}\nabla\mathc
                 <div class="post-prevnext my-3">
                   <article class="post-prev col-6">
                     
+                    
+                      <a href="/notes/study/camera-imaging/fisher-information-calib/fisher-information-calib/" title="Fisher 信息：相机标定仿真实操">
+                        <i class="iconfont icon-arrowleft"></i>
+                        <span class="hidden-mobile">Fisher 信息：相机标定仿真实操</span>
+                        <span class="visible-mobile">上一篇</span>
+                      </a>
                     
                   </article>
                   <article class="post-next col-6">
