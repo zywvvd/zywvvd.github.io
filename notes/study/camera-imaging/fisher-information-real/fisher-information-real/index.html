@@ -24,25 +24,25 @@
 <meta property="og:site_name" content="又见苍岚">
 <meta property="og:description" content="本文继续相机内参标定的工作, 之前仿真篇在有真值的数字孪生里算了 CRLB、验证了「在估计处算观测信息」这套方法可信（《Fisher 信息：相机标定仿真实操》，理论见《Fisher 信息与精度下界》）。但仿真篇留了一个缺口：真实标定没有真值，第 6 步的 Monte Carlo 验证做不了。 本文把同一套方法跑在真实采的图上，并用 k 折、独立测试、数据一致性把那步验证补回来——回答：这台相机的">
 <meta property="og:locale" content="zh_CN">
-<meta property="og:image" content="https://www.zywvvd.com/notes/study/camera-imaging/fisher-information-real/fisher-information-real/figs/chessboard_raw.jpg">
-<meta property="og:image" content="https://www.zywvvd.com/notes/study/camera-imaging/fisher-information-real/fisher-information-real/figs/chessboard_corners.jpg">
-<meta property="og:image" content="https://www.zywvvd.com/notes/study/camera-imaging/fisher-information-real/fisher-information-real/figs/test_error_map.png">
-<meta property="og:image" content="https://www.zywvvd.com/notes/study/camera-imaging/fisher-information-real/fisher-information-real/figs/noise_scatter.png">
-<meta property="og:image" content="https://www.zywvvd.com/notes/study/camera-imaging/fisher-information-real/fisher-information-real/figs/repeat_8groups.png">
-<meta property="og:image" content="https://www.zywvvd.com/notes/study/camera-imaging/fisher-information-real/fisher-information-real/figs/train_error_map.png">
-<meta property="og:image" content="https://www.zywvvd.com/notes/study/camera-imaging/fisher-information-real/fisher-information-real/figs/block_flow_comparison.png">
-<meta property="og:image" content="https://www.zywvvd.com/notes/study/camera-imaging/fisher-information-real/fisher-information-real/figs/block_flow_correlation.png">
-<meta property="og:image" content="https://www.zywvvd.com/notes/study/camera-imaging/fisher-information-real/fisher-information-real/figs/distortion_field.png">
-<meta property="og:image" content="https://www.zywvvd.com/notes/study/camera-imaging/fisher-information-real/fisher-information-real/figs/test_error_map.png">
-<meta property="og:image" content="https://www.zywvvd.com/notes/study/camera-imaging/fisher-information-real/fisher-information-real/figs/test_rms_vs_boardsize.png">
-<meta property="og:image" content="https://www.zywvvd.com/notes/study/camera-imaging/fisher-information-real/fisher-information-real/figs/error_level_map.png">
-<meta property="og:image" content="https://www.zywvvd.com/notes/study/camera-imaging/fisher-information-real/fisher-information-real/figs/test_residual_flow.png">
+<meta property="og:image" content="https://uipv4.zywvvd.com:33030/HexoFiles/files/fisher_figs_real/chessboard_raw.jpg">
+<meta property="og:image" content="https://uipv4.zywvvd.com:33030/HexoFiles/files/fisher_figs_real/chessboard_corners.jpg">
+<meta property="og:image" content="https://uipv4.zywvvd.com:33030/HexoFiles/files/fisher_figs_real/test_error_map.png">
+<meta property="og:image" content="https://uipv4.zywvvd.com:33030/HexoFiles/files/fisher_figs_real/noise_scatter.png">
+<meta property="og:image" content="https://uipv4.zywvvd.com:33030/HexoFiles/files/fisher_figs_real/repeat_8groups.png">
+<meta property="og:image" content="https://uipv4.zywvvd.com:33030/HexoFiles/files/fisher_figs_real/train_error_map.png">
+<meta property="og:image" content="https://uipv4.zywvvd.com:33030/HexoFiles/files/fisher_figs_real/block_flow_comparison.png">
+<meta property="og:image" content="https://uipv4.zywvvd.com:33030/HexoFiles/files/fisher_figs_real/block_flow_correlation.png">
+<meta property="og:image" content="https://uipv4.zywvvd.com:33030/HexoFiles/files/fisher_figs_real/distortion_field.png">
+<meta property="og:image" content="https://uipv4.zywvvd.com:33030/HexoFiles/files/fisher_figs_real/test_error_map.png">
+<meta property="og:image" content="https://uipv4.zywvvd.com:33030/HexoFiles/files/fisher_figs_real/test_rms_vs_boardsize.png">
+<meta property="og:image" content="https://uipv4.zywvvd.com:33030/HexoFiles/files/fisher_figs_real/error_level_map.png">
+<meta property="og:image" content="https://uipv4.zywvvd.com:33030/HexoFiles/files/fisher_figs_real/test_residual_flow.png">
 <meta property="article:published_time" content="2026-07-23T02:00:00.000Z">
-<meta property="article:modified_time" content="2026-07-23T09:48:30.427Z">
+<meta property="article:modified_time" content="2026-07-24T05:36:03.882Z">
 <meta property="article:author" content="Yiwei Zhang">
 <meta property="article:tag" content="Camera">
 <meta name="twitter:card" content="summary_large_image">
-<meta name="twitter:image" content="https://www.zywvvd.com/notes/study/camera-imaging/fisher-information-real/fisher-information-real/figs/chessboard_raw.jpg">
+<meta name="twitter:image" content="https://uipv4.zywvvd.com:33030/HexoFiles/files/fisher_figs_real/chessboard_raw.jpg">
   
   
   
@@ -902,7 +902,7 @@ document.addEventListener("readystatechange", function() {
                 
                   
                     <!-- compatible with older versions-->
-                    本文最后更新于：2026年7月23日 下午
+                    本文最后更新于：2026年7月24日 下午
                   
                 
               </p>
@@ -1248,8 +1248,8 @@ $$
 </ul>
 <p><strong>结论</strong>：三套数据（标定 cal_data + 噪声 cal_sigama + 测试 cal_test）<strong>检测全部成功</strong>（100%），整体有效；cal_data 有 20% 微动组——这本身是 §六归因要验证的（微动是否是 RMS&gt;σ_det 的主因；spoiler：剔微动后 RMS 没降，不是主因，是硬件）。</p>
 <p><strong>数据示例</strong>（原始棋盘 + 角点检测标注）：</p>
-<p><img src="figs/chessboard_raw.jpg" srcset="/img/loading.gif" lazyload alt="原始棋盘图"></p>
-<p><img src="figs/chessboard_corners.jpg" srcset="/img/loading.gif" lazyload alt="88 角点检测标注"></p>
+<p><img src="https://uipv4.zywvvd.com:33030/HexoFiles/files/fisher_figs_real/chessboard_raw.jpg" srcset="/img/loading.gif" lazyload alt="原始棋盘图"></p>
+<p><img src="https://uipv4.zywvvd.com:33030/HexoFiles/files/fisher_figs_real/chessboard_corners.jpg" srcset="/img/loading.gif" lazyload alt="88 角点检测标注"></p>
 <p><em>上：原始采集图（cal_data 2560×1440）；下：findChessboardCorners + cornerSubPix 亚像素检测的 88 角点（11×8 棋盘，彩色连线+序号）。cal_data 640/640、cal_test 64/65 检测成功。</em></p>
 <h3 id="四、独立测试方法">四、独立测试方法</h3>
 <blockquote>
@@ -1304,7 +1304,7 @@ $$
 </tbody>
 </table>
 <p>各组 RMS <strong>一致</strong>（差第 4 位）→ <strong>内参可靠</strong>；0.27 是 <strong>cal_test 泛化 gap（训练0.14→测试0.27）</strong>（非内参问题）；bias≈0（无系统偏置）。</p>
-<p><img src="figs/test_error_map.png" srcset="/img/loading.gif" lazyload alt="cal_test 残差光流"></p>
+<p><img src="https://uipv4.zywvvd.com:33030/HexoFiles/files/fisher_figs_real/test_error_map.png" srcset="/img/loading.gif" lazyload alt="cal_test 残差光流"></p>
 <h3 id="五、10-步实操">五、10 步实操</h3>
 <blockquote>
 <p>概念（§一）、数据（§三）、独立测试工具（§四）都已就位，下面把整条评估流程拆成 10 步落地： ①-⑤ 回答核心三问（地板在哪 / 差距多少 / 朝哪使劲），⑥-⑩ 从可靠性、数据量、泛化、一致性等更多角度反复验证同一个结论。</p>
@@ -1486,7 +1486,7 @@ $$
 <li>vs 仿真默认 σ_det=0.1：<strong>实测好 2.2×</strong>（CRLB ∝ σ_a，精度潜力相应提升）。</li>
 <li>σ_det=0.046 是<strong>物理地板</strong>（检测器决定的，与标定无关）。</li>
 </ul>
-<p><img src="figs/noise_scatter.png" srcset="/img/loading.gif" lazyload alt="静止连拍角点散布"></p>
+<p><img src="https://uipv4.zywvvd.com:33030/HexoFiles/files/fisher_figs_real/noise_scatter.png" srcset="/img/loading.gif" lazyload alt="静止连拍角点散布"></p>
 <p><em>图：6 个角点（中心 #43 + 边缘 #0/#87 等）跨 80 帧的位置散布（单位毫像素 mpx）。每个红点 = 一帧检测的残差 Δp=检测−组均值，散布大小 = 该角点检测噪声。<strong>v 方向（纵）散布 &gt; u 方向（横）</strong> → 各向异性（σ_v&gt;σ_u）。边缘角点（#0/#87）散布 ≈ 中心（#43），说明检测噪声在视场内较均匀。</em></p>
 <p><strong>→ σ_det 是第 3 步 Fisher 信息（I=（1/σ_a²）JᵀJ）、第 5 步地板判据（RMS/σ_det）的分母。</strong></p>
 <h4 id="第-2-步｜8-组重复标定">第 2 步｜8 组重复标定</h4>
@@ -1647,7 +1647,7 @@ $$
 </table>
 <p><strong>解读</strong>：fx/fy/k1 八组极一致（std/fx=0.004%）→ 标定高度可重复；rms 变异 0.15% → 同位姿假设成立 → std_emp 合法。</p>
 <h5 id="2-4-图表：8-组-θ̂-散布">2.4 图表：8 组 θ̂ 散布</h5>
-<p><img src="figs/repeat_8groups.png" srcset="/img/loading.gif" lazyload alt="8 组 θ̂ 散布"></p>
+<p><img src="https://uipv4.zywvvd.com:33030/HexoFiles/files/fisher_figs_real/repeat_8groups.png" srcset="/img/loading.gif" lazyload alt="8 组 θ̂ 散布"></p>
 <p><em>图：8 组标定的 fx/fy/cx/cy/k1（柱状，相对均值偏差 %）。柱高一致 → 可重复；微小差异 = 噪声实例造成的散布（std_emp）。</em></p>
 <p><strong>→ θ_mean（8 组均值）是第 3 步 Fisher 求值点；theta_std 是经验不确定度，等下和 CRLB 比看有效性。</strong></p>
 <h4 id="第-3-步｜Fisher-CRLB">第 3 步｜Fisher CRLB</h4>
@@ -2014,9 +2014,8 @@ $$
 </ul>
 <h5 id="6-4-解读">6.4 解读</h5>
 <ul>
-<li><strong>θ̂ 跨 80 折极稳</strong>（fx=1854.9±0.28，cv=0.015%）：换不同的位姿子集/噪声实例，内参几乎不变 → 可靠。</li>
-<li><strong>但跨折 std（0.28）≫ CRLB（0.054），std/CRLB≈5</strong>：实测散布是&quot;纯噪声理论&quot;的 5 倍。差额来自 &quot;用哪些位姿&quot;的子集敏感性 + 组间微动，<strong>不是纯随机噪声</strong>。这解释了为何 cx/cy 在第 3 步超 CRLB—— 理论只算噪声，实测还吃系统误差。</li>
-<li><strong>→ 衔接第 7 步</strong>：既然散布&gt;理论，加更多数据能否压下去？第 7 步看 k 帧 vs 精度。 <strong>→ 衔接第 8 步</strong>：80 折 std 是最终不确定度的三路之一（取保守上界）。</li>
+<li><strong>→ 衔接第 7 步</strong>：跨折散布 &gt; 理论 CRLB，加更多数据能否压下去？第 7 步看 k 帧 vs 精度。</li>
+<li><strong>→ 衔接第 8 步</strong>：80 折 std 是最终不确定度的三路之一（取保守上界）。</li>
 </ul>
 <h4 id="第-7-步｜精度-vs-数据量（硬件-vs-数据）">第 7 步｜精度 vs 数据量（硬件 vs 数据）</h4>
 <h5 id="7-1-原理：加图降的是理论精度，降不动实际-RMS">7.1 原理：加图降的是理论精度，降不动实际 RMS</h5>
@@ -2079,7 +2078,11 @@ $$
 <li><strong>再次印证</strong>：rms 卡硬件，加数据（×6）降不动。</li>
 </ul>
 <h5 id="7-4-解读">7.4 解读</h5>
-<p><strong>这是&quot;硬件 vs 数据&quot;的关键判决</strong>：加 5 倍数据，RMS 几乎不动（0.1379→0.1380），只有 CRLB 降。说明 RMS=0.138 不是&quot;图不够多&quot;，而是镜头剩余像差 + 靶标不平的硬件天花板——<strong>排除归因候选 （b） 运动（微动）、印证候选 （c） 硬件</strong>。要更准须换硬件（玻璃镀铬靶 + 更好镜头），不是加图。 <strong>→ 衔接第 8 步</strong>：k=5（400 张）给出最稳的 θ̂_final，作为最终内参。</p>
+<p><strong>结论（硬件 vs 数据的关键判决）</strong>：加 5 倍数据，RMS 几乎不动（0.1379→0.1380），只有 CRLB 降。说明 RMS=0.138 不是&quot;图不够多&quot;，而是镜头剩余像差 + 靶标不平的硬件天花板——排除归因候选（b）运动（微动）、印证候选（c）硬件。要更准须换硬件（玻璃镀铬靶 + 更平镜头），不是加图。</p>
+<p><strong>实践含义：没必要在同一位置重复拍摄标定图</strong>。同一位姿的连拍帧高度相似（只差噪声实例），对内参估计是重复信息——k=1→5 帧（80→400 张）RMS 不动、CRLB 虽降但远大于实际散布（std/CRLB≈5），多拍只会无谓增加标定求解的参数规模（外参 6×N 增大、LM 变慢），不改善实际精度。每位姿拍 1 张、把精力放在<strong>位姿多样性</strong>（位置九宫格 + 俯仰/偏航/滚转 + 远近）上才是有效信息——多样位姿才真正增加 Fisher 信息、改善参数解耦（否则 fx/cy 等耦合退化、CRLB 爆 NaN）。</p>
+<blockquote>
+<p>重复结构（8 帧/位姿）的唯一价值是<strong>重复性分析</strong>（8 组重组 = 真实版 Monte Carlo），不是&quot;更多标定数据&quot;。 <strong>→ 衔接第 8 步</strong>：每位姿取 1 张（80 张扁平）给出 θ̂_final。</p>
+</blockquote>
 <h4 id="第-8-步｜最终内参-误差光流">第 8 步｜最终内参 + 误差光流</h4>
 <h5 id="8-1-原理：三路整合给最终内参，光流看系统误差在哪">8.1 原理：三路整合给最终内参，光流看系统误差在哪</h5>
 <p>最终内参 = <code>calibrate_full</code> 对<strong>扁平 80 张</strong>（每位姿 1 张，无重复帧）的标定结果 θ̂_full，不确定度取 <strong>三路保守上界</strong> <code>max(CRLB, std_repeat, std_cv5)</code>——任一条路给出的不确定度都不会比这更乐观，稳妥。</p>
@@ -2165,7 +2168,7 @@ $$
 <li>fx 相对精度 <strong>0.0041%</strong>（不确定度 0.279/fx），<strong>远优于工程判据 0.1-0.3%</strong>。</li>
 <li><strong>训练光流</strong>：RMS=0.169，<strong>边缘/中心≈1.06</strong>（边缘略大，镜头边缘像差），<strong>v&gt;u</strong>（各向异性，印证 σ_v&gt;σ_u）。</li>
 </ul>
-<p><img src="figs/train_error_map.png" srcset="/img/loading.gif" lazyload alt="训练误差光流"></p>
+<p><img src="https://uipv4.zywvvd.com:33030/HexoFiles/files/fisher_figs_real/train_error_map.png" srcset="/img/loading.gif" lazyload alt="训练误差光流"></p>
 <blockquote>
 <p>逐角点光流箭头多而杂（系统趋势 + 检测噪声混在一起）。标准测试流程里另算一份<strong>分块平均残差场</strong> （按像素位置分 8×10 块，块内取平均，滤掉随机噪声显系统趋势）+ 它的<strong>向量相关性</strong>，作为第 9 步测试评估的固定输出（见 9.4），不在此单独展开。</p>
 </blockquote>
@@ -2246,10 +2249,10 @@ $$
 </tbody>
 </table>
 <p>块平均（0.03/0.12）远小于全局 RMS（0.14/0.27）：大部分残差是随机噪声，被平均压掉。测试集左下角 max≈0.94 是 k3 表达不了的边缘像差——硬件上限的空间位置。</p>
-<p><img src="figs/block_flow_comparison.png" srcset="/img/loading.gif" lazyload alt="分块光流对比"></p>
+<p><img src="https://uipv4.zywvvd.com:33030/HexoFiles/files/fisher_figs_real/block_flow_comparison.png" srcset="/img/loading.gif" lazyload alt="分块光流对比"></p>
 <p><strong>结果二：残差向量相关性（核心）</strong></p>
 <figure class="highlight routeros"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><code class="hljs routeros">组间相关(8 组,同位姿不同帧):  <span class="hljs-attribute">mean</span>=0.945   <span class="hljs-attribute">min</span>=0.910   <span class="hljs-attribute">max</span>=0.984   ← 高度可复现<br>组-vs-测试(8 组各对测试):      <span class="hljs-attribute">mean</span>=0.012   (逐组 -0.02~0.04)        ← 不相关<br>训练平均场 vs 测试场:          0.012<br></code></pre></td></tr></table></figure>
-<p><img src="figs/block_flow_correlation.png" srcset="/img/loading.gif" lazyload alt="分块残差向量相关性"></p>
+<p><img src="https://uipv4.zywvvd.com:33030/HexoFiles/files/fisher_figs_real/block_flow_correlation.png" srcset="/img/loading.gif" lazyload alt="分块残差向量相关性"></p>
 <p><strong>怎么读（两层结论，都重要）</strong>：</p>
 <ul>
 <li><strong>组间相关 0.94 ≫ 0</strong>：同位姿跨噪声实例（8 组只差取了哪一帧）残差场几乎一样 → 残差是 <strong>系统性/确定性</strong>的（由位姿决定），不是随机噪声。这直接证明 <strong>RMS&gt;σ_det 是系统误差</strong>，而非噪声涨落（若纯噪声，组间相关应≈0，RMS 也就≈σ_det）。</li>
@@ -2303,7 +2306,7 @@ $$
 </tbody>
 </table>
 <p>残差 max / 像差 max = 0.94/275 = <strong>0.34%</strong> → 模型捕获了 99.9%+ 的镜头畸变。</p>
-<p><img src="figs/distortion_field.png" srcset="/img/loading.gif" lazyload alt="畸变模型像差场 vs 残差场"></p>
+<p><img src="https://uipv4.zywvvd.com:33030/HexoFiles/files/fisher_figs_real/distortion_field.png" srcset="/img/loading.gif" lazyload alt="畸变模型像差场 vs 残差场"></p>
 <p>这把 train-vs-test≈0 的疑问说清：<strong>固定像差是存在的（275px，模型已建成 δ（u，v） 这张固定图）</strong>；残差（0.94px）之所以位姿相关、不构成固定图，是因为它是&quot;δ 之外的高阶残余 + 靶标方格不均匀 + 外参传播&quot;的混合，按像素分块时被位姿打乱。所以&quot;硬件上限&quot;的真相是：镜头主畸变（275px 量级）已被模型吃掉，剩下的 &lt;1px 残差是靶标/高阶/位姿残余——这部分加图降不动（第 7 步），换镜头+玻璃靶才能降。</p>
 <h5 id="9-5-解读">9.5 解读</h5>
 <ul>
@@ -2311,7 +2314,7 @@ $$
 <li><strong>0.27 &gt; 训练 0.14</strong> 是 cal_test 的泛化 gap：测试集位姿覆盖/难度不同（且含测试集自身噪声）， <strong>不是内参问题</strong>。bias≈0 说明无系统偏置。</li>
 <li><strong>→ 衔接第 10 步</strong>：泛化一致还不够，最后用&quot;数据一致性&quot;正面回答&quot;内参是不是数据无关的物理常量&quot;。</li>
 </ul>
-<p><img src="figs/test_error_map.png" srcset="/img/loading.gif" lazyload alt="测试误差光流"></p>
+<p><img src="https://uipv4.zywvvd.com:33030/HexoFiles/files/fisher_figs_real/test_error_map.png" srcset="/img/loading.gif" lazyload alt="测试误差光流"></p>
 <h5 id="9-6-测试误差-vs-标定板大小：近拍脱焦（非畸变）">9.6 测试误差 vs 标定板大小：近拍脱焦（非畸变）</h5>
 <p>测试 RMS 0.27 比训练 0.14 高，除位姿覆盖不同外，还有一个结构性来源：<strong>标定板在画面里越大（离相机越近）的图，误差越大</strong>。把 64 张测试图按各自的板视大小（角点到质心均距）与每图 RMS 算相关：</p>
 <table>
@@ -2341,7 +2344,7 @@ $$
 </tbody>
 </table>
 <p>按板大小分组：大板（&gt;293 px）平均 RMS <strong>0.317</strong>，小板 <strong>0.173</strong>，约 2 倍。</p>
-<p><img src="figs/test_rms_vs_boardsize.png" srcset="/img/loading.gif" lazyload alt="测试误差 vs 板大小"></p>
+<p><img src="https://uipv4.zywvvd.com:33030/HexoFiles/files/fisher_figs_real/test_rms_vs_boardsize.png" srcset="/img/loading.gif" lazyload alt="测试误差 vs 板大小"></p>
 <p><strong>判定为近距离脱焦，而非畸变或模型问题</strong>：</p>
 <ul>
 <li>若是边缘畸变，误差应随角点离图像中心的归一半径增大（畸变 <code>r²</code> 项）；但这里与边缘半径几乎无关（−0.14），与板视大小强相关（+0.68）。</li>
@@ -2956,9 +2959,9 @@ $$
 </tbody>
 </table>
 <p>训练 RMS = 0.1379 px（每图 p50=0.133，p95=0.176，max=0.218）。</p>
-<p><img src="figs/error_level_map.png" srcset="/img/loading.gif" lazyload alt="训练残差图"></p>
+<p><img src="https://uipv4.zywvvd.com:33030/HexoFiles/files/fisher_figs_real/error_level_map.png" srcset="/img/loading.gif" lazyload alt="训练残差图"></p>
 <p>测试（64 张独立位姿，固定内参 → solvePnP）：泛化 RMS = 0.2717 px（每图 p50=0.207，p95=0.438，max=0.720）；bias u=+0.0000、v=−0.0002 px（无系统偏置）；std u=0.179、v=0.205 px（v&gt;u，各向异性，印证 σ_v&gt;σ_u）。</p>
-<p><img src="figs/test_residual_flow.png" srcset="/img/loading.gif" lazyload alt="测试残差光流"></p>
+<p><img src="https://uipv4.zywvvd.com:33030/HexoFiles/files/fisher_figs_real/test_residual_flow.png" srcset="/img/loading.gif" lazyload alt="测试残差光流"></p>
 <p>训练 RMS 0.138 &lt; 测试 0.272：差值是泛化 gap（测试集位姿/难度不同，并非内参变差）；bias≈0 说明无系统投影偏置。结果与 §九 一致——内参是可靠、可泛化的物理量，精度被硬件封顶。</p>
 <h3 id="小结">小结</h3>
 <p>整条评估链收敛到一句话：这台相机+靶，fx 相对精度 0.02%（跨独立数据集可保证），重投影 RMS 0.14 px 是硬件天花板——随机误差已达下界，内参经 10 步验证是可靠的物理常量，要更准须换硬件，不是加图或改代码。</p>
