@@ -35,7 +35,7 @@
 <meta property="og:image" content="https://uipv4.zywvvd.com:33030/HexoFiles/files/structured_light/colored_front.png">
 <meta property="og:image" content="https://uipv4.zywvvd.com:33030/HexoFiles/files/structured_light/speckle_left_vis.png">
 <meta property="article:published_time" content="2026-07-30T02:00:00.000Z">
-<meta property="article:modified_time" content="2026-07-30T01:01:05.397Z">
+<meta property="article:modified_time" content="2026-07-30T03:40:20.995Z">
 <meta property="article:author" content="Yiwei Zhang">
 <meta property="article:tag" content="3D">
 <meta property="article:tag" content="结构光">
@@ -688,7 +688,7 @@ document.addEventListener("readystatechange", function() {
         <i class="iconfont icon-chart"></i>
         
           <!-- compatible with older versions-->
-          2.9k 字
+          3.3k 字
         
       </span>
     
@@ -700,7 +700,7 @@ document.addEventListener("readystatechange", function() {
         
         
           <!-- compatible with older versions-->
-          25 分钟
+          28 分钟
         
       </span>
     
@@ -903,7 +903,7 @@ document.addEventListener("readystatechange", function() {
                 
                   
                     <!-- compatible with older versions-->
-                    本文最后更新于：2026年7月30日 上午
+                    本文最后更新于：2026年7月30日 中午
                   
                 
               </p>
@@ -1088,7 +1088,21 @@ $$</p>
 <p>视差每差 1 像素（$|dd|=1$），深度差 $\Delta Z=Z^2/(fB)$。$\Delta Z\propto Z^2$——深度精度随距离平方退化，此为三角测距的几何属性。子像素匹配使视差精度达 0.1 px 量级，设子像素噪声 $\sigma_d$，则深度噪声 $\text{RMS}\approx\sigma_d,Z^2/(fB)$。</p>
 <h3 id="1-6-整流与视差搜索窗（量程）">1.6 整流与视差搜索窗（量程）</h3>
 <p><strong>整流（rectification）</strong>：两相机物理上不严格平行同向（有微小旋转 $R$ 和基线位移 $t$）。出厂标定测出 $R/t$，据此对左右图各算一个<strong>单应变换</strong>（homography），把两图重采样到「光轴平行、像面共面、基线水平、对应点同行」的规范化姿态。</p>
-<p><strong>R/T 与单应的关系</strong>：$R/t$ 是几何起因；虚拟 3D 旋转绕光心，投影到图像上就是 2D 单应 $H=K,R_{\text{rect}},K^{-1}$。链条：$R/t$（3D）→ 虚拟旋转 → 诱导单应（2D）→ warp 重采样。实现：去畸变（非线性）+ 单应 warp（线性）复合，预计算为像素重映射表。</p>
+<p><strong>R/T 与单应的关系——为什么整流在图像上是单应变换</strong>：整流的几何起因是 $R/t$（标定测出的两相机 3D 相对姿态），但实际作用在图像上的是单应变换。推导如下。</p>
+<p>设相机内参矩阵为 $K$（$3\times3$），3D 物点 $P$ 的原始投影（齐次坐标）为：</p>
+<p>$$<br>
+\lambda, p = K,P<br>
+$$</p>
+<p>其中 $p=(u,v,1)^{\mathsf{T}}$ 是像点齐次坐标，$\lambda$ 是深度尺度因子。把相机绕光心做一个<strong>虚拟旋转</strong> $R_v$（只转不移），物点 $P$ 不动但相机坐标系变了，在新坐标系下 $P$ 变为 $P’=R_v,P$，新投影为 $\lambda’ p’ = K R_v P$。从原始投影反解 $P = \lambda K^{-1}p$，代入新投影：</p>
+<p>$$<br>
+\lambda’ p’ = K R_v \lambda K^{-1} p = \lambda (K R_v K^{-1}) p<br>
+$$</p>
+<p>齐次坐标下比例因子 $\lambda/\lambda’$ 不影响，故：</p>
+<p>$$<br>
+\boxed{,p’ \sim H,p,\quad H = K,R_v,K^{-1},}<br>
+$$</p>
+<p><strong>这就是关键结论</strong>：相机绕光心的 3D 旋转，在图像上的效果恰好是一个 2D 单应 $H=K,R_v,K<sup>{-1}$。直觉上：$K</sup>{-1}$ 把像素还原成光线方向（归一化坐标）→ $R_v$ 旋转光线 → $K$ 转回像素坐标。</p>
+<p><strong>整流如何应用</strong>：① 由标定的 $R/t$ 构造整流旋转 $R_{\text{rect}}$（Bouguet 法：以基线方向 $t/|t|$ 为新 X 轴构造正交基），使基线水平、光轴平行；② 左相机虚拟旋转 $R_L=R_{\text{rect}}$，右相机 $R_R=R_{\text{rect}}\cdot R$；③ 各自诱导单应 $H_L=K_L R_{\text{rect}} K_L^{-1}$、$H_R=K_R R_{\text{rect}} R K_R^{-1}$；④ 对每像素执行去畸变（非线性）+ 单应 warp（线性），复合为像素重映射表，预计算一次查表完成。链条：$R/t$（标定）→ $R_{\text{rect}}$（Bouguet）→ $H=K R_v K^{-1}$（诱导单应）→ warp → 整流图。</p>
 <p><img src="https://uipv4.zywvvd.com:33030/HexoFiles/files/structured_light/rectification.png" srcset="/img/loading.gif" lazyload alt="整流：把两幅图变换到对应点同行，匹配由二维搜索降为一维"></p>
 <p><strong>视差搜索窗</strong> $[d_{\min},d_{\max}]$：SGBM 的配置参数，非物理常量。由 <code>DISPARITY_OFFSET</code>（$d_{\min}$）和 <code>DISPARITY_NUM</code>（$N$）决定，$d_{\max}=d_{\min}+N$。该窗经 $Z=fB/d$ 换算即工作量程：</p>
 <p>$$<br>
@@ -1496,6 +1510,12 @@ $$</p>
                 <div class="post-prevnext my-3">
                   <article class="post-prev col-6">
                     
+                    
+                      <a href="/notes/3d/gimbal-lock/gimbal-lock/" title="万向节死锁（Gimbal Lock）">
+                        <i class="iconfont icon-arrowleft"></i>
+                        <span class="hidden-mobile">万向节死锁（Gimbal Lock）</span>
+                        <span class="visible-mobile">上一篇</span>
+                      </a>
                     
                   </article>
                   <article class="post-next col-6">
