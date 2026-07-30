@@ -35,7 +35,7 @@
 <meta property="og:image" content="https://uipv4.zywvvd.com:33030/HexoFiles/files/structured_light/colored_front.png">
 <meta property="og:image" content="https://uipv4.zywvvd.com:33030/HexoFiles/files/structured_light/speckle_left_vis.png">
 <meta property="article:published_time" content="2026-07-30T02:00:00.000Z">
-<meta property="article:modified_time" content="2026-07-30T06:04:40.412Z">
+<meta property="article:modified_time" content="2026-07-30T06:26:20.958Z">
 <meta property="article:author" content="Yiwei Zhang">
 <meta property="article:tag" content="3D">
 <meta property="article:tag" content="结构光">
@@ -688,7 +688,7 @@ document.addEventListener("readystatechange", function() {
         <i class="iconfont icon-chart"></i>
         
           <!-- compatible with older versions-->
-          3.4k 字
+          3.7k 字
         
       </span>
     
@@ -700,7 +700,7 @@ document.addEventListener("readystatechange", function() {
         
         
           <!-- compatible with older versions-->
-          29 分钟
+          32 分钟
         
       </span>
     
@@ -1129,7 +1129,13 @@ H = KR_vK^{-1}
 $$
 
 <p>直觉上：K 的逆矩阵把像素还原成光线方向（归一化坐标），R_v 旋转光线，K 转回像素坐标——三步复合即为 H。</p>
-<p><strong>整流如何应用</strong>：① 由标定的 $R/t$ 构造整流旋转 $R_{\text{rect}}$（Bouguet 法：以基线方向 $t/|t|$ 为新 X 轴构造正交基），使基线水平、光轴平行；② 左相机虚拟旋转 $R_L=R_{\text{rect}}$，右相机 $R_R=R_{\text{rect}}\cdot R$；③ 各自诱导单应 $H_L=K_L R_{\text{rect}} K_L^{-1}$、$H_R=K_R R_{\text{rect}} R K_R^{-1}$；④ 对每像素执行去畸变（非线性）+ 单应 warp（线性），复合为像素重映射表，预计算一次查表完成。链条：$R/t$（标定）→ $R_{\text{rect}}$（Bouguet）→ $H=K R_v K^{-1}$（诱导单应）→ warp → 整流图。</p>
+<p><strong>整流如何应用</strong>：① 由标定的 $R/t$ 构造整流旋转 $R_{\text{rect}}$（Bouguet 法：以基线方向 $t/|t|$ 为新 X 轴构造正交基），使基线水平、光轴平行；② 左相机虚拟旋转 $R_L=R_{\text{rect}}$，右相机 $R_R=R_{\text{rect}}\cdot R$；③ 各自诱导单应（公式见下）；④ 对每像素执行去畸变（非线性）+ 单应 warp（线性），复合为像素重映射表，预计算一次查表完成。链条：$R/t$（标定）→ $R_{\text{rect}}$（Bouguet）→ 单应 $H$（输出端用公共 $K_{\text{new}}$）→ warp → 整流图。</p>
+
+$$
+H_L=K_{\text{new}}R_{\text{rect}}K_L^{-1},\qquad H_R=K_{\text{new}}R_{\text{rect}}RK_R^{-1}
+$$
+
+<p><strong>焦距如何被统一</strong>：$H_L$、$H_R$ 输出端用的是<strong>同一个公共内参 $K_{\text{new}}$</strong>，输入端才保留各自不同的 $K_L$、$K_R$。这和前面「两端同一个 $K$」的单应不同——那只统一朝向，焦距仍各是各的（左 $f_L$、右 $f_R$）。把输出端换成 $K_{\text{new}}$ 后，两张图都被重采样进同一个虚拟相机，焦距统一为公共值 $f_{\text{new}}$；镜头本身不动，只是每个像素按 $H$ 重新落位、新像素网格改用 $f_{\text{new}}$ 计量。读法从右往左：$K_i$ 的逆把原图像素还原成光线（剥掉该相机自己的 $f_i$），$R_i$ 把光线转到公共朝向，$K_{\text{new}}$ 用公共焦距投回像素。$f_{\text{new}}$ 是算法自选的自由参数，Bouguet / OpenCV 取<strong>两个相机焦距的平均</strong>，让整流图像素尺度贴近原图。基线则化为两个投影中心在水平方向的错开 $f_{\text{new}}B$，即视差——整流后两相机除这点水平错开外其余内参全同，故式子里只剩一个 $f$（即 $f_{\text{new}}$）。</p>
 <p><img src="https://uipv4.zywvvd.com:33030/HexoFiles/files/structured_light/rectification.png" srcset="/img/loading.gif" lazyload alt="整流：把两幅图变换到对应点同行，匹配由二维搜索降为一维"></p>
 <p><strong>视差搜索窗</strong> $[d_{\min},d_{\max}]$：SGBM 的配置参数，非物理常量。由 <code>DISPARITY_OFFSET</code>（$d_{\min}$）和 <code>DISPARITY_NUM</code>（$N$）决定，$d_{\max}=d_{\min}+N$。该窗经 $Z=fB/d$ 换算即工作量程：</p>
 
