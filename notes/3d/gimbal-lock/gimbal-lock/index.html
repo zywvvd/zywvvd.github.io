@@ -28,7 +28,7 @@
 <meta property="og:image" content="https://uipv4.zywvvd.com:33030/HexoFiles/files/gimbal_lock/gimbal_lock.gif">
 <meta property="og:image" content="https://uipv4.zywvvd.com:33030/HexoFiles/files/gimbal_lock/gimbal_airplane.png">
 <meta property="article:published_time" content="2026-07-30T03:32:00.000Z">
-<meta property="article:modified_time" content="2026-07-30T03:40:21.637Z">
+<meta property="article:modified_time" content="2026-07-30T06:02:21.111Z">
 <meta property="article:author" content="Yiwei Zhang">
 <meta property="article:tag" content="3D">
 <meta name="twitter:card" content="summary_large_image">
@@ -677,7 +677,7 @@ document.addEventListener("readystatechange", function() {
         <i class="iconfont icon-chart"></i>
         
           <!-- compatible with older versions-->
-          2.9k 字
+          3.8k 字
         
       </span>
     
@@ -689,7 +689,7 @@ document.addEventListener("readystatechange", function() {
         
         
           <!-- compatible with older versions-->
-          25 分钟
+          32 分钟
         
       </span>
     
@@ -892,7 +892,7 @@ document.addEventListener("readystatechange", function() {
                 
                   
                     <!-- compatible with older versions-->
-                    本文最后更新于：2026年7月30日 中午
+                    本文最后更新于：2026年7月30日 下午
                   
                 
               </p>
@@ -906,9 +906,11 @@ document.addEventListener("readystatechange", function() {
 <span id="more"></span>
 <h2 id="欧拉角与旋转轴">欧拉角与旋转轴</h2>
 <p>三维旋转有 3 个自由度，欧拉角用三个角度 $\psi,\theta,\varphi$ 表示一次完整旋转，方式是绕指定轴依次转三次。以航空常用的 ZYX 顺序（yaw-pitch-roll）为例：</p>
-<p>$$<br>
-R = R_z(\psi),R_y(\theta),R_x(\varphi)<br>
-$$</p>
+
+$$
+R = R_z(\psi)\,R_y(\theta)\,R_x(\varphi)
+$$
+
 <p>其中 $\psi$（yaw，偏航）绕 $z$ 轴，$\theta$（pitch，俯仰）绕 $y$ 轴，$\varphi$（roll，滚转）绕 $x$ 轴。</p>
 <p>按内旋（intrinsic，动轴）约定，这三个轴是刚体自身的机体轴，并且会随前一次转动而改变：每次旋转都绕&quot;此刻机体上&quot;的那根轴进行。各步旋转的轴承轴在世界坐标系中的指向如下：</p>
 <table>
@@ -940,6 +942,42 @@ $$</p>
 <p>yaw 的轴承轴固定在世界竖直方向：它是顺序中最外层（最先施加）的旋转，机体尚未运动时即与世界 $z$ 重合，此后不再改变。这与航向的物理含义一致——航向由罗盘测量，罗盘测定的是绕地垂线的转角，改变俯仰不会改变航向读数。pitch 与 roll 的轴承轴则随前序转动而变化。</p>
 <p>同一矩阵 $R_z(\psi)R_y(\theta)R_x(\varphi)$ 也可按外旋（extrinsic，定轴）理解为绕固定世界轴依次转 $x\to y\to z$（顺序相反），内旋 ZYX 与外旋 XYZ 给出相同的旋转矩阵。死锁与选用动轴还是定轴无关：两种解读下奇点都出现在 $\theta=\pm90°$。</p>
 <p>欧拉角是最小参数（3 个角）表示，对人最直观，但当中间角 $\theta=\pm90°$ 时会出现奇点，即万向节死锁。</p>
+<h2 id="内旋与外旋：同一矩阵的两种读法">内旋与外旋：同一矩阵的两种读法</h2>
+<p>前面提到 $R_z(\psi)R_y(\theta)R_x(\varphi)$ 可按内旋（动轴）或外旋（定轴）两种方式理解。这里把二者的关系、以及&quot;外旋是否也有死锁&quot;讲透。</p>
+<h3 id="同一个矩阵，两种操作顺序">同一个矩阵，两种操作顺序</h3>
+<p>矩阵 $R=R_z(\psi)R_y(\theta)R_x(\varphi)$ 对应两种等价的物理操作：</p>
+<ul>
+<li><strong>内旋（机体轴）</strong>：每次绕<strong>当前机体轴</strong>转，顺序 $z\to y\to x$，机体轴随前一次转动而改变。复合方式是<strong>右乘</strong>（新旋转追加到右边）：</li>
+</ul>
+
+$$
+R = I \,\xrightarrow{\,\cdot R_z(\psi)\,}\, R_z(\psi) \,\xrightarrow{\,\cdot R_y(\theta)\,}\, R_z(\psi)R_y(\theta) \,\xrightarrow{\,\cdot R_x(\varphi)\,}\, R_z(\psi)R_y(\theta)R_x(\varphi)
+$$
+
+<ul>
+<li><strong>外旋（世界轴）</strong>：每次绕<strong>固定世界轴</strong>转，顺序 $x\to y\to z$（顺序相反），轴永远不动。复合方式是<strong>左乘</strong>（新旋转加到左边）：</li>
+</ul>
+
+$$
+R = I \,\xrightarrow{\,R_x(\varphi)\cdot\,}\, R_x(\varphi) \,\xrightarrow{\,R_y(\theta)\cdot\,}\, R_y(\theta)R_x(\varphi) \,\xrightarrow{\,R_z(\psi)\cdot\,}\, R_z(\psi)R_y(\theta)R_x(\varphi)
+$$
+
+<p>两条路径终点完全相同。一般定理：<strong>内旋按某轴序 = 外旋按反序</strong>（内旋 ZYX = 外旋 XYZ）。</p>
+<h3 id="为什么相等：共轭证明">为什么相等：共轭证明</h3>
+<p>更深的理由在于&quot;绕已转动的机体轴&quot;与&quot;绕固定轴&quot;的对应。设机体当前姿态为 $R$，机体上某根轴在体系里是 $\hat u$，则它在世界系里的方向是 $R\hat u$。绕这条<strong>世界系中的 $R\hat u$ 轴</strong>转 $\alpha$，等价于共轭：</p>
+
+$$
+\mathrm{Rot}(R\hat u,\alpha) = R\,\mathrm{Rot}(\hat u,\alpha)\,R^{-1}
+$$
+
+<p>（把机体转回世界、绕世界轴转、再转回去。）由此可证：内旋&quot;先绕体 $e_1$ 转 $\alpha_1$、再绕（新）体 $e_2$ 转 $\alpha_2$“等于外旋&quot;先绕世 $e_2$ 转 $\alpha_2$、再绕世 $e_1$ 转 $\alpha_1$”，二者都得 $R_{e_1}(\alpha_1)R_{e_2}(\alpha_2)$。三个轴同理，即得内旋 ZYX = 外旋 XYZ。</p>
+<h3 id="外旋也有死锁，且在同一处">外旋也有死锁，且在同一处</h3>
+<p>既然内旋与外旋给出<strong>同一个矩阵</strong> $R_z(\psi)R_y(\theta)R_x(\varphi)$，而死锁是这套三角度参数化的奇点（雅可比行列式 $\det M=\cos\theta$，在 $\theta=\pm90°$ 处为零），那么<strong>外旋同样有死锁，且恰在中间角 $\theta=\pm90°$</strong>——与内旋完全一样。死锁是参数化的性质，不取决于用内旋还是外旋去&quot;读&quot;这个矩阵。</p>
+<h3 id="但外旋的几何图像不同">但外旋的几何图像不同</h3>
+<p>内旋有现成的&quot;嵌套万向节&quot;物理图像：三个环的轴承（动轴）在 $\theta=90°$ 时重合。外旋则<strong>三个轴都是固定的世界轴，永远互相垂直，永远不会重合</strong>——所以外旋里看不到&quot;两根轴碰到一起&quot;的画面。那外旋的死锁是怎么&quot;形成&quot;的？</p>
+<p>关键在于外旋是<strong>顺序施加</strong>的：先绕世界 $x$ 转 $\varphi$，再绕世界 $y$ 转 $\theta$，最后绕世界 $z$ 转 $\psi$。$\theta=90°$ 时，最早那个&quot;绕世界 $x$&quot;的转动，其效果被后面的世界 $y(90°)$、世界 $z$ 两次转动<strong>搬运</strong>后，最终落到了世界 $z$ 轴上——与最后那个&quot;绕世界 $z$&quot;的转动方向重合。于是旋钮 $\varphi$ 与 $\psi$ 的净效果变成绕同一根世界 $z$ 轴，二者不再独立。</p>
+<p>用公式看最清楚（$\theta=90°$ 时）：改变 $\varphi$ 引起的姿态变化，其空间角速度为 $R\hat x=-\hat z$（机体 $x$ 轴此刻指向世界 $-z$）；改变 $\psi$ 引起的空间角速度直接就是 $\hat z$。两者都沿世界 $z$ 轴（$\pm$ 方向），故线性相关、自由度丢失。<strong>内旋里是&quot;两根动轴重合&quot;，外旋里是&quot;一个早转动的效果被搬运到与后转动同轴&quot;——同一件事的两种说法。</strong></p>
+<p>一句话：<strong>死锁是三角度参数化的固有奇点，内旋外旋只是同一矩阵的两种叙述；换表示（四元数/旋转矩阵）即可消除。</strong></p>
 <h2 id="关键区分：轴承轴与物体自身轴">关键区分：轴承轴与物体自身轴</h2>
 <p>上表的三根轴承轴对应一个三环嵌套的万向节：外环提供 yaw（钉在世界 $z$）、中环提供 pitch、内环提供 roll，物体固定在最内环上。这里需要区分两个概念：</p>
 <ul>
@@ -953,40 +991,54 @@ $$</p>
 <p>下面从几何、微分、矩阵三个层面证明同一个结论：pitch $=\pm90°$ 时，三个欧拉角只能表达两个独立的旋转方向。</p>
 <h3 id="几何层面：两根轴承轴重合">几何层面：两根轴承轴重合</h3>
 <p>roll 的轴承轴为 $\mathbf{n}_{\text{roll}}=R_z(\psi)R_y(\theta)\hat x$。代入 $R_y(\theta)$ 与 $\theta=90°$（$\cos90°=0,\sin90°=1$）：</p>
-<p>$$<br>
-R_y(90°)=\begin{bmatrix}0&amp;0&amp;1\0&amp;1&amp;0\-1&amp;0&amp;0\end{bmatrix},\qquad \hat x=\begin{bmatrix}1\0\0\end{bmatrix}<br>
-$$</p>
+
+$$
+R_y(90°)=\begin{bmatrix}0&0&1\\0&1&0\\-1&0&0\end{bmatrix},\qquad \hat x=\begin{bmatrix}1\\0\\0\end{bmatrix}
+$$
+
 <p>矩阵乘 $\hat x=(1,0,0)^\top$ 相当于取矩阵的第一列，因此：</p>
-<p>$$<br>
-R_y(90°)\hat x=\begin{bmatrix}0\0\-1\end{bmatrix}=-\hat z<br>
-$$</p>
+
+$$
+R_y(90°)\hat x=\begin{bmatrix}0\\0\\-1\end{bmatrix}=-\hat z
+$$
+
 <p>随后 $R_z(\psi)$ 绕 $z$ 轴旋转，不改变沿 $z$ 方向的向量（$R_z(\psi)\hat z=\hat z$），故 $\mathbf{n}_{\text{roll}}=R_z(\psi)(-\hat z)=-\hat z$。roll 的轴承轴 $-\hat z$ 与 yaw 的轴承轴 $+\hat z$ 落在同一条世界 $z$ 轴线上——绕 $-\hat z$ 旋转等价于绕 $+\hat z$ 反向旋转，两个原本独立的旋转合并为一个。</p>
 <p><img src="https://uipv4.zywvvd.com:33030/HexoFiles/files/gimbal_lock/gimbal_lock.gif" srcset="/img/loading.gif" lazyload alt="pitch 从 0° 扫到 90° 的死锁过程"></p>
 <h3 id="微分层面：雅可比降秩">微分层面：雅可比降秩</h3>
 <p>将欧拉角视为姿态空间 SO(3) 上的坐标。一组有效的坐标要求其雅可比满秩，即角度的微小变化能产生全部 3 个独立的旋转方向。欧拉角速率 $(\dot\varphi,\dot\theta,\dot\psi)$ 到机体角速度 $(p,q,r)$（滚转率、俯仰率、偏航率，机体系分量）的映射为 $3\times3$ 矩阵 $M$：</p>
-<p>$$<br>
-\begin{bmatrix}p\q\r\end{bmatrix}=\begin{bmatrix}1&amp;0&amp;-\sin\theta\0&amp;\cos\varphi&amp;\cos\theta\sin\varphi\0&amp;-\sin\varphi&amp;\cos\theta\cos\varphi\end{bmatrix}\begin{bmatrix}\dot\varphi\\dot\theta\\dot\psi\end{bmatrix}<br>
-$$</p>
+
+$$
+\begin{bmatrix}p\\q\\r\end{bmatrix}=\begin{bmatrix}1&0&-\sin\theta\\0&\cos\varphi&\cos\theta\sin\varphi\\0&-\sin\varphi&\cos\theta\cos\varphi\end{bmatrix}\begin{bmatrix}\dot\varphi\\\dot\theta\\\dot\psi\end{bmatrix}
+$$
+
 <p>按第一列展开，$M$ 的行列式为：</p>
-<p>$$<br>
-\det M=\cos\theta<br>
-$$</p>
+
+$$
+\det M=\cos\theta
+$$
+
 <p>因此 $M$ 仅在 $\theta=\pm90°$ 处奇异（$\det M=0$），秩由 3 降为 2。在 $\theta=90°$ 时 $M$ 的三列中，第一列（$\dot\varphi$，roll）为 $(1,0,0)^\top$，第三列（$\dot\psi$，yaw）为 $(-1,0,0)^\top$，两者只差一个负号，都只产生绕机体 $x$ 轴的转动（对应 $p=\dot\varphi-\dot\psi$，而 $q,r$ 与 $\dot\varphi,\dot\psi$ 无关）。也就是说，此时 yaw 与 roll 产生同一方向的转动、不再独立，可到达的角速度空间由 3 维塌缩为 2 维。$\det M=\cos\theta$ 这一结果直接给出了奇点的位置。</p>
 <h3 id="矩阵层面：R-只依赖角度之差">矩阵层面：R 只依赖角度之差</h3>
 <p>记 $c_\psi=\cos\psi$、$s_\psi=\sin\psi$、$c_\varphi=\cos\varphi$、$s_\varphi=\sin\varphi$，将 $\theta=90°$ 代入后 $R=R_z(\psi),R_y(90°),R_x(\varphi)$ 分两步计算。先算 $A=R_y(90°)R_x(\varphi)$（行点列）：</p>
-<p>$$<br>
-A=\begin{bmatrix}0&amp;0&amp;1\0&amp;1&amp;0\-1&amp;0&amp;0\end{bmatrix}\begin{bmatrix}1&amp;0&amp;0\0&amp;c_\varphi&amp;-s_\varphi\0&amp;s_\varphi&amp;c_\varphi\end{bmatrix}=\begin{bmatrix}0&amp;s_\varphi&amp;c_\varphi\0&amp;c_\varphi&amp;-s_\varphi\-1&amp;0&amp;0\end{bmatrix}<br>
-$$</p>
+
+$$
+A=\begin{bmatrix}0&0&1\\0&1&0\\-1&0&0\end{bmatrix}\begin{bmatrix}1&0&0\\0&c_\varphi&-s_\varphi\\0&s_\varphi&c_\varphi\end{bmatrix}=\begin{bmatrix}0&s_\varphi&c_\varphi\\0&c_\varphi&-s_\varphi\\-1&0&0\end{bmatrix}
+$$
+
 <p>再算 $R=R_z(\psi)A$：</p>
-<p>$$<br>
-R=\begin{bmatrix}c_\psi&amp;-s_\psi&amp;0\s_\psi&amp;c_\psi&amp;0\0&amp;0&amp;1\end{bmatrix}\begin{bmatrix}0&amp;s_\varphi&amp;c_\varphi\0&amp;c_\varphi&amp;-s_\varphi\-1&amp;0&amp;0\end{bmatrix}=\begin{bmatrix}0&amp;c_\psi s_\varphi-s_\psi c_\varphi&amp;c_\psi c_\varphi+s_\psi s_\varphi\0&amp;s_\psi s_\varphi+c_\psi c_\varphi&amp;s_\psi c_\varphi-c_\psi s_\varphi\-1&amp;0&amp;0\end{bmatrix}<br>
-$$</p>
+
+$$
+R=\begin{bmatrix}c_\psi&-s_\psi&0\\s_\psi&c_\psi&0\\0&0&1\end{bmatrix}\begin{bmatrix}0&s_\varphi&c_\varphi\\0&c_\varphi&-s_\varphi\\-1&0&0\end{bmatrix}=\begin{bmatrix}0&c_\psi s_\varphi-s_\psi c_\varphi&c_\psi c_\varphi+s_\psi s_\varphi\\0&s_\psi s_\varphi+c_\psi c_\varphi&s_\psi c_\varphi-c_\psi s_\varphi\\-1&0&0\end{bmatrix}
+$$
+
 <p>用和差角公式（$c_\psi s_\varphi-s_\psi c_\varphi=-\sin(\psi-\varphi)$，$c_\psi c_\varphi+s_\psi s_\varphi=\cos(\psi-\varphi)$ 等）合并：</p>
-<p>$$<br>
-R\big|_{\theta=90°}=\begin{bmatrix}0&amp;-\sin(\psi-\varphi)&amp;\cos(\psi-\varphi)\0&amp;\cos(\psi-\varphi)&amp;\sin(\psi-\varphi)\-1&amp;0&amp;0\end{bmatrix}<br>
-$$</p>
-<p>整个矩阵的非零项全部是 $\sin(\psi-\varphi)$ 或 $\cos(\psi-\varphi)$，即只含 $\psi-\varphi$ 这一个组合。给定该 $R$ 只能反解出 $\psi-\varphi$，无法分别确定 $\psi$ 和 $\varphi$（令 $\psi,\varphi$ 同时增加同一 $\delta$，$R$ 完全不变）。两个角度塌缩为一个，自由度减少一个，与雅可比降秩的结论一致。取 $\varphi=0$ 即得到常见简写形式 $\begin{bmatrix}0&amp;-\sin\psi&amp;\cos\psi\0&amp;\cos\psi&amp;\sin\psi\-1&amp;0&amp;0\end{bmatrix}$。</p>
-<p>需要说明的是，该矩阵的三列 $(0,0,-1)<sup>\top$、$(-\sin(\psi-\varphi),\cos(\psi-\varphi),0)</sup>\top$、$(\cos(\psi-\varphi),\sin(\psi-\varphi),0)^\top$ 仍两两正交、行列式为 $+1$，是一个合法的旋转矩阵；自由度丢失并非旋转矩阵本身退化（如列向量线性相关），而是从角度到矩阵的映射在此处降秩。</p>
+
+$$
+R\big|_{\theta=90°}=\begin{bmatrix}0&-\sin(\psi-\varphi)&\cos(\psi-\varphi)\\0&\cos(\psi-\varphi)&\sin(\psi-\varphi)\\-1&0&0\end{bmatrix}
+$$
+
+<p>整个矩阵的非零项全部是 $\sin(\psi-\varphi)$ 或 $\cos(\psi-\varphi)$，即只含 $\psi-\varphi$ 这一个组合。给定该 $R$ 只能反解出 $\psi-\varphi$，无法分别确定 $\psi$ 和 $\varphi$（令 $\psi,\varphi$ 同时增加同一 $\delta$，$R$ 完全不变）。两个角度塌缩为一个，自由度减少一个，与雅可比降秩的结论一致。取 $\varphi=0$ 即得到常见简写形式 $\begin{bmatrix}0&-\sin\psi&\cos\psi\\0&\cos\psi&\sin\psi\\-1&0&0\end{bmatrix}$。</p>
+<p>需要说明的是，该矩阵的三列 $(0,0,-1)^\top$、$(-\sin(\psi-\varphi),\cos(\psi-\varphi),0)^\top$、$(\cos(\psi-\varphi),\sin(\psi-\varphi),0)^\top$ 仍两两正交、行列式为 $+1$，是一个合法的旋转矩阵；自由度丢失并非旋转矩阵本身退化（如列向量线性相关），而是从角度到矩阵的映射在此处降秩。</p>
 <h2 id="直观比喻">直观比喻</h2>
 <h3 id="飞机">飞机</h3>
 <p>为飞机定义三个机体轴：纵轴（机头方向，roll 绕它）、横轴（翼展方向，pitch 绕它）、立轴（机背方向）。对应到万向节：yaw 绕世界竖直轴（外环，固定）、pitch 绕横轴、roll 绕纵轴。</p>
@@ -1145,8 +1197,8 @@ $$</p>
                   <article class="post-next col-6">
                     
                     
-                      <a href="/notes/3d/structured-light/structured-light-fm815/" title="结构光相机成像原理与距离-精度实测——图漾 FM815-IX-E1">
-                        <span class="hidden-mobile">结构光相机成像原理与距离-精度实测——图漾 FM815-IX-E1</span>
+                      <a href="/notes/3d/structured-light/structured-light-fm815/" title="结构光相机成像原理与精度实测 -- FM815-IX-E1">
+                        <span class="hidden-mobile">结构光相机成像原理与精度实测 -- FM815-IX-E1</span>
                         <span class="visible-mobile">下一篇</span>
                         <i class="iconfont icon-arrowright"></i>
                       </a>
