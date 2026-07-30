@@ -1,0 +1,1824 @@
+
+
+<!DOCTYPE html>
+<html lang="zh-CN" data-default-color-scheme=auto>
+
+
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="baidu-site-verification" content="codeva-rLWafCJGYc" />
+  <link rel="apple-touch-icon" sizes="76x76" href="/image/avatar.png">
+  <link rel="icon" href="/image/avatar.png">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, shrink-to-fit=no">
+  <meta http-equiv="x-ua-compatible" content="ie=edge">
+  
+  <meta name="theme-color" content="#2f4154">
+  <meta name="author" content="Yiwei Zhang">
+  <meta name="keywords" content="人工智能, 深度学习, 个人博客, 机器学习">
+  
+    <meta name="description" content="Claude Code 是由人工智能公司 Anthropic 推出的一款终端（命令行）原生AI编程助手, 本文介绍相关内容并记录 GLM 4.7 模型介入流程。">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Claude Code 简介与 GLM 接入">
+<meta property="og:url" content="https://www.zywvvd.com/notes/tools/claude-code-intr/claude-code-intr/index.html">
+<meta property="og:site_name" content="又见苍岚">
+<meta property="og:description" content="Claude Code 是由人工智能公司 Anthropic 推出的一款终端（命令行）原生AI编程助手, 本文介绍相关内容并记录 GLM 4.7 模型介入流程。">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="https://uipv4.zywvvd.com:33030/HexoFiles/vvd_image_files/202601141701045.png">
+<meta property="og:image" content="https://uipv4.zywvvd.com:33030/HexoFiles/vvd_image_files/202601141708835.png">
+<meta property="og:image" content="https://uipv4.zywvvd.com:33030/HexoFiles/vvd_image_files/202601141725458.png">
+<meta property="og:image" content="https://uipv4.zywvvd.com:33030/HexoFiles/vvd_image_files/202601191113488.png">
+<meta property="og:image" content="https://uipv4.zywvvd.com:33030/HexoFiles/vvd_image_files/202601191113547.png">
+<meta property="og:image" content="https://uipv4.zywvvd.com:33030/HexoFiles/vvd_image_files/202601191131710.png">
+<meta property="article:published_time" content="2026-01-14T08:30:32.000Z">
+<meta property="article:modified_time" content="2026-07-09T02:27:06.431Z">
+<meta property="article:author" content="Yiwei Zhang">
+<meta property="article:tag" content="LLM">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:image" content="https://uipv4.zywvvd.com:33030/HexoFiles/vvd_image_files/202601141701045.png">
+  
+  
+  
+  <title>Claude Code 简介与 GLM 接入 - 又见苍岚</title>
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/twitter-bootstrap/4.6.1/css/bootstrap.min.css" />
+
+
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/github-markdown-css/4.0.0/github-markdown.min.css" />
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/hint.css/2.7.0/hint.min.css" />
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/fancybox/3.5.7/jquery.fancybox.min.css" />
+
+
+
+<!-- 主题依赖的图标库，不要自行修改 -->
+<!-- Do not modify the link that theme dependent icons -->
+
+<link rel="stylesheet" href="//at.alicdn.com/t/font_1749284_hj8rtnfg7um.css">
+
+
+
+<link rel="stylesheet" href="//at.alicdn.com/t/font_1736178_lbnruvf0jn.css">
+
+
+<link  rel="stylesheet" href="/css/main.css" />
+
+
+  <link id="highlight-css" rel="stylesheet" href="/css/highlight.css" />
+  
+    <link id="highlight-css-dark" rel="stylesheet" href="/css/highlight-dark.css" />
+  
+
+
+
+  
+<link rel="stylesheet" href="/css/custom.css">
+<link rel="stylesheet" href="/css/reward.css">
+<link rel="stylesheet" href="//cdn.jsdelivr.net/npm/aplayer/dist/APlayer.min.css">
+
+
+
+  <script id="fluid-configs">
+    var Fluid = window.Fluid || {};
+    Fluid.ctx = Object.assign({}, Fluid.ctx)
+    var CONFIG = {"hostname":"www.zywvvd.com","root":"/","version":"1.9.7","typing":{"enable":true,"typeSpeed":90,"cursorChar":"_","loop":false,"scope":["home"]},"anchorjs":{"enable":true,"element":"h1,h2,h3,h4,h5,h6","placement":"left","visible":"hover","icon":""},"progressbar":{"enable":true,"height_px":3,"color":"#29d","options":{"showSpinner":false,"trickleSpeed":100}},"code_language":{"enable":true,"default":"TEXT"},"copy_btn":true,"image_caption":{"enable":true},"image_zoom":{"enable":true,"img_url_replace":["",""]},"toc":{"enable":true,"placement":"right","headingSelector":"h1,h2,h3,h4,h5,h6","collapseDepth":0},"lazyload":{"enable":true,"loading_img":"/img/loading.gif","onlypost":false,"offset_factor":2},"web_analytics":{"enable":true,"follow_dnt":true,"baidu":null,"google":null,"tencent":{"sid":null,"cid":null},"woyaola":null,"cnzz":null,"leancloud":{"app_id":"Cv0XNeBSBdAPAIuVj3PsyM3R-MdYXbMMI","app_key":"4PU1rNlGrqXWzhfW3dgq98oX","server_url":null,"path":"window.location.pathname","ignore_local":false},"gtag":null},"search_path":"/local-search.xml","include_content_in_search":true};
+
+    if (CONFIG.web_analytics.follow_dnt) {
+      var dntVal = navigator.doNotTrack || window.doNotTrack || navigator.msDoNotTrack;
+      Fluid.ctx.dnt = dntVal && (dntVal.startsWith('1') || dntVal.startsWith('yes') || dntVal.startsWith('on'));
+    }
+  </script>
+  <script  src="/js/utils.js" ></script>
+  <script  src="/js/color-schema.js" ></script>
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+    
+  
+
+
+
+  
+<meta name="generator" content="Hexo 7.2.0"><link rel="alternate" href="/atom.xml" title="又见苍岚" type="application/atom+xml">
+</head>
+
+<script>
+// 页面加载完成后隐藏加载动画
+document.addEventListener("readystatechange", function() {
+    const loader = document.getElementById('Loadanimation');
+    if (loader) {
+        // 停留1秒后开始淡出
+        setTimeout(function() {
+            loader.style.transition = 'opacity 1.2s';
+            loader.style.opacity = '0';
+            // 淡出完成后隐藏
+            setTimeout(() => {
+                loader.style.display = 'none';
+            }, 1000); // 等待淡出动画完成
+        }, 700); // 停留0.8秒
+    }
+});
+</script>
+
+
+
+<body>
+  
+<div id="Loadanimation" style="z-index:999999;">
+<div id="Loadanimation-center">
+   <div id="Loadanimation-center-absolute">
+       <div class="xccx_object" id="xccx_four"></div>
+       <div class="xccx_object" id="xccx_three"></div>
+       <div class="xccx_object" id="xccx_two"></div>
+       <div class="xccx_object" id="xccx_one"></div>
+   </div>
+</div>
+</div>
+
+<link href="/css/loading.css"type="text/css"rel="stylesheet"/>
+
+
+
+
+
+
+<div>
+	<div class='real_mask' style="
+		background-color: rgba(0,0,0,0.4);
+		width: 100%;
+		height: 100%;
+		position: fixed;
+		z-index: -777;
+	"></div>
+	<div id="banner_video_insert">
+	</div>	
+	<div id='vvd_banner_img'>
+	</div>
+</div>
+<div id="banner"></div>
+
+
+
+
+
+
+
+  <header>
+    
+
+<div class="header-inner" style="height: 80vh;">
+  <nav id="navbar" class="navbar fixed-top  navbar-expand-lg navbar-dark scrolling-navbar">
+  <div class="container">
+    <a class="navbar-brand" href="/">
+      <strong>CangLan</strong>
+    </a>
+
+    <button id="navbar-toggler-btn" class="navbar-toggler" type="button" data-toggle="collapse"
+            data-target="#navbarSupportedContent"
+            aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
+      <div class="animated-icon"><span></span><span></span><span></span></div>
+    </button>
+
+    <!-- Collapsible content -->
+    <div class="collapse navbar-collapse" id="navbarSupportedContent">
+      <ul class="navbar-nav ml-auto text-center">
+        
+          
+          
+          
+          
+            <li class="nav-item">
+		<div >
+		      <a class="nav-link" href="/" target="_self" data-umami-event="Navigation-Homepage">
+
+		        <i class="iconfont icon-home-fill"></i>
+		        <span>首页</span>
+		      </a>
+		</div>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item dropdown">
+              <a class="nav-link dropdown-toggle" target="_self" href="javascript:;" role="button"
+                 data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                <i class="iconfont icon-shuji1"></i>
+                <span>文章</span>
+              </a>
+              <div class="dropdown-menu" aria-labelledby="navbarDropdown">
+                
+                  
+                  
+                  
+		<div >
+
+                  <a class="dropdown-item" href="/archives/" target="_self" data-umami-event="Navigation-Archive">
+
+                    <i class="iconfont icon-archive-fill"></i>
+                    <span>归档</span>
+                  </a>
+		</div>
+                
+                  
+                  
+                  
+		<div >
+
+                  <a class="dropdown-item" href="/categories/" target="_self" data-umami-event="Navigation-Category">
+
+                    <i class="iconfont icon-category-fill"></i>
+                    <span>分类</span>
+                  </a>
+		</div>
+                
+                  
+                  
+                  
+		<div >
+
+                  <a class="dropdown-item" href="/tags/" target="_self" data-umami-event="Navigation-Tag">
+
+                    <i class="iconfont icon-tags-fill"></i>
+                    <span>标签</span>
+                  </a>
+		</div>
+                
+                  
+                  
+                  
+		<div >
+
+                  <a class="dropdown-item" href="/shuoshuo/" target="_self" data-umami-event="Navigation-Shuoshuo">
+
+                    <i class="iconfont icon-24gf-bubblesDots4"></i>
+                    <span>说说</span>
+                  </a>
+		</div>
+                
+              </div>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item dropdown">
+              <a class="nav-link dropdown-toggle" target="_self" href="javascript:;" role="button"
+                 data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                <i class="iconfont icon-momo"></i>
+                <span>社交</span>
+              </a>
+              <div class="dropdown-menu" aria-labelledby="navbarDropdown">
+                
+                  
+                  
+                  
+		<div >
+
+                  <a class="dropdown-item" href="/links/" target="_self" data-umami-event="Navigation-Friends">
+
+                    <i class="iconfont icon-link-fill"></i>
+                    <span>友链</span>
+                  </a>
+		</div>
+                
+                  
+                  
+                  
+		<div >
+
+                  <a class="dropdown-item" href="/messagebd/" target="_self" data-umami-event="Navigation-MessageBoard">
+
+                    <i class="iconfont icon-comment"></i>
+                    <span>留言板</span>
+                  </a>
+		</div>
+                
+                  
+                  
+                  
+		<div >
+
+                  <a class="dropdown-item" href="/atom.xml" target="_self" data-umami-event="Navigation-RSS">
+
+                    <i class="iconfont icon-dingyue"></i>
+                    <span>RSS订阅</span>
+                  </a>
+		</div>
+                
+                  
+                  
+                  
+		<div >
+
+                  <a class="dropdown-item" href="/reccomments/" target="_self" data-umami-event="Navigation-Recent-Comments">
+
+                    <i class="iconfont icon-icon-pinglunguanli-pinglunliebiao"></i>
+                    <span>近期评论</span>
+                  </a>
+		</div>
+                
+              </div>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item dropdown">
+              <a class="nav-link dropdown-toggle" target="_self" href="javascript:;" role="button"
+                 data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                <i class="iconfont icon-user-fill"></i>
+                <span>个人</span>
+              </a>
+              <div class="dropdown-menu" aria-labelledby="navbarDropdown">
+                
+                  
+                  
+                  
+		<div >
+
+                  <a class="dropdown-item" href="/about/" target="_self" data-umami-event="Navigation-AboutMe">
+
+                    <i class="iconfont icon-guanyuwomen"></i>
+                    <span>关于</span>
+                  </a>
+		</div>
+                
+                  
+                  
+                  
+		<div >
+
+                  <a class="dropdown-item" href="/playlist/" target="_self" data-umami-event="Navigation-Music">
+
+                    <i class="iconfont icon-music"></i>
+                    <span>歌单</span>
+                  </a>
+		</div>
+                
+                  
+                  
+                  
+		<div >
+
+                  <a class="dropdown-item" href="https://uipv4.zywvvd.com:33035" target="_self" data-umami-event="Navigation-Nextcloud">
+
+                    <i class="iconfont icon-xuniyingpan"></i>
+                    <span>网盘</span>
+                  </a>
+		</div>
+                
+                  
+                  
+                  
+		<div >
+
+                  <a class="dropdown-item" href="https://uipv4.zywvvd.com:33036" target="_self" data-umami-event="Navigation-OneDev">
+
+                    <i class="iconfont icon-git"></i>
+                    <span>仓库</span>
+                  </a>
+		</div>
+                
+                  
+                  
+                  
+		<div >
+
+                  <a class="dropdown-item" href="https://uipv4.zywvvd.com:33041" target="_self" data-umami-event="Navigation-Wiki">
+
+                    <i class="iconfont icon-wiki"></i>
+                    <span>百科</span>
+                  </a>
+		</div>
+                
+              </div>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item dropdown">
+              <a class="nav-link dropdown-toggle" target="_self" href="javascript:;" role="button"
+                 data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                <i class="iconfont icon-ic_fly"></i>
+                <span>导航</span>
+              </a>
+              <div class="dropdown-menu" aria-labelledby="navbarDropdown">
+                
+                  
+                  
+                  
+		<div >
+
+                  <a class="dropdown-item" href="/site-map/" target="_self" data-umami-event="Navigation-SiteMap">
+
+                    <i class="iconfont icon-lianjie"></i>
+                    <span>链接</span>
+                  </a>
+		</div>
+                
+                  
+                  
+                  
+		<div >
+
+                  <a class="dropdown-item" href="/nodeppt/hexo/snavigation/" target="_self" data-umami-event="Navigation-Search">
+
+                    <i class="iconfont icon-sousuo"></i>
+                    <span>搜索</span>
+                  </a>
+		</div>
+                
+              </div>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item dropdown">
+              <a class="nav-link dropdown-toggle" target="_self" href="javascript:;" role="button"
+                 data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                <i class="iconfont icon-wangzhan"></i>
+                <span>站点</span>
+              </a>
+              <div class="dropdown-menu" aria-labelledby="navbarDropdown">
+                
+                  
+                  
+                  
+		<div >
+
+                  <a class="dropdown-item" href="https://uipv4.zywvvd.com:33039/share/0zx3o21oIpZTZqwC/%E5%8F%88%E8%A7%81%E8%8B%8D%E5%B2%9A" target="_self" data-umami-event="Navigation-Umami">
+
+                    <i class="iconfont icon-tongji2"></i>
+                    <span>站点分析</span>
+                  </a>
+		</div>
+                
+                  
+                  
+                  
+		<div >
+
+                  <a class="dropdown-item" href="/earth_sta/" target="_self" data-umami-event="Navigation-Globe">
+
+                    <i class="iconfont icon-tongjifenxi-xiangmubiaogetongji"></i>
+                    <span>访问统计</span>
+                  </a>
+		</div>
+                
+                  
+                  
+                  
+		<div >
+
+                  <a class="dropdown-item" href="https://uipv4.zywvvd.com:33034/status/show" target="_self" data-umami-event="Navigation-Monitor">
+
+                    <i class="iconfont icon-jiankong"></i>
+                    <span>站点监控</span>
+                  </a>
+		</div>
+                
+              </div>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item dropdown">
+              <a class="nav-link dropdown-toggle" target="_self" href="javascript:;" role="button"
+                 data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                <i class="iconfont icon-chuansong"></i>
+                <span>传送</span>
+              </a>
+              <div class="dropdown-menu" aria-labelledby="navbarDropdown">
+                
+                  
+                  
+                  
+		<div >
+
+                  <a class="dropdown-item" href="https://www.foreverblog.cn/go.html" target="_self" data-umami-event="Navigation-ForeverBolg">
+
+                    <i class="iconfont icon-a-BlackHole"></i>
+                    <span>十年之约</span>
+                  </a>
+		</div>
+                
+                  
+                  
+                  
+		<div >
+
+                  <a class="dropdown-item" href="https://www.travellings.cn/go.html" target="_self" data-umami-event="Navigation-DriveTo">
+
+                    <i class="iconfont icon-train1"></i>
+                    <span>开往</span>
+                  </a>
+		</div>
+                
+                  
+                  
+                  
+		<div >
+
+                  <a class="dropdown-item" href="https://bf.zzxworld.com/" target="_self" data-umami-event="Navigation-BlogFinder">
+
+                    <i class="iconfont icon-icon-"></i>
+                    <span>BlogFinder</span>
+                  </a>
+		</div>
+                
+                  
+                  
+                  
+		<div >
+
+                  <a class="dropdown-item" href="https://www.perass.com/" target="_self" data-umami-event="Navigation-Bloghome">
+
+                    <i class="iconfont icon-home-fill"></i>
+                    <span>博客之家</span>
+                  </a>
+		</div>
+                
+              </div>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item dropdown">
+              <a class="nav-link dropdown-toggle" target="_self" href="javascript:;" role="button"
+                 data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                <i class="iconfont icon-gongju"></i>
+                <span>工具</span>
+              </a>
+              <div class="dropdown-menu" aria-labelledby="navbarDropdown">
+                
+                  
+                  
+                  
+		<div >
+
+                  <a class="dropdown-item" href="/navigates/calculator" target="_self" data-umami-event="Navigation-Calculator">
+
+                    <i class="iconfont icon-jisuan"></i>
+                    <span>计算器</span>
+                  </a>
+		</div>
+                
+                  
+                  
+                  
+		<div >
+
+                  <a class="dropdown-item" href="/navigates/webgraphviz" target="_self" data-umami-event="Navigation-WebGtaphviz">
+
+                    <i class="iconfont icon-tongyong-huatugongju2"></i>
+                    <span>Graphviz</span>
+                  </a>
+		</div>
+                
+                  
+                  
+                  
+		<div >
+
+                  <a class="dropdown-item" href="/navigates/formular_reco" target="_self" data-umami-event="Navigation-Formular-Reco">
+
+                    <i class="iconfont icon-a-checkformula"></i>
+                    <span>公式识别</span>
+                  </a>
+		</div>
+                
+              </div>
+            </li>
+          
+        
+        
+          <li class="nav-item" id="search-btn">
+            <a class="nav-link" target="_self" href="javascript:;" data-toggle="modal" data-target="#modalSearch" aria-label="Search">
+              <i class="iconfont icon-search"></i>
+            </a>
+          </li>
+          
+        
+        
+          <li class="nav-item" id="color-toggle-btn">
+            <a class="nav-link" target="_self" href="javascript:;" aria-label="Color Toggle">
+              <i class="iconfont icon-dark" id="color-toggle-icon"></i>
+            </a>
+          </li>
+        
+      </ul>
+    </div>
+  </div>
+</nav>
+
+  
+
+<div id="banner" class="banner" parallax=true
+     style="background: url('https://uipv4.zywvvd.com:33030/HexoFiles/new/bg-trans.png') no-repeat center center; background-size: cover;">
+  <div class="full-bg-img">
+    <div class="mask flex-center" style="background-color: rgba(0, 0, 0, 0)">
+      <div class="banner-text text-center fade-in-up">
+        <div class="h2">
+          
+            <span id="subtitle">Claude Code 简介与 GLM 接入</span>
+          
+        </div>
+
+        
+          
+  <div class="mt-3">
+    
+      <span class="post-meta mr-2">
+        <i class="iconfont icon-author" aria-hidden="true"></i>
+        Yiwei Zhang
+      </span>
+    
+    
+      <span class="post-meta">
+        <i class="iconfont icon-date-fill" aria-hidden="true"></i>
+        <time datetime="2026-01-14 16:30" pubdate>
+          2026年1月14日 下午
+        </time>
+      </span>
+    
+  </div>
+
+  <div class="mt-1">
+    
+      <span class="post-meta mr-2">
+        <i class="iconfont icon-chart"></i>
+        
+          <!-- compatible with older versions-->
+          3.6k 字
+        
+      </span>
+    
+
+    
+      <span class="post-meta mr-2">
+        <i class="iconfont icon-clock-fill"></i>
+        
+        
+        
+          <!-- compatible with older versions-->
+          31 分钟
+        
+      </span>
+    
+
+    
+    
+      
+        <span id="vvdpost_container_page_pvuv" style="display: none">
+          <i class="iconfont icon-eye" aria-hidden="true"></i>
+          <span id="vvdpost_value_page_pv">0</span> 次&nbsp&nbsp
+		  <i class="iconfont icon-users" aria-hidden="true"></i>
+		  <span id="vvdpost_value_page_uv">0</span> 人&nbsp&nbsp
+		  <i class="iconfont icon-comment" aria-hidden="true"></i>
+		  <span id="vvdpost_value_page_cn">0</span> 条
+        </span>
+
+    <script>
+    document.addEventListener("DOMContentLoaded", function() {
+	      console.log("PVUV_" + window.location.pathname);
+
+	      // 使用 fetch API 发送 POST 请求
+	      fetch('https://uipv4.zywvvd.com:33037/poststats', { 
+		  method: 'POST',
+		  headers: {
+		      'Content-Type': 'application/json'
+		  },
+		  body: JSON.stringify(window.location.pathname) // 将路径名作为对象发送，以便在服务器端更容易处理
+	      })
+	      .then(response => {
+		  // 检查响应状态
+		  if (!response.ok) {
+		      throw new Error('Network response was not ok ' + response.statusText);
+		  }
+		  return response.json(); // 解析 JSON 响应
+	      })
+	      .then(data => {
+		  // 处理解析后的数据
+		  console.log(data.pv);
+		  var pvCtn = document.querySelector('#vvdpost_container_page_pvuv');
+		  if (pvCtn) {
+		      var pvEle = document.querySelector('#vvdpost_value_page_pv');
+		      var uvEle = document.querySelector('#vvdpost_value_page_uv');
+		      var cnEle = document.querySelector('#vvdpost_value_page_cn');
+		      if (pvEle && uvEle) {
+		          pvEle.innerText = data.pv;
+		          uvEle.innerText = data.uv;
+		          cnEle.innerText = data.cn;
+		          pvCtn.style.display = 'inline';
+		      }
+		  }
+	      })
+	      .catch(error => {
+		  // 处理请求错误
+		  console.error('There has been a problem with your fetch operation:', error);
+	      });
+      });
+  </script>
+      
+    
+  </div>
+
+
+        
+      </div>
+
+      
+        <div class="scroll-down-bar">
+          <i class="iconfont icon-arrowdown"></i>
+        </div>
+      
+    </div>
+  </div>
+</div>
+
+</div>
+
+
+	<script type="text/javascript" src="/vvd_js/jquery.js"></script>
+	<script async src="https://uipv4.zywvvd.com:33039/script.js" data-website-id="dd4a05c6-dde2-4743-9c3a-a79d6bee0778"></script>
+	<div class="banner" id='banner' >
+
+		<div class="full-bg-img" >
+
+			
+				<script>
+					var ua = navigator.userAgent;
+					var ipad = ua.match(/(iPad).*OS\s([\d_]+)/),
+						isIphone = !ipad && ua.match(/(iPhone\sOS)\s([\d_]+)/),
+						isAndroid = ua.match(/(Android)\s+([\d.]+)/),
+						isMobile = isIphone || isAndroid;
+
+					function set_video_attr(id){
+						var height = document.body.clientHeight
+						var width = document.body.clientWidth
+						var video_item = document.getElementById(id);
+
+						if (height / width < 0.56){
+							video_item.setAttribute('width', '100%');
+							video_item.setAttribute('height', 'auto');
+						} else {
+							video_item.setAttribute('height', '100%');
+							video_item.setAttribute('width', 'auto');
+						}
+					}
+
+					fetch('https://uipv4.zywvvd.com:33037/wallpaper-pair')
+					  .then(response => response.json()) // 解析JSON数据
+					  .then(data => {
+						console.log('获取链接成功');
+						video_url = data[0][0]
+						pre_show_image_url = data[0][1]
+
+						banner_obj = document.getElementById("banner")
+						banner_obj.style.cssText = "background: url('" + pre_show_image_url + "') no-repeat;"
+
+						vvd_banner_obj = document.getElementById("vvd_banner_img")
+						vvd_banner_content = "<img id='banner_img_item' src='" + pre_show_image_url + "'style='position: fixed; z-index: -999'>"
+						vvd_banner_obj.innerHTML = vvd_banner_content 
+
+						if (!isMobile) {
+							video_html_res = "<video id='video_item' style='position: fixed; z-index: -888;'  muted='muted' src=" + video_url + " autoplay='autoplay' loop='loop'></video>"
+							document.getElementById("banner_video_insert").innerHTML = video_html_res;
+							set_video_attr('video_item')
+							set_video_attr('banner_img_item')
+						}
+					    
+					  })
+					  .catch((error) => {
+					    console.error('请求失败,尝试本地获取背景图像：', error);
+	    					$.getJSON('/vvd_js/video_url.json', function(data){
+
+							var video_list_length = data.length
+							var seed = Math.random()
+							index = Math.floor(seed * video_list_length)
+
+							video_url = data[index][0]
+							pre_show_image_url = data[index][1]
+
+							banner_obj = document.getElementById("banner")
+							banner_obj.style.cssText = "background: url('" + pre_show_image_url + "') no-repeat;"
+
+							vvd_banner_obj = document.getElementById("vvd_banner_img")
+							vvd_banner_content = "<img id='banner_img_item' src='" + pre_show_image_url + "'style='position: fixed; z-index: -999'>"
+							vvd_banner_obj.innerHTML = vvd_banner_content 
+
+							if (!isMobile) {
+								video_html_res = "<video id='video_item' style='position: fixed; z-index: -888;'  muted='muted' src=" + video_url + " autoplay='autoplay' loop='loop'></video>"
+								document.getElementById("banner_video_insert").innerHTML = video_html_res;
+								set_video_attr('video_item')
+								set_video_attr('banner_img_item')
+							}
+						});
+					  });
+
+
+
+
+
+
+					if (!isMobile){
+						window.onresize = function(){
+							set_video_attr('video_item')
+							set_video_attr('banner_img_item')
+							}
+						}
+				</script>
+
+			
+
+
+			
+			</div>
+		</div>
+    </div>
+
+  </header>
+
+  <main>
+    
+      
+
+
+
+<div class="container-fluid nopadding-x">
+  <div class="row nomargin-x">
+    <div class="side-col d-none d-lg-block col-lg-2">
+      
+
+    </div>
+
+    <div class="col-lg-8 nopadding-x-md">
+      <div class="container nopadding-x-md" id="board-ctn">
+        <div id="board">
+          <article class="post-content mx-auto">
+
+            <!-- <h1 id="seo-header">Claude Code 简介与 GLM 接入</h1> -->
+
+            
+              <p id="updated-time" class="note note-info" style="">
+                
+                  
+                    <!-- compatible with older versions-->
+                    本文最后更新于：2026年7月9日 上午
+                  
+                
+              </p>
+            
+            
+              <div class="markdown-body">
+                
+                <blockquote>
+<p>Claude Code 是由人工智能公司 <strong>Anthropic</strong> 推出的一款<strong>终端（命令行）原生AI编程助手</strong>, 本文介绍相关内容并记录 GLM 4.7 模型介入流程。</p>
+</blockquote>
+<span id="more"></span>
+<h3 id="简介">简介</h3>
+<p>Claude Code 是由人工智能公司 Anthropic 推出的一款终端（命令行）原生AI编程助手。它不仅仅是一个代码补全工具，更像一个能深度理解你的项目、并直接执行命令的智能编程伙伴。</p>
+<p>与在IDE中使用的插件不同，它在你的终端里运行，能直接读取整个代码库，并根据你的自然语言指令完成从生成代码到运行命令、管理Git等一系列开发任务。</p>
+<p>它的核心价值在于 <strong>“终端原生 + 项目全局视野 + 实操能力”</strong> ，旨在将开发者从繁琐的重复劳动和频繁的界面切换中解放出来。主要功能可以概括为以下四大场景：</p>
+<table>
+<thead>
+<tr>
+<th style="text-align:left">功能场景</th>
+<th style="text-align:left">具体描述</th>
+<th style="text-align:left">示例指令（终端中输入）</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align:left"><strong>🧱 功能构建</strong></td>
+<td style="text-align:left">用自然语言描述需求，自动生成可运行的代码。</td>
+<td style="text-align:left">“帮我用React写一个支持增删的TodoList组件。”</td>
+</tr>
+<tr>
+<td style="text-align:left"><strong>🐛 调试修复</strong></td>
+<td style="text-align:left">粘贴错误信息或描述问题，自动分析并提供修复方案。</td>
+<td style="text-align:left">“下面的TypeError报错怎么解决？”</td>
+</tr>
+<tr>
+<td style="text-align:left"><strong>🗺️ 代码库导航</strong></td>
+<td style="text-align:left">快速理解项目结构、梳理逻辑，无需手动浏览所有文件。</td>
+<td style="text-align:left">“这个项目的权限认证逻辑是怎样的？”</td>
+</tr>
+<tr>
+<td style="text-align:left"><strong>⚙️ 自动化任务</strong></td>
+<td style="text-align:left">处理Git工作流、修复代码规范、生成文档等重复性工作。</td>
+<td style="text-align:left">“帮我批量修复项目中所有的ESLint错误。”</td>
+</tr>
+</tbody>
+</table>
+<p>除了强大的功能，以下几个技术特点使其在同类工具中脱颖而出：</p>
+<ul>
+<li><strong>终端原生</strong>：直接集成到最通用的开发环境（终端）中，灵活且高效。</li>
+<li><strong>超长上下文</strong>：支持<strong>200K tokens</strong>的超长上下文，能透彻理解大型、复杂的项目。</li>
+<li><strong>强大的实操能力</strong>：不仅能生成代码，还能获得授权后<strong>直接编辑文件、运行Shell命令、提交Git</strong>，实现“所想即所得”。</li>
+<li><strong>项目规范沉淀</strong>：通过创建项目根目录下的 <strong><code>CLAUDE.md</code></strong> 文件，你可以记录项目架构、编码规范等，让AI助手快速“熟悉”你的项目，提供更精准的帮助。</li>
+</ul>
+<h3 id="Claude-Code-安装">Claude Code 安装</h3>
+<p><strong>安装</strong>：前提是拥有**Node.js 18+**环境。最常用的安装方式是通过npm（Node.js包管理器）进行全局安装</p>
+<p>进入命令行界面，安装 Claude Code</p>
+<figure class="highlight coffeescript"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs coffeescript"><span class="hljs-built_in">npm</span> install -g @anthropic-ai/claude-code<br></code></pre></td></tr></table></figure>
+<p>运行如下命令，查看安装结果，若显示版本号则表示安装成功</p>
+<figure class="highlight ada"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs ada">claude <span class="hljs-comment">--version</span><br></code></pre></td></tr></table></figure>
+<p>如果此时执行 <code>claude</code> 命令会提示错误：</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br></pre></td><td class="code"><pre><code class="hljs shell">Welcome to Claude Code v2.1.7 <br>…………………………………………………………………………………………………………………………………………………………<br><br>     *                                       █████▓▓░<br>                                 *         ███▓░     ░░<br>            ░░░░░░                        ███▓░<br>    ░░░   ░░░░░░░░░░                      ███▓░<br>   ░░░░░░░░░░░░░░░░░░░    *                ██▓░░      ▓<br>                                             ░▓▓███▓▓░<br> *                                 ░░░░                   <br>                                 ░░░░░░░░                 <br>                               ░░░░░░░░░░░░░░░░           <br>       █████████                                        *<br>      ██▄█████▄██                        *<br>       █████████      *<br>…………………█ █   █ █………………………………………………………………………………………………………………<br><br> Unable to connect to Anthropic services<br><br> Failed to connect to api.anthropic.com: ERR_BAD_REQUEST<br><br> Please check your internet connection and network settings.<br><br> Note: Claude Code might not be available in your country. Check supported<br> countries at https://anthropic.com/supported-countries<br><br></code></pre></td></tr></table></figure>
+<p>此时我们需要配置相应模型才可以继续使用</p>
+<h3 id="配置-GLM-Coding-Plan">配置 GLM Coding Plan</h3>
+<blockquote>
+<p>GLM 在众多大模型中性能较好，价格较低，是当前性价比较高的方案。</p>
+<p>官方文档：<a target="_blank" rel="noopener" href="https://docs.bigmodel.cn/cn/coding-plan/tool/claude">https://docs.bigmodel.cn/cn/coding-plan/tool/claude</a></p>
+</blockquote>
+<p>GLM 是智谱清言的新一代旗舰模型，首次使用需要：</p>
+<ul>
+<li>
+<p><a target="_blank" rel="noopener" href="https://open.bigmodel.cn/">登录官网</a>注册帐号</p>
+</li>
+<li>
+<p>获取 <a target="_blank" rel="noopener" href="https://bigmodel.cn/usercenter/proj-mgmt/apikeys">API Key</a></p>
+</li>
+</ul>
+<p><img src="https://uipv4.zywvvd.com:33030/HexoFiles/vvd_image_files/202601141701045.png" srcset="/img/loading.gif" lazyload alt=""></p>
+<ul>
+<li>
+<p>配置环境变量 （Mac / Linxu 系统）</p>
+<figure class="highlight 1c"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs 1c">curl -O <span class="hljs-string">&quot;https://cdn.bigmodel.cn/install/claude_code_env.sh&quot;</span> <span class="hljs-meta">&amp;&amp; bash ./claude_code_env.sh</span><br></code></pre></td></tr></table></figure>
+<p>–&gt; 输入获取的 API Key</p>
+<figure class="highlight ruby"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br></pre></td><td class="code"><pre><code class="hljs ruby">curl -O <span class="hljs-string">&quot;https://cdn.bigmodel.cn/install/claude_code_env.sh&quot;</span> &amp;&amp; bash ./claude_code_env.sh<br>  % <span class="hljs-title class_">Total</span>    % <span class="hljs-title class_">Received</span> % <span class="hljs-title class_">Xferd</span>  <span class="hljs-title class_">Average</span> <span class="hljs-title class_">Speed</span>   <span class="hljs-title class_">Time</span>    <span class="hljs-title class_">Time</span>     <span class="hljs-title class_">Time</span>  <span class="hljs-title class_">Current</span><br>                                 <span class="hljs-title class_">Dload</span>  <span class="hljs-title class_">Upload</span>   <span class="hljs-title class_">Total</span>   <span class="hljs-title class_">Spent</span>    <span class="hljs-title class_">Left</span>  <span class="hljs-title class_">Speed</span><br><span class="hljs-number">100</span>  <span class="hljs-number">5389</span>  <span class="hljs-number">100</span>  <span class="hljs-number">5389</span>    <span class="hljs-number">0</span>     <span class="hljs-number">0</span>  <span class="hljs-number">31448</span>      <span class="hljs-number">0</span> --<span class="hljs-symbol">:--</span><span class="hljs-symbol">:--</span> --<span class="hljs-symbol">:--</span><span class="hljs-symbol">:--</span> --<span class="hljs-symbol">:--</span><span class="hljs-symbol">:--</span> <span class="hljs-number">31514</span><br>🚀 <span class="hljs-title class_">Starting</span> claude_code_env.sh<br>✅ <span class="hljs-title class_">Node</span>.js is already <span class="hljs-symbol">installed:</span> v18.<span class="hljs-number">20.2</span><br>✅ <span class="hljs-title class_">Claude</span> <span class="hljs-title class_">Code</span> is already <span class="hljs-symbol">installed:</span> <span class="hljs-number">2.1</span>.<span class="hljs-number">7</span> (<span class="hljs-title class_">Claude</span> <span class="hljs-title class_">Code</span>)<br>🔹 <span class="hljs-title class_">Configuring</span> <span class="hljs-title class_">Claude</span> <span class="hljs-title class_">Code</span>...<br>   <span class="hljs-title class_">You</span> can get your <span class="hljs-variable constant_">API</span> key <span class="hljs-symbol">from:</span> <span class="hljs-symbol">https:</span>/<span class="hljs-regexp">/open.bigmodel.cn/usercenter</span><span class="hljs-regexp">/proj-mgmt/apikeys</span><br>🔑 <span class="hljs-title class_">Please</span> enter your <span class="hljs-variable constant_">ZHIPU</span> <span class="hljs-variable constant_">API</span> <span class="hljs-symbol">key:</span> <br>✅ <span class="hljs-title class_">Claude</span> <span class="hljs-title class_">Code</span> configured successfully<br><br>✅ 🎉 <span class="hljs-title class_">Installation</span> completed successfully!<br><br>🚀 <span class="hljs-title class_">You</span> can now start using <span class="hljs-title class_">Claude</span> <span class="hljs-title class_">Code</span> <span class="hljs-symbol">with:</span><br>   claude<br><br></code></pre></td></tr></table></figure>
+<p>脚本会自动通过修改 <code>~/.claude/settings.json</code> 来配置如下环境变量(您无需手动修改)：</p>
+<figure class="highlight json"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><code class="hljs json"><span class="hljs-punctuation">&#123;</span><br>    <span class="hljs-attr">&quot;env&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-punctuation">&#123;</span><br>        <span class="hljs-attr">&quot;ANTHROPIC_AUTH_TOKEN&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;your_zhipu_api_key&quot;</span><span class="hljs-punctuation">,</span><br>        <span class="hljs-attr">&quot;ANTHROPIC_BASE_URL&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;https://open.bigmodel.cn/api/anthropic&quot;</span><span class="hljs-punctuation">,</span><br>        <span class="hljs-attr">&quot;API_TIMEOUT_MS&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;3000000&quot;</span><span class="hljs-punctuation">,</span><br>        <span class="hljs-attr">&quot;CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-number">1</span><br>    <span class="hljs-punctuation">&#125;</span><br><span class="hljs-punctuation">&#125;</span><br></code></pre></td></tr></table></figure>
+<p>脚本会自动在 <code>~/.claude.json</code> 添加</p>
+<figure class="highlight json"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><code class="hljs json"><span class="hljs-punctuation">&#123;</span><br>    <span class="hljs-attr">&quot;hasCompletedOnboarding&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-literal"><span class="hljs-keyword">true</span></span><br><span class="hljs-punctuation">&#125;</span><br></code></pre></td></tr></table></figure>
+</li>
+</ul>
+<blockquote>
+<p>配置成功后，请确保重新打开一个新的终端窗口，以便环境配置生效。</p>
+</blockquote>
+<h4 id="GLM-5-支持">GLM 5 支持</h4>
+<p>最近智谱清言推出了 GLM 5 大模型，可以通过升级套餐至 Pro 及以上享用。</p>
+<p>在成功配置套餐后，默认为服务端模型映射，即您界面上看到的是 Claude 模型但实际是 GLM 模型。<br>
+Claude Code 内部模型环境变量与 GLM 模型对应关系，默认配置如下：</p>
+<ul>
+<li><code>ANTHROPIC_DEFAULT_OPUS_MODEL</code>：<code>GLM-4.7</code></li>
+<li><code>ANTHROPIC_DEFAULT_SONNET_MODEL</code>：<code>GLM-4.7</code></li>
+<li><code>ANTHROPIC_DEFAULT_HAIKU_MODEL</code>：<code>GLM-4.5-Air</code></li>
+</ul>
+<p>使用 GLM-5，需要在配置文件 <code>~/.claude/settings.json</code> 中，添加或替换如下环境变量参数：</p>
+<figure class="highlight json"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><code class="hljs json"><span class="hljs-punctuation">&#123;</span><br>  <span class="hljs-attr">&quot;env&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-punctuation">&#123;</span><br>    <span class="hljs-attr">&quot;ANTHROPIC_DEFAULT_HAIKU_MODEL&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;glm-4.5-air&quot;</span><span class="hljs-punctuation">,</span><br>    <span class="hljs-attr">&quot;ANTHROPIC_DEFAULT_SONNET_MODEL&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;glm-4.7&quot;</span><span class="hljs-punctuation">,</span><br>    <span class="hljs-attr">&quot;ANTHROPIC_DEFAULT_OPUS_MODEL&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;glm-5&quot;</span><br>  <span class="hljs-punctuation">&#125;</span><br><span class="hljs-punctuation">&#125;</span><br></code></pre></td></tr></table></figure>
+<blockquote>
+<p>GLM-5 参数量更大，对标 Claude Opus 模型，调用 GLM-5 时用量将按照 “高峰期 3 倍，非高峰期 2 倍” 进行计算抵扣；我们推荐您在复杂任务上切换至 GLM-5 处理，普通任务上继续使用 GLM-4.7，以避免套餐用量额度消耗过快。注：“高峰期”为每日的 14:00～18:00 （UTC+8）。</p>
+</blockquote>
+<ul>
+<li>官方文档：<a target="_blank" rel="noopener" href="https://docs.bigmodel.cn/cn/coding-plan/tool/claude">https://docs.bigmodel.cn/cn/coding-plan/tool/claude</a></li>
+</ul>
+<h4 id="模型切换">模型切换</h4>
+<p>在完成上述配置后，在 claude 命令状态中输入 <code>/model </code>  切换模型：</p>
+<blockquote>
+<p>当前输出为 2.1.70 版本的 claude code</p>
+</blockquote>
+<figure class="highlight pgsql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><code class="hljs pgsql"> /model                                                                                                                                                                                                                                                <br>                                                                                                                                              <br>────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────<br>  <span class="hljs-keyword">Select</span> model                                                                                                                                                                                                                                          <br>  Switch <span class="hljs-keyword">between</span> Claude models. Applies <span class="hljs-keyword">to</span> this <span class="hljs-keyword">session</span> <span class="hljs-keyword">and</span> future Claude Code sessions. <span class="hljs-keyword">For</span> other/previous model names, specify <span class="hljs-keyword">with</span> <span class="hljs-comment">--model.</span><br>                                                                                                                                                                                                                                                        <br>  ❯ <span class="hljs-number">1.</span> <span class="hljs-keyword">Default</span> (recommended) ✔  Use the <span class="hljs-keyword">default</span> model (currently glm<span class="hljs-number">-4.7</span>) · <span class="hljs-meta">$3</span>/<span class="hljs-meta">$15</span> per Mtok                                                                                                                                                             <br>    <span class="hljs-number">2.</span> Sonnet (<span class="hljs-number">1</span>M context)      Sonnet <span class="hljs-number">4.6</span> <span class="hljs-keyword">for</span> long sessions · <span class="hljs-meta">$6</span>/<span class="hljs-meta">$22</span><span class="hljs-number">.50</span> per Mtok                                                                                                                                                                       <br>    <span class="hljs-number">3.</span> Opus                     Opus <span class="hljs-number">4.6</span> · Most capable <span class="hljs-keyword">for</span> complex <span class="hljs-keyword">work</span> · <span class="hljs-meta">$5</span>/<span class="hljs-meta">$25</span> per Mtok                                                                                                                                                              <br>    <span class="hljs-number">4.</span> Opus (<span class="hljs-number">1</span>M context)        Opus <span class="hljs-number">4.6</span> <span class="hljs-keyword">for</span> long sessions · <span class="hljs-meta">$10</span>/<span class="hljs-meta">$37</span><span class="hljs-number">.50</span> per Mtok                                                                                                                                                                        <br>    <span class="hljs-number">5.</span> Haiku                    Haiku <span class="hljs-number">4.5</span> · Fastest <span class="hljs-keyword">for</span> quick answers · <span class="hljs-meta">$1</span>/<span class="hljs-meta">$5</span> per Mtok                                                                                                                                                                  <br>                                                                                                                                                                                                                                                        <br>  ▌▌▌ Medium effort (<span class="hljs-keyword">default</span>) ← → <span class="hljs-keyword">to</span> adjust<br><br>  Enter <span class="hljs-keyword">to</span> confirm · Esc <span class="hljs-keyword">to</span> <span class="hljs-keyword">exit</span><br></code></pre></td></tr></table></figure>
+<p>切换模型后可以通过 <code>/status</code> 查看使用的模型</p>
+<figure class="highlight livecodeserver"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br></pre></td><td class="code"><pre><code class="hljs livecodeserver">❯ /status                                                                                                                                                                                                                                               <br>       <br>────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────<br>  Settings:  Status   Config   Usage  (←/→ <span class="hljs-keyword">or</span> <span class="hljs-literal">tab</span> <span class="hljs-built_in">to</span> cycle)                                                                                                                                                                                             <br>                                                                                                                                       <br>  Version: <span class="hljs-number">2.1</span><span class="hljs-number">.70</span>                                                                <br>  Session name: /<span class="hljs-built_in">rename</span> <span class="hljs-built_in">to</span> <span class="hljs-built_in">add</span> <span class="hljs-keyword">a</span> name                                                                                                                                                                                                                   <br>  Session ID: <span class="hljs-number">4772e8</span>e2<span class="hljs-number">-10e4</span><span class="hljs-number">-4341</span>-b3a3-xxxxxxxxxxxx                                                                                                                                                                                                      <br>  cwd: /home/vvd/.claude                                                                                                                                                                                                                                <br>  Auth <span class="hljs-keyword">token</span>: ANTHROPIC_AUTH_TOKEN<br>  Anthropic base <span class="hljs-built_in">URL</span>: <span class="hljs-keyword">https</span>://<span class="hljs-built_in">open</span>.bigmodel.cn/api/anthropic<br><br>  Model: opus (glm<span class="hljs-number">-5</span>)<br>  IDE: Installed VS Code <span class="hljs-built_in">extension</span><br>  Memory:<br>  Setting sources: User settings<br>  Esc <span class="hljs-built_in">to</span> <span class="hljs-built_in">cancel</span><br></code></pre></td></tr></table></figure>
+<blockquote>
+<p>看到 glm-5 即为配置成功</p>
+</blockquote>
+<p>建议使用最新版本的 Claude Code，您可以通过以下命令检查当前版本和升级：</p>
+<blockquote>
+<p>我们在 Claude Code 2.1.42 等版本验证 OK。</p>
+</blockquote>
+<figure class="highlight apache"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><code class="hljs apache"><span class="hljs-comment"># 检查当前版本</span><br><span class="hljs-attribute">claude</span> --version<br><span class="hljs-attribute">2</span>.<span class="hljs-number">1</span>.<span class="hljs-number">70</span> (Claude Code)<br><br><span class="hljs-comment"># 升级到最新版本</span><br><span class="hljs-attribute">claude</span> update<br></code></pre></td></tr></table></figure>
+<h3 id="工作模式">工作模式</h3>
+<p>AI辅助写作/编辑工具中常用三种工作模式：</p>
+<table>
+<thead>
+<tr>
+<th style="text-align:left">模式</th>
+<th style="text-align:left">用户控制度</th>
+<th style="text-align:left">速度</th>
+<th style="text-align:left">透明度</th>
+<th style="text-align:left">适用场景</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align:left"><strong>默认模式</strong></td>
+<td style="text-align:left">高（逐条确认）</td>
+<td style="text-align:left">慢</td>
+<td style="text-align:left">高</td>
+<td style="text-align:left">精细编辑、学习</td>
+</tr>
+<tr>
+<td style="text-align:left"><strong>自动接受</strong></td>
+<td style="text-align:left">低（批量接受）</td>
+<td style="text-align:left">快</td>
+<td style="text-align:left">低</td>
+<td style="text-align:left">快速润色、信任AI</td>
+</tr>
+<tr>
+<td style="text-align:left"><strong>计划模式</strong></td>
+<td style="text-align:left">中（先批准计划）</td>
+<td style="text-align:left">中</td>
+<td style="text-align:left">中高</td>
+<td style="text-align:left">复杂重构、重大修改</td>
+</tr>
+</tbody>
+</table>
+<ul>
+<li><strong>默认模式（Default Mode）</strong>
+<ul>
+<li><strong>特点</strong>：AI提供建议，但需要用户手动确认采纳</li>
+<li><strong>工作流程</strong>：AI分析文本后给出修改建议 → 用户查看建议 → 决定是否接受每个修改</li>
+<li><strong>控制度</strong>：用户完全控制，可以逐条选择接受或拒绝</li>
+<li><strong>适用场景</strong>：精细编辑、对修改内容要求严格、希望了解每个改动原因</li>
+</ul>
+</li>
+<li><strong>自动接受编辑模式（Auto-accept Edit Mode）</strong>
+<ul>
+<li><strong>特点</strong>：AI自动应用所有它认为合适的修改</li>
+<li><strong>工作流程</strong>：用户输入指令 → AI直接修改文本 → 呈现最终结果</li>
+<li><strong>控制度</strong>：用户信任AI的判断，放弃逐条确认</li>
+<li><strong>适用场景</strong>：快速润色、基础校对、格式整理、信任AI能力时</li>
+</ul>
+</li>
+<li><strong>计划模式/策略模式（Plan Mode）</strong>
+<ul>
+<li><strong>特点</strong>：AI先制定修改计划，获得用户批准后再执行</li>
+<li><strong>工作流程</strong>：
+<ol>
+<li>AI分析文本并制定修改方案</li>
+<li>向用户解释“我将如何修改，为什么”</li>
+<li>用户批准计划</li>
+<li>AI按计划执行修改</li>
+</ol>
+</li>
+<li><strong>控制度</strong>：中间层控制，用户了解整体修改思路后再决定</li>
+<li><strong>适用场景</strong>：重大重构、复杂改写、希望了解AI的修改逻辑</li>
+</ul>
+</li>
+</ul>
+<h3 id="开始使用-Claude-Code">开始使用 Claude Code</h3>
+<p>配置完成后，进入一个您的代码工作目录，在终端中执行 <code>claude</code> 命令即可开始使用 <strong>Claude Code</strong></p>
+<blockquote>
+<p>若遇到「Do you want to use this API key」选择 Yes 即可</p>
+</blockquote>
+<p>启动后选择信任 Claude Code 访问文件夹里的文件，如下：</p>
+<p><img src="https://uipv4.zywvvd.com:33030/HexoFiles/vvd_image_files/202601141708835.png" srcset="/img/loading.gif" lazyload alt=""></p>
+<blockquote>
+<p>现在就可以正常使用 Claude Code 进行开发了。</p>
+</blockquote>
+<p>可以用自然语言进行交流编程：</p>
+<p><img src="https://uipv4.zywvvd.com:33030/HexoFiles/vvd_image_files/202601141725458.png" srcset="/img/loading.gif" lazyload alt=""></p>
+<h4 id="初始化">初始化</h4>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs bash">/init<br></code></pre></td></tr></table></figure>
+<p>每一次打开一个项目，都运行一下： <code>/init</code> 命令。</p>
+<p>Claude Code 会扫描代码库，自动生成一个 <a target="_blank" rel="noopener" href="http://CLAUDE.md">CLAUDE.md</a> 文件。里面包含：</p>
+<ul>
+<li>怎么 build、怎么 test</li>
+<li>记录关键目录是干什么的</li>
+<li>总结代码规范和风格</li>
+<li>记录重要的架构决策</li>
+</ul>
+<p>对于较大复杂的项目，你还可以建一个 .claude/rules/ 目录，用于放不同模块的专门规则。</p>
+<p>比如 API 目录下的规则文件，只在处理 API 代码时生效。甚至可以用 YAML 前缀指定路径条件。</p>
+<figure class="highlight yaml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><code class="hljs yaml"><span class="hljs-meta">---  </span><br><span class="hljs-string">paths:src/api/**/*.ts</span><br><span class="hljs-meta">---</span><br><span class="hljs-comment"># API Development Rules  </span><br><span class="hljs-string">-AllAPIendpointsmustincludeinputvalidation</span>  <br></code></pre></td></tr></table></figure>
+<p>这个目录下的每个 <code>.md</code> 文件都会自动加载为项目记忆，与你的 <code>CLAUDE.md</code> 并存，作为具体模块的补充。</p>
+<h4 id="随时更新项目记忆">随时更新项目记忆</h4>
+<p>可以直接告诉 Claude ：“更新 <a target="_blank" rel="noopener" href="http://claude.md">claude.md</a>，记住这个项目用 bun 不用 npm。”Claude 会自己把这条写进去。</p>
+<h4 id="引用上下文">引用上下文</h4>
+<p>当你需要 AI 重点参考某个模块时，直接输入 @xxx，是给 Claude 添加上下文的最快方式。比如</p>
+<ul>
+<li>@src/auth.ts - 把单个文件引入上下文</li>
+<li>@src/components/ - 参考整个目录</li>
+<li>@mcp:github - 启用或禁用 MCP 服务器</li>
+</ul>
+<p>它支持模糊匹配（类似 IDE 的全局搜索），能瞬间锁定 auth.ts 或整个 components/ 目录。</p>
+<h4 id="执行-Bash-命令">执行 Bash 命令</h4>
+<blockquote>
+<p>! 前缀</p>
+</blockquote>
+<p>不要浪费 token 去问&quot;你能运行 git status 吗？&quot;。</p>
+<p>直接输入 <code>!</code> 加上你的 bash 命令：</p>
+<figure class="highlight diff"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><code class="hljs diff"><span class="hljs-addition">! git status  </span><br><span class="hljs-addition">! npm test  </span><br><span class="hljs-addition">! ls -la src/  </span><br></code></pre></td></tr></table></figure>
+<p><code>!</code> 前缀会立即执行 bash 命令，命令运行结果就会直接回传给 Claude 作为上下文。</p>
+<h4 id="双击-Esc-回滚-随时撤销">双击 Esc 回滚 -随时撤销</h4>
+<p>若是 AI 改错了，按两次 Esc 就能回到之前的状态。</p>
+<p>你可以选只回退对话、只回退代码、或者都回退。但注意 Bash 命令执行不可撤销。</p>
+<p>比手动 git revert 快很多。</p>
+<h4 id="Ctrl-R-反向搜索历史提示词">Ctrl + R - 反向搜索历史提示词</h4>
+<p>有些复杂的 Prompt（提示词）很难记，想找回昨天写的那条时：</p>
+<p>先按 Ctrl+R 搜索之前用过的 prompt；再按 Ctrl+R 循环查找就能找到写过的 prompt ，不用重复输入。</p>
+<h4 id="Ctrl-S-提示词暂存">Ctrl + S - 提示词暂存</h4>
+<p>提示词写到一半，想先问别的？按 Ctrl+S 暂存当前内容，稍后自动恢复。就像 git stash，但是给 prompt 用的。</p>
+<h4 id="Prompt-建议-AI-自动预测下一步">Prompt 建议 - AI 自动预测下一步</h4>
+<p>完成一个任务后，Claude 会灰色显示建议的下一步操作。</p>
+<p>按 Tab 接受并编辑，按 Enter 直接运行。可以在 /config 里开关。</p>
+<h4 id="–continue-resume-断点续传">–continue / --resume - 断点续传</h4>
+<p>笔记本没电了，终端关了，没事。</p>
+<figure class="highlight dsconfig"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><code class="hljs dsconfig"><span class="hljs-string">claude</span> <span class="hljs-built_in">--continue</span>    <span class="hljs-comment"># 继续上次的对话  </span><br><span class="hljs-string">claude</span> <span class="hljs-built_in">--resume</span>      <span class="hljs-comment"># 选择要恢复的会话  </span><br></code></pre></td></tr></table></figure>
+<p>会话默认会保存 30 天。也可以在配置里改 cleanupPeriodDays，设成 0 立刻清理，或者设成 365 保留一年。</p>
+<h4 id="rename-给会话命名">/rename - 给会话命名</h4>
+<p>你的 git 分支有名字，你的 Claude 会话也该有。</p>
+<p>/resume 界面还支持分组、预览、键盘快捷键。</p>
+<figure class="highlight jboss-cli"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><code class="hljs jboss-cli"><span class="hljs-string">/rename</span> api-migration       <span class="hljs-comment"># 命名当前会话  </span><br><span class="hljs-string">/resume</span> api-migration       <span class="hljs-comment"># 按名字恢复  </span><br>claude <span class="hljs-params">--resume</span> api-migration  <span class="hljs-comment"># 命令行也行  </span><br></code></pre></td></tr></table></figure>
+<h4 id="–teleport-云端同步">–teleport - 云端同步</h4>
+<p>如果在 Claude Code Web 端 <a target="_blank" rel="noopener" href="http://claude.ai/code">claude.ai/code</a> 启动了一个会话，想让它在终端或者手机端继续。</p>
+<h4 id="export-导出操作记录">/export - 导出操作记录</h4>
+<p>把整个对话导出成 Markdown，包含所有 prompt、AI 回复、工具调用、执行结果。</p>
+<h4 id="vim-Vim-模式">/vim - Vim 模式</h4>
+<p>输入 /vim 开启完整的 Vim 风格编辑功能。支持 h j k l、ciw、dd、w b、A 等 vim 命令。</p>
+<p>再输入 /vim 关闭。</p>
+<h4 id="statusline-自定义状态栏">/statusline - 自定义状态栏</h4>
+<p>对话过程中，你可能想知道现在在哪条 Git 分支、Token 耗了多少，以前得退出去看。</p>
+<p>其实，输入/statusline，配置底部状态栏就会显示：</p>
+<ul>
+<li>git 分支和状态</li>
+<li>当前模型</li>
+<li>token 用量</li>
+<li>上下文百分比</li>
+<li>自定义脚本输出</li>
+</ul>
+<h4 id="context-看-Token-花哪了">/context - 看 Token 花哪了</h4>
+<p>聊着聊着 AI 突然变傻了（忘了前面的设定），多半是上下文爆了。</p>
+<p>用法：输入：/context，显示当前对话各部分占用了多少 Token：</p>
+<p>上下文快满的时候，看一眼就知道该删什么。</p>
+<h4 id="stats-使用统计">/stats - 使用统计</h4>
+<p>查看使用模式、最爱模型、使用连续天数等。</p>
+<p>官方戏称“橙色是新的绿色”，类似 GitHub 贡献图。你的 AI 使用记录也有图表了。</p>
+<h4 id="usage-查看额度">/usage - 查看额度</h4>
+<p>查看当前用量和剩余额度，带可视化进度条。</p>
+<p>/extra-usage 可以购买额外容量。</p>
+<p>知道自己还能用多少，心里有底。</p>
+<h4 id="ultrathink-深度思考模式">ultrathink - 深度思考模式</h4>
+<p>很多开发者抱怨 AI 写代码“不动脑子”。其实是因为你没开启它的“深度思考”开关。</p>
+<p>在 prompt 里加 ultrathink 关键词，Claude 会在回复前分配最多 32K tokens 用于内部推理。</p>
+<p>这就适合架构设计、难缠 bug、性能优化。其成本是普通对话的 3-5 倍，但输出质量明显更好。</p>
+<h4 id="Plan-Mode-先规划再动手">Plan Mode - 先规划再动手</h4>
+<p>按两次 Shift + Tab 进入 Plan Mode。</p>
+<p>Claude 会先读项目代码，分析架构和依赖，起草实现方案，等你批准了才开始写代码。</p>
+<h4 id="Extended-Thinking-API-看见思考过程">Extended Thinking (API) - 看见思考过程</h4>
+<p>这个是 API 功能，不在 CLI 里。</p>
+<p>调用 Claude API 时，开启 thinking: {type: “enabled”, budget_tokens: 5000}，AI 会在 thinking blocks 里显示推理过程。</p>
+<p>对于调试复杂逻辑或者理解 AI 的决策很有用。</p>
+<h4 id="sandbox-沙盒模式">/sandbox - 沙盒模式</h4>
+<p>有时候，AI 想跑个 ls 都要你点确认，一下午光点鼠标了。</p>
+<p>这时候就要提前设置允许的操作范围，比如允许 npm install、允许 npm test、禁止 rm -rf；支持通配符，mcp__server__* 可以允许所有 MCP 服务器。</p>
+<p>好处是不用每次都点允许，但危险操作会自动拦截。</p>
+<h4 id="YOLO-Mode-跳过所有权限">YOLO Mode - 跳过所有权限</h4>
+<figure class="highlight ada"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs ada">claude <span class="hljs-comment">--dangerously-skip-permissions  </span><br></code></pre></td></tr></table></figure>
+<p>跳过所有权限确认。适合隔离环境、可信操作、你知道自己在干什么的场景。</p>
+<h4 id="Headless-Mode-非交互运行">Headless Mode - 非交互运行</h4>
+<p>当你想批量分析 100 个 commit 的变更时，输入</p>
+<figure class="highlight nginx"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs nginx"><span class="hljs-attribute">claude</span> -p <span class="hljs-string">&quot;简述这些更改&quot;</span>  <br></code></pre></td></tr></table></figure>
+<p>通过 -p 参数，Claude 的输出会直接流向标准输出。这意味着你可以把它写进 Shell 脚本，甚至塞进 GitHub Actions 流程里。</p>
+<figure class="highlight 1c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><code class="hljs 1c">git diff <span class="hljs-string">| claude -p &quot;</span>Explain these changes<span class="hljs-string">&quot;  </span><br>claude -p <span class="hljs-string">&quot;List all functions&quot;</span> <span class="hljs-string">| grep &quot;</span>async<span class="hljs-string">&quot;  </span><br></code></pre></td></tr></table></figure>
+<p>AI 进入你的脚本和自动化流程。</p>
+<h4 id="Commands-可复用提示词">Commands - 可复用提示词</h4>
+<p>把常用 prompt 保存成 .md 文件，自动变成 slash 命令。</p>
+<p>创建一个 /daily-standup 命令运行你的晨会流程，或者 /explain $ARGUMENTS 支持参数传递。</p>
+<h3 id="VS-code-中使用-Claude-Code">VS code 中使用 Claude Code</h3>
+<p>需要：</p>
+<ul>
+<li>
+<p>VS Code 1.98.0 或更高版本</p>
+</li>
+<li>
+<p>Anthropic 账户（首次打开扩展时您将登录）。</p>
+</li>
+<li>
+<p>安装 Claude Code for VS Code 插件</p>
+</li>
+</ul>
+<p><img src="https://uipv4.zywvvd.com:33030/HexoFiles/vvd_image_files/202601191113488.png" srcset="/img/loading.gif" lazyload alt=""></p>
+<p>界面会出现 CC 的标志，单击可以打开界面</p>
+<p><img src="https://uipv4.zywvvd.com:33030/HexoFiles/vvd_image_files/202601191113547.png" srcset="/img/loading.gif" lazyload alt=""></p>
+<p>配置好 CC 后可以在 VS Code 中对话使用了</p>
+<p><img src="https://uipv4.zywvvd.com:33030/HexoFiles/vvd_image_files/202601191131710.png" srcset="/img/loading.gif" lazyload alt=""></p>
+<h3 id="参考资料">参考资料</h3>
+<ul>
+<li><a target="_blank" rel="noopener" href="https://www.claude.com/product/claude-code">https://www.claude.com/product/claude-code</a></li>
+<li><a target="_blank" rel="noopener" href="https://docs.bigmodel.cn/cn/coding-plan/tool/claude">https://docs.bigmodel.cn/cn/coding-plan/tool/claude</a></li>
+<li><a target="_blank" rel="noopener" href="https://code.claude.com/docs/zh-CN/quickstart">https://code.claude.com/docs/zh-CN/quickstart</a></li>
+<li>Anthropic 社区负责人连更31条Claude Code技巧！</li>
+<li><a target="_blank" rel="noopener" href="https://code.claude.com/docs/zh-CN/vs-code">https://code.claude.com/docs/zh-CN/vs-code</a></li>
+</ul>
+<link rel="stylesheet" href="/css/spoiler.css" type="text/css"><script src="/js/spoiler.js" type="text/javascript" async></script>
+                
+
+
+				<br /><br />
+				<blockquote>
+					<p>文章链接：<br /> 
+					<a style="font-size: 0.85rem" target="_blank" rel="noopener" href="https://www.zywvvd.com/notes/tools/claude-code-intr/claude-code-intr/">https://www.zywvvd.com/notes/tools/claude-code-intr/claude-code-intr/</a>
+					</p>
+				</blockquote>
+
+
+              </div>
+            
+            <hr/>
+			
+			<!-- 添加打赏模块 -->
+			<div class="reward-container">
+				
+					<button id="rewardBtn" class="reward-btn">
+						 
+							❤ 打赏
+							
+					</button>
+					<p class="tea">“觉得不错的话，给点打赏吧 ୧(๑•̀⌄•́๑)૭”</p>
+					<div id="rewardImgContainer" class="reward-img-container">
+						<div class="singleImgContainer">
+							<img id="wechatImg" class="reward-img" src="https://uipv4.zywvvd.com:33030/HexoFiles/vvd_pc_upload/wechatpay.png" srcset="/img/loading.gif" lazyload alt="微信二维码">
+							<p class="wechatPay">微信支付</p>
+						</div>
+						<div class="singleImgContainer">
+							<img id="alipayImg" class="reward-img" src="https://uipv4.zywvvd.com:33030/HexoFiles/vvd_pc_upload/alipay.png" srcset="/img/loading.gif" lazyload alt="支付宝二维码">
+							<p class="aliPay">支付宝支付</p>
+						</div>
+					</div>
+				
+			</div>
+			
+            <div>
+              <div class="post-metas my-3">
+  
+    <div class="post-meta mr-3 d-flex align-items-center">
+      <i class="iconfont icon-category"></i>
+      
+
+<span class="category-chains">
+  
+  
+    
+      <span class="category-chain">
+        
+  <a href="/categories/LLM/" class="category-chain-item">LLM</a>
+  
+  
+
+      </span>
+    
+  
+</span>
+
+    </div>
+  
+  
+    <div class="post-meta">
+      <i class="iconfont icon-tags"></i>
+      
+        <a href="/tags/LLM/" class="print-no-link">#LLM</a>
+      
+    </div>
+  
+</div>
+
+
+              
+  
+
+  <div class="license-box my-3">
+    <div class="license-title">
+      <div>Claude Code 简介与 GLM 接入</div>
+      <div>https://www.zywvvd.com/notes/tools/claude-code-intr/claude-code-intr/</div>
+    </div>
+    <div class="license-meta">
+      
+        <div class="license-meta-item">
+          <div>作者</div>
+          <div>Yiwei Zhang</div>
+        </div>
+      
+      
+        <div class="license-meta-item license-meta-date">
+          <div>发布于</div>
+          <div>2026年1月14日</div>
+        </div>
+      
+      
+      
+        <div class="license-meta-item">
+          <div>许可协议</div>
+          <div>
+            
+              
+              
+                <a class="print-no-link" target="_blank" href="https://creativecommons.org/licenses/by/4.0/">
+                  <span class="hint--top hint--rounded" aria-label="BY - 署名">
+                    <i class="iconfont icon-by"></i>
+                  </span>
+                </a>
+              
+            
+          </div>
+        </div>
+      
+    </div>
+    <div class="license-icon iconfont"></div>
+  </div>
+
+
+
+              
+                <div class="post-prevnext my-3">
+                  <article class="post-prev col-6">
+                    
+                    
+                      <a href="/notes/coding/python/protobuf/protobuf/" title="Protobuf 简介与测试">
+                        <i class="iconfont icon-arrowleft"></i>
+                        <span class="hidden-mobile">Protobuf 简介与测试</span>
+                        <span class="visible-mobile">上一篇</span>
+                      </a>
+                    
+                  </article>
+                  <article class="post-next col-6">
+                    
+                    
+                      <a href="/notes/tools/music/music-lyrics/music-lyrics/" title="Github 歌词下载工具 163MusicLyrics">
+                        <span class="hidden-mobile">Github 歌词下载工具 163MusicLyrics</span>
+                        <span class="visible-mobile">下一篇</span>
+                        <i class="iconfont icon-arrowright"></i>
+                      </a>
+                    
+                  </article>
+                </div>
+              
+            </div>
+
+            
+  
+  
+    <article id="comments" lazyload>
+      
+  <div id="waline"></div>
+  <script type="text/javascript">
+    Fluid.utils.loadComments('#waline', function() {
+      Fluid.utils.createCssLink('https://lib.baomitu.com/waline/2.14.8/waline.min.css')
+      Fluid.utils.createScript('https://lib.baomitu.com/waline/2.14.8/waline.min.js', function() {
+        var options = Object.assign(
+          {"serverURL":"https://uipv4.zywvvd.com:33033/","path":"window.location.pathname","meta":["nick","mail","link"],"requiredMeta":["nick"],"lang":"zh-CN","emoji":["https://cdn.jsdelivr.net/gh/walinejs/emojis/weibo"],"dark":"html[data-user-color-scheme=\"dark\"]","wordLimit":0,"pageSize":10,"reaction":true,"locale":{"placeholder":"山高路远，常来玩吖 ~","reactionTitle":null}},
+          {
+            el: '#waline',
+            path: window.location.pathname
+          }
+        )
+        Waline.init(options);
+        Fluid.utils.waitElementVisible('#waline .vcontent', () => {
+          var imgSelector = '#waline .vcontent img:not(.vemoji)';
+          Fluid.plugins.imageCaption(imgSelector);
+          Fluid.plugins.fancyBox(imgSelector);
+        })
+      });
+    });
+  </script>
+  <noscript>Please enable JavaScript to view the comments</noscript>
+
+
+    </article>
+  
+
+
+          </article>
+        </div>
+      </div>
+    </div>
+
+    <div class="side-col d-none d-lg-block col-lg-2">
+      
+  <aside class="sidebar" style="margin-left: -1rem">
+    <div id="toc">
+  <p class="toc-header">
+    <i class="iconfont icon-list"></i>
+    <span>目录</span>
+  </p>
+  <div class="toc-body" id="toc-body"></div>
+</div>
+
+
+
+  </aside>
+
+
+    </div>
+  </div>
+</div>
+
+
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+  
+  
+
+
+
+
+
+  <script>
+  Fluid.utils.createScript('https://lib.baomitu.com/mermaid/8.14.0/mermaid.min.js', function() {
+    mermaid.initialize({"theme":"default"});
+
+    Fluid.utils.listenDOMLoaded(function() {
+      Fluid.events.registerRefreshCallback(function() {
+        if ('mermaid' in window) {
+          mermaid.init();
+        }
+      });
+    });
+  });
+</script>
+
+
+
+
+
+
+    
+
+    
+      <a id="scroll-top-button" aria-label="TOP" href="#" role="button">
+        <i class="iconfont icon-xiangshangjiantou" aria-hidden="true"></i>
+      </a>
+    
+
+    
+      <div class="modal fade" id="modalSearch" tabindex="-1" role="dialog" aria-labelledby="ModalLabel"
+     aria-hidden="true">
+  <div class="modal-dialog modal-dialog-scrollable modal-lg" role="document">
+    <div class="modal-content">
+      <div class="modal-header text-center">
+        <h4 class="modal-title w-100 font-weight-bold">搜索</h4>
+        <button type="button" id="local-search-close" class="close" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body mx-3">
+        <div class="md-form mb-5">
+          <input type="text" id="local-search-input" class="form-control validate">
+          <label data-error="x" data-success="v" for="local-search-input">关键词</label>
+        </div>
+        <div class="list-group" id="local-search-result"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+    
+
+    
+  </main>
+
+  <footer>
+    <div class="footer-inner">
+  
+    <div class="footer-content">
+       <div class="vvd_footer" style="font-size: 0.85rem;"> <a href="https://hexo.io" target="_blank" rel="nofollow noopener" color="#d7d8d9" data-umami-event="Footer-Hexo"><span class="umami--click--Footer-Hexo">Hexo</span></a> <i class="iconfont icon-love"></i> <a href="https://github.com/fluid-dev/hexo-theme-fluid" target="_blank" rel="nofollow noopener" data-umami-event="Footer-Fluid"><span class="umami--click--Footer-Fluid">Fluid</span></a> <i class="iconfont icon-love"></i> <a href="https://uipv4.zywvvd.com:33039/share/0zx3o21oIpZTZqwC/%E5%8F%88%E8%A7%81%E8%8B%8D%E5%B2%9A" target="_blank" rel="nofollow noopener" data-umami-event="Footer-Umami"><span class="umami--click--Footer-Umami">Umami</span></a> <div style="font-size: 0.85rem;"> <span id="timeDate">载入天数...</span> <span id="times">载入时分秒...</span> <script src="/vvd_js/duration.js"></script> </div> <div style="font-size: 0.85rem;"> <span> 总访问量 <span style="color: #d7d8d9;" id="PVstatic">0</span> 次&nbsp</span> <span> 总访客数 <span style="color: #d7d8d9;" id="UVstatic">0</span> 人&nbsp</span> <span> 当前在线 <span style="color: #d7d8d9;" id="ACTstatic">0</span> 人&nbsp</span> <script src="https://uipv4.zywvvd.com:33037/statistics" defer></script> </div> <div> <span> Copyright © 2020-2025. All Rights Reserved.</span> </div> <div style="font-size: 0.88rem;"> <a target="_blank" rel="noopener" href="https://developer.hitokoto.cn/" id="hitokoto_text"><span style="color: #d7d8d9;"  id="hitokoto"></span></a> <script src="https://uipv4.zywvvd.com:33044/?encode=js&select=%23hitokoto" defer></script> </div> <a href="https://icp.gov.moe/?keyword=20230615" target="_blank">萌ICP备20230615号</a>
+
+
+</div> 
+    </div>
+  
+  
+  
+  
+</div>
+
+  </footer>
+
+  <!-- Scripts -->
+  
+  <script  src="https://lib.baomitu.com/nprogress/0.2.0/nprogress.min.js" ></script>
+  <link  rel="stylesheet" href="https://lib.baomitu.com/nprogress/0.2.0/nprogress.min.css" />
+
+  <script>
+    NProgress.configure({"showSpinner":false,"trickleSpeed":100})
+    NProgress.start()
+    window.addEventListener('load', function() {
+      NProgress.done();
+    })
+  </script>
+
+
+<script  src="https://lib.baomitu.com/jquery/3.6.0/jquery.min.js" ></script>
+<script  src="https://lib.baomitu.com/twitter-bootstrap/4.6.1/js/bootstrap.min.js" ></script>
+<script  src="/js/events.js" ></script>
+<script  src="/js/plugins.js" ></script>
+
+
+
+
+
+  
+    <script  src="/js/img-lazyload.js" ></script>
+  
+
+
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/tocbot/4.18.2/tocbot.min.js', function() {
+    var toc = jQuery('#toc');
+    if (toc.length === 0 || !window.tocbot) { return; }
+    var boardCtn = jQuery('#board-ctn');
+    var boardTop = boardCtn.offset().top;
+
+    window.tocbot.init(Object.assign({
+      tocSelector     : '#toc-body',
+      contentSelector : '.markdown-body',
+      linkClass       : 'tocbot-link',
+      activeLinkClass : 'tocbot-active-link',
+      listClass       : 'tocbot-list',
+      isCollapsedClass: 'tocbot-is-collapsed',
+      collapsibleClass: 'tocbot-is-collapsible',
+      scrollSmooth    : true,
+      includeTitleTags: true,
+      headingsOffset  : -boardTop,
+    }, CONFIG.toc));
+    if (toc.find('.toc-list-item').length > 0) {
+      toc.css('visibility', 'visible');
+    }
+
+    Fluid.events.registerRefreshCallback(function() {
+      if ('tocbot' in window) {
+        tocbot.refresh();
+        var toc = jQuery('#toc');
+        if (toc.length === 0 || !tocbot) {
+          return;
+        }
+        if (toc.find('.toc-list-item').length > 0) {
+          toc.css('visibility', 'visible');
+        }
+      }
+    });
+  });
+</script>
+
+
+  <script src=https://lib.baomitu.com/clipboard.js/2.0.10/clipboard.min.js></script>
+
+  <script>Fluid.plugins.codeWidget();</script>
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/anchor-js/4.3.1/anchor.min.js', function() {
+    window.anchors.options = {
+      placement: CONFIG.anchorjs.placement,
+      visible  : CONFIG.anchorjs.visible
+    };
+    if (CONFIG.anchorjs.icon) {
+      window.anchors.options.icon = CONFIG.anchorjs.icon;
+    }
+    var el = (CONFIG.anchorjs.element || 'h1,h2,h3,h4,h5,h6').split(',');
+    var res = [];
+    for (var item of el) {
+      res.push('.markdown-body > ' + item.trim());
+    }
+    if (CONFIG.anchorjs.placement === 'left') {
+      window.anchors.options.class = 'anchorjs-link-left';
+    }
+    window.anchors.add(res.join(', '));
+
+    Fluid.events.registerRefreshCallback(function() {
+      if ('anchors' in window) {
+        anchors.removeAll();
+        var el = (CONFIG.anchorjs.element || 'h1,h2,h3,h4,h5,h6').split(',');
+        var res = [];
+        for (var item of el) {
+          res.push('.markdown-body > ' + item.trim());
+        }
+        if (CONFIG.anchorjs.placement === 'left') {
+          anchors.options.class = 'anchorjs-link-left';
+        }
+        anchors.add(res.join(', '));
+      }
+    });
+  });
+</script>
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/fancybox/3.5.7/jquery.fancybox.min.js', function() {
+    Fluid.plugins.fancyBox();
+  });
+</script>
+
+
+  <script>Fluid.plugins.imageCaption();</script>
+
+  
+      <script>
+        if (!window.MathJax) {
+          window.MathJax = {
+            tex    : {
+              inlineMath: { '[+]': [['$', '$']] }
+            },
+            options: {
+              renderActions: {
+                insertedScript: [200, () => {
+                  document.querySelectorAll('mjx-container').forEach(node => {
+                    let target = node.parentNode;
+                    if (target.nodeName.toLowerCase() === 'li') {
+                      target.parentNode.classList.add('has-jax');
+                    }
+                  });
+                }, '', false]
+              }
+            }
+          };
+        } else {
+          MathJax.startup.document.state(0);
+          MathJax.texReset();
+          MathJax.typeset();
+          MathJax.typesetPromise();
+        }
+
+        Fluid.events.registerRefreshCallback(function() {
+          if ('MathJax' in window && MathJax.startup.document && typeof MathJax.startup.document.state === 'function') {
+            MathJax.startup.document.state(0);
+            MathJax.texReset();
+            MathJax.typeset();
+            MathJax.typesetPromise();
+          }
+        });
+      </script>
+    
+
+  <script  src="https://lib.baomitu.com/mathjax/3.2.1/es5/tex-mml-chtml.js" ></script>
+
+  <script defer src="/js/leancloud.js" ></script>
+
+  <script  src="/js/local-search.js" ></script>
+
+
+
+
+  
+<script src="//cdn.jsdelivr.net/npm/aplayer/dist/APlayer.min.js"></script>
+<script src="//cdn.jsdelivr.net/gh/metowolf/MetingJS@1.2/dist/Meting.min.js"></script>
+<script src="/js/reward.js"></script>
+
+
+
+<!-- 主题的启动项，将它保持在最底部 -->
+<!-- the boot of the theme, keep it at the bottom -->
+<script  src="/js/boot.js" ></script>
+
+
+  <script type="text/javascript">
+    /*窗口监视*/
+    var originalTitle = document.title;
+    window.onblur = function(){document.title = "明眸如初"};
+    window.onfocus = function(){document.title = originalTitle};
+  </script>
+
+
+  <div id="tooltip-rightmenu" class="tooltip-rightmenu">如需原始右键菜单请按下 <strong>Ctrl+右键</strong></div>
+
+<div id="rightmenu-wrapper" style="">
+  <ul class="list-v rightmenu" id="rightmenu-content">
+	  <li class="navigation menuNavigation-Content">
+		<a class="nav icon-only fix-cursor-default" onclick="history.back()"><i class="iconfont icon-zuojiantou1"></i></a>
+		<a class="nav icon-only fix-cursor-default" onclick="history.forward()"><i class="iconfont icon-youjiantou1"></i></a>
+		<a class="nav icon-only fix-cursor-default" onclick="window.location.reload()"><i class="iconfont icon-shuaxin"></i></a>
+		<a  aria-label="TOP" href="#" role="button"><i class="iconfont icon-xiangshang"></i></a>
+	  </li>
+
+		<hr class="menuLoad-Content" style="display: block;">
+	  <li class="menuLoad-Content" style="display: block;">
+		<a class="vlts-menu fix-cursor-default" target="_self" href="javascript:;" data-toggle="modal" data-target="#modalSearch" aria-label="Search">
+		  <span>
+			  <i class="iconfont icon-sousuo1 rightmenu-icon"></i>
+			  站内搜索
+		  </span>
+		</a>
+	  </li>
+
+	  <li class="menuLoad-Content" style="display: block;">
+		<a class="vlts-menu fix-cursor-default"  href="https://www.zywvvd.com/messagebd/" data-group="link">
+		  <span>
+			  <i class="iconfont icon-yangshi_icon_tongyong_chat rightmenu-icon">  </i>
+			   留言吐槽 
+		   </span>
+		</a>
+	  </li>
+
+
+	  <li class="menuLoad-Content" style="display: block;">
+		<a class="vlts-menu fix-cursor-default" id="help" target="_blank" rel="noopener" href="https://www.foreverblog.cn/go.html" data-group="link">
+		<span>
+			  <i class="iconfont icon-a-BlackHole rightmenu-icon"></i>
+			  虫洞穿梭
+		  </span>
+		</a>
+	  </li>
+
+	<a id="scroll-top-button" aria-label="TOP" href="#" role="button" style="bottom: 20px; right: 52.6364px;">
+        <i class="iconfont icon-xiangshangjiantou" aria-hidden="true"></i>
+      </a>
+
+	<hr class="menuLoad-Content" style="display: block;">
+	
+	  <li class="menuLoad-Content" style="display: block;">
+		<a class="vlts-menu fix-cursor-default" id="destroy-airplane" target="_blank" rel="noopener"  data-group="link">
+		<span>
+			  <i class="iconfont icon-feiji rightmenu-icon"></i>
+			  破坏小飞机
+		  </span>
+		</a>
+	  </li>
+  </ul>
+</div>
+
+<script>
+	var ua = navigator.userAgent;
+	var ipad = ua.match(/(iPad).*OS\s([\d_]+)/),
+		isIphone = !ipad && ua.match(/(iPhone\sOS)\s([\d_]+)/),
+		isAndroid = ua.match(/(Android)\s+([\d.]+)/),
+		isMobile = isIphone || isAndroid;
+
+	if(!isMobile) {
+		// 为按钮添加事件处理器
+		document.getElementById('destroy-airplane').onclick = function() {
+		  console.log('飞机起飞！');
+		  // 定义要执行的JavaScript代码
+		var KICKASSVERSION='2.0';
+		var s = document.createElement('script');
+		s.type='text/javascript';
+		document.body.appendChild(s);
+		s.src='https://uipv4.zywvvd.com:33030/HexoFiles/js/games/airplane/airplane.js';
+		void(0);
+		};
+	}
+</script>
+
+
+
+
+
+<link href="/css/custom.css"type="text/css"rel="stylesheet"/>
+<script src="/vvd_js/right_menu.js" type="text/javascript"></script>
+<link href="/css/right_menu.css"type="text/css"rel="stylesheet"/>
+<script src="/vvd_js/go.js"></script>
+
+
+  <noscript>
+    <div class="noscript-warning">博客在允许 JavaScript 运行的环境下浏览效果更佳</div>
+  </noscript>
+<script src="/live2dw/lib/L2Dwidget.min.js?094cbace49a39548bed64abff5988b05"></script><script>L2Dwidget.init({"pluginRootPath":"live2dw/","pluginJsPath":"lib/","pluginModelPath":"assets/","tagMode":false,"log":false,"model":{"jsonPath":"/live2dw/assets/z16.model.json"},"display":{"position":"left","width":200,"height":400},"mobile":{"show":false},"react":{"opacity":0.9}});</script></body>
+</html>

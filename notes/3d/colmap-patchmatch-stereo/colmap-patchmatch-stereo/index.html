@@ -1,0 +1,2589 @@
+
+
+<!DOCTYPE html>
+<html lang="zh-CN" data-default-color-scheme=auto>
+
+
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="baidu-site-verification" content="codeva-rLWafCJGYc" />
+  <link rel="apple-touch-icon" sizes="76x76" href="/image/avatar.png">
+  <link rel="icon" href="/image/avatar.png">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, shrink-to-fit=no">
+  <meta http-equiv="x-ua-compatible" content="ie=edge">
+  
+  <meta name="theme-color" content="#2f4154">
+  <meta name="author" content="Yiwei Zhang">
+  <meta name="keywords" content="人工智能, 深度学习, 个人博客, 机器学习">
+  
+    <meta name="description" content="COLMAP 的 PatchMatch Stereo 是 MVS 稠密重建的核心算法，通过随机初始化深度和法线、NCC 代价评估、空间传播与随机扰动迭代优化，估计每个像素的最优深度。本文记录算法原理与实现细节。">
+<meta property="og:type" content="article">
+<meta property="og:title" content="COLMAP PatchMatch Stereo">
+<meta property="og:url" content="https://www.zywvvd.com/notes/3d/colmap-patchmatch-stereo/colmap-patchmatch-stereo/index.html">
+<meta property="og:site_name" content="又见苍岚">
+<meta property="og:description" content="COLMAP 的 PatchMatch Stereo 是 MVS 稠密重建的核心算法，通过随机初始化深度和法线、NCC 代价评估、空间传播与随机扰动迭代优化，估计每个像素的最优深度。本文记录算法原理与实现细节。">
+<meta property="og:locale" content="zh_CN">
+<meta property="article:published_time" content="2026-05-16T02:00:00.000Z">
+<meta property="article:modified_time" content="2026-07-09T02:27:06.438Z">
+<meta property="article:author" content="Yiwei Zhang">
+<meta property="article:tag" content="3D">
+<meta property="article:tag" content="Computer_Vision">
+<meta property="article:tag" content="COLMAP">
+<meta name="twitter:card" content="summary_large_image">
+  
+  
+  
+  <title>COLMAP PatchMatch Stereo - 又见苍岚</title>
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/twitter-bootstrap/4.6.1/css/bootstrap.min.css" />
+
+
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/github-markdown-css/4.0.0/github-markdown.min.css" />
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/hint.css/2.7.0/hint.min.css" />
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/fancybox/3.5.7/jquery.fancybox.min.css" />
+
+
+
+<!-- 主题依赖的图标库，不要自行修改 -->
+<!-- Do not modify the link that theme dependent icons -->
+
+<link rel="stylesheet" href="//at.alicdn.com/t/font_1749284_hj8rtnfg7um.css">
+
+
+
+<link rel="stylesheet" href="//at.alicdn.com/t/font_1736178_lbnruvf0jn.css">
+
+
+<link  rel="stylesheet" href="/css/main.css" />
+
+
+  <link id="highlight-css" rel="stylesheet" href="/css/highlight.css" />
+  
+    <link id="highlight-css-dark" rel="stylesheet" href="/css/highlight-dark.css" />
+  
+
+
+
+  
+<link rel="stylesheet" href="/css/custom.css">
+<link rel="stylesheet" href="/css/reward.css">
+<link rel="stylesheet" href="//cdn.jsdelivr.net/npm/aplayer/dist/APlayer.min.css">
+
+
+
+  <script id="fluid-configs">
+    var Fluid = window.Fluid || {};
+    Fluid.ctx = Object.assign({}, Fluid.ctx)
+    var CONFIG = {"hostname":"www.zywvvd.com","root":"/","version":"1.9.7","typing":{"enable":true,"typeSpeed":90,"cursorChar":"_","loop":false,"scope":["home"]},"anchorjs":{"enable":true,"element":"h1,h2,h3,h4,h5,h6","placement":"left","visible":"hover","icon":""},"progressbar":{"enable":true,"height_px":3,"color":"#29d","options":{"showSpinner":false,"trickleSpeed":100}},"code_language":{"enable":true,"default":"TEXT"},"copy_btn":true,"image_caption":{"enable":true},"image_zoom":{"enable":true,"img_url_replace":["",""]},"toc":{"enable":true,"placement":"right","headingSelector":"h1,h2,h3,h4,h5,h6","collapseDepth":0},"lazyload":{"enable":true,"loading_img":"/img/loading.gif","onlypost":false,"offset_factor":2},"web_analytics":{"enable":true,"follow_dnt":true,"baidu":null,"google":null,"tencent":{"sid":null,"cid":null},"woyaola":null,"cnzz":null,"leancloud":{"app_id":"Cv0XNeBSBdAPAIuVj3PsyM3R-MdYXbMMI","app_key":"4PU1rNlGrqXWzhfW3dgq98oX","server_url":null,"path":"window.location.pathname","ignore_local":false},"gtag":null},"search_path":"/local-search.xml","include_content_in_search":true};
+
+    if (CONFIG.web_analytics.follow_dnt) {
+      var dntVal = navigator.doNotTrack || window.doNotTrack || navigator.msDoNotTrack;
+      Fluid.ctx.dnt = dntVal && (dntVal.startsWith('1') || dntVal.startsWith('yes') || dntVal.startsWith('on'));
+    }
+  </script>
+  <script  src="/js/utils.js" ></script>
+  <script  src="/js/color-schema.js" ></script>
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+    
+  
+
+
+
+  
+<meta name="generator" content="Hexo 7.2.0"><link rel="alternate" href="/atom.xml" title="又见苍岚" type="application/atom+xml">
+</head>
+
+<script>
+// 页面加载完成后隐藏加载动画
+document.addEventListener("readystatechange", function() {
+    const loader = document.getElementById('Loadanimation');
+    if (loader) {
+        // 停留1秒后开始淡出
+        setTimeout(function() {
+            loader.style.transition = 'opacity 1.2s';
+            loader.style.opacity = '0';
+            // 淡出完成后隐藏
+            setTimeout(() => {
+                loader.style.display = 'none';
+            }, 1000); // 等待淡出动画完成
+        }, 700); // 停留0.8秒
+    }
+});
+</script>
+
+
+
+<body>
+  
+<div id="Loadanimation" style="z-index:999999;">
+<div id="Loadanimation-center">
+   <div id="Loadanimation-center-absolute">
+       <div class="xccx_object" id="xccx_four"></div>
+       <div class="xccx_object" id="xccx_three"></div>
+       <div class="xccx_object" id="xccx_two"></div>
+       <div class="xccx_object" id="xccx_one"></div>
+   </div>
+</div>
+</div>
+
+<link href="/css/loading.css"type="text/css"rel="stylesheet"/>
+
+
+
+
+
+
+<div>
+	<div class='real_mask' style="
+		background-color: rgba(0,0,0,0.4);
+		width: 100%;
+		height: 100%;
+		position: fixed;
+		z-index: -777;
+	"></div>
+	<div id="banner_video_insert">
+	</div>	
+	<div id='vvd_banner_img'>
+	</div>
+</div>
+<div id="banner"></div>
+
+
+
+
+
+
+
+  <header>
+    
+
+<div class="header-inner" style="height: 80vh;">
+  <nav id="navbar" class="navbar fixed-top  navbar-expand-lg navbar-dark scrolling-navbar">
+  <div class="container">
+    <a class="navbar-brand" href="/">
+      <strong>CangLan</strong>
+    </a>
+
+    <button id="navbar-toggler-btn" class="navbar-toggler" type="button" data-toggle="collapse"
+            data-target="#navbarSupportedContent"
+            aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
+      <div class="animated-icon"><span></span><span></span><span></span></div>
+    </button>
+
+    <!-- Collapsible content -->
+    <div class="collapse navbar-collapse" id="navbarSupportedContent">
+      <ul class="navbar-nav ml-auto text-center">
+        
+          
+          
+          
+          
+            <li class="nav-item">
+		<div >
+		      <a class="nav-link" href="/" target="_self" data-umami-event="Navigation-Homepage">
+
+		        <i class="iconfont icon-home-fill"></i>
+		        <span>首页</span>
+		      </a>
+		</div>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item dropdown">
+              <a class="nav-link dropdown-toggle" target="_self" href="javascript:;" role="button"
+                 data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                <i class="iconfont icon-shuji1"></i>
+                <span>文章</span>
+              </a>
+              <div class="dropdown-menu" aria-labelledby="navbarDropdown">
+                
+                  
+                  
+                  
+		<div >
+
+                  <a class="dropdown-item" href="/archives/" target="_self" data-umami-event="Navigation-Archive">
+
+                    <i class="iconfont icon-archive-fill"></i>
+                    <span>归档</span>
+                  </a>
+		</div>
+                
+                  
+                  
+                  
+		<div >
+
+                  <a class="dropdown-item" href="/categories/" target="_self" data-umami-event="Navigation-Category">
+
+                    <i class="iconfont icon-category-fill"></i>
+                    <span>分类</span>
+                  </a>
+		</div>
+                
+                  
+                  
+                  
+		<div >
+
+                  <a class="dropdown-item" href="/tags/" target="_self" data-umami-event="Navigation-Tag">
+
+                    <i class="iconfont icon-tags-fill"></i>
+                    <span>标签</span>
+                  </a>
+		</div>
+                
+                  
+                  
+                  
+		<div >
+
+                  <a class="dropdown-item" href="/shuoshuo/" target="_self" data-umami-event="Navigation-Shuoshuo">
+
+                    <i class="iconfont icon-24gf-bubblesDots4"></i>
+                    <span>说说</span>
+                  </a>
+		</div>
+                
+              </div>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item dropdown">
+              <a class="nav-link dropdown-toggle" target="_self" href="javascript:;" role="button"
+                 data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                <i class="iconfont icon-momo"></i>
+                <span>社交</span>
+              </a>
+              <div class="dropdown-menu" aria-labelledby="navbarDropdown">
+                
+                  
+                  
+                  
+		<div >
+
+                  <a class="dropdown-item" href="/links/" target="_self" data-umami-event="Navigation-Friends">
+
+                    <i class="iconfont icon-link-fill"></i>
+                    <span>友链</span>
+                  </a>
+		</div>
+                
+                  
+                  
+                  
+		<div >
+
+                  <a class="dropdown-item" href="/messagebd/" target="_self" data-umami-event="Navigation-MessageBoard">
+
+                    <i class="iconfont icon-comment"></i>
+                    <span>留言板</span>
+                  </a>
+		</div>
+                
+                  
+                  
+                  
+		<div >
+
+                  <a class="dropdown-item" href="/atom.xml" target="_self" data-umami-event="Navigation-RSS">
+
+                    <i class="iconfont icon-dingyue"></i>
+                    <span>RSS订阅</span>
+                  </a>
+		</div>
+                
+                  
+                  
+                  
+		<div >
+
+                  <a class="dropdown-item" href="/reccomments/" target="_self" data-umami-event="Navigation-Recent-Comments">
+
+                    <i class="iconfont icon-icon-pinglunguanli-pinglunliebiao"></i>
+                    <span>近期评论</span>
+                  </a>
+		</div>
+                
+              </div>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item dropdown">
+              <a class="nav-link dropdown-toggle" target="_self" href="javascript:;" role="button"
+                 data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                <i class="iconfont icon-user-fill"></i>
+                <span>个人</span>
+              </a>
+              <div class="dropdown-menu" aria-labelledby="navbarDropdown">
+                
+                  
+                  
+                  
+		<div >
+
+                  <a class="dropdown-item" href="/about/" target="_self" data-umami-event="Navigation-AboutMe">
+
+                    <i class="iconfont icon-guanyuwomen"></i>
+                    <span>关于</span>
+                  </a>
+		</div>
+                
+                  
+                  
+                  
+		<div >
+
+                  <a class="dropdown-item" href="/playlist/" target="_self" data-umami-event="Navigation-Music">
+
+                    <i class="iconfont icon-music"></i>
+                    <span>歌单</span>
+                  </a>
+		</div>
+                
+                  
+                  
+                  
+		<div >
+
+                  <a class="dropdown-item" href="https://uipv4.zywvvd.com:33035" target="_self" data-umami-event="Navigation-Nextcloud">
+
+                    <i class="iconfont icon-xuniyingpan"></i>
+                    <span>网盘</span>
+                  </a>
+		</div>
+                
+                  
+                  
+                  
+		<div >
+
+                  <a class="dropdown-item" href="https://uipv4.zywvvd.com:33036" target="_self" data-umami-event="Navigation-OneDev">
+
+                    <i class="iconfont icon-git"></i>
+                    <span>仓库</span>
+                  </a>
+		</div>
+                
+                  
+                  
+                  
+		<div >
+
+                  <a class="dropdown-item" href="https://uipv4.zywvvd.com:33041" target="_self" data-umami-event="Navigation-Wiki">
+
+                    <i class="iconfont icon-wiki"></i>
+                    <span>百科</span>
+                  </a>
+		</div>
+                
+              </div>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item dropdown">
+              <a class="nav-link dropdown-toggle" target="_self" href="javascript:;" role="button"
+                 data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                <i class="iconfont icon-ic_fly"></i>
+                <span>导航</span>
+              </a>
+              <div class="dropdown-menu" aria-labelledby="navbarDropdown">
+                
+                  
+                  
+                  
+		<div >
+
+                  <a class="dropdown-item" href="/site-map/" target="_self" data-umami-event="Navigation-SiteMap">
+
+                    <i class="iconfont icon-lianjie"></i>
+                    <span>链接</span>
+                  </a>
+		</div>
+                
+                  
+                  
+                  
+		<div >
+
+                  <a class="dropdown-item" href="/nodeppt/hexo/snavigation/" target="_self" data-umami-event="Navigation-Search">
+
+                    <i class="iconfont icon-sousuo"></i>
+                    <span>搜索</span>
+                  </a>
+		</div>
+                
+              </div>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item dropdown">
+              <a class="nav-link dropdown-toggle" target="_self" href="javascript:;" role="button"
+                 data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                <i class="iconfont icon-wangzhan"></i>
+                <span>站点</span>
+              </a>
+              <div class="dropdown-menu" aria-labelledby="navbarDropdown">
+                
+                  
+                  
+                  
+		<div >
+
+                  <a class="dropdown-item" href="https://uipv4.zywvvd.com:33039/share/0zx3o21oIpZTZqwC/%E5%8F%88%E8%A7%81%E8%8B%8D%E5%B2%9A" target="_self" data-umami-event="Navigation-Umami">
+
+                    <i class="iconfont icon-tongji2"></i>
+                    <span>站点分析</span>
+                  </a>
+		</div>
+                
+                  
+                  
+                  
+		<div >
+
+                  <a class="dropdown-item" href="/earth_sta/" target="_self" data-umami-event="Navigation-Globe">
+
+                    <i class="iconfont icon-tongjifenxi-xiangmubiaogetongji"></i>
+                    <span>访问统计</span>
+                  </a>
+		</div>
+                
+                  
+                  
+                  
+		<div >
+
+                  <a class="dropdown-item" href="https://uipv4.zywvvd.com:33034/status/show" target="_self" data-umami-event="Navigation-Monitor">
+
+                    <i class="iconfont icon-jiankong"></i>
+                    <span>站点监控</span>
+                  </a>
+		</div>
+                
+              </div>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item dropdown">
+              <a class="nav-link dropdown-toggle" target="_self" href="javascript:;" role="button"
+                 data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                <i class="iconfont icon-chuansong"></i>
+                <span>传送</span>
+              </a>
+              <div class="dropdown-menu" aria-labelledby="navbarDropdown">
+                
+                  
+                  
+                  
+		<div >
+
+                  <a class="dropdown-item" href="https://www.foreverblog.cn/go.html" target="_self" data-umami-event="Navigation-ForeverBolg">
+
+                    <i class="iconfont icon-a-BlackHole"></i>
+                    <span>十年之约</span>
+                  </a>
+		</div>
+                
+                  
+                  
+                  
+		<div >
+
+                  <a class="dropdown-item" href="https://www.travellings.cn/go.html" target="_self" data-umami-event="Navigation-DriveTo">
+
+                    <i class="iconfont icon-train1"></i>
+                    <span>开往</span>
+                  </a>
+		</div>
+                
+                  
+                  
+                  
+		<div >
+
+                  <a class="dropdown-item" href="https://bf.zzxworld.com/" target="_self" data-umami-event="Navigation-BlogFinder">
+
+                    <i class="iconfont icon-icon-"></i>
+                    <span>BlogFinder</span>
+                  </a>
+		</div>
+                
+                  
+                  
+                  
+		<div >
+
+                  <a class="dropdown-item" href="https://www.perass.com/" target="_self" data-umami-event="Navigation-Bloghome">
+
+                    <i class="iconfont icon-home-fill"></i>
+                    <span>博客之家</span>
+                  </a>
+		</div>
+                
+              </div>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item dropdown">
+              <a class="nav-link dropdown-toggle" target="_self" href="javascript:;" role="button"
+                 data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                <i class="iconfont icon-gongju"></i>
+                <span>工具</span>
+              </a>
+              <div class="dropdown-menu" aria-labelledby="navbarDropdown">
+                
+                  
+                  
+                  
+		<div >
+
+                  <a class="dropdown-item" href="/navigates/calculator" target="_self" data-umami-event="Navigation-Calculator">
+
+                    <i class="iconfont icon-jisuan"></i>
+                    <span>计算器</span>
+                  </a>
+		</div>
+                
+                  
+                  
+                  
+		<div >
+
+                  <a class="dropdown-item" href="/navigates/webgraphviz" target="_self" data-umami-event="Navigation-WebGtaphviz">
+
+                    <i class="iconfont icon-tongyong-huatugongju2"></i>
+                    <span>Graphviz</span>
+                  </a>
+		</div>
+                
+                  
+                  
+                  
+		<div >
+
+                  <a class="dropdown-item" href="/navigates/formular_reco" target="_self" data-umami-event="Navigation-Formular-Reco">
+
+                    <i class="iconfont icon-a-checkformula"></i>
+                    <span>公式识别</span>
+                  </a>
+		</div>
+                
+              </div>
+            </li>
+          
+        
+        
+          <li class="nav-item" id="search-btn">
+            <a class="nav-link" target="_self" href="javascript:;" data-toggle="modal" data-target="#modalSearch" aria-label="Search">
+              <i class="iconfont icon-search"></i>
+            </a>
+          </li>
+          
+        
+        
+          <li class="nav-item" id="color-toggle-btn">
+            <a class="nav-link" target="_self" href="javascript:;" aria-label="Color Toggle">
+              <i class="iconfont icon-dark" id="color-toggle-icon"></i>
+            </a>
+          </li>
+        
+      </ul>
+    </div>
+  </div>
+</nav>
+
+  
+
+<div id="banner" class="banner" parallax=true
+     style="background: url('https://uipv4.zywvvd.com:33030/HexoFiles/new/bg-trans.png') no-repeat center center; background-size: cover;">
+  <div class="full-bg-img">
+    <div class="mask flex-center" style="background-color: rgba(0, 0, 0, 0)">
+      <div class="banner-text text-center fade-in-up">
+        <div class="h2">
+          
+            <span id="subtitle">COLMAP PatchMatch Stereo</span>
+          
+        </div>
+
+        
+          
+  <div class="mt-3">
+    
+      <span class="post-meta mr-2">
+        <i class="iconfont icon-author" aria-hidden="true"></i>
+        Yiwei Zhang
+      </span>
+    
+    
+      <span class="post-meta">
+        <i class="iconfont icon-date-fill" aria-hidden="true"></i>
+        <time datetime="2026-05-16 10:00" pubdate>
+          2026年5月16日 上午
+        </time>
+      </span>
+    
+  </div>
+
+  <div class="mt-1">
+    
+      <span class="post-meta mr-2">
+        <i class="iconfont icon-chart"></i>
+        
+          <!-- compatible with older versions-->
+          11k 字
+        
+      </span>
+    
+
+    
+      <span class="post-meta mr-2">
+        <i class="iconfont icon-clock-fill"></i>
+        
+        
+        
+          <!-- compatible with older versions-->
+          96 分钟
+        
+      </span>
+    
+
+    
+    
+      
+        <span id="vvdpost_container_page_pvuv" style="display: none">
+          <i class="iconfont icon-eye" aria-hidden="true"></i>
+          <span id="vvdpost_value_page_pv">0</span> 次&nbsp&nbsp
+		  <i class="iconfont icon-users" aria-hidden="true"></i>
+		  <span id="vvdpost_value_page_uv">0</span> 人&nbsp&nbsp
+		  <i class="iconfont icon-comment" aria-hidden="true"></i>
+		  <span id="vvdpost_value_page_cn">0</span> 条
+        </span>
+
+    <script>
+    document.addEventListener("DOMContentLoaded", function() {
+	      console.log("PVUV_" + window.location.pathname);
+
+	      // 使用 fetch API 发送 POST 请求
+	      fetch('https://uipv4.zywvvd.com:33037/poststats', { 
+		  method: 'POST',
+		  headers: {
+		      'Content-Type': 'application/json'
+		  },
+		  body: JSON.stringify(window.location.pathname) // 将路径名作为对象发送，以便在服务器端更容易处理
+	      })
+	      .then(response => {
+		  // 检查响应状态
+		  if (!response.ok) {
+		      throw new Error('Network response was not ok ' + response.statusText);
+		  }
+		  return response.json(); // 解析 JSON 响应
+	      })
+	      .then(data => {
+		  // 处理解析后的数据
+		  console.log(data.pv);
+		  var pvCtn = document.querySelector('#vvdpost_container_page_pvuv');
+		  if (pvCtn) {
+		      var pvEle = document.querySelector('#vvdpost_value_page_pv');
+		      var uvEle = document.querySelector('#vvdpost_value_page_uv');
+		      var cnEle = document.querySelector('#vvdpost_value_page_cn');
+		      if (pvEle && uvEle) {
+		          pvEle.innerText = data.pv;
+		          uvEle.innerText = data.uv;
+		          cnEle.innerText = data.cn;
+		          pvCtn.style.display = 'inline';
+		      }
+		  }
+	      })
+	      .catch(error => {
+		  // 处理请求错误
+		  console.error('There has been a problem with your fetch operation:', error);
+	      });
+      });
+  </script>
+      
+    
+  </div>
+
+
+        
+      </div>
+
+      
+        <div class="scroll-down-bar">
+          <i class="iconfont icon-arrowdown"></i>
+        </div>
+      
+    </div>
+  </div>
+</div>
+
+</div>
+
+
+	<script type="text/javascript" src="/vvd_js/jquery.js"></script>
+	<script async src="https://uipv4.zywvvd.com:33039/script.js" data-website-id="dd4a05c6-dde2-4743-9c3a-a79d6bee0778"></script>
+	<div class="banner" id='banner' >
+
+		<div class="full-bg-img" >
+
+			
+				<script>
+					var ua = navigator.userAgent;
+					var ipad = ua.match(/(iPad).*OS\s([\d_]+)/),
+						isIphone = !ipad && ua.match(/(iPhone\sOS)\s([\d_]+)/),
+						isAndroid = ua.match(/(Android)\s+([\d.]+)/),
+						isMobile = isIphone || isAndroid;
+
+					function set_video_attr(id){
+						var height = document.body.clientHeight
+						var width = document.body.clientWidth
+						var video_item = document.getElementById(id);
+
+						if (height / width < 0.56){
+							video_item.setAttribute('width', '100%');
+							video_item.setAttribute('height', 'auto');
+						} else {
+							video_item.setAttribute('height', '100%');
+							video_item.setAttribute('width', 'auto');
+						}
+					}
+
+					fetch('https://uipv4.zywvvd.com:33037/wallpaper-pair')
+					  .then(response => response.json()) // 解析JSON数据
+					  .then(data => {
+						console.log('获取链接成功');
+						video_url = data[0][0]
+						pre_show_image_url = data[0][1]
+
+						banner_obj = document.getElementById("banner")
+						banner_obj.style.cssText = "background: url('" + pre_show_image_url + "') no-repeat;"
+
+						vvd_banner_obj = document.getElementById("vvd_banner_img")
+						vvd_banner_content = "<img id='banner_img_item' src='" + pre_show_image_url + "'style='position: fixed; z-index: -999'>"
+						vvd_banner_obj.innerHTML = vvd_banner_content 
+
+						if (!isMobile) {
+							video_html_res = "<video id='video_item' style='position: fixed; z-index: -888;'  muted='muted' src=" + video_url + " autoplay='autoplay' loop='loop'></video>"
+							document.getElementById("banner_video_insert").innerHTML = video_html_res;
+							set_video_attr('video_item')
+							set_video_attr('banner_img_item')
+						}
+					    
+					  })
+					  .catch((error) => {
+					    console.error('请求失败,尝试本地获取背景图像：', error);
+	    					$.getJSON('/vvd_js/video_url.json', function(data){
+
+							var video_list_length = data.length
+							var seed = Math.random()
+							index = Math.floor(seed * video_list_length)
+
+							video_url = data[index][0]
+							pre_show_image_url = data[index][1]
+
+							banner_obj = document.getElementById("banner")
+							banner_obj.style.cssText = "background: url('" + pre_show_image_url + "') no-repeat;"
+
+							vvd_banner_obj = document.getElementById("vvd_banner_img")
+							vvd_banner_content = "<img id='banner_img_item' src='" + pre_show_image_url + "'style='position: fixed; z-index: -999'>"
+							vvd_banner_obj.innerHTML = vvd_banner_content 
+
+							if (!isMobile) {
+								video_html_res = "<video id='video_item' style='position: fixed; z-index: -888;'  muted='muted' src=" + video_url + " autoplay='autoplay' loop='loop'></video>"
+								document.getElementById("banner_video_insert").innerHTML = video_html_res;
+								set_video_attr('video_item')
+								set_video_attr('banner_img_item')
+							}
+						});
+					  });
+
+
+
+
+
+
+					if (!isMobile){
+						window.onresize = function(){
+							set_video_attr('video_item')
+							set_video_attr('banner_img_item')
+							}
+						}
+				</script>
+
+			
+
+
+			
+			</div>
+		</div>
+    </div>
+
+  </header>
+
+  <main>
+    
+      
+
+
+
+<div class="container-fluid nopadding-x">
+  <div class="row nomargin-x">
+    <div class="side-col d-none d-lg-block col-lg-2">
+      
+
+    </div>
+
+    <div class="col-lg-8 nopadding-x-md">
+      <div class="container nopadding-x-md" id="board-ctn">
+        <div id="board">
+          <article class="post-content mx-auto">
+
+            <!-- <h1 id="seo-header">COLMAP PatchMatch Stereo</h1> -->
+
+            
+              <p id="updated-time" class="note note-info" style="">
+                
+                  
+                    <!-- compatible with older versions-->
+                    本文最后更新于：2026年7月9日 上午
+                  
+                
+              </p>
+            
+            
+              <div class="markdown-body">
+                
+                <blockquote>
+<p>COLMAP 的 PatchMatch Stereo 是 MVS 稠密重建的核心算法，通过随机初始化深度和法线、NCC 代价评估、空间传播与随机扰动迭代优化，估计每个像素的最优深度。本文记录算法原理与实现细节。</p>
+</blockquote>
+<span id="more"></span>
+<h3 id="算法核心思想">算法核心思想</h3>
+<p>用一句话概括：<strong>每个像素随机猜一个深度，靠 NCC 判断猜得对不对，好的猜测向邻居扩散，反复多轮直到收敛。</strong></p>
+<p>展开来说有三个机制：</p>
+<p><strong>1. 随机猜测（探索）</strong></p>
+<p>每个像素初始时在 <code>[depth_min, depth_max]</code> 范围内随机取一个深度值——纯粹蒙的。后续每轮迭代也在当前最优值附近随机扰动，探索新的可能性。</p>
+<p><strong>2. NCC 打分（判断对错）</strong></p>
+<p>判断一个深度猜测是否正确的依据：假设该像素深度为 <code>d</code>，算出 3D 点，投影到源图，比较参考图 patch 和源图 patch：</p>
+<figure class="highlight jboss-cli"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><code class="hljs jboss-cli">深度正确 → 投影到源图是同一块表面 → <span class="hljs-keyword">patch</span> 相似 → NCC 高 → 猜测<span class="hljs-string">&quot;好&quot;</span><br>深度错误 → 投影到源图是不相关的区域 → <span class="hljs-keyword">patch</span> 不像 → NCC 低 → 猜测<span class="hljs-string">&quot;差&quot;</span><br></code></pre></td></tr></table></figure>
+<p><strong>3. 空间传播（好的答案扩散）</strong></p>
+<p>如果邻居像素的深度比我好（NCC 更高），我就直接拿来用。通过多轮迭代 + 四方向扫描，正确深度从少数碰巧猜对的像素逐步扩散到全图：</p>
+<figure class="highlight makefile"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><code class="hljs makefile"><span class="hljs-section">初始:  全图随机猜 → 几乎全错</span><br>  ↓<br><span class="hljs-section">传播+打分循环:  好的猜测被 NCC 识别，通过传播扩散给邻居</span><br>  ↓<br><span class="hljs-section">收敛:  大部分像素找到了 NCC 最高的深度</span><br></code></pre></td></tr></table></figure>
+<p>这正是 PatchMatch 名称的由来——通过 <strong>Patch 匹配</strong>（NCC）来驱动 <strong>Match 传播</strong>（空间扩散）。</p>
+<h3 id="算法定位">算法定位</h3>
+<figure class="highlight nestedtext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><code class="hljs nestedtext"><span class="hljs-attribute">COLMAP MVS 流水线</span><span class="hljs-punctuation">:</span><br><span class="hljs-punctuation"></span><br>  <span class="hljs-attribute">image_undistorter          ← 去畸变，统一为 pinhole 模型</span><br><span class="hljs-attribute">        │</span><br><span class="hljs-attribute">  PatchMatch Stereo          ← 本文档重点</span><br><span class="hljs-attribute">    ├── Phase 1</span><span class="hljs-punctuation">:</span> <span class="hljs-string">Photometric ← 仅光度一致性 (NCC)</span><br>    <span class="hljs-attribute">└── Phase 2</span><span class="hljs-punctuation">:</span> <span class="hljs-string">Geometric   ← 加入几何一致性约束</span><br>        │<br>  stereo_fusion              ← 多视角深度图融合<br>        │<br>  Poisson/Delaunay 网格化    ← (可选) 生成 mesh<br></code></pre></td></tr></table></figure>
+<h3 id="输入与输出">输入与输出</h3>
+<table>
+<thead>
+<tr>
+<th>输入</th>
+<th>说明</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>参考图像 (ref)</td>
+<td>待估计深度的图像</td>
+</tr>
+<tr>
+<td>源图像集合 (src)</td>
+<td>与参考图像有视角重叠的邻近图像（默认选取 20 张）</td>
+</tr>
+<tr>
+<td>相机内参 K</td>
+<td>每幅图像的焦距、主点</td>
+</tr>
+<tr>
+<td>相对位姿 R, T</td>
+<td>参考图像到每张源图像的旋转和平移</td>
+</tr>
+<tr>
+<td>depth_min / depth_max</td>
+<td>深度搜索范围</td>
+</tr>
+</tbody>
+</table>
+<table>
+<thead>
+<tr>
+<th>输出</th>
+<th>说明</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>depth_map</td>
+<td>每像素的深度值 (沿光轴距离)</td>
+</tr>
+<tr>
+<td>normal_map</td>
+<td>每像素的法线向量 (3D 单位向量)</td>
+</tr>
+<tr>
+<td>consistency_graph</td>
+<td>(可选) 多视角一致性图</td>
+</tr>
+</tbody>
+</table>
+<h3 id="可配置参数">可配置参数</h3>
+<p>源码位置: <code>patch_match_options.h</code></p>
+<table>
+<thead>
+<tr>
+<th>参数</th>
+<th>默认值</th>
+<th>说明</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>max_image_size</code></td>
+<td>-1</td>
+<td>图像最大边长，超出则缩放</td>
+</tr>
+<tr>
+<td><code>window_radius</code></td>
+<td>5</td>
+<td>NCC 窗口半径，实际窗口 = 2×5+1 = 11×11</td>
+</tr>
+<tr>
+<td><code>window_step</code></td>
+<td>1</td>
+<td>NCC 窗口内像素步长</td>
+</tr>
+<tr>
+<td><code>sigma_spatial</code></td>
+<td>-1</td>
+<td>双边空间权重 σ（默认 = window_radius）</td>
+</tr>
+<tr>
+<td><code>sigma_color</code></td>
+<td>0.2</td>
+<td>双边颜色权重 σ</td>
+</tr>
+<tr>
+<td><code>ncc_sigma</code></td>
+<td>0.6</td>
+<td>NCC 似然函数的扩散参数</td>
+</tr>
+<tr>
+<td><code>num_samples</code></td>
+<td>15</td>
+<td>每像素每轮 Monte Carlo 源图采样次数</td>
+</tr>
+<tr>
+<td><code>num_iterations</code></td>
+<td>5</td>
+<td>外层迭代次数（每迭代 = 4 个 sweep 方向）</td>
+</tr>
+<tr>
+<td><code>min_triangulation_angle</code></td>
+<td>1.0°</td>
+<td>源图选择的最小三角化角度阈值</td>
+</tr>
+<tr>
+<td><code>incident_angle_sigma</code></td>
+<td>0.9</td>
+<td>入射角似然函数的扩散参数</td>
+</tr>
+<tr>
+<td><code>depth_min / depth_max</code></td>
+<td>-1.0</td>
+<td>深度搜索范围（从 sparse SfM 估计）</td>
+</tr>
+<tr>
+<td><code>filter_min_ncc</code></td>
+<td>0.1</td>
+<td>过滤：最小 NCC 阈值</td>
+</tr>
+<tr>
+<td><code>filter_min_triangulation_angle</code></td>
+<td>3.0°</td>
+<td>过滤：最小三角化角度</td>
+</tr>
+<tr>
+<td><code>filter_min_num_consistent</code></td>
+<td>2</td>
+<td>过滤：最少一致源图数</td>
+</tr>
+<tr>
+<td><code>geom_consistency</code></td>
+<td>true</td>
+<td>是否启用几何一致性</td>
+</tr>
+<tr>
+<td><code>geom_consistency_regularizer</code></td>
+<td>0.3</td>
+<td>几何一致性项权重</td>
+</tr>
+<tr>
+<td><code>geom_consistency_max_cost</code></td>
+<td>3.0 px</td>
+<td>最大前向-后向重投影误差</td>
+</tr>
+<tr>
+<td><code>filter</code></td>
+<td>true</td>
+<td>是否启用输出过滤</td>
+</tr>
+<tr>
+<td><code>filter_geom_consistency_max_cost</code></td>
+<td>1.0 px</td>
+<td>过滤时的几何一致性重投影误差阈值</td>
+</tr>
+<tr>
+<td><code>cache_size</code></td>
+<td>32.0 GB</td>
+<td>工作空间缓存大小</td>
+</tr>
+<tr>
+<td><code>gpu_index</code></td>
+<td>“-1”</td>
+<td>GPU 索引，“-1” 使用所有可用 GPU</td>
+</tr>
+<tr>
+<td><code>write_consistency_graph</code></td>
+<td>false</td>
+<td>是否输出一致性图</td>
+</tr>
+<tr>
+<td><code>allow_missing_files</code></td>
+<td>false</td>
+<td>是否容忍缺失文件</td>
+</tr>
+</tbody>
+</table>
+<p>窗口半径上限 32（硬编码 <code>kMaxPatchMatchWindowRadius</code>），与 CUDA 线程块大小 <code>THREADS_PER_BLOCK = 32</code> 匹配。</p>
+<h3 id="数据结构">数据结构</h3>
+<h4 id="GPU-全局状态">GPU 全局状态</h4>
+<p>源码位置: <code>patch_match_cuda.h</code></p>
+<table>
+<thead>
+<tr>
+<th>变量</th>
+<th>类型</th>
+<th>尺寸</th>
+<th>用途</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>ref_image_-&gt;image</code></td>
+<td><code>GpuMat&lt;uint8_t&gt;</code></td>
+<td>W×H</td>
+<td>参考图灰度</td>
+</tr>
+<tr>
+<td><code>ref_image_-&gt;sum_image</code></td>
+<td><code>GpuMat&lt;float&gt;</code></td>
+<td>W×H</td>
+<td>预计算的 bilateral 加权和</td>
+</tr>
+<tr>
+<td><code>ref_image_-&gt;squared_sum_image</code></td>
+<td><code>GpuMat&lt;float&gt;</code></td>
+<td>W×H</td>
+<td>预计算的 bilateral 加权平方和</td>
+</tr>
+<tr>
+<td><code>depth_map_</code></td>
+<td><code>GpuMat&lt;float&gt;</code></td>
+<td>W×H</td>
+<td>每像素深度假设</td>
+</tr>
+<tr>
+<td><code>normal_map_</code></td>
+<td><code>GpuMat&lt;float&gt;</code></td>
+<td>W×H×3</td>
+<td>每像素法线假设 (nx, ny, nz)</td>
+</tr>
+<tr>
+<td><code>cost_map_</code></td>
+<td><code>GpuMat&lt;float&gt;</code></td>
+<td>W×H×N_src</td>
+<td>每源图的光度代价 (1-NCC)</td>
+</tr>
+<tr>
+<td><code>sel_prob_map_</code></td>
+<td><code>GpuMat&lt;float&gt;</code></td>
+<td>W×H×N_src</td>
+<td>当前源图选择概率</td>
+</tr>
+<tr>
+<td><code>prev_sel_prob_map_</code></td>
+<td><code>GpuMat&lt;float&gt;</code></td>
+<td>W×H×N_src</td>
+<td>上一 sweep 方向的选择概率</td>
+</tr>
+<tr>
+<td><code>consistency_mask_</code></td>
+<td><code>GpuMat&lt;uint8_t&gt;</code></td>
+<td>W×H×N_src</td>
+<td>一致性过滤掩码（仅最后一轮 sweep 分配）</td>
+</tr>
+<tr>
+<td><code>src_depth_maps_texture_</code></td>
+<td>Layered Texture (float)</td>
+<td>源图深度图纹理（几何一致性模式启用时使用）</td>
+<td></td>
+</tr>
+<tr>
+<td><code>rand_state_map_</code></td>
+<td><code>GpuMatPRNG</code></td>
+<td>W×H</td>
+<td>每像素 CUDA 随机数状态 (curandState)</td>
+</tr>
+<tr>
+<td><code>global_workspace_</code></td>
+<td><code>GpuMat&lt;float&gt;</code></td>
+<td>max(W,H)×N_src×2</td>
+<td>前向消息 + 采样 CDF</td>
+</tr>
+</tbody>
+</table>
+<h4 id="纹理缓存">纹理缓存</h4>
+<p>源码位置: <code>cuda_texture.h</code></p>
+<table>
+<thead>
+<tr>
+<th>变量</th>
+<th>类型</th>
+<th>说明</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>ref_image_texture_</code></td>
+<td>Layered Texture (uint8)</td>
+<td>参考图像，支持硬件双线性插值</td>
+</tr>
+<tr>
+<td><code>src_images_texture_</code></td>
+<td>Layered Texture (uint8)</td>
+<td>所有源图像 (max_W × max_H × N_src)</td>
+</tr>
+<tr>
+<td><code>poses_texture_[4]</code></td>
+<td>Layered Texture (float)</td>
+<td>4 种旋转的相机位姿，每种存储 N_src 个位姿</td>
+</tr>
+</tbody>
+</table>
+<p>每个位姿存储 43 个 float：</p>
+<figure class="highlight inform7"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><code class="hljs inform7"><span class="hljs-comment">[0..3]</span>    : 源图内参 K_src (fx, cx, fy, cy)<br><span class="hljs-comment">[4..12]</span>   : 相对旋转 R (3×3)<br><span class="hljs-comment">[13..15]</span>  : 相对平移 T (3)<br><span class="hljs-comment">[16..18]</span>  : 投影中心 C (3)<br><span class="hljs-comment">[19..30]</span>  : 投影矩阵 P = K_src <span class="hljs-comment">[R|T]</span> (3×4)<br><span class="hljs-comment">[31..42]</span>  : 逆投影矩阵 P⁻¹ (3×4)<br></code></pre></td></tr></table></figure>
+<h3 id="初始化阶段">初始化阶段</h3>
+<h4 id="源图像选择">源图像选择</h4>
+<p>源码位置: <code>patch_match.cc:291-368</code></p>
+<p>从 <code>patch-match.cfg</code> 文件中读取参考图像和候选源图的配置。支持三种模式：</p>
+<ol>
+<li><strong><code>__all__</code></strong> — 所有其他图像作为源图</li>
+<li><strong><code>__auto__, N</code></strong> — 自动选择最优 N 张源图（默认 N=20）
+<ul>
+<li>按共享稀疏点数量排序</li>
+<li>过滤条件：第 75 百分位三角化角 &gt; <code>min_triangulation_angle</code></li>
+</ul>
+</li>
+<li><strong>显式列表</strong> — 手动指定源图名称</li>
+</ol>
+<h4 id="双边预过滤">双边预过滤</h4>
+<p>源码位置: <code>gpu_mat_ref_image.cu:39-81</code></p>
+<p>在迭代开始前，对参考图像的每个像素预计算 bilateral 加权的局部统计量：</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><code class="hljs python"><span class="hljs-keyword">for</span> dr <span class="hljs-keyword">in</span> <span class="hljs-built_in">range</span>(-radius, radius+<span class="hljs-number">1</span>, step):<br>    <span class="hljs-keyword">for</span> dc <span class="hljs-keyword">in</span> <span class="hljs-built_in">range</span>(-radius, radius+<span class="hljs-number">1</span>, step):<br>        ref_color = ref_image[row+dr, col+dc]<br><br>        <span class="hljs-comment"># 双边权重: 空间距离 + 颜色差异</span><br>        w = exp(-(dr²+dc²) / (<span class="hljs-number">2</span>σ_s²) - (center_color - ref_color)² / (<span class="hljs-number">2</span>σ_c²))<br><br>        color_sum        += w * ref_color<br>        color_squared_sum += w * ref_color²<br>        weight_sum       += w<br><br>sum_image[row, col]        = color_sum / weight_sum<br>squared_sum_image[row, col] = color_squared_sum / weight_sum<br></code></pre></td></tr></table></figure>
+<p><strong>目的</strong>：将参考图像侧的 NCC 统计量预计算好，迭代时只需计算源图像侧，大幅减少重复计算。</p>
+<p><strong>为什么参考图侧可以预计算</strong>：NCC 公式展开后包含 5 项累加，其中参考图侧的 2 项在整个迭代过程中<strong>始终不变</strong>——不管 depth/normal 怎么变，参考图上每个像素的颜色值是固定的，变化的只有 warp 到源图后读出的颜色：</p>
+<figure class="highlight css"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><code class="hljs css">NCC 的 <span class="hljs-number">5</span> 项累加:<br><br>  参考图侧（不随假设变化，可预计算）:<br>    ref_sum     = Σ <span class="hljs-built_in">w</span>(i) × <span class="hljs-built_in">ref_color</span>(i)       ← 存入 sum_image<br>    ref_sq_sum  = Σ <span class="hljs-built_in">w</span>(i) × <span class="hljs-built_in">ref_color</span>(i)²      ← 存入 squared_sum_image<br><br>  源图侧（每个假设都要重新算）:<br>    src_sum      = Σ <span class="hljs-built_in">w</span>(i) × <span class="hljs-built_in">src_color</span>(i)      ← warp 改变 → 颜色改变<br>    src_sq_sum   = Σ <span class="hljs-built_in">w</span>(i) × <span class="hljs-built_in">src_color</span>(i)²     ← 同上<br>    cross_sum    = Σ <span class="hljs-built_in">w</span>(i) × <span class="hljs-built_in">ref</span>(i) × <span class="hljs-built_in">src</span>(i)   ← 同上<br></code></pre></td></tr></table></figure>
+<p>NCC 窗口有 <code>(2×5+1)² = 121</code> 个像素。每个假设评估时，预计算省掉了 2 项 × 121 像素的累加，只需从全局内存读取 2 个 float（<code>sum_image[row,col]</code> 和 <code>squared_sum_image[row,col]</code>）。整个算法每个像素评估 <code>5假设 × 15采样 × 20次迭代 = 1500</code> 次假设，累计节省约 <strong>40% 的 NCC 计算量</strong>。</p>
+<h4 id="深度与法线初始化">深度与法线初始化</h4>
+<p><strong>深度 (Photometric 模式)</strong>：在 <code>[depth_min, depth_max]</code> 范围内均匀随机采样。</p>
+<p><strong>法线</strong>：使用 Marsaglia 方法在面向相机的半球面上均匀随机采样：</p>
+<ol>
+<li>采样 u₁, u₂ ∈ [-1, 1]，直到 u₁² + u₂² &lt; 1</li>
+<li>法线 n = (2u₁√(1-u₁²-u₂²), 2u₂√(1-u₁²-u₂²), 1-2(u₁²+u₂²))</li>
+<li>确保法线朝向相机：dot(n, view_ray) &lt; 0</li>
+</ol>
+<p><strong>选择概率</strong>：所有源图初始化为均匀概率 0.5。</p>
+<h3 id="核心算法：Sweep-Kernel">核心算法：Sweep Kernel</h3>
+<p>源码位置: <code>patch_match_cuda.cu:899-1254</code></p>
+<h4 id="整体调度">整体调度</h4>
+<figure class="highlight apache"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><code class="hljs apache"><span class="hljs-attribute">ComputeInitialCost</span>()              ← 评估初始随机 depth/normal 的 NCC<br><br><span class="hljs-attribute">for</span> iter = <span class="hljs-number">0</span> to num_iterations-<span class="hljs-number">1</span>:   ← 默认 <span class="hljs-number">5</span> 次迭代<br>    <span class="hljs-attribute">for</span> sweep = <span class="hljs-number">0</span> to <span class="hljs-number">3</span>:              ← <span class="hljs-number">4</span> 个方向<br>        <span class="hljs-attribute">perturbation</span> = <span class="hljs-number">1</span>.<span class="hljs-number">0</span> / <span class="hljs-number">2</span>^(iter + sweep/<span class="hljs-number">4</span>)<br>        <span class="hljs-attribute">prev_weight</span> = (iter*<span class="hljs-number">4</span> + sweep) / (num_iterations*<span class="hljs-number">4</span>)<br>        <span class="hljs-attribute">SweepFromTopToBottom</span>(...)<br>        <span class="hljs-attribute">Rotate</span>()                      ← 所有数据结构旋转 <span class="hljs-number">90</span>°<br></code></pre></td></tr></table></figure>
+<p>每次 <code>Rotate()</code> 将整个 GPU 状态旋转 90°（depth_map、normal_map、cost_map、参考图像等），同时切换到预计算的旋转后位姿。这样 4 个 sweep 分别对应：<strong>上→下、右→左、下→上、左→右</strong>。</p>
+<h4 id="深度估计的基本原理">深度估计的基本原理</h4>
+<p>整个算法的核心问题是：<strong>怎么从多张照片判断一个像素的深度？</strong></p>
+<p>人眼通过左右眼的视差感知深度——两眼看到的画面有细微差异，差异越大说明物体越近。MVS 做同样的事，用&quot;参考图 + N 张源图&quot;代替&quot;左眼 + 右眼&quot;。判断流程为：</p>
+<figure class="highlight nestedtext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><code class="hljs nestedtext"><span class="hljs-attribute">第 1 步</span><span class="hljs-punctuation">:</span> <span class="hljs-string">对参考图像素 (row, col)，假设一个深度 d，算出 3D 点</span><br><br>    <span class="hljs-attribute">像素 (500, 300), 深度假设 d = 10m → 3D 点 P = (2.3, 1.8, 10.0)</span><br><span class="hljs-attribute"></span><br><span class="hljs-attribute">第 2 步</span><span class="hljs-punctuation">:</span> <span class="hljs-string">把 3D 点 P 投影到源图（通过相机位姿）</span><br><br>    <span class="hljs-attribute">源图像素 (480, 290)  ← 位置不同，因为视角不同</span><br><span class="hljs-attribute"></span><br><span class="hljs-attribute">第 3 步</span><span class="hljs-punctuation">:</span> <span class="hljs-string">比较参考图 patch 和源图 patch</span><br><br>    <span class="hljs-attribute">参考图 (500,300) 附近 11×11 区域 vs 源图 (480,290) 附近 11×11 区域</span><br><span class="hljs-attribute"></span><br><span class="hljs-attribute">    d 正确</span><span class="hljs-punctuation">:</span> <span class="hljs-string">两个 patch 看到同一块表面 → NCC ≈ 1（好）</span><br>    <span class="hljs-attribute">d 错误</span><span class="hljs-punctuation">:</span> <span class="hljs-string">投影到了源图中不相关的位置 → NCC ≈ 0（差）</span><br></code></pre></td></tr></table></figure>
+<p><strong>猜错了的例子</strong>：</p>
+<figure class="highlight glsl"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><code class="hljs glsl">真实情况: 像素 (<span class="hljs-number">500</span>,<span class="hljs-number">300</span>) 对应一堵白墙，深度 <span class="hljs-number">10</span>m<br><br>假设 d = <span class="hljs-number">10</span>m (正确):<br>  <span class="hljs-number">3</span>D 点在白墙上 → 投影到源图也是白墙 → <span class="hljs-keyword">patch</span> 相似 → NCC = <span class="hljs-number">0.95</span> ✓<br><br>假设 d = <span class="hljs-number">5</span>m (太近):<br>  <span class="hljs-number">3</span>D 点在白墙前面 → 投影到源图时落到墙前的一棵树上<br>  → 参考图 <span class="hljs-keyword">patch</span> 是白墙，源图 <span class="hljs-keyword">patch</span> 是树叶 → NCC = <span class="hljs-number">0.1</span> ✗<br><br>假设 d = <span class="hljs-number">20</span>m (太远):<br>  <span class="hljs-number">3</span>D 点穿过了墙 → 投影到源图时落到后面的建筑上<br>  → 参考图 <span class="hljs-keyword">patch</span> 是白墙，源图 <span class="hljs-keyword">patch</span> 是建筑 → NCC = <span class="hljs-number">0.2</span> ✗<br></code></pre></td></tr></table></figure>
+<p><strong>判断&quot;好还是不好&quot;的标准就是 NCC</strong>——深度正确时，参考图和源图的对应 patch 看起来一样（高 NCC）；深度错误时，投影跑偏了，patch 不匹配（低 NCC）。整个算法就是<strong>反复猜不同的 depth + normal，用 NCC 给每个猜测打分，留下得分最高的</strong>。</p>
+<h4 id="Sweep-是什么">Sweep 是什么</h4>
+<p>一次 sweep 就是<strong>从一端扫到另一端</strong>，逐像素处理。以从上到下的 sweep 为例：</p>
+<figure class="highlight tap"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><code class="hljs tap">第 <span class="hljs-number"> 0 </span>行: 处理所有像素 (更新深度)<br>第 <span class="hljs-number"> 1 </span>行: 处理所有像素 (可以看第<span class="hljs-number"> 0 </span>行的结果)<br>第 <span class="hljs-number"> 2 </span>行: 处理所有像素 (可以看第<span class="hljs-number"> 1 </span>行的结果)<br>...<br>最后一行: 处理所有像素<br></code></pre></td></tr></table></figure>
+<p>扫一遍的过程中，每个像素都做了&quot;看看上面邻居的深度好不好，好就拿来用&quot;的操作。</p>
+<h4 id="多轮迭代的目的">多轮迭代的目的</h4>
+<p>初始状态每个像素的深度都是随机猜的，全不对。靠传播让正确值从第 0 行逐行接力传到第 1536 行需要 1536 次 sweep，根本等不起。</p>
+<p>PatchMatch 的关键是不只依赖传播，还同时做随机扰动：</p>
+<figure class="highlight nestedtext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><code class="hljs nestedtext"><span class="hljs-attribute">每轮 sweep 做两件事</span><span class="hljs-punctuation">:</span><br><span class="hljs-punctuation"></span><br><span class="hljs-attribute">1. 传播</span><span class="hljs-punctuation">:</span> <span class="hljs-string">抄邻居的好结果 → 正确信息向前推进一步</span><br><span class="hljs-attribute">2. 随机扰动</span><span class="hljs-punctuation">:</span> <span class="hljs-string">每个像素自己也在探索新深度 → 可能直接猜中正确答案</span><br><br><span class="hljs-attribute">两个机制叠加</span><span class="hljs-punctuation">:</span><br>  传播让正确值稳步扩散（确定性推进）<br>  随机扰动让远处像素有机会自己找到正确答案（不需要等传播传过来）<br></code></pre></td></tr></table></figure>
+<p>类比一个教室里老师把答案告诉第一排，每个学生可以抄前一排的答案（传播），也可以自己猜（随机扰动），比较后留下更好的。几轮之后全班都有正确答案——不需要等第一排的答案逐排传到最后一排。</p>
+<p>所以 5 轮迭代 × 4 方向 = 20 次 sweep 就够了：</p>
+<figure class="highlight nestedtext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><code class="hljs nestedtext"><span class="hljs-attribute">初始</span><span class="hljs-punctuation">:</span> <span class="hljs-string"> 全部随机 → 全错</span><br><span class="hljs-attribute">第 1 轮</span><span class="hljs-punctuation">:</span> <span class="hljs-string"> 少数像素碰巧猜对 + 传播到邻居 → 只覆盖少数区域</span><br><span class="hljs-attribute">第 2 轮</span><span class="hljs-punctuation">:</span> <span class="hljs-string"> 更多像素自己猜对 + 传播继续扩散 → 覆盖更多区域</span><br><span class="hljs-attribute">...</span><br><span class="hljs-attribute">第 5 轮</span><span class="hljs-punctuation">:</span> <span class="hljs-string"> 大部分像素已收敛，只剩微调</span><br></code></pre></td></tr></table></figure>
+<h4 id="4-方向扫描的目的">4 方向扫描的目的</h4>
+<p>只从上往下扫，信息只能<strong>向下传播</strong>，下方的正确值永远传不到上方。所以扫 4 个方向，让信息从四面八方传播：</p>
+<figure class="highlight apache"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><code class="hljs apache"><span class="hljs-attribute">sweep</span> <span class="hljs-number">0</span>: 上→下   （上方好结果往下传）<br><span class="hljs-attribute">sweep</span> <span class="hljs-number">1</span>: 右→左   （右方好结果往左传）<br><span class="hljs-attribute">sweep</span> <span class="hljs-number">2</span>: 下→上   （下方好结果往上传）<br><span class="hljs-attribute">sweep</span> <span class="hljs-number">3</span>: 左→右   （左方好结果往右传）<br></code></pre></td></tr></table></figure>
+<p>4 个方向扫完 = 信息在上下左右都传播了一轮。5 次迭代 × 4 方向 = 20 轮扫描。</p>
+<h4 id="用旋转-90°-实现-4-方向">用旋转 90° 实现 4 方向</h4>
+<p>最直觉的做法是写 4 个不同的 kernel：<code>SweepDown()</code>、<code>SweepRight()</code>、<code>SweepUp()</code>、<code>SweepLeft()</code>。</p>
+<p>COLMAP 只写了 <strong>1 个 kernel</strong>（<code>SweepFromTopToBottom</code>），永远只从上往下扫。每扫完一次把整张图旋转 90°——kernel 还是同一个，但效果等价于换了方向扫原图：</p>
+<figure class="highlight gcode"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><code class="hljs gcode">原始图:           旋转 <span class="hljs-number">90</span>° 后:      再旋转 <span class="hljs-number">90</span>°:      再旋转 <span class="hljs-number">90</span>°:<br>┌──────┐         ┌──────┐        ┌──────┐        ┌──────┐<br>│↓ ↓ ↓ │         │↓ ↓ ↓ │        │↓ ↓ ↓ │        │↓ ↓ ↓ │<br>│↓ ↓ ↓ │  →      │↓ ↓ ↓ │  →     │↓ ↓ ↓ │  →     │↓ ↓ ↓ │<br>│↓ ↓ ↓ │         │↓ ↓ ↓ │        │↓ ↓ ↓ │        │↓ ↓ ↓ │<br>└──────┘         └──────┘        └──────┘        └──────┘<br>上→下            上→下            上→下            上→下<br><span class="hljs-comment">(实际:上→下)</span>    <span class="hljs-comment">(实际:右→左)</span>    <span class="hljs-comment">(实际:下→上)</span>    <span class="hljs-comment">(实际:左→右)</span><br></code></pre></td></tr></table></figure>
+<p>好处：只需写、调试、维护 <strong>1 个 kernel</strong> 而非 4 个。</p>
+<h4 id="perturbation-和-prev-weight">perturbation 和 prev_weight</h4>
+<ul>
+<li><strong>perturbation</strong>：每轮随机扰动的幅度。第 1 轮大胆猜（搜索范围 ±100%），第 5 轮只微调（±6%）。<strong>从粗到精</strong>。</li>
+<li><strong>prev_weight</strong>：选择源图时多大程度信任上一轮的结果。早期 trust 当前计算，后期 trust 历史积累。<strong>防止结果抖动</strong>。</li>
+</ul>
+<h4 id="线程组织">线程组织</h4>
+<ul>
+<li><strong>每 CUDA 线程处理一列</strong>，从上到下逐行扫描</li>
+<li>32 线程/块 (<code>THREADS_PER_BLOCK = 32</code>)</li>
+<li>同一块内的线程共享参考图像 tile（共享内存）</li>
+<li>第一行加载完整 tile，后续行增量更新（移出旧行，加载新行）</li>
+</ul>
+<h4 id="Sweep-内逐像素处理流程">Sweep 内逐像素处理流程</h4>
+<p>每个像素 <code>(row, col)</code> 的处理分为以下步骤：</p>
+<p><strong>步骤 ①：后向消息预计算</strong></p>
+<p>源码位置: <code>patch_match_cuda.cu:942-955</code></p>
+<p>在 sweep 开始前，为每张源图从下到上计算后向消息 β：</p>
+<figure class="highlight maxima"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><code class="hljs maxima">对每张源图 image_idx:<br>    <span class="hljs-built_in">beta</span> = <span class="hljs-number">0.5</span>   (均匀初始)<br>    <span class="hljs-keyword">for</span> <span class="hljs-built_in">row</span> = H-<span class="hljs-number">1</span> down to <span class="hljs-number">0</span>:<br>        cost = cost_map[<span class="hljs-built_in">row</span>, <span class="hljs-built_in">col</span>, image_idx]<br>        <span class="hljs-built_in">beta</span> = ComputeBackwardMessage(cost, <span class="hljs-built_in">beta</span>)<br>        sel_prob_map[<span class="hljs-built_in">row</span>, <span class="hljs-built_in">col</span>, image_idx] = <span class="hljs-built_in">beta</span><br></code></pre></td></tr></table></figure>
+<p>β 是一个隐藏马尔可夫模型 (HMM) 的后向消息，编码了当前像素下方的所有像素是否认为该源图是&quot;好的匹配&quot;。这为后续的源图采样提供了全局上下文。</p>
+<blockquote>
+<p>后向消息暂时存储在 <code>sel_prob_map_</code> 中（复用内存），在后续 sweep 逐行处理时被前向消息替换。</p>
+</blockquote>
+<p><strong>步骤 ②：空间传播</strong></p>
+<p>源码位置: <code>patch_match_cuda.cu:1013</code></p>
+<p>将上方像素 <code>(row-1, col)</code> 的 depth + normal 传播到当前行：</p>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><code class="hljs cpp">propagated_depth = <span class="hljs-built_in">PropagateDepth</span>(<br>    prev_depth, prev_normal, row<span class="hljs-number">-1</span>, row);<br></code></pre></td></tr></table></figure>
+<p><code>PropagateDepth</code> 的计算：</p>
+<figure class="highlight excel"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><code class="hljs excel">上方像素 (<span class="hljs-built_in">row</span>-<span class="hljs-number">1</span>, col) 的 depth + normal 定义了一个 <span class="hljs-number">3</span>D 平面<span class="hljs-symbol">:</span><br>  平面方程<span class="hljs-symbol">:</span> <span class="hljs-built_in">n</span> · (X - P) = <span class="hljs-number">0</span><br>  其中 P = depth * 视线方向 (<span class="hljs-built_in">row</span>-<span class="hljs-number">1</span> 处的 <span class="hljs-number">3</span>D 点)<br><br>当前像素 (<span class="hljs-built_in">row</span>, col) 的视线 ray 与该平面求交<span class="hljs-symbol">:</span><br>  <span class="hljs-built_in">t</span> = (<span class="hljs-built_in">n</span> · P) / (<span class="hljs-built_in">n</span> · ray_direction)<br>  propagated_depth = <span class="hljs-built_in">t</span> * (ray_direction[<span class="hljs-number">2</span>])  // 取 z 分量作为深度<br></code></pre></td></tr></table></figure>
+<p><strong>关键</strong>：这不是简单复制邻域深度，而是通过平面几何正确传播斜面上的深度值。例如地面倾斜时，深度沿列方向的变化会被正确传播。</p>
+<p><strong>步骤 ③：随机扰动</strong></p>
+<p>源码位置: <code>patch_match_cuda.cu:1021-1028</code></p>
+<p>在当前最优假设基础上加随机扰动：</p>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><code class="hljs cpp"><span class="hljs-comment">// 深度扰动: 在 [(1-p)*depth, (1+p)*depth] 均匀采样</span><br>rand_depth = <span class="hljs-built_in">PerturbDepth</span>(perturbation, curr_depth, &amp;rand_state);<br><br><span class="hljs-comment">// 法线扰动: 随机旋转矩阵，角度范围 [-p*π/2, p*π/2]</span><br><span class="hljs-built_in">PerturbNormal</span>(row, col, perturbation * M_PI, curr_normal, &amp;rand_state, rand_normal);<br></code></pre></td></tr></table></figure>
+<p>扰动幅度 <code>perturbation</code> 按指数衰减：</p>
+<figure class="highlight apache"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><code class="hljs apache"><span class="hljs-attribute">iter</span>=<span class="hljs-number">0</span>, sweep=<span class="hljs-number">0</span>:  p = <span class="hljs-number">1</span>.<span class="hljs-number">000</span>    (<span class="hljs-number">100</span>% 大范围搜索)<br><span class="hljs-attribute">iter</span>=<span class="hljs-number">0</span>, sweep=<span class="hljs-number">1</span>:  p = <span class="hljs-number">0</span>.<span class="hljs-number">841</span><br><span class="hljs-attribute">iter</span>=<span class="hljs-number">0</span>, sweep=<span class="hljs-number">2</span>:  p = <span class="hljs-number">0</span>.<span class="hljs-number">707</span><br><span class="hljs-attribute">iter</span>=<span class="hljs-number">0</span>, sweep=<span class="hljs-number">3</span>:  p = <span class="hljs-number">0</span>.<span class="hljs-number">595</span><br><span class="hljs-attribute">iter</span>=<span class="hljs-number">1</span>, sweep=<span class="hljs-number">0</span>:  p = <span class="hljs-number">0</span>.<span class="hljs-number">500</span><br><span class="hljs-attribute">iter</span>=<span class="hljs-number">2</span>, sweep=<span class="hljs-number">0</span>:  p = <span class="hljs-number">0</span>.<span class="hljs-number">250</span><br><span class="hljs-attribute">iter</span>=<span class="hljs-number">4</span>, sweep=<span class="hljs-number">3</span>:  p = <span class="hljs-number">0</span>.<span class="hljs-number">037</span>    (<span class="hljs-number">3</span>.<span class="hljs-number">7</span>% 精细微调)<br></code></pre></td></tr></table></figure>
+<p>实现从<strong>粗到精</strong>的搜索策略：早期大范围探索解空间，后期精细调整。</p>
+<p><strong>深度扰动：乘性 vs 加性</strong></p>
+<p>深度扰动采用<strong>乘性</strong>范围 <code>[(1-p)*depth, (1+p)*depth]</code> 而非加性 <code>[depth-δ, depth+δ]</code>：</p>
+<ul>
+<li><strong>物理意义</strong>：深度测量的相对精度通常恒定（如 ±1%），而非绝对精度恒定（如 ±0.1m）。乘性扰动在不同深度范围上产生成比例的搜索范围</li>
+<li><strong>实际效果</strong>：depth=100m 时搜索 [50, 150]m（iter=0），depth=1m 时搜索 [0.5, 1.5]m。加性扰动 <code>±50m</code> 在近距离时完全不合理</li>
+</ul>
+<p><strong>法线扰动：旋转矩阵</strong></p>
+<p>法线扰动使用旋转矩阵 <code>R = Rx(α) × Ry(β) × Rz(γ)</code>，角度 α, β, γ 在 <code>[-perturbation/2, perturbation/2]</code> 均匀采样。如果旋转后法线翻转（不再面向相机），则将扰动减半重试（最多 3 次）。</p>
+<p>旋转矩阵扰动保证了法线始终在<strong>流形上</strong>（单位球面上），比直接在 (nx, ny, nz) 上加噪声后归一化更均匀。</p>
+<p><strong>指数衰减的数学保证</strong></p>
+<figure class="highlight apache"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs apache"><span class="hljs-attribute">perturbation</span> = <span class="hljs-number">1</span>/<span class="hljs-number">2</span>^(iter + sweep/<span class="hljs-number">4</span>)<br></code></pre></td></tr></table></figure>
+<ul>
+<li><strong>与模拟退火的类比</strong>：perturbation 对应&quot;温度&quot;，指数衰减对应冷却调度</li>
+<li><strong>指数衰减 vs 线性衰减</strong>：线性衰减 <code>p = 1 - step/total</code> 在后期仍有较大残余扰动（如最后 10% 步骤的 p 从 0.1 线性降到 0）。指数衰减在最后几步的扰动极小（p &lt; 0.04），保证收敛精度</li>
+<li><strong>收敛保证</strong>：perturbation 最终趋于 0 → 随机扰动退化 → 算法退化为纯坐标下降 → 保证收敛到局部最优</li>
+</ul>
+<p><strong>步骤 ④：源图选择概率计算</strong></p>
+<p>源码位置: <code>patch_match_cuda.cu:1036-1072</code></p>
+<p>为每张源图计算选择概率，由 4 个因子相乘：</p>
+<p><strong>因子 A：HMM 前向-后向消息</strong></p>
+<p>源码位置: <code>patch_match_cuda.cu:664-798</code> (<code>LikelihoodComputer</code>)</p>
+<p>HMM 状态空间 = {被选中, 未选中}，两个状态之间的转移概率：</p>
+<figure class="highlight abnf"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><code class="hljs abnf">自转移概率 <span class="hljs-operator">=</span> <span class="hljs-number">0.99999</span>  (极高的状态保持概率)<br>状态切换概率 <span class="hljs-operator">=</span> <span class="hljs-number">0.00001</span><br></code></pre></td></tr></table></figure>
+<p>发射概率：</p>
+<ul>
+<li>被选中状态: NCC 似然 = exp(-cost² / (2σ_ncc²)) × 归一化因子</li>
+<li>未选中状态: 均匀概率 = 0.5</li>
+</ul>
+<p>前向消息 α 在 sweep 过程中逐行更新，后向消息 β 已预计算。合并后：</p>
+<figure class="highlight gcode"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs gcode">sel_prob = prev_weight × prev_prob + <span class="hljs-comment">(1 - prev_weight)</span> × <span class="hljs-comment">(α × β / total)</span><br></code></pre></td></tr></table></figure>
+<p><code>prev_weight</code> 随迭代线性增长（0→0.95），给历史选择概率越来越大的权重，增加时序稳定性。</p>
+<p><strong>因子 B：三角化角概率</strong></p>
+<figure class="highlight arcade"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><code class="hljs arcade">cos_angle = -dot(S, <span class="hljs-built_in">point</span>) / (|S| × |<span class="hljs-built_in">point</span>|)<br>S = source_camera_center - <span class="hljs-number">3</span>D_point<br><br><span class="hljs-keyword">if</span> cos_angle &gt; <span class="hljs-built_in">cos</span>(min_angle):   <span class="hljs-comment">// 角度太小</span><br>    prob = 二次惩罚, 映射到 [<span class="hljs-number">0</span>, <span class="hljs-number">1</span>]<br><span class="hljs-keyword">else</span>:<br>    prob = <span class="hljs-number">1.0</span>                   <span class="hljs-comment">// 角度足够大，无惩罚</span><br></code></pre></td></tr></table></figure>
+<p><strong>几何原理</strong>：三角化角是参考相机、3D 点、源相机构成的三角形的顶角。当该角度接近 0° 时，参考和源相机几乎从同一方向观察该点，深度估计的精度急剧下降：</p>
+<figure class="highlight isbl"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><code class="hljs isbl">深度不确定度 ∝ 特征定位误差 / <span class="hljs-function"><span class="hljs-title">sin</span>(<span class="hljs-variable">triangulation_angle</span>)</span><br><br>  角度 <span class="hljs-number">30</span>°: <span class="hljs-function"><span class="hljs-title">sin</span>(<span class="hljs-number">30</span>°) = <span class="hljs-number">0.5</span>   → 深度误差 = <span class="hljs-number">2</span>× 特征误差</span><br><span class="hljs-function">  角度 <span class="hljs-number">5</span>°:  <span class="hljs-title">sin</span>(<span class="hljs-number">5</span>°)  = <span class="hljs-number">0.087</span> → 深度误差 ≈ <span class="hljs-number">11.5</span>× 特征误差</span><br><span class="hljs-function">  角度 <span class="hljs-number">1</span>°:  <span class="hljs-title">sin</span>(<span class="hljs-number">1</span>°)  = <span class="hljs-number">0.017</span> → 深度误差 ≈ <span class="hljs-number">57</span>× 特征误差</span><br></code></pre></td></tr></table></figure>
+<blockquote>
+<p>二次惩罚而非硬阈值：硬阈值在边界处会导致源图突然切换，引入不连续性。二次惩罚在阈值附近平滑过渡，低于阈值后概率逐渐下降到 0。</p>
+</blockquote>
+<p><strong>因子 C：入射角概率</strong></p>
+<figure class="highlight lisp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><code class="hljs lisp">cos_incident = dot(<span class="hljs-name">source_ray_direction</span>, normal)<br>prob = exp(<span class="hljs-name">-</span>(<span class="hljs-number">1</span> - max(<span class="hljs-number">0</span>, cos_incident))² / (<span class="hljs-number">2</span>σ_incident²))<br></code></pre></td></tr></table></figure>
+<p><strong>Foreshortening 效应</strong>：当源相机以大角度（接掠射）观察表面时：</p>
+<ul>
+<li>表面上的小区域在图像中被压缩到更少的像素（foreshortening），匹配窗口覆盖的实际面积减小</li>
+<li>纹理分辨率降低，特征区分性下降</li>
+<li>非朗伯特表面（glossy、specular）的反射特性随角度变化更大</li>
+</ul>
+<p>高斯衰减函数 <code>exp(-(1-cosθ)²/(2σ²))</code> 在 <code>θ=0°</code>（正对表面）时为 1.0，<code>θ=45°</code> 时约 0.78（σ=0.9），<code>θ=90°</code>（掠射）时趋近 0。</p>
+<p><strong>因子 D：分辨率先验</strong></p>
+<p>计算单应变换后源图 patch 与参考图 patch 的面积比：</p>
+<figure class="highlight angelscript"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><code class="hljs angelscript"><span class="hljs-keyword">if</span> 源图 patch 更小 (zoomed <span class="hljs-keyword">in</span>):<br>    ratio = src_area / <span class="hljs-built_in">ref</span>_area<br><span class="hljs-keyword">else</span>:<br>    ratio = <span class="hljs-built_in">ref</span>_area / src_area<br></code></pre></td></tr></table></figure>
+<p><strong>分辨率匹配的重要性</strong>：homography 将参考图的 NCC 窗口 warp 到源图后，patch 大小可能改变：</p>
+<ul>
+<li>源图离场景更近 → 源图 patch 更大 → 分辨率更高 → 匹配更精细（好）</li>
+<li>源图离场景更远 → 源图 patch 更小 → 分辨率不足 → 细节丢失（差）</li>
+</ul>
+<p>取 <code>min(src/ref, ref/src)</code> 而非 <code>src/ref</code> 是因为<strong>两个方向的降质都应惩罚</strong>：无论是源图分辨率不足还是过度放大（可能引入插值伪影），匹配质量都会下降。比值接近 1.0 表示两视角的分辨率匹配良好。</p>
+<p><strong>合并</strong>:</p>
+<figure class="highlight inform7"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs inform7">sampling_prob<span class="hljs-comment">[i]</span> = sel_prob<span class="hljs-comment">[i]</span> × tri_prob<span class="hljs-comment">[i]</span> × inc_prob<span class="hljs-comment">[i]</span> × res_prob<span class="hljs-comment">[i]</span><br></code></pre></td></tr></table></figure>
+<p>然后转换为 CDF 用于加权采样。</p>
+<p><strong>步骤 ⑤：Monte Carlo 源图采样 + 5 假设评估</strong></p>
+<p>源码位置: <code>patch_match_cuda.cu:1094-1139</code></p>
+<p>同时评估 <strong>5 个假设</strong>：</p>
+<table>
+<thead>
+<tr>
+<th>假设编号</th>
+<th>depth 来源</th>
+<th>normal 来源</th>
+<th>说明</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>0</td>
+<td>当前最优</td>
+<td>当前最优</td>
+<td>复用已存储 photo cost；几何模式仍需计算 geom cost</td>
+</tr>
+<tr>
+<td>1</td>
+<td>传播（上方）</td>
+<td>传播（上方）</td>
+<td>空间传播候选</td>
+</tr>
+<tr>
+<td>2</td>
+<td>随机扰动</td>
+<td>随机扰动</td>
+<td>探索新区域</td>
+</tr>
+<tr>
+<td>3</td>
+<td>当前最优</td>
+<td>随机扰动</td>
+<td>在已知好深度处探索新法线</td>
+</tr>
+<tr>
+<td>4</td>
+<td>随机扰动</td>
+<td>当前最优</td>
+<td>在已知好法线处探索新深度</td>
+</tr>
+</tbody>
+</table>
+<p>采样过程（重复 <code>num_samples=15</code> 次）：</p>
+<figure class="highlight apache"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><code class="hljs apache"><span class="hljs-attribute">for</span> sample = <span class="hljs-number">0</span> to num_samples-<span class="hljs-number">1</span>:<br>    <span class="hljs-comment"># 按选择概率加权采样一张源图</span><br>    <span class="hljs-attribute">rand</span> = random()<br>    <span class="hljs-attribute">src_idx</span> = 第一个 CDF 超过 rand 的源图<br><br>    <span class="hljs-comment"># 假设 0: 复用存储的 cost</span><br>    <span class="hljs-attribute">costs</span>[<span class="hljs-number">0</span>] += cost_map[row, col, src_idx]<br><br>    <span class="hljs-comment"># 假设 1-4: 重新计算 NCC 代价</span><br>    <span class="hljs-attribute">for</span> hypo = <span class="hljs-number">1</span> to <span class="hljs-number">4</span>:<br>        <span class="hljs-attribute">costs</span>[hypo] += ComputeNCC(depths[hypo], normals[hypo], src_idx)<br></code></pre></td></tr></table></figure>
+<p>采样结束后，累计代价最小的假设胜出：</p>
+<figure class="highlight stylus"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><code class="hljs stylus">best = <span class="hljs-built_in">argmin</span>(costs<span class="hljs-selector-attr">[0..4]</span>)<br>depth_map<span class="hljs-selector-attr">[row, col]</span>  = depths<span class="hljs-selector-attr">[best]</span><br>normal_map<span class="hljs-selector-attr">[row, col]</span> = normals<span class="hljs-selector-attr">[best]</span><br></code></pre></td></tr></table></figure>
+<p><strong>5 假设策略的设计原理</strong></p>
+<p>从<strong>坐标下降 (Coordinate Descent)</strong> 的视角理解：同时优化 depth 和 normal 构成一个 4 维搜索问题（1D depth + 3D normal），直接搜索代价高昂。5 个假设实现了对这个 4D 空间的高效覆盖：</p>
+<table>
+<thead>
+<tr>
+<th>策略</th>
+<th>假设</th>
+<th>优化维度</th>
+<th>目的</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>保持</strong></td>
+<td>0: (curr_d, curr_n)</td>
+<td>无</td>
+<td>exploitation：保留已知的局部最优</td>
+</tr>
+<tr>
+<td><strong>传播</strong></td>
+<td>1: (prev_d, prev_n)</td>
+<td>全维度</td>
+<td>利用邻域的空间连贯性</td>
+</tr>
+<tr>
+<td><strong>探索</strong></td>
+<td>2: (rand_d, rand_n)</td>
+<td>全维度</td>
+<td>exploration：跳出局部最优</td>
+</tr>
+<tr>
+<td><strong>分离优化 depth</strong></td>
+<td>3: (rand_d, curr_n)</td>
+<td>仅 depth</td>
+<td>depth 单独优化（normal 已收敛时）</td>
+</tr>
+<tr>
+<td><strong>分离优化 normal</strong></td>
+<td>4: (curr_d, rand_n)</td>
+<td>仅 normal</td>
+<td>normal 单独优化（depth 已收敛时）</td>
+</tr>
+</tbody>
+</table>
+<blockquote>
+<p>假设 3+4 的必要性：考虑一个 depth 已收敛到正确值但 normal 尚未收敛的像素。假设 0/1/3/4 都保持正确 depth，只有假设 2 和 4 探索新 normal。如果没有假设 4（只有 0-3），normal 的优化只能通过假设 2（全随机）进行，效率很低。分离优化允许在一个维度已收敛时高效优化另一个维度。</p>
+</blockquote>
+<p><strong>Monte Carlo 采样的自适应性</strong></p>
+<p>Monte Carlo 采样 <code>num_samples=15</code> 次（而非评估所有 N_src=20 张源图）的关键优势是<strong>自适应性</strong>：</p>
+<ul>
+<li><strong>概率集中时</strong>（如某源图 sel_prob = 0.8）：该源图被采样的期望次数 = 15 × 0.8 = 12 次，等价于主要用该最优源图评估 → 结果接近最优</li>
+<li><strong>概率均匀时</strong>（如 5 张源图各 0.2）：每张被采样的期望次数 = 15 × 0.2 = 3 次 → 均匀探索</li>
+<li><strong>对比 Top-K 选择</strong>：固定取概率最高的 K 张源图，无法适应不同分布。当 K 张源图概率接近时浪费计算，当某张源图概率远高于其他时又不够集中</li>
+</ul>
+<figure class="highlight mathematica"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs mathematica">采样概率 → <span class="hljs-built_in">CDF</span> → 随机数 ∈ <span class="hljs-punctuation">[</span><span class="hljs-number">0</span><span class="hljs-operator">,</span><span class="hljs-number">1</span><span class="hljs-punctuation">)</span> → 第一个 <span class="hljs-built_in">CDF</span> 超过随机数的源图<br></code></pre></td></tr></table></figure>
+<p>这种<strong>逆变换采样 (Inverse Transform Sampling)</strong> 保证了采样频率严格正比于选择概率。</p>
+<p><strong>步骤 ⑥：更新前向消息</strong></p>
+<p>源码位置: <code>patch_match_cuda.cu:1154-1173</code></p>
+<p>选定最优假设后，用新的 depth/normal 重新计算每张源图的 NCC 代价，更新前向消息 α 和 <code>sel_prob_map</code>。</p>
+<p><strong>步骤 ⑦：过滤（最后一轮 sweep）</strong></p>
+<p>源码位置: <code>patch_match_cuda.cu:1175-1242</code></p>
+<p>仅在最后一次迭代的最后一个 sweep 启用。统计每张源图的一致性：</p>
+<figure class="highlight gradle"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><code class="hljs gradle"><span class="hljs-keyword">for</span> <span class="hljs-keyword">each</span> <span class="hljs-keyword">source</span> image:<br>    <span class="hljs-keyword">if</span> NCC cost &lt; filter_min_ncc:<br>        consistent_count++<br><br><span class="hljs-keyword">if</span> consistent_count &lt; filter_min_num_consistent:<br>    depth_map[row, col] = <span class="hljs-number">0</span>    <span class="hljs-comment">// 标记为无效</span><br></code></pre></td></tr></table></figure>
+<p>几何一致性模式下，额外检查前向-后向重投影误差。</p>
+<h3 id="光度一致性代价：NCC-计算细节">光度一致性代价：NCC 计算细节</h3>
+<p>源码位置: <code>patch_match_cuda.cu:460-558</code> (<code>PhotoConsistencyCostComputer</code>)</p>
+<h4 id="单应变换-Homography">单应变换 (Homography)</h4>
+<p>给定像素 <code>(row, col)</code> 的 depth <code>d</code> 和 normal <code>n</code>，计算从参考图到源图的平面单应矩阵：</p>
+<figure class="highlight excel"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><code class="hljs excel">H = K_src × (R - <span class="hljs-built_in">T</span> · <span class="hljs-built_in">n</span>&#x27; / d) × K_ref⁻¹<br><br>其中<span class="hljs-symbol">:</span><br>  d = depth × (<span class="hljs-built_in">n</span> · 视线方向)     // 平面到相机原点的距离<br>  R, <span class="hljs-built_in">T</span> = 参考图到源图的相对旋转和平移<br>  <span class="hljs-built_in">n</span>&#x27; = <span class="hljs-built_in">n</span> 在相机坐标系下的表示<br></code></pre></td></tr></table></figure>
+<p><strong>为什么 depth + normal 能定义 3D 平面</strong></p>
+<p>在相机坐标系下，像素 <code>(row, col)</code> 的视线方向为：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs bash">v = (inv_fx × col - cx/fx, inv_fy × row - cy/fy, 1)ᵀ<br></code></pre></td></tr></table></figure>
+<p>沿该视线方向、深度为 <code>depth</code> 的 3D 点为：</p>
+<figure class="highlight tp"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs tp"><span class="hljs-keyword">P</span> = depth × v = (<span class="hljs-keyword">X</span>, <span class="hljs-keyword">Y</span>, depth)ᵀ<br></code></pre></td></tr></table></figure>
+<p>该点处的法线 <code>n = (nx, ny, nz)</code> 定义了一个过 P 的平面：</p>
+<figure class="highlight tp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><code class="hljs tp">平面方程: nᵀ · (<span class="hljs-keyword">X</span> - <span class="hljs-keyword">P</span>) = <span class="hljs-number">0</span><br>即: nx·<span class="hljs-keyword">X</span> + ny·<span class="hljs-keyword">Y</span> + nz·<span class="hljs-keyword">Z</span> = nᵀ · <span class="hljs-keyword">P</span><br></code></pre></td></tr></table></figure>
+<p>平面上所有点满足 <code>nᵀ · Q = d</code>，其中 <code>d = nᵀ · P = depth × (n · v)</code> 就是平面到相机原点的<strong>有符号距离</strong>。由于法线面向相机 (<code>n · v &lt; 0</code>)，<code>d &lt; 0</code>，表示平面在相机前方。</p>
+<p><strong>平面诱导 Homography 的推导</strong></p>
+<p>两个相机之间的几何关系由旋转 <code>R</code> 和平移 <code>T</code> 描述。对于参考图像素 <code>p_ref</code>，其对应的 3D 点为 <code>Q = K_ref⁻¹ × p_ref × Z</code>（Z 是该点的深度）。如果 Q 落在平面 <code>nᵀQ = d</code> 上，则：</p>
+<figure class="highlight abnf"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs abnf"><span class="hljs-attribute">Z</span> <span class="hljs-operator">=</span> d / (nᵀ × K_ref⁻¹ × p_ref)<br></code></pre></td></tr></table></figure>
+<p>代入投影方程 <code>p_src ∝ K_src × (R × Q + T)</code> 并展开：</p>
+<figure class="highlight excel"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><code class="hljs excel">p_src ∝ K_src × (R × K_ref⁻¹ × p_ref × d/(<span class="hljs-built_in">n</span>ᵀK_ref⁻¹p_ref) + <span class="hljs-built_in">T</span>)<br>       ∝ K_src × (R - <span class="hljs-built_in">T</span> × <span class="hljs-built_in">n</span>ᵀ/d) × K_ref⁻¹ × p_ref<br>       = H × p_ref<br></code></pre></td></tr></table></figure>
+<p>因此 <strong>平面上的所有像素对 (p_ref, p_src) 由一个 3×3 矩阵 H 关联</strong>，这是 homography 的定义。关键洞察：一般的双视图几何需要基础矩阵 F（非平面场景），但当我们假设<strong>局部平面</strong>时，关系退化为精确的 homography，不再需要逐像素搜索深度，只需指定平面参数 (depth, normal) 即可确定所有对应关系。</p>
+<p><strong>增量计算</strong></p>
+<p>warped 坐标通过增量计算避免重复矩阵乘法：</p>
+<figure class="highlight ini"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><code class="hljs ini"><span class="hljs-attr">tform_base</span> = H × [col, row, <span class="hljs-number">1</span>]ᵀ<br><span class="hljs-attr">tform_step_row</span> = H × [<span class="hljs-number">0</span>, <span class="hljs-number">1</span>, <span class="hljs-number">0</span>]ᵀ<br><span class="hljs-attr">tform_step_col</span> = H × [<span class="hljs-number">1</span>, <span class="hljs-number">0</span>, <span class="hljs-number">0</span>]ᵀ<br></code></pre></td></tr></table></figure>
+<p>逐像素遍历 NCC 窗口时，坐标递推为：</p>
+<figure class="highlight maxima"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><code class="hljs maxima">warped(<span class="hljs-built_in">row</span>+<span class="hljs-number">1</span>, <span class="hljs-built_in">col</span>) = warped(<span class="hljs-built_in">row</span>, <span class="hljs-built_in">col</span>) + tform_step_row<br>warped(<span class="hljs-built_in">row</span>, <span class="hljs-built_in">col</span>+<span class="hljs-number">1</span>) = warped(<span class="hljs-built_in">row</span>, <span class="hljs-built_in">col</span>) + tform_step_col<br></code></pre></td></tr></table></figure>
+<blockquote>
+<p><strong>数值稳定性</strong>：图像坐标在千量级（如 2048），远大于颜色值 [0,1]。从 base 位置增量累加比每像素独立计算 <code>H × [c,r,1]</code> 更稳定，因为避免了 <code>大数 × 小数 + 大数 × 大数</code> 的精度损失。每个 NCC 窗口只需一次完整矩阵向量乘法 + 最多 <code>window_size²</code> 次加法。</p>
+</blockquote>
+<h4 id="共享内存参考图像">共享内存参考图像</h4>
+<p>源码位置: <code>patch_match_cuda.cu:343-414</code> (<code>LocalRefImage</code>)</p>
+<p>每个线程块在共享内存中缓存一列参考图像 patch：</p>
+<figure class="highlight nestedtext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><code class="hljs nestedtext"><span class="hljs-attribute">tile 尺寸</span><span class="hljs-punctuation">:</span> <span class="hljs-string">kNumRows × (3 × THREADS_PER_BLOCK) floats</span><br><br><span class="hljs-attribute">第一行</span><span class="hljs-punctuation">:</span> <span class="hljs-string">加载完整 tile (所有线程并行)</span><br><span class="hljs-attribute">后续行</span><span class="hljs-punctuation">:</span> <span class="hljs-string">上移一行，只加载最底部新行</span><br></code></pre></td></tr></table></figure>
+<h4 id="NCC-公式">NCC 公式</h4>
+<p><strong>归一化互相关 (Normalized Cross-Correlation)</strong> 衡量两个图像 patch 的线性相关程度：</p>
+<figure class="highlight sqf"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><code class="hljs sqf">          Σ (I_ref - μ<span class="hljs-variable">_ref</span>) × (I_src - μ<span class="hljs-variable">_src</span>)<br>NCC = ─────────────────────────────────────────<br>       <span class="hljs-built_in">sqrt</span>(Σ(I_ref - μ<span class="hljs-variable">_ref</span>)²) × <span class="hljs-built_in">sqrt</span>(Σ(I_src - μ<span class="hljs-variable">_src</span>)²)<br></code></pre></td></tr></table></figure>
+<p>等价形式（编程更方便）：</p>
+<figure class="highlight stylus"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs stylus">NCC = <span class="hljs-built_in">Covar</span>(ref, <span class="hljs-attribute">src</span>) / <span class="hljs-built_in">sqrt</span>(<span class="hljs-built_in">Var</span>(ref) × <span class="hljs-built_in">Var</span>(src))<br></code></pre></td></tr></table></figure>
+<p><strong>数值含义</strong>：</p>
+<table>
+<thead>
+<tr>
+<th>NCC 值</th>
+<th>含义</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>+1</strong></td>
+<td>完美正相关——两个 patch 亮度变化模式完全一致</td>
+</tr>
+<tr>
+<td><strong>0</strong></td>
+<td>无关——两个 patch 毫无关联</td>
+</tr>
+<tr>
+<td><strong>-1</strong></td>
+<td>完美负相关——亮度变化模式完全相反</td>
+</tr>
+</tbody>
+</table>
+<p>NCC 通过<strong>减均值、除标准差</strong>消除了亮度和对比度差异。假设源图比参考图亮 50、对比度放大 2 倍（<code>I_src = 50 + 2·I_ref</code>），则 <code>(I_src - μ_src)</code> 依然是 <code>(I_ref - μ_ref)</code> 的 2 倍，但除以标准差后完全抵消，NCC = 1。</p>
+<p>COLMAP 使用 <code>cost = 1 - NCC</code>，范围 <code>[0, 2]</code>，0 = 完美匹配，2 = 最差。</p>
+<p><strong>为什么选择 NCC 而非 SSD/SAD</strong></p>
+<p>不同视角的图像可能存在<strong>仿射亮度变化</strong> <code>I_src = a + b × I_ref</code>（由曝光差异、传感器增益、gamma 校正等引起）。</p>
+<ul>
+<li><strong>SSD</strong>（Sum of Squared Differences）对这种变化敏感：<code>SSD = Σ(a + b·I₁ - I₂)²</code> 随 a, b 变化而改变</li>
+<li><strong>NCC 具有仿射不变性</strong>：</li>
+</ul>
+<figure class="highlight stylus"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><code class="hljs stylus">若 I_src = <span class="hljs-selector-tag">a</span> + <span class="hljs-selector-tag">b</span> × I_ref，则:<br>  E<span class="hljs-selector-attr">[I_src]</span> = <span class="hljs-selector-tag">a</span> + <span class="hljs-selector-tag">b</span> × E<span class="hljs-selector-attr">[I_ref]</span><br>  <span class="hljs-built_in">Var</span>(I_src) = b² × <span class="hljs-built_in">Var</span>(I_ref)<br>  <span class="hljs-built_in">Covar</span>(I_ref, I_src) = <span class="hljs-selector-tag">b</span> × <span class="hljs-built_in">Var</span>(I_ref)<br>  NCC = <span class="hljs-selector-tag">b</span> × <span class="hljs-built_in">Var</span>(ref) / <span class="hljs-built_in">sqrt</span>(<span class="hljs-built_in">Var</span>(ref) × b² × <span class="hljs-built_in">Var</span>(ref)) = <span class="hljs-built_in">sign</span>(b)<br></code></pre></td></tr></table></figure>
+<p>当 <code>b &gt; 0</code>（大多数情况）时，<code>NCC = 1</code>（完美相关），与 a, b 的具体值无关。这使得 NCC 在不同曝光条件下保持稳定的匹配质量。</p>
+<p><strong>双边权重的物理意义</strong></p>
+<p>普通加权求和给每个像素一个权重 <code>Σ w(i) × I(i)</code>。<strong>双边</strong>就是从<strong>两个维度</strong>同时决定权重：</p>
+<figure class="highlight stylus"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><code class="hljs stylus"><span class="hljs-function"><span class="hljs-title">w</span><span class="hljs-params">(i)</span></span> = <span class="hljs-built_in">exp</span>(-距离²/(<span class="hljs-number">2</span>σ_s²)) × <span class="hljs-built_in">exp</span>(-颜色差²/(<span class="hljs-number">2</span>σ_c²))<br>       ─────────────────────   ────────────────────────<br>          空间权重                颜色权重<br></code></pre></td></tr></table></figure>
+<ul>
+<li>
+<p><strong>空间权重</strong> <code>exp(-dist²/(2σ_s²))</code>：高斯衰减，σ_s = window_radius 时窗口边缘权重约 0.14。给中心像素更高权重，同时避免窗口边缘像素主导统计量。</p>
+</li>
+<li>
+<p><strong>颜色权重</strong> <code>exp(-Δcolor²/(2σ_c²))</code>：σ_c = 0.2（灰度范围 [0,1]）。关键作用是<strong>跨遮挡边界的自适应降权</strong>：</p>
+<ul>
+<li>当窗口跨越遮挡边界时，边界另一侧的像素颜色差异大 → 权重低 → 不参与统计</li>
+<li>这避免了遮挡物像素&quot;污染&quot;NCC 计算，使得遮挡边界处的深度估计更锐利</li>
+<li>等效于只在颜色相似（大概率属于同一平面）的像素上计算 NCC</li>
+</ul>
+</li>
+</ul>
+<p><strong>遮挡边界示例</strong>：</p>
+<figure class="highlight makefile"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><code class="hljs makefile"><span class="hljs-section">场景: 一面白墙前面有根深色柱子，NCC 窗口中心在墙上（白色）</span><br><br>┌─────────────────┐<br>│ 白 白 白 黑 黑   │  ← 窗口内一半是墙，一半是柱子<br>│ 白 [白] 白 黑 黑 │  ← 中心是墙<br>│ 白 白 白 黑 黑   │<br>└─────────────────┘<br><br><span class="hljs-section">普通高斯加权: 黑色像素距离近 → 权重高 → 混入柱子颜色 → NCC 被拉低</span><br><span class="hljs-section">双边加权:     黑色像素和中心(白色)颜色差大 → 权重趋近0 → 只用白色像素算 NCC</span><br></code></pre></td></tr></table></figure>
+<p><strong>与普通高斯滤波的对比</strong>：</p>
+<table>
+<thead>
+<tr>
+<th></th>
+<th>高斯滤波</th>
+<th>双边滤波</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>空间距离</td>
+<td>远了降权 ✓</td>
+<td>远了降权 ✓</td>
+</tr>
+<tr>
+<td>颜色差异</td>
+<td><strong>不管</strong></td>
+<td>差了降权 ✓</td>
+</tr>
+<tr>
+<td>跨边界行为</td>
+<td>会模糊 ✗</td>
+<td>保持锐利 ✓</td>
+</tr>
+</tbody>
+</table>
+<p><strong>预计算的数学依据</strong></p>
+<p>参考图像侧的统计量在迭代中<strong>不变</strong>，因为参考图像本身不随 depth/normal 变化而改变：</p>
+<figure class="highlight angelscript"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><code class="hljs angelscript"><span class="hljs-built_in">ref</span>_sum = Σ w(i) × <span class="hljs-built_in">ref</span>_color(i)          ← 常量（参考图不变）<br><span class="hljs-built_in">ref</span>_sq_sum = Σ w(i) × <span class="hljs-built_in">ref</span>_color(i)²      ← 常量<br></code></pre></td></tr></table></figure>
+<p>只有源图像侧的 warp 坐标（以及读出的颜色值）随假设变化。因此 <code>sum_image</code> 和 <code>squared_sum_image</code> 只需在初始化时计算一次，每次假设评估只更新源图侧的 <code>src_color_sum</code>、<code>src_color_sq_sum</code>、<code>src_ref_color_sum</code>。这将 NCC 的每像素计算量减少了约一半。</p>
+<p><strong>具体计算</strong></p>
+<figure class="highlight ini"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><code class="hljs ini"><span class="hljs-attr">ref_color_var</span> = squared_sum_image - sum_image²        (预计算)<br><span class="hljs-attr">src_color_sum</span> = Σ w(i) × src_color(i)<br><span class="hljs-attr">src_color_sq_sum</span> = Σ w(i) × src_color(i)²<br><span class="hljs-attr">cross_sum</span> = Σ w(i) × ref_color(i) × src_color(i)<br><br><span class="hljs-attr">src_color_var</span> = src_color_sq_sum / W - (src_color_sum / W)²<br><span class="hljs-attr">covar</span> = cross_sum / W - (ref_sum / W) × (src_color_sum / W)<br><br><span class="hljs-attr">NCC</span> = covar / sqrt(max(ref_color_var, ε) × max(src_color_var, ε))<br></code></pre></td></tr></table></figure>
+<p>其中 <code>W = Σ w(i)</code> 是权重和，<code>ε = 1e-5</code> 防止除零。若任一方差 &lt; ε，直接设 <code>cost = 2.0</code>（最差代价）。</p>
+<blockquote>
+<p>代价范围: <code>[0, 2.0]</code>，其中 0 = 完美匹配，2.0 = 最差。</p>
+</blockquote>
+<h3 id="HMM-源图选择的数学模型">HMM 源图选择的数学模型</h3>
+<p>源码位置: <code>patch_match_cuda.cu:664-798</code> (<code>LikelihoodComputer</code>)</p>
+<h4 id="设计动机">设计动机</h4>
+<p>MVS 重建中，并非所有源图对每个像素都有用。一张源图可能因为<strong>遮挡</strong>、<strong>视角过大</strong>、<strong>分辨率不匹配</strong>等原因对某些像素无效。暴力评估所有源图既浪费计算又可能引入坏匹配。</p>
+<p><strong>核心观察</strong>：一张源图在相邻像素处的&quot;好坏&quot;状态通常是<strong>空间连续</strong>的。例如，源图 A 在参考图像的某个区域可见（匹配好），在另一个区域被物体遮挡（匹配差）。遮挡边界处状态突变，但边界两侧各自连续。</p>
+<p><strong>HMM 建模思路</strong>：将 sweep 方向（如从上到下）的像素序列视为时间轴，每张源图的&quot;好坏&quot;状态形成一条沿空间轴的一维 HMM。前向-后向消息传递让每个像素的源图选择不仅基于本地 NCC，还融合了整列像素的全局证据。</p>
+<figure class="highlight nestedtext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><code class="hljs nestedtext"><span class="hljs-attribute">遮挡场景示例 (sweep 方向</span><span class="hljs-punctuation">:</span> <span class="hljs-string">上→下):</span><br><br>  <span class="hljs-attribute">行 0-50</span><span class="hljs-punctuation">:</span> <span class="hljs-string">  源图 A 可见，NCC 高 → sel_prob 高 → 被频繁采样</span><br>  <span class="hljs-attribute">行 51</span><span class="hljs-punctuation">:</span> <span class="hljs-string">    遮挡边界，NCC 骤降 → 前向消息开始下降</span><br>  <span class="hljs-attribute">行 52-100</span><span class="hljs-punctuation">:</span> <span class="hljs-string">源图 A 被遮挡，NCC 低 → sel_prob 低 → 很少被采样</span><br><br>  <span class="hljs-attribute">HMM 的作用</span><span class="hljs-punctuation">:</span> <span class="hljs-string">行 51 处 sel_prob 不是瞬间跳变，而是平滑过渡</span><br>             （因为 0.99999 的自转移概率使状态变化需要多行证据累积）<br></code></pre></td></tr></table></figure>
+<h4 id="模型定义">模型定义</h4>
+<p>对每个像素，每张源图有一个隐藏状态 <code>s ∈ &#123;0, 1&#125;</code>：</p>
+<ul>
+<li><code>s = 1</code>: 该源图被选中（匹配质量好）</li>
+<li><code>s = 0</code>: 该源图未被选中（匹配质量差或不一致）</li>
+</ul>
+<h4 id="转移模型">转移模型</h4>
+<figure class="highlight apache"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><code class="hljs apache"><span class="hljs-attribute">P</span>(s_t = s_&#123;t-<span class="hljs-number">1</span>&#125;) = <span class="hljs-number">0</span>.<span class="hljs-number">99999</span>    (极高的状态保持概率)<br><span class="hljs-attribute">P</span>(s_t ≠ s_&#123;t-<span class="hljs-number">1</span>&#125;) = <span class="hljs-number">0</span>.<span class="hljs-number">00001</span>    (极低的状态切换概率)<br></code></pre></td></tr></table></figure>
+<p>其中 t 是行索引（在垂直 sweep 中）。</p>
+<h4 id="发射模型">发射模型</h4>
+<figure class="highlight stylus"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><code class="hljs stylus"><span class="hljs-function"><span class="hljs-title">P</span><span class="hljs-params">(cost | s=<span class="hljs-number">1</span>)</span></span> = <span class="hljs-built_in">exp</span>(-cost² / (<span class="hljs-number">2</span>σ_ncc²)) × Z      (好的匹配 → 高 NCC → 低 cost → 高概率)<br><span class="hljs-function"><span class="hljs-title">P</span><span class="hljs-params">(cost | s=<span class="hljs-number">0</span>)</span></span> = <span class="hljs-number">0.5</span>                                (均匀分布)<br></code></pre></td></tr></table></figure>
+<p>归一化因子 <code>Z = 2 / (√(2π)·σ·erf(√2/σ))</code>，确保发射概率在 cost∈[0,2] 上合理归一化。其中 <code>cost = 1 - NCC</code>，NCC∈[-1,1]，故 cost∈[0,2]。</p>
+<h4 id="前向-后向消息传递">前向-后向消息传递</h4>
+<p><strong>前向消息 α 的直觉</strong>：在从上到下扫描时，α 编码了&quot;<strong>从第 0 行到当前行，所有像素的证据是否支持选中该源图</strong>&quot;。它像一个从上往下传递的&quot;信任分数&quot;——如果上方很多像素都认为该源图好，α 会维持在高位；如果遇到连续多行低 NCC，α 逐渐下降。</p>
+<p><strong>前向消息 α</strong> (sweep 方向内逐行更新):</p>
+<figure class="highlight gcode"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><code class="hljs gcode">α_t<span class="hljs-comment">(1)</span> ∝ P<span class="hljs-comment">(cost_t | s=1)</span> × [<span class="hljs-number">0.99999</span> × α_&#123;t<span class="hljs-number">-1</span>&#125;<span class="hljs-comment">(1)</span> + <span class="hljs-number">0.00001</span> × α_&#123;t<span class="hljs-number">-1</span>&#125;<span class="hljs-comment">(0)</span>]<br>α_t<span class="hljs-comment">(0)</span> ∝ P<span class="hljs-comment">(cost_t | s=0)</span> × [<span class="hljs-number">0.00001</span> × α_&#123;t<span class="hljs-number">-1</span>&#125;<span class="hljs-comment">(1)</span> + <span class="hljs-number">0.99999</span> × α_&#123;t<span class="hljs-number">-1</span>&#125;<span class="hljs-comment">(0)</span>]<br></code></pre></td></tr></table></figure>
+<p><strong>后向消息 β 的直觉</strong>：β 编码了&quot;<strong>从当前行到底部，该源图是否被看好</strong>&quot;。在 sweep 开始前从底部向上计算，β 让当前像素在决策时不仅看&quot;上方说了什么&quot;（α），还知道&quot;下方会说什么&quot;（β）。</p>
+<p><strong>为什么用 0.99999 而非 0.9</strong>：转移概率 <code>P(保持) = 0.99999</code> 意味着：</p>
+<ul>
+<li>状态切换需要约 <code>1/0.00001 = 100,000</code> 个像素的证据才能翻转</li>
+<li>在实际图像（高度通常 &lt; 4000 像素）中，这意味着<strong>一次遮挡不会导致选择概率剧烈波动</strong></li>
+<li>只有持续多行的强证据（连续高/低 NCC）才会改变状态</li>
+<li>效果：选择概率具有<strong>空间平滑性</strong>，避免单像素噪声导致源图选择抖动</li>
+</ul>
+<p><strong>后向消息 β</strong> (逆 sweep 方向预计算):</p>
+<figure class="highlight gcode"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><code class="hljs gcode">β_t<span class="hljs-comment">(1)</span> ∝ Σ_s<span class="hljs-string">&#x27; P(s_&#123;t+1&#125;=s&#x27;</span> | s_t=<span class="hljs-number">1</span>) × P<span class="hljs-comment">(cost_&#123;t+1&#125; | s&#x27;)</span> × β_&#123;t<span class="hljs-number">+1</span>&#125;<span class="hljs-comment">(s&#x27;)</span><br>β_t<span class="hljs-comment">(0)</span> ∝ Σ_s<span class="hljs-string">&#x27; P(s_&#123;t+1&#125;=s&#x27;</span> | s_t=<span class="hljs-number">0</span>) × P<span class="hljs-comment">(cost_&#123;t+1&#125; | s&#x27;)</span> × β_&#123;t<span class="hljs-number">+1</span>&#125;<span class="hljs-comment">(s&#x27;)</span><br></code></pre></td></tr></table></figure>
+<p><strong>合并</strong>:</p>
+<figure class="highlight gcode"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs gcode">P<span class="hljs-comment">(s=1 | all observations)</span> = α_t<span class="hljs-comment">(1)</span> × β_t<span class="hljs-comment">(1)</span> / [<span class="hljs-comment">(1-α_t(1)</span>)×<span class="hljs-comment">(1-β_t(1)</span>) + α_t<span class="hljs-comment">(1)</span>×β_t<span class="hljs-comment">(1)</span>]<br></code></pre></td></tr></table></figure>
+<p>其中 α_t 是标量（前向消息 P(s=1|o_0…o_t)），β_t 也是标量（后向消息 P(s=1|o_t…o_{H-1})）。代码中 <code>ComputeSelProb</code> 函数直接实现了这个公式。</p>
+<h4 id="时序平滑">时序平滑</h4>
+<p>相邻 sweep 方向之间的选择概率通过线性插值平滑：</p>
+<figure class="highlight ini"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><code class="hljs ini"><span class="hljs-attr">final_prob</span> = prev_weight × prev_prob + (<span class="hljs-number">1</span> - prev_weight) × (α × β / total)<br><span class="hljs-attr">prev_weight</span> = (iter×<span class="hljs-number">4</span> + sweep) / (num_iterations×<span class="hljs-number">4</span>)<br></code></pre></td></tr></table></figure>
+<p><strong>跨迭代的信息累积</strong>：每个 sweep 方向计算的选择概率 <code>α×β/(total)</code> 可能因当轮 depth/normal 的随机性而抖动。通过将上一轮的结果 <code>prev_prob</code> 以递增权重混合进来，算法在迭代过程中逐步建立起<strong>稳定的源图选择共识</strong>。</p>
+<p><code>prev_weight</code> 从 0 线性增长到 <code>(N_iter×4 - 1) / (N_iter×4)</code>（默认 5 次迭代时最大为 19/20 = 0.95）：</p>
+<ul>
+<li><strong>早期</strong> (prev_weight ≈ 0)：完全信任当前 sweep 的计算，允许快速适应新的 depth/normal</li>
+<li><strong>后期</strong> (prev_weight ≈ 0.95)：主要信任历史累积概率，depth/normal 已基本收敛，不需要源图选择剧烈变化</li>
+<li><strong>始终保留 5% 新信息</strong>：即使到最后也不完全锁定，保留对局部异常的响应能力</li>
+</ul>
+<h3 id="深度与法线参数化">深度与法线参数化</h3>
+<h4 id="depth-normal-参数化的选择">(depth, normal) 参数化的选择</h4>
+<p>MVS 算法需要对每个像素估计一个 3D 位置。常见的参数化选择：</p>
+<table>
+<thead>
+<tr>
+<th>参数化</th>
+<th>自由度</th>
+<th>优势</th>
+<th>劣势</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Disparity (视差)</strong></td>
+<td>1</td>
+<td>正面平面场景下线性化</td>
+<td>无法表示倾斜平面，需要视角已知</td>
+</tr>
+<tr>
+<td><strong>Depth (深度)</strong></td>
+<td>1</td>
+<td>简单直观</td>
+<td>只能表示正面朝向的平面，倾斜面需要逐像素独立深度</td>
+</tr>
+<tr>
+<td><strong>3D 坐标 (X,Y,Z)</strong></td>
+<td>3</td>
+<td>最通用</td>
+<td>参数空间不平滑，优化困难，需要更多样本</td>
+</tr>
+<tr>
+<td><strong>Depth + Normal</strong></td>
+<td>4</td>
+<td>局部平面假设，参数空间平滑</td>
+<td>比纯深度多 3 个参数</td>
+</tr>
+</tbody>
+</table>
+<p><strong>(depth, normal)</strong> 参数化的核心优势是<strong>局部平面假设</strong>：</p>
+<ol>
+<li>真实世界的表面在局部范围内近似平面（墙壁、地面、桌面等）</li>
+<li>depth + normal 定义一个过该像素 3D 点的平面，邻域像素共享同一平面假设</li>
+<li>空间传播时，邻域的平面假设可以直接通过几何传播（而非启发式插值）</li>
+<li>相比逐像素独立深度，平面假设通过法线提供了深度在空间上的<strong>一阶梯度信息</strong>，大幅减少需要的随机搜索次数</li>
+</ol>
+<h4 id="深度">深度</h4>
+<p>每像素一个 float，表示沿光轴的深度值。3D 点重建：</p>
+<figure class="highlight abnf"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><code class="hljs abnf"><span class="hljs-attribute">X</span> <span class="hljs-operator">=</span> depth × (inv_fx × col - cx/fx)<br><span class="hljs-attribute">Y</span> <span class="hljs-operator">=</span> depth × (inv_fy × row - cy/fy)<br><span class="hljs-attribute">Z</span> <span class="hljs-operator">=</span> depth<br></code></pre></td></tr></table></figure>
+<h4 id="法线">法线</h4>
+<p>每像素一个 3D 单位向量 <code>(nx, ny, nz)</code>，约束面向相机：</p>
+<figure class="highlight stylus"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs stylus"><span class="hljs-function"><span class="hljs-title">dot</span><span class="hljs-params">(normal, view_ray_direction)</span></span> &lt; <span class="hljs-number">0</span><br></code></pre></td></tr></table></figure>
+<p>depth + normal 共同定义该像素处的局部 3D 平面。</p>
+<h4 id="平面传播">平面传播</h4>
+<p>空间传播时，上方像素的 (depth, normal) 定义了一个 3D 平面。<strong>实现上</strong> <code>PropagateDepth</code> 函数做了 2D 简化：只在 (row方向, depth) 平面内做线段求交，仅使用法线的 ny 和 nz 分量（忽略 nx），因为 sweep 方向沿列传播，横向分量不影响交点深度。</p>
+<figure class="highlight gcode"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><code class="hljs gcode"><span class="hljs-number">2</span>D 简化（row-depth 平面）:<br>  上方像素的 ray 终点: P<span class="hljs-number">1</span> = <span class="hljs-comment">(depth1 * (inv_fy*row1 - cy/fy)</span>, depth<span class="hljs-number">1</span>)<br>  平面法线方向:        dir = <span class="hljs-comment">(nz, -ny)</span><br><br>  当前像素的 ray 方向: <span class="hljs-comment">(inv_fy*row2 - cy/fy, 1)</span><br><br>  线段 <span class="hljs-comment">((0,0)</span>→ray<span class="hljs-number">2</span>方向) 与 线段 <span class="hljs-comment">(P1→P1+dir)</span> 的交点:<br>    t = <span class="hljs-comment">(y1*x2 - x1*y2)</span> / <span class="hljs-comment">((x2-x1)</span> + ray<span class="hljs-number">2</span>_x * <span class="hljs-comment">(y1-y2)</span>)<br><br>  propagated_depth = t<br></code></pre></td></tr></table></figure>
+<p>概念上等价于完整 3D ray-plane 求交，但避免了 3D 运算和 nx 分量，计算更高效。</p>
+<h3 id="迭代调度">迭代调度</h3>
+<p>源码位置: <code>patch_match_cuda.cu:1359-1512</code></p>
+<h4 id="完整时间表">完整时间表</h4>
+<figure class="highlight routeros"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><code class="hljs routeros"><span class="hljs-keyword">Step</span> 0: ComputeInitialCost<br>        用初始随机 depth/normal 计算所有源图的 NCC 代价<br><br><span class="hljs-keyword">Step</span> 1-20: 5 iterations × 4 sweeps<br>  ├─ iter 0, sweep 0: <span class="hljs-attribute">p</span>=1.000, <span class="hljs-attribute">prev_w</span>=0.00  (大范围搜索)<br>  ├─ iter 0, sweep 1: <span class="hljs-attribute">p</span>=0.841, <span class="hljs-attribute">prev_w</span>=0.05<br>  ├─ iter 0, sweep 2: <span class="hljs-attribute">p</span>=0.707, <span class="hljs-attribute">prev_w</span>=0.10<br>  ├─ iter 0, sweep 3: <span class="hljs-attribute">p</span>=0.595, <span class="hljs-attribute">prev_w</span>=0.15<br>  ├─ iter 1, sweep 0: <span class="hljs-attribute">p</span>=0.500, <span class="hljs-attribute">prev_w</span>=0.20<br>  ├─ iter 1, sweep 1: <span class="hljs-attribute">p</span>=0.420, <span class="hljs-attribute">prev_w</span>=0.25<br>  ├─ <span class="hljs-built_in">..</span>.<br>  ├─ iter 4, sweep 2: <span class="hljs-attribute">p</span>=0.035, <span class="hljs-attribute">prev_w</span>=0.90<br>  └─ iter 4, sweep 3: <span class="hljs-attribute">p</span>=0.037, <span class="hljs-attribute">prev_w</span>=0.95  (精细微调 + 过滤)<br></code></pre></td></tr></table></figure>
+<h4 id="扰动衰减曲线">扰动衰减曲线</h4>
+<figure class="highlight apache"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs apache"><span class="hljs-attribute">perturbation</span> = <span class="hljs-number">1</span>.<span class="hljs-number">0</span> / <span class="hljs-number">2</span>^(iter + sweep/<span class="hljs-number">4</span>)<br></code></pre></td></tr></table></figure>
+<table>
+<thead>
+<tr>
+<th>迭代</th>
+<th>Sweep 0</th>
+<th>Sweep 1</th>
+<th>Sweep 2</th>
+<th>Sweep 3</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>0</td>
+<td>100.0%</td>
+<td>84.1%</td>
+<td>70.7%</td>
+<td>59.5%</td>
+</tr>
+<tr>
+<td>1</td>
+<td>50.0%</td>
+<td>42.0%</td>
+<td>35.4%</td>
+<td>29.7%</td>
+</tr>
+<tr>
+<td>2</td>
+<td>25.0%</td>
+<td>21.0%</td>
+<td>17.7%</td>
+<td>14.9%</td>
+</tr>
+<tr>
+<td>3</td>
+<td>12.5%</td>
+<td>10.5%</td>
+<td>8.8%</td>
+<td>7.4%</td>
+</tr>
+<tr>
+<td>4</td>
+<td>6.3%</td>
+<td>5.3%</td>
+<td>4.4%</td>
+<td>3.7%</td>
+</tr>
+</tbody>
+</table>
+<h3 id="旋转策略">旋转策略</h3>
+<p>源码位置: <code>patch_match_cuda.cu:1810</code></p>
+<p>每次 sweep 后，整个 GPU 状态旋转 90°：</p>
+<figure class="highlight nestedtext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><code class="hljs nestedtext"><span class="hljs-attribute">旋转的数据</span><span class="hljs-punctuation">:</span><br>  <span class="hljs-bullet">-</span> <span class="hljs-string">depth_map, normal_map, cost_map</span><br>  <span class="hljs-bullet">-</span> <span class="hljs-string">sel_prob_map, prev_sel_prob_map</span><br>  <span class="hljs-bullet">-</span> <span class="hljs-string">ref_image, sum_image, squared_sum_image</span><br>  <span class="hljs-bullet">-</span> <span class="hljs-string">rand_state_map (随机数状态)</span><br><br><span class="hljs-attribute">切换的资源</span><span class="hljs-punctuation">:</span><br>  <span class="hljs-bullet">-</span> <span class="hljs-string">poses_texture_[rotation]  (4 种预计算的旋转位姿)</span><br>  <span class="hljs-bullet">-</span> <span class="hljs-string">ref_K[rotation], ref_inv_K[rotation] (CUDA 常量内存)</span><br></code></pre></td></tr></table></figure>
+<p>4 个 sweep 的方向：</p>
+<table>
+<thead>
+<tr>
+<th>Sweep</th>
+<th>原始方向</th>
+<th>旋转后实际遍历</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>0</td>
+<td>上→下</td>
+<td>上→下</td>
+</tr>
+<tr>
+<td>1</td>
+<td>上→下 (旋转 90°)</td>
+<td>右→左</td>
+</tr>
+<tr>
+<td>2</td>
+<td>上→下 (旋转 180°)</td>
+<td>下→上</td>
+</tr>
+<tr>
+<td>3</td>
+<td>上→下 (旋转 270°)</td>
+<td>左→右</td>
+</tr>
+</tbody>
+</table>
+<blockquote>
+<p>设计理由：通过旋转数据结构而非改变遍历方向，复用完全相同的 CUDA kernel，避免为不同方向写不同代码。</p>
+</blockquote>
+<h3 id="几何一致性阶段-Phase-2">几何一致性阶段 (Phase 2)</h3>
+<h4 id="两阶段执行架构">两阶段执行架构</h4>
+<p>源码位置: <code>patch_match.cc:170-207</code> (<code>PatchMatchController::Run()</code>)</p>
+<p>PatchMatchController 采用两阶段执行策略：</p>
+<figure class="highlight livecodeserver"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br></pre></td><td class="code"><pre><code class="hljs livecodeserver"><span class="hljs-keyword">if</span> geom_consistency == <span class="hljs-literal">true</span>:<br>    Pass <span class="hljs-number">1</span> (Photometric):<br>        options.geom_consistency = <span class="hljs-literal">false</span><br>        options.<span class="hljs-built_in">filter</span> = <span class="hljs-literal">false</span><br>        → 对所有图像运行纯光度 PatchMatch<br>        → 输出标记为 <span class="hljs-string">&quot;photometric&quot;</span> 类型<br>        → depth/<span class="hljs-keyword">normal</span> 随机初始化<br><br>    Pass <span class="hljs-number">2</span> (Geometric):<br>        options = 原始选项 (geom_consistency=<span class="hljs-literal">true</span>, <span class="hljs-built_in">filter</span>=<span class="hljs-literal">true</span>)<br>        input_type = <span class="hljs-string">&quot;photometric&quot;</span> (读取 Pass <span class="hljs-number">1</span> 的输出)<br>        → 对所有图像运行几何一致性 PatchMatch<br>        → 输出标记为 <span class="hljs-string">&quot;geometric&quot;</span> 类型<br>        → depth/<span class="hljs-keyword">normal</span> 从 photometric 结果初始化（非随机）<br><br><span class="hljs-keyword">else</span>:<br>    单阶段执行，<span class="hljs-built_in">filter</span> 按配置决定<br></code></pre></td></tr></table></figure>
+<p><strong>为什么需要两遍——源图的深度从哪来</strong>：</p>
+<p>重投影误差的计算要求源图也有深度：参考图用自己深度反投影到 3D → 投影到源图 → 要用源图的深度反投影回来。但源图的深度从哪来？</p>
+<p>答案就是 <strong>Pass 1 已经对所有图像都算了一遍深度图</strong>：</p>
+<figure class="highlight dns"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br></pre></td><td class="code"><pre><code class="hljs dns">Pass <span class="hljs-number">1</span> 结束后，每张图都有自己的深度图:<br><br>  depth_maps/<br>    image_001.photometric.bin   ← 图像 <span class="hljs-number">1</span> 的深度图<br>    image_002.photometric.bin   ← 图像 <span class="hljs-number">2</span> 的深度图<br>    image_003.photometric.bin   ← 图像 <span class="hljs-number">3</span> 的深度图<br>    ...<br><br>重投影时:<br><br>  参考图 (<span class="hljs-number">500,300</span>)  depth=<span class="hljs-number">10m</span><br>      ↓ 反投影<br>    <span class="hljs-number">3</span>D 点 <span class="hljs-keyword">A</span><br>      ↓ 投影<br>  源图 (<span class="hljs-number">480,290</span>)    ← 落到源图某个像素<br>      ↓ 读这个像素的深度图值<br>  源图 (<span class="hljs-number">480,290</span>) 的 depth = <span class="hljs-number">9</span>.<span class="hljs-number">8m</span>  ← Pass <span class="hljs-number">1</span> 算出来的<br>      ↓ 用源图自己的深度反投影<br>    <span class="hljs-number">3</span>D 点 <span class="hljs-keyword">A</span>&#x27;<br>      ↓ 投影回参考图<br>  参考图 (<span class="hljs-number">498</span>, <span class="hljs-number">295</span>)  ← 偏了 <span class="hljs-number">2</span>.<span class="hljs-number">5</span> 像素<br></code></pre></td></tr></table></figure>
+<p>Pass 1 让每张图都先猜好深度，Pass 2 让它们<strong>互相用对方的深度来验证自己猜得对不对</strong>。</p>
+<blockquote>
+<p>关键设计：Pass 1 不启用过滤（<code>filter=false</code>），确保 photometric 结果尽可能完整；Pass 2 的 <code>depth_min</code>/<code>depth_max</code> 从 sparse SfM 自动计算；<code>sigma_spatial</code> 如果 ≤ 0，自动设为 <code>window_radius</code>。</p>
+</blockquote>
+<h4 id="自适应过滤阈值">自适应过滤阈值</h4>
+<p>源码位置: <code>patch_match.cc:458-460</code></p>
+<p>控制器会自适应调整 <code>filter_min_num_consistent</code>：</p>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><code class="hljs cpp">patch_match_options.filter_min_num_consistent =<br>    std::<span class="hljs-built_in">min</span>(<span class="hljs-built_in">static_cast</span>&lt;<span class="hljs-type">int</span>&gt;(used_image_idxs.<span class="hljs-built_in">size</span>()) - <span class="hljs-number">1</span>,<br>             patch_match_options.filter_min_num_consistent);<br></code></pre></td></tr></table></figure>
+<p>当某问题可用的源图数量少于 <code>filter_min_num_consistent + 1</code> 时，自动降低阈值以避免过滤掉所有像素。</p>
+<h4 id="初始化">初始化</h4>
+<p>depth 和 normal 直接使用 Photometric 阶段的结果（非随机初始化）。</p>
+<h4 id="额外代价项">额外代价项</h4>
+<p>在 NCC 代价外加入前向-后向重投影误差：</p>
+<figure class="highlight asciidoc"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><code class="hljs asciidoc">geom_cost = Σ_src  (forward_reproj_error + backward_reproj_error)<br><br>总代价 = photo<span class="hljs-emphasis">_cost + λ × geom_cost</span><br><span class="hljs-emphasis">其中 λ = geom_consistency_</span>regularizer = 0.3<br></code></pre></td></tr></table></figure>
+<blockquote>
+<p>几何代价项直接以权重 λ <strong>加到</strong> 光度代价上，而非 <code>(1-λ)×photo + λ×geom</code> 的加权平均。photo_cost 范围 [0, 2]，geom_cost 截断在 max_cost (3.0px)，故 λ×geom_cost 最大贡献 0.3×3=0.9。</p>
+</blockquote>
+<p><strong>重投影误差的直觉：去了一趟能不能回到原点</strong></p>
+<p>两张照片拍同一面墙，墙上有个标记点 A。重投影误差就是：<strong>从参考图出发，走 参考图→3D→源图→3D→参考图 一圈，看看能不能回到出发点。</strong></p>
+<p><strong>深度正确时——回到原点</strong>：</p>
+<figure class="highlight dns"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><code class="hljs dns">参考图像素 (<span class="hljs-number">500,300</span>)，真实深度 <span class="hljs-number">10m</span><br><br>  参考图 (<span class="hljs-number">500,300</span>)                    源图 (<span class="hljs-number">480,290</span>)<br>       │                                  ▲<br>       │ ①反投影: depth=<span class="hljs-number">10m</span>               │<br>       ▼                                  │<br>     <span class="hljs-number">3</span>D 点 <span class="hljs-keyword">A</span>（在墙上）──②投影到源图──→│    ← 恰好是 <span class="hljs-keyword">A</span> 在源图的位置<br>                                          │<br>       ▲                                  │ ③读源图深度=<span class="hljs-number">10m</span><br>       │                                  │ ④反投影: 还是 <span class="hljs-keyword">A</span><br>       │           ⑤投影回参考图─────────┘<br>  回到 (<span class="hljs-number">500,300</span>) = 出发点<br><br>  误差 = <span class="hljs-number">0</span> 像素 ✓<br></code></pre></td></tr></table></figure>
+<p><strong>深度猜错时——回不到原点</strong>：</p>
+<figure class="highlight dns"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><code class="hljs dns">参考图像素 (<span class="hljs-number">500,300</span>)，猜深度 <span class="hljs-number">5m</span>（真实是 <span class="hljs-number">10m</span>）<br><br>  参考图 (<span class="hljs-number">500,300</span>)                    源图 (<span class="hljs-number">460,275</span>)<br>       │                                  ▲<br>       │ ①反投影: depth=<span class="hljs-number">5m</span>               │<br>       ▼                                  │<br>     <span class="hljs-number">3</span>D 点在墙前面 ──②投影到源图──→│     ← 不是 <span class="hljs-keyword">A</span>，跑到别处去了！<br>  （空中，不在墙上）                        │<br>                                          │ ③读这个位置的深度=<span class="hljs-number">8m</span><br>       ▲                                  │ ④反投影: 墙上另一个点<br>       │           ⑤投影回参考图─────────┘<br>  回到 (<span class="hljs-number">470,280</span>) ≠ 出发点 (<span class="hljs-number">500,300</span>)<br><br>  误差 = √((<span class="hljs-number">500-470</span>)² + (<span class="hljs-number">300-280</span>)²) = √(<span class="hljs-number">900+400</span>) ≈ <span class="hljs-number">36</span> 像素 ✗<br></code></pre></td></tr></table></figure>
+<p><strong>核心逻辑</strong>：</p>
+<figure class="highlight mathematica"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><code class="hljs mathematica">正确的深度<span class="hljs-operator">:</span>  参考图 → <span class="hljs-number">3</span><span class="hljs-built_in">D</span> → 源图 → <span class="hljs-number">3</span><span class="hljs-built_in">D</span> → 参考图 <span class="hljs-operator">=</span> 回到原点   误差<span class="hljs-operator">=</span><span class="hljs-number">0</span><br>错误的深度<span class="hljs-operator">:</span>  参考图 → <span class="hljs-number">3</span><span class="hljs-built_in">D</span> → 源图 → <span class="hljs-number">3</span><span class="hljs-built_in">D</span> → 参考图 ≠ 回到原点   误差<span class="hljs-operator">&gt;</span><span class="hljs-number">0</span><br></code></pre></td></tr></table></figure>
+<p>两张图互相验证：我用我的深度算出 3D 点去你那边看，你用你的深度从那边算回来。如果对不上（回不到原点），说明至少有一方的深度有问题。</p>
+<p><strong>前向投影的具体计算步骤</strong></p>
+<figure class="highlight tp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br></pre></td><td class="code"><pre><code class="hljs tp">步骤 <span class="hljs-number">1</span>: 反投影（参考图像素 → <span class="hljs-number">3</span>D 点）<br>  <span class="hljs-number">3</span>D_point = depth × (inv_fx×col - cx/fx, inv_fy×row - cy/fy, <span class="hljs-number">1</span>)<br><br>步骤 <span class="hljs-number">2</span>: 投影到源图（<span class="hljs-number">3</span>D 点 → 源图像素，使用投影矩阵 <span class="hljs-keyword">P</span>）<br>  src_col = (<span class="hljs-built_in">P[0]</span>*<span class="hljs-keyword">X</span> + <span class="hljs-built_in">P[<span class="hljs-number">1</span>]</span>*<span class="hljs-keyword">Y</span> + <span class="hljs-built_in">P[<span class="hljs-number">2</span>]</span>*<span class="hljs-keyword">Z</span> + <span class="hljs-built_in">P[<span class="hljs-number">3</span>]</span>) / (<span class="hljs-built_in">P[<span class="hljs-number">8</span>]</span>*<span class="hljs-keyword">X</span> + <span class="hljs-built_in">P[<span class="hljs-number">9</span>]</span>*<span class="hljs-keyword">Y</span> + <span class="hljs-built_in">P[<span class="hljs-number">10</span>]</span>*<span class="hljs-keyword">Z</span> + <span class="hljs-built_in">P[<span class="hljs-number">11</span>]</span>)<br>  src_row = (<span class="hljs-built_in">P[<span class="hljs-number">4</span>]</span>*<span class="hljs-keyword">X</span> + <span class="hljs-built_in">P[<span class="hljs-number">5</span>]</span>*<span class="hljs-keyword">Y</span> + <span class="hljs-built_in">P[<span class="hljs-number">6</span>]</span>*<span class="hljs-keyword">Z</span> + <span class="hljs-built_in">P[<span class="hljs-number">7</span>]</span>) / (<span class="hljs-built_in">P[<span class="hljs-number">8</span>]</span>*<span class="hljs-keyword">X</span> + <span class="hljs-built_in">P[<span class="hljs-number">9</span>]</span>*<span class="hljs-keyword">Y</span> + <span class="hljs-built_in">P[<span class="hljs-number">10</span>]</span>*<span class="hljs-keyword">Z</span> + <span class="hljs-built_in">P[<span class="hljs-number">11</span>]</span>)<br><br>步骤 <span class="hljs-number">3</span>: 读取源图该位置的深度<br>  src_depth = src_depth_map[src_row, src_col]<br><br>步骤 <span class="hljs-number">4</span>: 反投影回 <span class="hljs-number">3</span>D（源图像素 → <span class="hljs-number">3</span>D 点，使用逆投影矩阵 inv_P）<br>  backward_point = inv_P × (src_col × src_depth, src_row × src_depth, src_depth)<br><br>步骤 <span class="hljs-number">5</span>: 投影回参考图（<span class="hljs-number">3</span>D 点 → 参考图像素）<br>  backward_col = fx × backward_X / backward_Z + cx<br>  backward_row = fy × backward_Y / backward_Z + cy<br><br>步骤 <span class="hljs-number">6</span>: 计算重投影误差<br>  error = min(max_cost, sqrt((col - backward_col)² + (row - backward_row)²))<br></code></pre></td></tr></table></figure>
+<p>当两张图的深度<strong>都正确</strong>时，round-trip 经过正确的 3D 点，返回原始像素坐标，误差为 0。当任一图的深度有误时，3D 点不匹配，投影回参考图后产生偏移，且<strong>偏移量与深度误差成正比</strong>。</p>
+<p><strong>λ 权重分析</strong></p>
+<figure class="highlight routeros"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><code class="hljs routeros">photo_cost 范围:  [0, 2.0]   (1-NCC)<br>λ × geom_cost:   [0, 0.9]   (0.3 × max 3.0px)<br><br>几何项贡献占比:<br>  当 <span class="hljs-attribute">photo</span>=0.1, <span class="hljs-attribute">geom</span>=0.5px: <span class="hljs-attribute">total</span>=0.1+0.15=0.25, 几何占 60%<br>  当 <span class="hljs-attribute">photo</span>=0.5, <span class="hljs-attribute">geom</span>=0.5px: <span class="hljs-attribute">total</span>=0.5+0.15=0.65, 几何占 23%<br>  当 <span class="hljs-attribute">photo</span>=1.0, <span class="hljs-attribute">geom</span>=3.0px: <span class="hljs-attribute">total</span>=1.0+0.9=1.9,   几何占 47%<br></code></pre></td></tr></table></figure>
+<p>λ=0.3 使几何项在光度匹配较好（photo &lt; 0.3）时具有显著影响力，能纠正&quot;NCC 看起来好但几何不一致&quot;的情况（如重复纹理区域），但在光度匹配差时不会主导代价（避免误杀）。</p>
+<h4 id="过滤">过滤</h4>
+<p>最后一轮 sweep 使用更严格的过滤条件：</p>
+<figure class="highlight nestedtext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><code class="hljs nestedtext"><span class="hljs-attribute">对每张源图</span><span class="hljs-punctuation">:</span><br>  <span class="hljs-attribute">前置条件</span><span class="hljs-punctuation">:</span> <span class="hljs-string">三角化角 &gt; filter_min_triangulation_angle (3.0°)</span><br>           <span class="hljs-attribute">AND 入射角 &gt; 0 (源图在该法线方向可见)</span><br><span class="hljs-attribute"></span><br><span class="hljs-attribute">  光度一致性</span><span class="hljs-punctuation">:</span> <span class="hljs-string">sel_prob &gt;= ComputeNCCProb(1 - filter_min_ncc)</span><br>             <span class="hljs-attribute">(HMM 后验选择概率超过阈值)</span><br><span class="hljs-attribute">  AND</span><br><span class="hljs-attribute">  几何一致性</span><span class="hljs-punctuation">:</span> <span class="hljs-string">前向-后向重投影误差 &lt; filter_geom_consistency_max_cost (1.0 px)</span><br><br><span class="hljs-attribute">if 一致源图数 &lt; filter_min_num_consistent</span><span class="hljs-punctuation">:</span><br>    depth = 0  (标记为无效)<br></code></pre></td></tr></table></figure>
+<blockquote>
+<p>光度一致性过滤不是直接比较 NCC 代价值，而是比较 HMM 后验选择概率 <code>sel_prob</code> 与阈值 <code>ComputeNCCProb(1 - filter_min_ncc)</code>。这意味着过滤利用了整个 sweep 方向上的全局上下文信息，而非单像素代价。</p>
+</blockquote>
+<h3 id="性能特征">性能特征</h3>
+<h4 id="计算复杂度">计算复杂度</h4>
+<table>
+<thead>
+<tr>
+<th>阶段</th>
+<th>复杂度</th>
+<th>瓶颈</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>双边预过滤</td>
+<td>O(W × H × window²)</td>
+<td>参考图像处理</td>
+</tr>
+<tr>
+<td>单次 Sweep</td>
+<td>O(W × H × N_samples × NCC_window²)</td>
+<td>NCC 计算</td>
+</tr>
+<tr>
+<td>全部迭代</td>
+<td>O(N_iter × 4 × W × H × N_samples × NCC_window²)</td>
+<td>-</td>
+</tr>
+</tbody>
+</table>
+<h4 id="GPU-利用">GPU 利用</h4>
+<ul>
+<li><strong>纹理缓存</strong>：源图像存储在 CUDA layered texture 中，硬件双线性插值</li>
+<li><strong>共享内存</strong>：参考图像 patch 缓存在共享内存，减少全局内存访问</li>
+<li><strong>每列一线程</strong>：纵向扫描充分利用空间局部性和共享内存 tile</li>
+</ul>
+<h4 id="内存占用">内存占用</h4>
+<p>以 2048×1536 图像、20 张源图为例：</p>
+<table>
+<thead>
+<tr>
+<th>数据</th>
+<th>尺寸</th>
+<th>内存</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>depth_map</td>
+<td>2048×1536 × 4B</td>
+<td>12 MB</td>
+</tr>
+<tr>
+<td>normal_map</td>
+<td>2048×1536 × 3 × 4B</td>
+<td>36 MB</td>
+</tr>
+<tr>
+<td>cost_map</td>
+<td>2048×1536 × 20 × 4B</td>
+<td>240 MB</td>
+</tr>
+<tr>
+<td>sel_prob_map</td>
+<td>2048×1536 × 20 × 4B</td>
+<td>240 MB</td>
+</tr>
+<tr>
+<td>src_images</td>
+<td>20 × ~3MB</td>
+<td>~60 MB</td>
+</tr>
+<tr>
+<td>合计</td>
+<td></td>
+<td><strong>~590 MB</strong></td>
+</tr>
+</tbody>
+</table>
+<h3 id="关键设计总结">关键设计总结</h3>
+<table>
+<thead>
+<tr>
+<th>设计决策</th>
+<th>方法</th>
+<th>优势</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>光度代价</td>
+<td>双边加权 NCC</td>
+<td>对遮挡边界和颜色跳变鲁棒</td>
+</tr>
+<tr>
+<td>空间传播</td>
+<td>平面传播 (非像素复制)</td>
+<td>正确处理斜面深度传递</td>
+</tr>
+<tr>
+<td>源图选择</td>
+<td>HMM 前向-后向消息</td>
+<td>自适应选择最优视角，避免遮挡干扰</td>
+</tr>
+<tr>
+<td>源图采样</td>
+<td>Monte Carlo (15/20)</td>
+<td>O(N_samples) 而非 O(N_src)</td>
+</tr>
+<tr>
+<td>假设评估</td>
+<td>5 候选并行</td>
+<td>兼顾利用与探索</td>
+</tr>
+<tr>
+<td>扰动策略</td>
+<td>指数衰减</td>
+<td>粗到精收敛</td>
+</tr>
+<tr>
+<td>方向遍历</td>
+<td>数据结构旋转</td>
+<td>复用同一 kernel，代码简洁</td>
+</tr>
+<tr>
+<td>几何约束</td>
+<td>前向-后向重投影</td>
+<td>过滤光度一致的几何异常值</td>
+</tr>
+</tbody>
+</table>
+<h3 id="参考资料">参考资料</h3>
+<ul>
+<li>Schönberger et al., “Pixelwise View Selection for Unstructured Multi-View Stereo”, ECCV 2016</li>
+<li>Bailer et al., “PatchMatch Stereo”</li>
+<li>COLMAP 源码: <a target="_blank" rel="noopener" href="https://github.com/colmap/colmap">https://github.com/colmap/colmap</a></li>
+<li><a target="_blank" rel="noopener" href="https://colmap.github.io/">https://colmap.github.io/</a></li>
+</ul>
+<link rel="stylesheet" href="/css/spoiler.css" type="text/css"><script src="/js/spoiler.js" type="text/javascript" async></script>
+                
+
+
+				<br /><br />
+				<blockquote>
+					<p>文章链接：<br /> 
+					<a style="font-size: 0.85rem" target="_blank" rel="noopener" href="https://www.zywvvd.com/notes/3d/colmap-patchmatch-stereo/colmap-patchmatch-stereo/">https://www.zywvvd.com/notes/3d/colmap-patchmatch-stereo/colmap-patchmatch-stereo/</a>
+					</p>
+				</blockquote>
+
+
+              </div>
+            
+            <hr/>
+			
+			<!-- 添加打赏模块 -->
+			<div class="reward-container">
+				
+					<button id="rewardBtn" class="reward-btn">
+						 
+							❤ 打赏
+							
+					</button>
+					<p class="tea">“觉得不错的话，给点打赏吧 ୧(๑•̀⌄•́๑)૭”</p>
+					<div id="rewardImgContainer" class="reward-img-container">
+						<div class="singleImgContainer">
+							<img id="wechatImg" class="reward-img" src="https://uipv4.zywvvd.com:33030/HexoFiles/vvd_pc_upload/wechatpay.png" srcset="/img/loading.gif" lazyload alt="微信二维码">
+							<p class="wechatPay">微信支付</p>
+						</div>
+						<div class="singleImgContainer">
+							<img id="alipayImg" class="reward-img" src="https://uipv4.zywvvd.com:33030/HexoFiles/vvd_pc_upload/alipay.png" srcset="/img/loading.gif" lazyload alt="支付宝二维码">
+							<p class="aliPay">支付宝支付</p>
+						</div>
+					</div>
+				
+			</div>
+			
+            <div>
+              <div class="post-metas my-3">
+  
+    <div class="post-meta mr-3 d-flex align-items-center">
+      <i class="iconfont icon-category"></i>
+      
+
+<span class="category-chains">
+  
+  
+    
+      <span class="category-chain">
+        
+  <a href="/categories/Study/" class="category-chain-item">Study</a>
+  
+  
+    <span>></span>
+    
+  <a href="/categories/Study/Computer-Vision/" class="category-chain-item">Computer_Vision</a>
+  
+  
+
+  
+
+      </span>
+    
+  
+</span>
+
+    </div>
+  
+  
+    <div class="post-meta">
+      <i class="iconfont icon-tags"></i>
+      
+        <a href="/tags/3D/" class="print-no-link">#3D</a>
+      
+        <a href="/tags/Computer-Vision/" class="print-no-link">#Computer_Vision</a>
+      
+        <a href="/tags/COLMAP/" class="print-no-link">#COLMAP</a>
+      
+    </div>
+  
+</div>
+
+
+              
+  
+
+  <div class="license-box my-3">
+    <div class="license-title">
+      <div>COLMAP PatchMatch Stereo</div>
+      <div>https://www.zywvvd.com/notes/3d/colmap-patchmatch-stereo/colmap-patchmatch-stereo/</div>
+    </div>
+    <div class="license-meta">
+      
+        <div class="license-meta-item">
+          <div>作者</div>
+          <div>Yiwei Zhang</div>
+        </div>
+      
+      
+        <div class="license-meta-item license-meta-date">
+          <div>发布于</div>
+          <div>2026年5月16日</div>
+        </div>
+      
+      
+      
+        <div class="license-meta-item">
+          <div>许可协议</div>
+          <div>
+            
+              
+              
+                <a class="print-no-link" target="_blank" href="https://creativecommons.org/licenses/by/4.0/">
+                  <span class="hint--top hint--rounded" aria-label="BY - 署名">
+                    <i class="iconfont icon-by"></i>
+                  </span>
+                </a>
+              
+            
+          </div>
+        </div>
+      
+    </div>
+    <div class="license-icon iconfont"></div>
+  </div>
+
+
+
+              
+                <div class="post-prevnext my-3">
+                  <article class="post-prev col-6">
+                    
+                    
+                      <a href="/notes/study/camera-imaging/focal-sensor-fov/focal-sensor-fov/" title="焦距、传感器与 FOV">
+                        <i class="iconfont icon-arrowleft"></i>
+                        <span class="hidden-mobile">焦距、传感器与 FOV</span>
+                        <span class="visible-mobile">上一篇</span>
+                      </a>
+                    
+                  </article>
+                  <article class="post-next col-6">
+                    
+                    
+                      <a href="/notes/coding/design-pattern/event-driven-state-machine/event-driven-state-machine/" title="事件驱动的状态机框架">
+                        <span class="hidden-mobile">事件驱动的状态机框架</span>
+                        <span class="visible-mobile">下一篇</span>
+                        <i class="iconfont icon-arrowright"></i>
+                      </a>
+                    
+                  </article>
+                </div>
+              
+            </div>
+
+            
+  
+  
+    <article id="comments" lazyload>
+      
+  <div id="waline"></div>
+  <script type="text/javascript">
+    Fluid.utils.loadComments('#waline', function() {
+      Fluid.utils.createCssLink('https://lib.baomitu.com/waline/2.14.8/waline.min.css')
+      Fluid.utils.createScript('https://lib.baomitu.com/waline/2.14.8/waline.min.js', function() {
+        var options = Object.assign(
+          {"serverURL":"https://uipv4.zywvvd.com:33033/","path":"window.location.pathname","meta":["nick","mail","link"],"requiredMeta":["nick"],"lang":"zh-CN","emoji":["https://cdn.jsdelivr.net/gh/walinejs/emojis/weibo"],"dark":"html[data-user-color-scheme=\"dark\"]","wordLimit":0,"pageSize":10,"reaction":true,"locale":{"placeholder":"山高路远，常来玩吖 ~","reactionTitle":null}},
+          {
+            el: '#waline',
+            path: window.location.pathname
+          }
+        )
+        Waline.init(options);
+        Fluid.utils.waitElementVisible('#waline .vcontent', () => {
+          var imgSelector = '#waline .vcontent img:not(.vemoji)';
+          Fluid.plugins.imageCaption(imgSelector);
+          Fluid.plugins.fancyBox(imgSelector);
+        })
+      });
+    });
+  </script>
+  <noscript>Please enable JavaScript to view the comments</noscript>
+
+
+    </article>
+  
+
+
+          </article>
+        </div>
+      </div>
+    </div>
+
+    <div class="side-col d-none d-lg-block col-lg-2">
+      
+  <aside class="sidebar" style="margin-left: -1rem">
+    <div id="toc">
+  <p class="toc-header">
+    <i class="iconfont icon-list"></i>
+    <span>目录</span>
+  </p>
+  <div class="toc-body" id="toc-body"></div>
+</div>
+
+
+
+  </aside>
+
+
+    </div>
+  </div>
+</div>
+
+
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+  
+  
+
+
+
+
+
+  <script>
+  Fluid.utils.createScript('https://lib.baomitu.com/mermaid/8.14.0/mermaid.min.js', function() {
+    mermaid.initialize({"theme":"default"});
+
+    Fluid.utils.listenDOMLoaded(function() {
+      Fluid.events.registerRefreshCallback(function() {
+        if ('mermaid' in window) {
+          mermaid.init();
+        }
+      });
+    });
+  });
+</script>
+
+
+
+
+
+
+    
+
+    
+      <a id="scroll-top-button" aria-label="TOP" href="#" role="button">
+        <i class="iconfont icon-xiangshangjiantou" aria-hidden="true"></i>
+      </a>
+    
+
+    
+      <div class="modal fade" id="modalSearch" tabindex="-1" role="dialog" aria-labelledby="ModalLabel"
+     aria-hidden="true">
+  <div class="modal-dialog modal-dialog-scrollable modal-lg" role="document">
+    <div class="modal-content">
+      <div class="modal-header text-center">
+        <h4 class="modal-title w-100 font-weight-bold">搜索</h4>
+        <button type="button" id="local-search-close" class="close" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body mx-3">
+        <div class="md-form mb-5">
+          <input type="text" id="local-search-input" class="form-control validate">
+          <label data-error="x" data-success="v" for="local-search-input">关键词</label>
+        </div>
+        <div class="list-group" id="local-search-result"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+    
+
+    
+  </main>
+
+  <footer>
+    <div class="footer-inner">
+  
+    <div class="footer-content">
+       <div class="vvd_footer" style="font-size: 0.85rem;"> <a href="https://hexo.io" target="_blank" rel="nofollow noopener" color="#d7d8d9" data-umami-event="Footer-Hexo"><span class="umami--click--Footer-Hexo">Hexo</span></a> <i class="iconfont icon-love"></i> <a href="https://github.com/fluid-dev/hexo-theme-fluid" target="_blank" rel="nofollow noopener" data-umami-event="Footer-Fluid"><span class="umami--click--Footer-Fluid">Fluid</span></a> <i class="iconfont icon-love"></i> <a href="https://uipv4.zywvvd.com:33039/share/0zx3o21oIpZTZqwC/%E5%8F%88%E8%A7%81%E8%8B%8D%E5%B2%9A" target="_blank" rel="nofollow noopener" data-umami-event="Footer-Umami"><span class="umami--click--Footer-Umami">Umami</span></a> <div style="font-size: 0.85rem;"> <span id="timeDate">载入天数...</span> <span id="times">载入时分秒...</span> <script src="/vvd_js/duration.js"></script> </div> <div style="font-size: 0.85rem;"> <span> 总访问量 <span style="color: #d7d8d9;" id="PVstatic">0</span> 次&nbsp</span> <span> 总访客数 <span style="color: #d7d8d9;" id="UVstatic">0</span> 人&nbsp</span> <span> 当前在线 <span style="color: #d7d8d9;" id="ACTstatic">0</span> 人&nbsp</span> <script src="https://uipv4.zywvvd.com:33037/statistics" defer></script> </div> <div> <span> Copyright © 2020-2025. All Rights Reserved.</span> </div> <div style="font-size: 0.88rem;"> <a target="_blank" rel="noopener" href="https://developer.hitokoto.cn/" id="hitokoto_text"><span style="color: #d7d8d9;"  id="hitokoto"></span></a> <script src="https://uipv4.zywvvd.com:33044/?encode=js&select=%23hitokoto" defer></script> </div> <a href="https://icp.gov.moe/?keyword=20230615" target="_blank">萌ICP备20230615号</a>
+
+
+</div> 
+    </div>
+  
+  
+  
+  
+</div>
+
+  </footer>
+
+  <!-- Scripts -->
+  
+  <script  src="https://lib.baomitu.com/nprogress/0.2.0/nprogress.min.js" ></script>
+  <link  rel="stylesheet" href="https://lib.baomitu.com/nprogress/0.2.0/nprogress.min.css" />
+
+  <script>
+    NProgress.configure({"showSpinner":false,"trickleSpeed":100})
+    NProgress.start()
+    window.addEventListener('load', function() {
+      NProgress.done();
+    })
+  </script>
+
+
+<script  src="https://lib.baomitu.com/jquery/3.6.0/jquery.min.js" ></script>
+<script  src="https://lib.baomitu.com/twitter-bootstrap/4.6.1/js/bootstrap.min.js" ></script>
+<script  src="/js/events.js" ></script>
+<script  src="/js/plugins.js" ></script>
+
+
+
+
+
+  
+    <script  src="/js/img-lazyload.js" ></script>
+  
+
+
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/tocbot/4.18.2/tocbot.min.js', function() {
+    var toc = jQuery('#toc');
+    if (toc.length === 0 || !window.tocbot) { return; }
+    var boardCtn = jQuery('#board-ctn');
+    var boardTop = boardCtn.offset().top;
+
+    window.tocbot.init(Object.assign({
+      tocSelector     : '#toc-body',
+      contentSelector : '.markdown-body',
+      linkClass       : 'tocbot-link',
+      activeLinkClass : 'tocbot-active-link',
+      listClass       : 'tocbot-list',
+      isCollapsedClass: 'tocbot-is-collapsed',
+      collapsibleClass: 'tocbot-is-collapsible',
+      scrollSmooth    : true,
+      includeTitleTags: true,
+      headingsOffset  : -boardTop,
+    }, CONFIG.toc));
+    if (toc.find('.toc-list-item').length > 0) {
+      toc.css('visibility', 'visible');
+    }
+
+    Fluid.events.registerRefreshCallback(function() {
+      if ('tocbot' in window) {
+        tocbot.refresh();
+        var toc = jQuery('#toc');
+        if (toc.length === 0 || !tocbot) {
+          return;
+        }
+        if (toc.find('.toc-list-item').length > 0) {
+          toc.css('visibility', 'visible');
+        }
+      }
+    });
+  });
+</script>
+
+
+  <script src=https://lib.baomitu.com/clipboard.js/2.0.10/clipboard.min.js></script>
+
+  <script>Fluid.plugins.codeWidget();</script>
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/anchor-js/4.3.1/anchor.min.js', function() {
+    window.anchors.options = {
+      placement: CONFIG.anchorjs.placement,
+      visible  : CONFIG.anchorjs.visible
+    };
+    if (CONFIG.anchorjs.icon) {
+      window.anchors.options.icon = CONFIG.anchorjs.icon;
+    }
+    var el = (CONFIG.anchorjs.element || 'h1,h2,h3,h4,h5,h6').split(',');
+    var res = [];
+    for (var item of el) {
+      res.push('.markdown-body > ' + item.trim());
+    }
+    if (CONFIG.anchorjs.placement === 'left') {
+      window.anchors.options.class = 'anchorjs-link-left';
+    }
+    window.anchors.add(res.join(', '));
+
+    Fluid.events.registerRefreshCallback(function() {
+      if ('anchors' in window) {
+        anchors.removeAll();
+        var el = (CONFIG.anchorjs.element || 'h1,h2,h3,h4,h5,h6').split(',');
+        var res = [];
+        for (var item of el) {
+          res.push('.markdown-body > ' + item.trim());
+        }
+        if (CONFIG.anchorjs.placement === 'left') {
+          anchors.options.class = 'anchorjs-link-left';
+        }
+        anchors.add(res.join(', '));
+      }
+    });
+  });
+</script>
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/fancybox/3.5.7/jquery.fancybox.min.js', function() {
+    Fluid.plugins.fancyBox();
+  });
+</script>
+
+
+  <script>Fluid.plugins.imageCaption();</script>
+
+  
+      <script>
+        if (!window.MathJax) {
+          window.MathJax = {
+            tex    : {
+              inlineMath: { '[+]': [['$', '$']] }
+            },
+            options: {
+              renderActions: {
+                insertedScript: [200, () => {
+                  document.querySelectorAll('mjx-container').forEach(node => {
+                    let target = node.parentNode;
+                    if (target.nodeName.toLowerCase() === 'li') {
+                      target.parentNode.classList.add('has-jax');
+                    }
+                  });
+                }, '', false]
+              }
+            }
+          };
+        } else {
+          MathJax.startup.document.state(0);
+          MathJax.texReset();
+          MathJax.typeset();
+          MathJax.typesetPromise();
+        }
+
+        Fluid.events.registerRefreshCallback(function() {
+          if ('MathJax' in window && MathJax.startup.document && typeof MathJax.startup.document.state === 'function') {
+            MathJax.startup.document.state(0);
+            MathJax.texReset();
+            MathJax.typeset();
+            MathJax.typesetPromise();
+          }
+        });
+      </script>
+    
+
+  <script  src="https://lib.baomitu.com/mathjax/3.2.1/es5/tex-mml-chtml.js" ></script>
+
+  <script defer src="/js/leancloud.js" ></script>
+
+  <script  src="/js/local-search.js" ></script>
+
+
+
+
+  
+<script src="//cdn.jsdelivr.net/npm/aplayer/dist/APlayer.min.js"></script>
+<script src="//cdn.jsdelivr.net/gh/metowolf/MetingJS@1.2/dist/Meting.min.js"></script>
+<script src="/js/reward.js"></script>
+
+
+
+<!-- 主题的启动项，将它保持在最底部 -->
+<!-- the boot of the theme, keep it at the bottom -->
+<script  src="/js/boot.js" ></script>
+
+
+  <script type="text/javascript">
+    /*窗口监视*/
+    var originalTitle = document.title;
+    window.onblur = function(){document.title = "明眸如初"};
+    window.onfocus = function(){document.title = originalTitle};
+  </script>
+
+
+  <div id="tooltip-rightmenu" class="tooltip-rightmenu">如需原始右键菜单请按下 <strong>Ctrl+右键</strong></div>
+
+<div id="rightmenu-wrapper" style="">
+  <ul class="list-v rightmenu" id="rightmenu-content">
+	  <li class="navigation menuNavigation-Content">
+		<a class="nav icon-only fix-cursor-default" onclick="history.back()"><i class="iconfont icon-zuojiantou1"></i></a>
+		<a class="nav icon-only fix-cursor-default" onclick="history.forward()"><i class="iconfont icon-youjiantou1"></i></a>
+		<a class="nav icon-only fix-cursor-default" onclick="window.location.reload()"><i class="iconfont icon-shuaxin"></i></a>
+		<a  aria-label="TOP" href="#" role="button"><i class="iconfont icon-xiangshang"></i></a>
+	  </li>
+
+		<hr class="menuLoad-Content" style="display: block;">
+	  <li class="menuLoad-Content" style="display: block;">
+		<a class="vlts-menu fix-cursor-default" target="_self" href="javascript:;" data-toggle="modal" data-target="#modalSearch" aria-label="Search">
+		  <span>
+			  <i class="iconfont icon-sousuo1 rightmenu-icon"></i>
+			  站内搜索
+		  </span>
+		</a>
+	  </li>
+
+	  <li class="menuLoad-Content" style="display: block;">
+		<a class="vlts-menu fix-cursor-default"  href="https://www.zywvvd.com/messagebd/" data-group="link">
+		  <span>
+			  <i class="iconfont icon-yangshi_icon_tongyong_chat rightmenu-icon">  </i>
+			   留言吐槽 
+		   </span>
+		</a>
+	  </li>
+
+
+	  <li class="menuLoad-Content" style="display: block;">
+		<a class="vlts-menu fix-cursor-default" id="help" target="_blank" rel="noopener" href="https://www.foreverblog.cn/go.html" data-group="link">
+		<span>
+			  <i class="iconfont icon-a-BlackHole rightmenu-icon"></i>
+			  虫洞穿梭
+		  </span>
+		</a>
+	  </li>
+
+	<a id="scroll-top-button" aria-label="TOP" href="#" role="button" style="bottom: 20px; right: 52.6364px;">
+        <i class="iconfont icon-xiangshangjiantou" aria-hidden="true"></i>
+      </a>
+
+	<hr class="menuLoad-Content" style="display: block;">
+	
+	  <li class="menuLoad-Content" style="display: block;">
+		<a class="vlts-menu fix-cursor-default" id="destroy-airplane" target="_blank" rel="noopener"  data-group="link">
+		<span>
+			  <i class="iconfont icon-feiji rightmenu-icon"></i>
+			  破坏小飞机
+		  </span>
+		</a>
+	  </li>
+  </ul>
+</div>
+
+<script>
+	var ua = navigator.userAgent;
+	var ipad = ua.match(/(iPad).*OS\s([\d_]+)/),
+		isIphone = !ipad && ua.match(/(iPhone\sOS)\s([\d_]+)/),
+		isAndroid = ua.match(/(Android)\s+([\d.]+)/),
+		isMobile = isIphone || isAndroid;
+
+	if(!isMobile) {
+		// 为按钮添加事件处理器
+		document.getElementById('destroy-airplane').onclick = function() {
+		  console.log('飞机起飞！');
+		  // 定义要执行的JavaScript代码
+		var KICKASSVERSION='2.0';
+		var s = document.createElement('script');
+		s.type='text/javascript';
+		document.body.appendChild(s);
+		s.src='https://uipv4.zywvvd.com:33030/HexoFiles/js/games/airplane/airplane.js';
+		void(0);
+		};
+	}
+</script>
+
+
+
+
+
+<link href="/css/custom.css"type="text/css"rel="stylesheet"/>
+<script src="/vvd_js/right_menu.js" type="text/javascript"></script>
+<link href="/css/right_menu.css"type="text/css"rel="stylesheet"/>
+<script src="/vvd_js/go.js"></script>
+
+
+  <noscript>
+    <div class="noscript-warning">博客在允许 JavaScript 运行的环境下浏览效果更佳</div>
+  </noscript>
+<script src="/live2dw/lib/L2Dwidget.min.js?094cbace49a39548bed64abff5988b05"></script><script>L2Dwidget.init({"pluginRootPath":"live2dw/","pluginJsPath":"lib/","pluginModelPath":"assets/","tagMode":false,"log":false,"model":{"jsonPath":"/live2dw/assets/z16.model.json"},"display":{"position":"left","width":200,"height":400},"mobile":{"show":false},"react":{"opacity":0.9}});</script></body>
+</html>
