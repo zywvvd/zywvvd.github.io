@@ -1,0 +1,1749 @@
+
+
+<!DOCTYPE html>
+<html lang="zh-CN" data-default-color-scheme=auto>
+
+
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="baidu-site-verification" content="codeva-rLWafCJGYc" />
+  <link rel="apple-touch-icon" sizes="76x76" href="/image/avatar.png">
+  <link rel="icon" href="/image/avatar.png">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, shrink-to-fit=no">
+  <meta http-equiv="x-ua-compatible" content="ie=edge">
+  
+  <meta name="theme-color" content="#2f4154">
+  <meta name="author" content="Yiwei Zhang">
+  <meta name="keywords" content="人工智能, 深度学习, 个人博客, 机器学习">
+  
+    <meta name="description" content="齐次变换矩阵把旋转 $R$ 和平移 $\mathbf p$ 嵌进一个 $4\times4$ 矩阵，让位姿的描述与复合都化为矩阵乘法。它的难点不在定义，而在含义：同一个 ${}^{A}T_B$ 既是坐标换算、又是位姿描述、又是相对运动，由此牵出分解顺序、作用对象、旋转轴位置、内外旋、左右乘一连串相互关联的问题。全文沿&quot;立定义（§1）→ 记号的三层含义（§2，概念核心）→ 数值算例（§3）">
+<meta property="og:type" content="article">
+<meta property="og:title" content="齐次变换矩阵与 SE(3)">
+<meta property="og:url" content="https://www.zywvvd.com/notes/3d/homogeneous-transform/homogeneous-transform/index.html">
+<meta property="og:site_name" content="又见苍岚">
+<meta property="og:description" content="齐次变换矩阵把旋转 $R$ 和平移 $\mathbf p$ 嵌进一个 $4\times4$ 矩阵，让位姿的描述与复合都化为矩阵乘法。它的难点不在定义，而在含义：同一个 ${}^{A}T_B$ 既是坐标换算、又是位姿描述、又是相对运动，由此牵出分解顺序、作用对象、旋转轴位置、内外旋、左右乘一连串相互关联的问题。全文沿&quot;立定义（§1）→ 记号的三层含义（§2，概念核心）→ 数值算例（§3）">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="https://www.zywvvd.com/notes/3d/homogeneous-transform/homogeneous-transform/ht_se3_blocks.png">
+<meta property="og:image" content="https://www.zywvvd.com/notes/3d/homogeneous-transform/homogeneous-transform/ht_three_meanings.png">
+<meta property="og:image" content="https://www.zywvvd.com/notes/3d/homogeneous-transform/homogeneous-transform/ht_compose.png">
+<meta property="og:image" content="https://www.zywvvd.com/notes/3d/homogeneous-transform/homogeneous-transform/transform_point.png">
+<meta property="og:image" content="https://www.zywvvd.com/notes/3d/homogeneous-transform/homogeneous-transform/transform_decompose.png">
+<meta property="og:image" content="https://www.zywvvd.com/notes/3d/homogeneous-transform/homogeneous-transform/ht_active_passive.png">
+<meta property="og:image" content="https://www.zywvvd.com/notes/3d/homogeneous-transform/homogeneous-transform/ht_chasles_2d.png">
+<meta property="og:image" content="https://www.zywvvd.com/notes/3d/homogeneous-transform/homogeneous-transform/ht_screw.png">
+<meta property="og:image" content="https://www.zywvvd.com/notes/3d/homogeneous-transform/homogeneous-transform/ht_intrinsic_extrinsic.png">
+<meta property="og:image" content="https://www.zywvvd.com/notes/3d/homogeneous-transform/homogeneous-transform/ht_left_right_order.png">
+<meta property="og:image" content="https://www.zywvvd.com/notes/3d/homogeneous-transform/homogeneous-transform/ht_twist_exp.png">
+<meta property="og:image" content="https://www.zywvvd.com/notes/3d/homogeneous-transform/homogeneous-transform/ht_adjoint.png">
+<meta property="article:published_time" content="2026-07-31T11:00:00.000Z">
+<meta property="article:modified_time" content="2026-07-31T10:46:47.538Z">
+<meta property="article:author" content="Yiwei Zhang">
+<meta property="article:tag" content="3D">
+<meta property="article:tag" content="Robotics">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:image" content="https://www.zywvvd.com/notes/3d/homogeneous-transform/homogeneous-transform/ht_se3_blocks.png">
+  
+  
+  
+  <title>齐次变换矩阵与 SE(3) - 又见苍岚</title>
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/twitter-bootstrap/4.6.1/css/bootstrap.min.css" />
+
+
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/github-markdown-css/4.0.0/github-markdown.min.css" />
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/hint.css/2.7.0/hint.min.css" />
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/fancybox/3.5.7/jquery.fancybox.min.css" />
+
+
+
+<!-- 主题依赖的图标库，不要自行修改 -->
+<!-- Do not modify the link that theme dependent icons -->
+
+<link rel="stylesheet" href="//at.alicdn.com/t/font_1749284_hj8rtnfg7um.css">
+
+
+
+<link rel="stylesheet" href="//at.alicdn.com/t/font_1736178_lbnruvf0jn.css">
+
+
+<link  rel="stylesheet" href="/css/main.css" />
+
+
+  <link id="highlight-css" rel="stylesheet" href="/css/highlight.css" />
+  
+    <link id="highlight-css-dark" rel="stylesheet" href="/css/highlight-dark.css" />
+  
+
+
+
+  
+<link rel="stylesheet" href="/css/custom.css">
+<link rel="stylesheet" href="/css/reward.css">
+<link rel="stylesheet" href="//cdn.jsdelivr.net/npm/aplayer/dist/APlayer.min.css">
+
+
+
+  <script id="fluid-configs">
+    var Fluid = window.Fluid || {};
+    Fluid.ctx = Object.assign({}, Fluid.ctx)
+    var CONFIG = {"hostname":"www.zywvvd.com","root":"/","version":"1.9.7","typing":{"enable":true,"typeSpeed":90,"cursorChar":"_","loop":false,"scope":["home"]},"anchorjs":{"enable":true,"element":"h1,h2,h3,h4,h5,h6","placement":"left","visible":"hover","icon":""},"progressbar":{"enable":true,"height_px":3,"color":"#29d","options":{"showSpinner":false,"trickleSpeed":100}},"code_language":{"enable":true,"default":"TEXT"},"copy_btn":true,"image_caption":{"enable":true},"image_zoom":{"enable":true,"img_url_replace":["",""]},"toc":{"enable":true,"placement":"right","headingSelector":"h1,h2,h3,h4,h5,h6","collapseDepth":0},"lazyload":{"enable":true,"loading_img":"/img/loading.gif","onlypost":false,"offset_factor":2},"web_analytics":{"enable":true,"follow_dnt":true,"baidu":null,"google":null,"tencent":{"sid":null,"cid":null},"woyaola":null,"cnzz":null,"leancloud":{"app_id":"Cv0XNeBSBdAPAIuVj3PsyM3R-MdYXbMMI","app_key":"4PU1rNlGrqXWzhfW3dgq98oX","server_url":null,"path":"window.location.pathname","ignore_local":false},"gtag":null},"search_path":"/local-search.xml","include_content_in_search":true};
+
+    if (CONFIG.web_analytics.follow_dnt) {
+      var dntVal = navigator.doNotTrack || window.doNotTrack || navigator.msDoNotTrack;
+      Fluid.ctx.dnt = dntVal && (dntVal.startsWith('1') || dntVal.startsWith('yes') || dntVal.startsWith('on'));
+    }
+  </script>
+  <script  src="/js/utils.js" ></script>
+  <script  src="/js/color-schema.js" ></script>
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+    
+  
+
+
+
+  
+<meta name="generator" content="Hexo 7.2.0"><link rel="alternate" href="/atom.xml" title="又见苍岚" type="application/atom+xml">
+</head>
+
+<script>
+// 页面加载完成后隐藏加载动画
+document.addEventListener("readystatechange", function() {
+    const loader = document.getElementById('Loadanimation');
+    if (loader) {
+        // 停留1秒后开始淡出
+        setTimeout(function() {
+            loader.style.transition = 'opacity 1.2s';
+            loader.style.opacity = '0';
+            // 淡出完成后隐藏
+            setTimeout(() => {
+                loader.style.display = 'none';
+            }, 1000); // 等待淡出动画完成
+        }, 700); // 停留0.8秒
+    }
+});
+</script>
+
+
+
+<body>
+  
+<div id="Loadanimation" style="z-index:999999;">
+<div id="Loadanimation-center">
+   <div id="Loadanimation-center-absolute">
+       <div class="xccx_object" id="xccx_four"></div>
+       <div class="xccx_object" id="xccx_three"></div>
+       <div class="xccx_object" id="xccx_two"></div>
+       <div class="xccx_object" id="xccx_one"></div>
+   </div>
+</div>
+</div>
+
+<link href="/css/loading.css"type="text/css"rel="stylesheet"/>
+
+
+
+
+
+
+<div>
+	<div class='real_mask' style="
+		background-color: rgba(0,0,0,0.4);
+		width: 100%;
+		height: 100%;
+		position: fixed;
+		z-index: -777;
+	"></div>
+	<div id="banner_video_insert">
+	</div>	
+	<div id='vvd_banner_img'>
+	</div>
+</div>
+<div id="banner"></div>
+
+
+
+
+
+
+
+  <header>
+    
+
+<div class="header-inner" style="height: 80vh;">
+  <nav id="navbar" class="navbar fixed-top  navbar-expand-lg navbar-dark scrolling-navbar">
+  <div class="container">
+    <a class="navbar-brand" href="/">
+      <strong>CangLan</strong>
+    </a>
+
+    <button id="navbar-toggler-btn" class="navbar-toggler" type="button" data-toggle="collapse"
+            data-target="#navbarSupportedContent"
+            aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
+      <div class="animated-icon"><span></span><span></span><span></span></div>
+    </button>
+
+    <!-- Collapsible content -->
+    <div class="collapse navbar-collapse" id="navbarSupportedContent">
+      <ul class="navbar-nav ml-auto text-center">
+        
+          
+          
+          
+          
+            <li class="nav-item">
+		<div >
+		      <a class="nav-link" href="/" target="_self" data-umami-event="Navigation-Homepage">
+
+		        <i class="iconfont icon-home-fill"></i>
+		        <span>首页</span>
+		      </a>
+		</div>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item dropdown">
+              <a class="nav-link dropdown-toggle" target="_self" href="javascript:;" role="button"
+                 data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                <i class="iconfont icon-shuji1"></i>
+                <span>文章</span>
+              </a>
+              <div class="dropdown-menu" aria-labelledby="navbarDropdown">
+                
+                  
+                  
+                  
+		<div >
+
+                  <a class="dropdown-item" href="/archives/" target="_self" data-umami-event="Navigation-Archive">
+
+                    <i class="iconfont icon-archive-fill"></i>
+                    <span>归档</span>
+                  </a>
+		</div>
+                
+                  
+                  
+                  
+		<div >
+
+                  <a class="dropdown-item" href="/categories/" target="_self" data-umami-event="Navigation-Category">
+
+                    <i class="iconfont icon-category-fill"></i>
+                    <span>分类</span>
+                  </a>
+		</div>
+                
+                  
+                  
+                  
+		<div >
+
+                  <a class="dropdown-item" href="/tags/" target="_self" data-umami-event="Navigation-Tag">
+
+                    <i class="iconfont icon-tags-fill"></i>
+                    <span>标签</span>
+                  </a>
+		</div>
+                
+                  
+                  
+                  
+		<div >
+
+                  <a class="dropdown-item" href="/shuoshuo/" target="_self" data-umami-event="Navigation-Shuoshuo">
+
+                    <i class="iconfont icon-24gf-bubblesDots4"></i>
+                    <span>说说</span>
+                  </a>
+		</div>
+                
+              </div>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item dropdown">
+              <a class="nav-link dropdown-toggle" target="_self" href="javascript:;" role="button"
+                 data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                <i class="iconfont icon-momo"></i>
+                <span>社交</span>
+              </a>
+              <div class="dropdown-menu" aria-labelledby="navbarDropdown">
+                
+                  
+                  
+                  
+		<div >
+
+                  <a class="dropdown-item" href="/links/" target="_self" data-umami-event="Navigation-Friends">
+
+                    <i class="iconfont icon-link-fill"></i>
+                    <span>友链</span>
+                  </a>
+		</div>
+                
+                  
+                  
+                  
+		<div >
+
+                  <a class="dropdown-item" href="/messagebd/" target="_self" data-umami-event="Navigation-MessageBoard">
+
+                    <i class="iconfont icon-comment"></i>
+                    <span>留言板</span>
+                  </a>
+		</div>
+                
+                  
+                  
+                  
+		<div >
+
+                  <a class="dropdown-item" href="/atom.xml" target="_self" data-umami-event="Navigation-RSS">
+
+                    <i class="iconfont icon-dingyue"></i>
+                    <span>RSS订阅</span>
+                  </a>
+		</div>
+                
+                  
+                  
+                  
+		<div >
+
+                  <a class="dropdown-item" href="/reccomments/" target="_self" data-umami-event="Navigation-Recent-Comments">
+
+                    <i class="iconfont icon-icon-pinglunguanli-pinglunliebiao"></i>
+                    <span>近期评论</span>
+                  </a>
+		</div>
+                
+              </div>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item dropdown">
+              <a class="nav-link dropdown-toggle" target="_self" href="javascript:;" role="button"
+                 data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                <i class="iconfont icon-user-fill"></i>
+                <span>个人</span>
+              </a>
+              <div class="dropdown-menu" aria-labelledby="navbarDropdown">
+                
+                  
+                  
+                  
+		<div >
+
+                  <a class="dropdown-item" href="/about/" target="_self" data-umami-event="Navigation-AboutMe">
+
+                    <i class="iconfont icon-guanyuwomen"></i>
+                    <span>关于</span>
+                  </a>
+		</div>
+                
+                  
+                  
+                  
+		<div >
+
+                  <a class="dropdown-item" href="/playlist/" target="_self" data-umami-event="Navigation-Music">
+
+                    <i class="iconfont icon-music"></i>
+                    <span>歌单</span>
+                  </a>
+		</div>
+                
+                  
+                  
+                  
+		<div >
+
+                  <a class="dropdown-item" href="https://uipv4.zywvvd.com:33035" target="_self" data-umami-event="Navigation-Nextcloud">
+
+                    <i class="iconfont icon-xuniyingpan"></i>
+                    <span>网盘</span>
+                  </a>
+		</div>
+                
+                  
+                  
+                  
+		<div >
+
+                  <a class="dropdown-item" href="https://uipv4.zywvvd.com:33036" target="_self" data-umami-event="Navigation-OneDev">
+
+                    <i class="iconfont icon-git"></i>
+                    <span>仓库</span>
+                  </a>
+		</div>
+                
+                  
+                  
+                  
+		<div >
+
+                  <a class="dropdown-item" href="https://uipv4.zywvvd.com:33041" target="_self" data-umami-event="Navigation-Wiki">
+
+                    <i class="iconfont icon-wiki"></i>
+                    <span>百科</span>
+                  </a>
+		</div>
+                
+              </div>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item dropdown">
+              <a class="nav-link dropdown-toggle" target="_self" href="javascript:;" role="button"
+                 data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                <i class="iconfont icon-ic_fly"></i>
+                <span>导航</span>
+              </a>
+              <div class="dropdown-menu" aria-labelledby="navbarDropdown">
+                
+                  
+                  
+                  
+		<div >
+
+                  <a class="dropdown-item" href="/site-map/" target="_self" data-umami-event="Navigation-SiteMap">
+
+                    <i class="iconfont icon-lianjie"></i>
+                    <span>链接</span>
+                  </a>
+		</div>
+                
+                  
+                  
+                  
+		<div >
+
+                  <a class="dropdown-item" href="/nodeppt/hexo/snavigation/" target="_self" data-umami-event="Navigation-Search">
+
+                    <i class="iconfont icon-sousuo"></i>
+                    <span>搜索</span>
+                  </a>
+		</div>
+                
+              </div>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item dropdown">
+              <a class="nav-link dropdown-toggle" target="_self" href="javascript:;" role="button"
+                 data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                <i class="iconfont icon-wangzhan"></i>
+                <span>站点</span>
+              </a>
+              <div class="dropdown-menu" aria-labelledby="navbarDropdown">
+                
+                  
+                  
+                  
+		<div >
+
+                  <a class="dropdown-item" href="https://uipv4.zywvvd.com:33039/share/0zx3o21oIpZTZqwC/%E5%8F%88%E8%A7%81%E8%8B%8D%E5%B2%9A" target="_self" data-umami-event="Navigation-Umami">
+
+                    <i class="iconfont icon-tongji2"></i>
+                    <span>站点分析</span>
+                  </a>
+		</div>
+                
+                  
+                  
+                  
+		<div >
+
+                  <a class="dropdown-item" href="/earth_sta/" target="_self" data-umami-event="Navigation-Globe">
+
+                    <i class="iconfont icon-tongjifenxi-xiangmubiaogetongji"></i>
+                    <span>访问统计</span>
+                  </a>
+		</div>
+                
+                  
+                  
+                  
+		<div >
+
+                  <a class="dropdown-item" href="https://uipv4.zywvvd.com:33034/status/show" target="_self" data-umami-event="Navigation-Monitor">
+
+                    <i class="iconfont icon-jiankong"></i>
+                    <span>站点监控</span>
+                  </a>
+		</div>
+                
+              </div>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item dropdown">
+              <a class="nav-link dropdown-toggle" target="_self" href="javascript:;" role="button"
+                 data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                <i class="iconfont icon-chuansong"></i>
+                <span>传送</span>
+              </a>
+              <div class="dropdown-menu" aria-labelledby="navbarDropdown">
+                
+                  
+                  
+                  
+		<div >
+
+                  <a class="dropdown-item" href="https://www.foreverblog.cn/go.html" target="_self" data-umami-event="Navigation-ForeverBolg">
+
+                    <i class="iconfont icon-a-BlackHole"></i>
+                    <span>十年之约</span>
+                  </a>
+		</div>
+                
+                  
+                  
+                  
+		<div >
+
+                  <a class="dropdown-item" href="https://www.travellings.cn/go.html" target="_self" data-umami-event="Navigation-DriveTo">
+
+                    <i class="iconfont icon-train1"></i>
+                    <span>开往</span>
+                  </a>
+		</div>
+                
+                  
+                  
+                  
+		<div >
+
+                  <a class="dropdown-item" href="https://bf.zzxworld.com/" target="_self" data-umami-event="Navigation-BlogFinder">
+
+                    <i class="iconfont icon-icon-"></i>
+                    <span>BlogFinder</span>
+                  </a>
+		</div>
+                
+                  
+                  
+                  
+		<div >
+
+                  <a class="dropdown-item" href="https://www.perass.com/" target="_self" data-umami-event="Navigation-Bloghome">
+
+                    <i class="iconfont icon-home-fill"></i>
+                    <span>博客之家</span>
+                  </a>
+		</div>
+                
+              </div>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item dropdown">
+              <a class="nav-link dropdown-toggle" target="_self" href="javascript:;" role="button"
+                 data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                <i class="iconfont icon-gongju"></i>
+                <span>工具</span>
+              </a>
+              <div class="dropdown-menu" aria-labelledby="navbarDropdown">
+                
+                  
+                  
+                  
+		<div >
+
+                  <a class="dropdown-item" href="/navigates/calculator" target="_self" data-umami-event="Navigation-Calculator">
+
+                    <i class="iconfont icon-jisuan"></i>
+                    <span>计算器</span>
+                  </a>
+		</div>
+                
+                  
+                  
+                  
+		<div >
+
+                  <a class="dropdown-item" href="/navigates/webgraphviz" target="_self" data-umami-event="Navigation-WebGtaphviz">
+
+                    <i class="iconfont icon-tongyong-huatugongju2"></i>
+                    <span>Graphviz</span>
+                  </a>
+		</div>
+                
+                  
+                  
+                  
+		<div >
+
+                  <a class="dropdown-item" href="/navigates/formular_reco" target="_self" data-umami-event="Navigation-Formular-Reco">
+
+                    <i class="iconfont icon-a-checkformula"></i>
+                    <span>公式识别</span>
+                  </a>
+		</div>
+                
+              </div>
+            </li>
+          
+        
+        
+          <li class="nav-item" id="search-btn">
+            <a class="nav-link" target="_self" href="javascript:;" data-toggle="modal" data-target="#modalSearch" aria-label="Search">
+              <i class="iconfont icon-search"></i>
+            </a>
+          </li>
+          
+        
+        
+          <li class="nav-item" id="color-toggle-btn">
+            <a class="nav-link" target="_self" href="javascript:;" aria-label="Color Toggle">
+              <i class="iconfont icon-dark" id="color-toggle-icon"></i>
+            </a>
+          </li>
+        
+      </ul>
+    </div>
+  </div>
+</nav>
+
+  
+
+<div id="banner" class="banner" parallax=true
+     style="background: url('https://uipv4.zywvvd.com:33030/HexoFiles/new/bg-trans.png') no-repeat center center; background-size: cover;">
+  <div class="full-bg-img">
+    <div class="mask flex-center" style="background-color: rgba(0, 0, 0, 0)">
+      <div class="banner-text text-center fade-in-up">
+        <div class="h2">
+          
+            <span id="subtitle">齐次变换矩阵与 SE(3)</span>
+          
+        </div>
+
+        
+          
+  <div class="mt-3">
+    
+      <span class="post-meta mr-2">
+        <i class="iconfont icon-author" aria-hidden="true"></i>
+        Yiwei Zhang
+      </span>
+    
+    
+      <span class="post-meta">
+        <i class="iconfont icon-date-fill" aria-hidden="true"></i>
+        <time datetime="2026-07-31 19:00" pubdate>
+          2026年7月31日 晚上
+        </time>
+      </span>
+    
+  </div>
+
+  <div class="mt-1">
+    
+      <span class="post-meta mr-2">
+        <i class="iconfont icon-chart"></i>
+        
+          <!-- compatible with older versions-->
+          6.4k 字
+        
+      </span>
+    
+
+    
+      <span class="post-meta mr-2">
+        <i class="iconfont icon-clock-fill"></i>
+        
+        
+        
+          <!-- compatible with older versions-->
+          54 分钟
+        
+      </span>
+    
+
+    
+    
+      
+        <span id="vvdpost_container_page_pvuv" style="display: none">
+          <i class="iconfont icon-eye" aria-hidden="true"></i>
+          <span id="vvdpost_value_page_pv">0</span> 次&nbsp&nbsp
+		  <i class="iconfont icon-users" aria-hidden="true"></i>
+		  <span id="vvdpost_value_page_uv">0</span> 人&nbsp&nbsp
+		  <i class="iconfont icon-comment" aria-hidden="true"></i>
+		  <span id="vvdpost_value_page_cn">0</span> 条
+        </span>
+
+    <script>
+    document.addEventListener("DOMContentLoaded", function() {
+	      console.log("PVUV_" + window.location.pathname);
+
+	      // 使用 fetch API 发送 POST 请求
+	      fetch('https://uipv4.zywvvd.com:33037/poststats', { 
+		  method: 'POST',
+		  headers: {
+		      'Content-Type': 'application/json'
+		  },
+		  body: JSON.stringify(window.location.pathname) // 将路径名作为对象发送，以便在服务器端更容易处理
+	      })
+	      .then(response => {
+		  // 检查响应状态
+		  if (!response.ok) {
+		      throw new Error('Network response was not ok ' + response.statusText);
+		  }
+		  return response.json(); // 解析 JSON 响应
+	      })
+	      .then(data => {
+		  // 处理解析后的数据
+		  console.log(data.pv);
+		  var pvCtn = document.querySelector('#vvdpost_container_page_pvuv');
+		  if (pvCtn) {
+		      var pvEle = document.querySelector('#vvdpost_value_page_pv');
+		      var uvEle = document.querySelector('#vvdpost_value_page_uv');
+		      var cnEle = document.querySelector('#vvdpost_value_page_cn');
+		      if (pvEle && uvEle) {
+		          pvEle.innerText = data.pv;
+		          uvEle.innerText = data.uv;
+		          cnEle.innerText = data.cn;
+		          pvCtn.style.display = 'inline';
+		      }
+		  }
+	      })
+	      .catch(error => {
+		  // 处理请求错误
+		  console.error('There has been a problem with your fetch operation:', error);
+	      });
+      });
+  </script>
+      
+    
+  </div>
+
+
+        
+      </div>
+
+      
+        <div class="scroll-down-bar">
+          <i class="iconfont icon-arrowdown"></i>
+        </div>
+      
+    </div>
+  </div>
+</div>
+
+</div>
+
+
+	<script type="text/javascript" src="/vvd_js/jquery.js"></script>
+	<script async src="https://uipv4.zywvvd.com:33039/script.js" data-website-id="dd4a05c6-dde2-4743-9c3a-a79d6bee0778"></script>
+	<div class="banner" id='banner' >
+
+		<div class="full-bg-img" >
+
+			
+				<script>
+					var ua = navigator.userAgent;
+					var ipad = ua.match(/(iPad).*OS\s([\d_]+)/),
+						isIphone = !ipad && ua.match(/(iPhone\sOS)\s([\d_]+)/),
+						isAndroid = ua.match(/(Android)\s+([\d.]+)/),
+						isMobile = isIphone || isAndroid;
+
+					function set_video_attr(id){
+						var height = document.body.clientHeight
+						var width = document.body.clientWidth
+						var video_item = document.getElementById(id);
+
+						if (height / width < 0.56){
+							video_item.setAttribute('width', '100%');
+							video_item.setAttribute('height', 'auto');
+						} else {
+							video_item.setAttribute('height', '100%');
+							video_item.setAttribute('width', 'auto');
+						}
+					}
+
+					fetch('https://uipv4.zywvvd.com:33037/wallpaper-pair')
+					  .then(response => response.json()) // 解析JSON数据
+					  .then(data => {
+						console.log('获取链接成功');
+						video_url = data[0][0]
+						pre_show_image_url = data[0][1]
+
+						banner_obj = document.getElementById("banner")
+						banner_obj.style.cssText = "background: url('" + pre_show_image_url + "') no-repeat;"
+
+						vvd_banner_obj = document.getElementById("vvd_banner_img")
+						vvd_banner_content = "<img id='banner_img_item' src='" + pre_show_image_url + "'style='position: fixed; z-index: -999'>"
+						vvd_banner_obj.innerHTML = vvd_banner_content 
+
+						if (!isMobile) {
+							video_html_res = "<video id='video_item' style='position: fixed; z-index: -888;'  muted='muted' src=" + video_url + " autoplay='autoplay' loop='loop'></video>"
+							document.getElementById("banner_video_insert").innerHTML = video_html_res;
+							set_video_attr('video_item')
+							set_video_attr('banner_img_item')
+						}
+					    
+					  })
+					  .catch((error) => {
+					    console.error('请求失败,尝试本地获取背景图像：', error);
+	    					$.getJSON('/vvd_js/video_url.json', function(data){
+
+							var video_list_length = data.length
+							var seed = Math.random()
+							index = Math.floor(seed * video_list_length)
+
+							video_url = data[index][0]
+							pre_show_image_url = data[index][1]
+
+							banner_obj = document.getElementById("banner")
+							banner_obj.style.cssText = "background: url('" + pre_show_image_url + "') no-repeat;"
+
+							vvd_banner_obj = document.getElementById("vvd_banner_img")
+							vvd_banner_content = "<img id='banner_img_item' src='" + pre_show_image_url + "'style='position: fixed; z-index: -999'>"
+							vvd_banner_obj.innerHTML = vvd_banner_content 
+
+							if (!isMobile) {
+								video_html_res = "<video id='video_item' style='position: fixed; z-index: -888;'  muted='muted' src=" + video_url + " autoplay='autoplay' loop='loop'></video>"
+								document.getElementById("banner_video_insert").innerHTML = video_html_res;
+								set_video_attr('video_item')
+								set_video_attr('banner_img_item')
+							}
+						});
+					  });
+
+
+
+
+
+
+					if (!isMobile){
+						window.onresize = function(){
+							set_video_attr('video_item')
+							set_video_attr('banner_img_item')
+							}
+						}
+				</script>
+
+			
+
+
+			
+			</div>
+		</div>
+    </div>
+
+  </header>
+
+  <main>
+    
+      
+
+
+
+<div class="container-fluid nopadding-x">
+  <div class="row nomargin-x">
+    <div class="side-col d-none d-lg-block col-lg-2">
+      
+
+    </div>
+
+    <div class="col-lg-8 nopadding-x-md">
+      <div class="container nopadding-x-md" id="board-ctn">
+        <div id="board">
+          <article class="post-content mx-auto">
+
+            <!-- <h1 id="seo-header">齐次变换矩阵与 SE(3)</h1> -->
+
+            
+              <p id="updated-time" class="note note-info" style="">
+                
+                  
+                    <!-- compatible with older versions-->
+                    本文最后更新于：2026年7月31日 晚上
+                  
+                
+              </p>
+            
+            
+              <div class="markdown-body">
+                
+                <blockquote>
+<p>齐次变换矩阵把旋转 $R$ 和平移 $\mathbf p$ 嵌进一个 $4\times4$ 矩阵，让位姿的描述与复合都化为矩阵乘法。它的难点不在定义，而在含义：同一个 ${}^{A}T_B$ 既是坐标换算、又是位姿描述、又是相对运动，由此牵出分解顺序、作用对象、旋转轴位置、内外旋、左右乘一连串相互关联的问题。全文沿&quot;立定义（§1）→ 记号的三层含义（§2，概念核心）→ 数值算例（§3）→ 五个易混概念（§4–§8）→ 进阶工具（§9–§10）→ 工程实践（§11）&quot;展开，把这些逐个理清，结论均配数值算例与示意图。本文与《万向节死锁》同属一套 Robotics 笔记。</p>
+</blockquote>
+<span id="more"></span>
+<h2 id="1-齐次变换矩阵与-SE-3">1. 齐次变换矩阵与 SE(3)</h2>
+<p>把旋转 $R$（$3\times3$）和平移 $\mathbf p$（$3\times1$）嵌入一个 $4\times4$ 矩阵，得到<strong>齐次变换矩阵</strong>：</p>
+$$
+T = \begin{bmatrix} R & \mathbf p \\ \mathbf 0^\top & 1 \end{bmatrix}
+$$
+<p>所有这样的矩阵构成<strong>特殊欧氏群 SE(3)</strong>。它把位置与姿态统一进一个矩阵，而且复合变换只是矩阵乘法：${}^{a}T_c={}^{a}T_b\cdot{}^{b}T_c$（任意三个系，记号见第二节）。这正是手眼标定与机器人运动学推导里反复出现的工具。</p>
+<p><strong>为什么要升到四维。</strong> 三维旋转是线性的，写成矩阵乘 $R\mathbf x$；但平移是仿射，只能写成加法 $\mathbf x+\mathbf p$，二者合不进同一个 $3\times3$ 矩阵相乘。给坐标末尾补 $1$（齐次坐标），平移就归化成矩阵乘法：</p>
+$$
+\begin{bmatrix} R & \mathbf p \\ \mathbf 0^\top & 1 \end{bmatrix}
+\begin{bmatrix} \mathbf x \\ 1 \end{bmatrix}
+= \begin{bmatrix} R\mathbf x+\mathbf p \\ 1 \end{bmatrix}
+$$
+<p>&quot;旋转 + 平移&quot;这一仿射变换由此在四维里成为单个线性变换，复合也化为矩阵相乘——这正是上文 ${}^{A}T_C={}^{A}T_B\cdot{}^{B}T_C$ 能成立的前提。末行 $\mathbf 0^\top$ 与 $1$ 还保证两个这样的矩阵相乘后仍同形，SE(3) 因此对矩阵乘法封闭。</p>
+<p><img src="ht_se3_blocks.png" srcset="/img/loading.gif" lazyload alt="齐次变换矩阵的结构：旋转块 R、平移列 p、齐次行 0 1"></p>
+<h2 id="2-swig￼6-的三层含义">2. ${}^{A}T_B$ 的三层含义</h2>
+<p>全文用下标记法。${}^{A}T_B$ 这个 $4\times4$ 矩阵同时承载三层等价含义：</p>
+<ol>
+<li><strong>坐标变换（被动）</strong>：同一个点 $P$ 不动，把它在 $B$ 系的坐标换算成 $A$ 系的坐标（可理解为坐标系移动），变换矩阵左乘 $B$ 系的点——$\mathbf x^{(A)}={}^{A}T_B\,\mathbf x^{(B)}$，得到该点在 $A$ 系下的表示（$B\to A$ 方向用 $R={}^{A}R_B$；反向 $A\to B$ 用其逆 ${}^{B}T_A=R^\top$）。</li>
+<li><strong>位姿描述（被动）</strong>：$B$ 系在 $A$ 系下的位姿——站在 $A$ 看，$B$ 的原点在哪、三根轴朝哪。这是一个静态的几何事实，没有东西在动。</li>
+<li><strong>相对运动（主动）</strong>：当 $A,B$ 是同一刚体的两个构型，${}^{A}T_B$ 是把刚体从 $A$ 构型搬运到 $B$ 构型的那个刚体运动（把一个原本与 $A$ 重合的刚体搬到 $B$ 的位置）——刚体真的在动；反方向 $B\to A$ 的运动是其逆 ${}^{B}T_A=({}^{A}T_B)^{-1}$。</li>
+</ol>
+<p><img src="ht_three_meanings.png" srcset="/img/loading.gif" lazyload alt="同一个齐次变换的三种等价读法：坐标换算、位姿描述、相对运动"></p>
+<p>三张图同一几何——黑系 $A$、蓝系 $B$。左：同一个点 $P$ 不动，分别读 $A$、$B$ 两系坐标（被动换算）；中：$B$ 原点 $\mathbf p$ 与三轴朝向（$R$ 的列）静态刻画 $B$ 在 $A$ 的位姿（被动描述）；右：刚体由 $A$ 构型被搬到 $B$ 构型（主动运动）。三件事共享同一个 ${}^{A}T_B$。</p>
+<p>主动还是被动，只看一件事——谁在动。①②里点和刚体都不动（①是换个坐标系读同一个点，②是描述相对位姿），都属被动（alias）；③里刚体真的从 $A$ 被搬到 $B$，属主动（alibi）。①的坐标换算（$B\to A$）与③的刚体搬运（$A\to B$）方向相反，却共用同一个 ${}^{A}T_B$——“B 相对 A 在哪”，既是从 $A$ 到 $B$ 的动作，又是两系坐标的换算规则（主动与被动的完整对偶见第五节）。</p>
+<p><strong>为什么这三层是同一个矩阵。</strong> 设 ${}^{A}T_B=\begin{bmatrix}R&\mathbf p\\\mathbf 0^\top&1\end{bmatrix}$。从坐标变换 $\mathbf x^{(A)}=R\,\mathbf x^{(B)}+\mathbf p$ 取两个特殊点：令 $\mathbf x^{(B)}=\mathbf 0$（$B$ 原点），得 $\mathbf p=\mathbf x^{(A)}$，即平移列 $\mathbf p$ 正是 $B$ 原点在 $A$ 系的坐标；令 $\mathbf x^{(B)}=(1,0,0)$（$B$ 的 $x$ 轴上单位点），它相对原点的位移正是 $R$ 第一列，即 $B$ 的 $x$ 轴在 $A$ 系的方向。所以&quot;把 $B$ 变到 $A$ 的变换&quot;与&quot;$B$ 在 $A$ 下的位姿&quot;由同一组 $(R,\mathbf p)$ 决定。</p>
+<blockquote>
+<p>左上角那个系（A）是起点，右下角那个系（B）是终点——${}^{A}T_B$ 永远把刚体从 A 搬到 B，把坐标从 B 算回 A。</p>
+</blockquote>
+<p>两条派生规则贯穿全文：</p>
+<ul>
+<li><strong>逆（对调观察者）</strong>：$({}^{A}T_B)^{-1}={}^{B}T_A$；</li>
+<li><strong>复合（右乘链）</strong>：${}^{A}T_C={}^{A}T_B\cdot{}^{B}T_C$，要求中间系匹配（前项尾 $B$ = 后项头 $B$）。</li>
+</ul>
+<p><img src="ht_compose.png" srcset="/img/loading.gif" lazyload alt="右乘复合：从 A 经 B 到 C，前一项的尾系与后一项的头系必须匹配"></p>
+<p><strong>为什么复合落在右乘。</strong> 把每个变换看成一个函数——${}^{A}T_B$ 吃进 $B$ 系坐标、吐出 $A$ 系坐标。同一个点要从 $C$ 系一路读到 $A$ 系，中间必经 $B$：先把 $C$ 系坐标换成 $B$ 系，$\mathbf x^{(B)}={}^{B}T_C\,\mathbf x^{(C)}$；再换成 $A$ 系：</p>
+$$
+\mathbf x^{(A)}={}^{A}T_B\,\mathbf x^{(B)}={}^{A}T_B\,{}^{B}T_C\,\mathbf x^{(C)}
+$$
+<p>于是把 $C$ 直接变到 $A$ 的总变换就是 ${}^{A}T_C={}^{A}T_B\cdot{}^{B}T_C$——新接进来、离向量最近的那个变换自然落在右边。这正是函数嵌套 $f(g(x))$ 写成矩阵 $FG\,\mathbf x$ 的样子：最右的先执行。</p>
+<p>换个角度看同一条规则——<strong>下标咬合</strong>：${}^{A}T_B\cdot{}^{B}T_C$ 里前项的尾 $B$ 等于后项的头 $B$，像分数约分一样消去，剩下 $A$ 和 $C$。若反过来写成 ${}^{B}T_C\cdot{}^{A}T_B$，相邻处是 $C$ 接 $A$，对不上、消不掉——等于把&quot;$A$ 系下的坐标&quot;喂给一个&quot;只认 $B$ 系输入&quot;的算子，类型不匹配，没有几何意义。所以接链只能朝右延伸。</p>
+<blockquote>
+<p>右乘 = 函数复合 = 离向量最近的先作用 = 下标首尾相接。注意这说的是&quot;换系接链&quot;（被动）；给同一个刚体连续施加旋转时新旋转该左乘还是右乘，是另一件事，见第七、八节。</p>
+</blockquote>
+<h2 id="3-坐标换算的数值算例">3. 坐标换算的数值算例</h2>
+${}^{A}T_B$ 把同一个点 $P$ 的 $B$ 系坐标换算成 $A$ 系坐标（被动用法；主动读法见第五节）：$\mathbf x^{(A)}=R\,\mathbf x^{(B)}+\mathbf p$。用一个具体数字把它算到底（对应下图）：
+<ul>
+<li>已知：$B$ 原点在 $A$ 系 $\mathbf p=(2,1)$，转角 $\theta=30°$；</li>
+<li>点 $P$ 在 $B$ 系坐标 $P^{(B)}=(1.2,\,0.8)$。</li>
+</ul>
+<p>对应的旋转矩阵为：</p>
+$$
+R(30°)=\begin{bmatrix}0.866&-0.500\\0.500&0.866\end{bmatrix}
+$$
+<p>两步算：</p>
+<ol>
+<li><strong>旋转</strong>：$R\,P^{(B)}=(0.866{\times}1.2-0.500{\times}0.8,\;0.500{\times}1.2+0.866{\times}0.8)=(0.64,\,1.29)$；</li>
+<li><strong>平移</strong>：$P^{(A)}=R\,P^{(B)}+\mathbf p=(0.64+2,\,1.29+1)=(2.64,\,2.29)$。</li>
+</ol>
+<p><img src="transform_point.png" srcset="/img/loading.gif" lazyload alt="齐次变换坐标换算的完整数值算例"></p>
+<p>红色两段是 $P$ 沿 $B$ 轴的分解（读出 $B$ 系坐标 $1.2,0.8$）；橙色空心点是旋转中间结果 $R\,P^{(B)}=(0.64,1.29)$，橙色箭头是再加 $\mathbf p$ 的平移；灰色虚线是 $P$ 到 $A$ 轴的投影（读出 $A$ 系坐标 $2.64,2.29$）。一个点，两个坐标，${}^{A}T_B$ 负责在两者间换算。</p>
+<h2 id="4-先转后移与先移后转">4. 先转后移与先移后转</h2>
+<p>§4–§8 围绕齐次变换最易混淆的几件事展开：分解顺序、作用对象、旋转轴位置、内外旋、左右乘。本节先看分解顺序。</p>
+<p>矩阵乘法作用于列向量时，最靠近向量（最右边）的矩阵先执行。把 $T$ 拆成&quot;一次纯旋转 + 一次纯平移&quot;有两种等价写法，顺序恰好相反，差别只在平移量用哪个系：</p>
+<ul>
+<li><strong>参考系（$A$）视角——先转后移</strong>：</li>
+</ul>
+$$
+T=\begin{bmatrix}I&\mathbf p\\\mathbf 0^\top&1\end{bmatrix}\begin{bmatrix}R&\mathbf 0\\\mathbf 0^\top&1\end{bmatrix}=\mathrm{Trans}(\mathbf p)\,\mathrm{Rot}(R)
+$$
+<p>靠右的 $\mathrm{Rot}®$ 先执行（绕 $A$ 原点转），靠左的 $\mathrm{Trans}(\mathbf p)$ 后执行（沿 $A$ 系平移）。平移量 $\mathbf p$ 在 $A$ 系。</p>
+<ul>
+<li><strong>自身系（$B$）视角——先移后转</strong>：</li>
+</ul>
+$$
+T=\begin{bmatrix}R&\mathbf 0\\\mathbf 0^\top&1\end{bmatrix}\begin{bmatrix}I&R^{-1}\mathbf p\\\mathbf 0^\top&1\end{bmatrix}=\mathrm{Rot}(R)\,\mathrm{Trans}(R^{-1}\mathbf p)
+$$
+<p>靠右的 $\mathrm{Trans}(R^{-1}\mathbf p)$ 先执行（沿 $B$ 系平移），靠左的 $\mathrm{Rot}®$ 后执行（绕 $A$ 原点转）。平移量 $R^{-1}\mathbf p$ 在 $B$ 系。</p>
+<p>两种分解展开都是 $R\mathbf x+\mathbf p$，所以&quot;先转后移&quot;和&quot;先移后转&quot;都对，只是平移分别用目标系 $A$、源系 $B$ 的量。到底先转还是先移，取决于平移量写在哪一侧：写在左（目标系 $\mathbf p$）则先转后移，写在右（源系 $R^{-1}\mathbf p$）则先移后转。</p>
+<p><img src="transform_decompose.png" srcset="/img/loading.gif" lazyload alt="坐标系变换的两种等价分解"></p>
+<p>图中把两种分解逐步画出：<strong>左</strong>为先转后移——先绕 $A$ 原点转（金色中间态，原点不动、朝向变 $30°$），再沿 $A$ 系平移 $\mathbf p$；<strong>右</strong>为先移后转——先沿 $B$ 系量 $R^{-1}\mathbf p=(2.23,-0.13)$ 平移（金色中间态，朝向不变），再旋转。两条路径中间态不同，但终点 $B$（原点 $(2,1)$、朝向 $30°$）完全相同。</p>
+<h2 id="5-作用于点与作用于坐标系">5. 作用于点与作用于坐标系</h2>
+<p>同一个 ${}^{A}T_B$，作用在点上（主动，对应第二节③搬刚体）与作用在坐标系上（被动，对应第二节①换坐标）是方向相反的两件事。这里的&quot;对偶&quot;指同一个公式两种互为镜像的读法，而非两个不同的公式。镜像的来源是交换固定参考系：主动是物体动、坐标系固定；被动是坐标系动、物体固定。于是 ${}^{A}T_B$ 读出两个相反的箭头——作为主动算子，把刚体由 $A$ 构型搬到 $B$ 构型（世界里 $A\to B$）；作为被动换系规则，把同一个点的 $B$ 系读数换成 $A$ 系读数（标签上 $B\to A$）。一个符号、两个反向箭头，正是第二节所述&quot;方向相反却共用同一个矩阵&quot;的展开。</p>
+<ul>
+<li><strong>作用于点（主动 / alibi）</strong>：点动、坐标系不动。旋转改变点的位置（$P$ 绕 $A$ 原点转一段弧）。</li>
+<li><strong>作用于坐标系（被动 / alias）</strong>：点不动、坐标系动。把一个初始与 $A$ 重合的坐标系挪到位姿 $B$，旋转改变坐标系的朝向（三轴指向变、原点暂不动），平移再挪原点。</li>
+</ul>
+<p><img src="ht_active_passive.png" srcset="/img/loading.gif" lazyload alt="作用于点 vs 作用于坐标系：点动用 R，坐标系动用 Rᵀ，二者互为转置"></p>
+<p>作用于点的代数形式 $R\,\mathbf x$（矩阵乘列向量）对主动与被动都成立，区分二者的不是代数，而是输入、输出这对向量的含义。若它们是同一个点在两个系里的读数（$\mathbf x^{(B)}\to\mathbf x^{(A)}$），点没有移动，是被动；若它们是同一个系里两个不同的点（$\mathbf x\to\mathbf x'=R\,\mathbf x$），点确实移动，是主动。因此判据只有一条：输入与输出是同一个点的两个读数，还是两个不同的点。这与&quot;算的是不是点&quot;无关，也与左乘、右乘无关（对列向量左乘是固定写法，见第八节）。</p>
+<p>两者互为逆（转置）。在同一帧内主动转动一个点用 $R$：$\mathbf x'=R\,\mathbf x$；把坐标系被动转 $R$，同一个固定点在新系里的坐标变为：</p>
+$$
+\mathbf x_{\text{新}}=R^{-1}\mathbf x_{\text{旧}}=R^{\top}\mathbf x_{\text{旧}}
+$$
+<p>坐标系沿某方向前进时，固定点在该系里的坐标反而后退，正是这个转置关系的体现。所以 ${}^{A}T_B$ 既是&quot;$B$ 在 $A$ 中的位姿描述&quot;、又是&quot;$A\to B$ 的变换算子&quot;——一个矩阵、两个视角。作用于点转位置，作用于坐标系转朝向；主动用 $R$，被动用 $R^{\top}$。</p>
+<p>主动与被动回答&quot;谁在动&quot;，与&quot;转轴是否随机体一起动&quot;是两个独立的维度。&quot;作用在点上左乘 $R\mathbf x$&quot;只是矩阵乘列向量的固定写法，对单次旋转谈不上内外旋；内外旋只在一串旋转的复合顺序里才有意义，取决于转轴固定在世界系还是机体（见第七节）。本节与第七节分属两个维度；左乘、右乘本身的含义统一在第八节澄清。</p>
+<h2 id="6-旋转的轴：过不过原点">6. 旋转的轴：过不过原点</h2>
+<p>由欧拉定理，任何旋转矩阵 $R$ 等价于绕单一轴 $\hat{\mathbf u}$ 转 $\theta$ 的一次旋转（Rodrigues 公式）。$\hat{\mathbf u}$（$R$ 特征值 1 的特征向量）只给轴的方向，不给位置。轴是否过原点要看对象：</p>
+<ul>
+<li><strong>纯旋转 $R$</strong>（即分解里的 $\mathrm{Rot}®$ 这一步）：轴穿过原点。因为纯旋转是线性变换，必然固定原点 $R\,\mathbf 0=\mathbf 0$。</li>
+<li><strong>完整变换 $T=(R,\mathbf p)$</strong>（整体刚体运动）：等效旋转轴（更准确说是<strong>螺旋轴</strong> screw axis）一般不过原点——除非 $\mathbf p$ 平行于转轴（即没有垂直于轴的分量，含 $\mathbf p=\mathbf 0$ 的纯旋转）。一般情形下 $T$ 等价于绕某条不过原点的轴转 $\theta$、并沿该轴滑移一段（Chasles 定理）。</li>
+</ul>
+<p><img src="ht_chasles_2d.png" srcset="/img/loading.gif" lazyload alt="纯旋转的轴穿过原点；完整变换的螺旋轴一般不过原点"></p>
+<p><strong>左</strong>：纯旋转，轴穿原点，点绕原点画弧，螺距 $h=0$。<strong>右</strong>：完整变换 $T=(R,\mathbf p)$，等效螺旋轴不过原点（绿色偏置），点绕这条偏置轴转 $\theta$、同时沿轴滑移 $d$，螺距 $h=d/\theta$。把&quot;轴的位置&quot;从三维螺旋轴拉回平面对照，更为直观。</p>
+<p><img src="ht_screw.png" srcset="/img/loading.gif" lazyload alt="螺旋运动与 Chasles 定理：绕轴转 θ 的同时沿轴平移 d，螺距 h=d/θ"></p>
+<p>所以&quot;旋转绕原点&quot;指的是分解里的那一步纯旋转，不是 $T$ 整体的等效轴。</p>
+<p><strong>Chasles 定理。</strong> 任意刚体运动 $T=(R,\mathbf p)$（$R\ne I$）都唯一等价于绕空间中某条固定轴 $\hat{\boldsymbol\ell}$ 转 $\theta$、同时沿该轴平移距离 $d$ 的螺旋运动（screw motion）：轴方向为 $R$ 的旋转轴 $\hat{\boldsymbol\omega}$，沿轴平移分量 $d=\hat{\boldsymbol\omega}^\top\mathbf p$，垂直于轴的平移分量则体现为&quot;轴不过原点&quot;的偏置。比值 $h=d/\theta$ 称为螺距（pitch）：$h=0$ 为纯转动（转动副），$h\to\infty$ 为纯平动（移动副），有限非零为螺旋副。这正是&quot;完整 $T$ 的螺旋轴一般不过原点&quot;的根据。</p>
+<h2 id="7-内旋与外旋">7. 内旋与外旋</h2>
+<p>单个 $R$ 只是一次旋转、无先后，谈不上内外旋。只有需要连续追加旋转时，才要回答：每一次新旋转，绕的是世界固定轴还是物体当前轴？这个选择决定了矩阵该左乘还是右乘。</p>
+<h3 id="7-1-外旋左乘，内旋右乘">7.1 外旋左乘，内旋右乘</h3>
+<p>记当前已累积的旋转为 $R$，新追加一次绕轴 $\hat{\mathbf u}$ 转 $\theta$ 的旋转 $\mathrm{Rot}(\hat{\mathbf u},\theta)$：</p>
+<ul>
+<li><strong>外旋（extrinsic，定轴）</strong>——轴固定在世界系，左乘：</li>
+</ul>
+$$
+R \;\leftarrow\; \mathrm{Rot}(\hat{\mathbf u},\theta)\,R
+$$
+<ul>
+<li><strong>内旋（intrinsic，动轴）</strong>——轴固定在物体（随机体一起转），右乘：</li>
+</ul>
+$$
+R \;\leftarrow\; R\,\mathrm{Rot}(\hat{\mathbf u},\theta)
+$$
+<p><img src="ht_intrinsic_extrinsic.png" srcset="/img/loading.gif" lazyload alt="内旋（机体轴，右乘）vs 外旋（世界轴，左乘）：同一姿态，两种累积顺序"></p>
+<p><strong>为什么右乘。</strong> 内旋绕机体当前轴 $\hat{\mathbf u}$——该轴此刻在世界系里的方向是 $R\hat{\mathbf u}$。绕这条世界轴 $R\hat{\mathbf u}$ 转 $\theta$，由共轭（见 7.3）等于 $R\,\mathrm{Rot}(\hat{\mathbf u},\theta)\,R^{-1}$；把它接在当前姿态之后：$\bigl(R\,\mathrm{Rot}(\hat{\mathbf u},\theta)\,R^{-1}\bigr)\,R=R\,\mathrm{Rot}(\hat{\mathbf u},\theta)$——右乘。外旋的轴本就固定在世界系，直接左乘即可。</p>
+<h3 id="7-2-同一个矩阵，两种读法">7.2 同一个矩阵，两种读法</h3>
+<p>一串旋转的总矩阵只取决于&quot;写成什么乘积&quot;，不取决于怎么解释它。以航空常用的 $R_z(\psi)R_y(\theta)R_x(\varphi)$ 为例，它有两种等价的物理读法：</p>
+<ul>
+<li><strong>内旋（机体轴，顺序 $z\to y\to x$）</strong>：每次绕当前机体轴转，复合是右乘链——</li>
+</ul>
+$$
+I \,\xrightarrow{\,\cdot R_z(\psi)\,}\, R_z(\psi) \,\xrightarrow{\,\cdot R_y(\theta)\,}\, R_z(\psi)R_y(\theta) \,\xrightarrow{\,\cdot R_x(\varphi)\,}\, R_z(\psi)R_y(\theta)R_x(\varphi)
+$$
+<ul>
+<li><strong>外旋（世界轴，顺序 $x\to y\to z$，反序）</strong>：每次绕固定世界轴转，复合是左乘链——</li>
+</ul>
+$$
+I \,\xrightarrow{\,R_x(\varphi)\cdot\,}\, R_x(\varphi) \,\xrightarrow{\,R_y(\theta)\cdot\,}\, R_y(\theta)R_x(\varphi) \,\xrightarrow{\,R_z(\psi)\cdot\,}\, R_z(\psi)R_y(\theta)R_x(\varphi)
+$$
+<p>两条链终点完全相同。一般定理：内旋按某轴序 = 外旋按反序（内旋 ZYX = 外旋 XYZ）。</p>
+<h3 id="7-3-共轭证明">7.3 共轭证明</h3>
+<p>设机体当前姿态为 $R$，机体上某轴在体系里是 $\hat{\mathbf u}$，则它在世界系里的方向是 $R\hat{\mathbf u}$。绕这条世界系中的 $R\hat{\mathbf u}$ 轴转 $\alpha$，等价于共轭：</p>
+$$
+\mathrm{Rot}(R\hat{\mathbf u},\alpha)=R\,\mathrm{Rot}(\hat{\mathbf u},\alpha)\,R^{-1}
+$$
+<p>几何上是把机体转回世界、绕世界轴转、再转回去。据此可证：&quot;先绕体轴 $e_1$ 转 $\alpha_1$、再绕（新）体轴 $e_2$ 转 $\alpha_2$&quot;的内旋，等于&quot;先绕世界 $e_2$ 转 $\alpha_2$、再绕世界 $e_1$ 转 $\alpha_1$“的外旋，二者都得 $R_{e_1}(\alpha_1)R_{e_2}(\alpha_2)$。三轴同理，即得&quot;内旋 = 外旋反序”，这也是 7.1 里内旋落到右乘的根源。</p>
+<h3 id="7-4-与作用对象的关系">7.4 与作用对象的关系</h3>
+<p>常有说法&quot;作用在点上左乘就是外旋、作用在坐标系上右乘就是内旋&quot;——方向对，但省略了前提（第五节已把主动、被动分开）：</p>
+<ul>
+<li>一个孤立的点或向量没有自己的轴，连续转它时转轴只能取世界轴，自然落到外旋、左乘复合。所以&quot;点 = 外旋 = 左乘&quot;成立。</li>
+<li>一个坐标系或刚体有自身机体轴；若让它一步步绕自己的轴转，就是内旋、右乘复合。所以&quot;坐标系按自身轴 = 内旋 = 右乘&quot;成立。</li>
+<li>但坐标系也能绕世界轴转（那仍是外旋、仍左乘）；点也能绑在刚体上随内旋一起动。所以&quot;点↔外旋、坐标系↔内旋&quot;只是最自然的搭配，不是规定。判定标准始终只有一条：这一步的转轴，定在世界里还是定在机体上？与作用在点上还是坐标系上无关。</li>
+</ul>
+<h3 id="7-5-内旋与外旋的选用">7.5 内旋与外旋的选用</h3>
+<p>轴在世界 → 外旋 → 左乘；轴在机体 → 内旋 → 右乘。按物理转轴长在哪来选：</p>
+<ul>
+<li><strong>机械臂 / DH 建模</strong>：关节绕的是连杆自己的轴，属内旋、右乘，$T=T_1T_2\cdots T_n$。机器人学默认。</li>
+<li><strong>图形学 / 点云在世界里操作物体</strong>（先绕世界 $X$ 再绕世界 $Y$）：世界轴，属外旋、左乘。</li>
+<li><strong>航空航天 yaw-pitch-roll</strong>：yaw 绕地垂线（世界），pitch/roll 绕机体轴，整体通常按内旋 ZYX 描述。</li>
+</ul>
+<p>内旋与外旋能表达的姿态集合完全相同（内旋 XYZ ≡ 外旋 ZYX），选哪个不影响结果，只影响哪种写法最顺、最不容易错。原则是：物理转轴属于哪个系，就按那个系选内外。</p>
+<h3 id="7-6-万向节死锁">7.6 万向节死锁</h3>
+<p>三角度欧拉表示在内旋（或等价的外旋反序）下，当中间角达到 $\pm90°$ 时雅可比降秩、丢失一个自由度，即万向节死锁。它是三角度参数化的固有奇点，与内/外旋无关（同一个矩阵、同一个奇点）；换四元数或旋转矩阵表示即可消除。完整推导（几何、雅可比 $\det M=\cos\theta$、矩阵三层证明，以及外旋死锁的几何图像）见《万向节死锁》。</p>
+<h2 id="8-左乘、右乘与执行顺序">8. 左乘、右乘与执行顺序</h2>
+<p>“左乘”&quot;右乘&quot;是相对被变换的量而言的：变换矩阵是主语，被变换的量是参照物。</p>
+<blockquote>
+<p>$T$ 左乘 $\mathbf x$：$T$ 写在 $\mathbf x$ 左边，得 $T\mathbf x$；<br>
+$T$ 右乘 $\mathbf x$：$T$ 写在 $\mathbf x$ 右边，得 $\mathbf xT$。</p>
+</blockquote>
+<p>即&quot;左/右&quot;描述的是变换矩阵落在被变换量的哪一侧，主语是新引入的矩阵。同一术语在不同语境作用的对象不同，需要分开理解：</p>
+<ul>
+<li><strong>作用于向量</strong>：变换在向量左边（$T\mathbf x$），即搬点。列向量约定下变换对点恒为左乘，反向是左乘其逆 $T^{-1}\mathbf x$，而非右乘。</li>
+<li><strong>复合变换（接链）</strong>：${}^{W}T_A\cdot{}^{A}T_B$，新变换追加在链右侧，即接一个更局部的系。</li>
+<li><strong>连续旋转（见第七节）</strong>：新旋转对已有姿态 $R$ 左乘（外旋，$\mathrm{Rot}\,R$）或右乘（内旋，$R\,\mathrm{Rot}$）。</li>
+<li><strong>执行顺序</strong>：由&quot;谁更靠近被作用的向量&quot;决定（最右的先执行），与上述三种&quot;左/右乘&quot;含义无关。</li>
+</ul>
+<p>一句话：&quot;左/右乘&quot;说的是位置（变换落在被变换量的哪一侧），不是执行先后。</p>
+<p><img src="ht_left_right_order.png" srcset="/img/loading.gif" lazyload alt="左乘、右乘是位置；执行顺序由谁更靠近向量决定"></p>
+<p>上半画出乘积链 $T_1T_2T_3\,x$ 的执行顺序：自右向左，最靠近向量 $x$ 的 $T_3$ 先执行。下半区分&quot;左乘&quot;（$T$ 在 $x$ 左边，得 $T\,x$）与&quot;右乘&quot;（$T$ 在 $x$ 右边，得 $x\,T$）——说的是位置，不是先后。</p>
+<h2 id="9-指数坐标：SE-3-的矩阵指数与对数">9. 指数坐标：SE(3) 的矩阵指数与对数</h2>
+<p>前面用 $(R,\mathbf p)$ 拼 $T$。反过来，任意 $T\in SE(3)$ 也可写成某旋量（twist）的矩阵指数，这是螺旋理论与李群视角的核心。一个旋量 $\mathcal S=(\boldsymbol\omega,\mathbf v)$（$\boldsymbol\omega$ 角速度、$\mathbf v$ 线速度）对应 $4\times4$ 矩阵：</p>
+$$
+[\mathcal S]=\begin{bmatrix}[\boldsymbol\omega]_\times&\mathbf v\\\mathbf 0^\top&0\end{bmatrix}
+$$
+<p>这里 $\boldsymbol\omega$ 已含转角（$\theta=\|\boldsymbol\omega\|$），故运动就是 $[\mathcal S]$ 自身的指数（不再另乘 $\theta$）：</p>
+$$
+\exp([\mathcal S])=\begin{bmatrix}R&V\mathbf v\\\mathbf 0^\top&1\end{bmatrix}
+$$
+<p><img src="ht_twist_exp.png" srcset="/img/loading.gif" lazyload alt="旋量经矩阵指数给出刚体运动：绕轴转的同时沿轴平移"></p>
+<p>红色螺旋轨迹即 $\exp([\mathcal S])$ 描述的运动：点既绕偏置轴转 $\theta$、又沿轴滑移 $d$，角速度方向 $\omega$ 沿螺旋轴。一次矩阵指数，把&quot;绕一根轴边转边移&quot;一次写完。</p>
+<p>其中 $R$ 由 Rodrigues 公式给出：</p>
+$$
+R=I+\frac{\sin\theta}{\theta}[\boldsymbol\omega]_\times+\frac{1-\cos\theta}{\theta^2}[\boldsymbol\omega]_\times^2
+$$
+<p>（$\theta=\|\boldsymbol\omega\|$），而</p>
+$$
+V=I+\frac{1-\cos\theta}{\theta^2}[\boldsymbol\omega]_\times+\frac{\theta-\sin\theta}{\theta^3}[\boldsymbol\omega]_\times^2
+$$
+<p><strong>这两条公式从哪来。</strong> 矩阵指数按定义展开为幂级数 $\exp([\boldsymbol\omega]_\times)=I+[\boldsymbol\omega]_\times+\tfrac{1}{2!}[\boldsymbol\omega]_\times^2+\cdots$。关键是反对称矩阵满足 $[\boldsymbol\omega]_\times^3=-\theta^2[\boldsymbol\omega]_\times$（$\theta=\|\boldsymbol\omega\|$），三次及以上的幂都能降回一、二次：$[\boldsymbol\omega]_\times^3=-\theta^2[\boldsymbol\omega]_\times$、$[\boldsymbol\omega]_\times^4=-\theta^2[\boldsymbol\omega]_\times^2$，循环往复。把级数按奇、偶次分组，分别套 $\sin\theta$ 与 $\cos\theta$ 的泰勒展开，即得 Rodrigues；同样的展开用于平移项，得 $V$。这解释了为何系数里尽是 $\sin\theta/\theta$、$(1-\cos\theta)/\theta^2$ 这类角度之比。</p>
+<p>逆运算矩阵对数可由 $T$ 反解螺旋参数：</p>
+$$
+\log T=\begin{bmatrix}\log R&V^{-1}\mathbf p\\\mathbf 0^\top&0\end{bmatrix}
+$$
+<p>由 $\mathrm{tr}®$ 取 $\theta=\cos^{-1}\frac{\mathrm{tr}R-1}{2}$，由 $R-R^\top$ 取 $\boldsymbol\omega$，再算：</p>
+$$
+V^{-1}=I-\tfrac12[\boldsymbol\omega]_\times+\frac{1}{\theta^2}\bigl(1-\frac{\theta\sin\theta}{2(1-\cos\theta)}\bigr)[\boldsymbol\omega]_\times^2
+$$
+<p>$R=I$（纯平移）时退化为 $\theta=\|\mathbf p\|,\mathbf v=\mathbf p/\theta$；小 $\theta$ 时须用泰勒展开避免除零。指数坐标把&quot;任意 $T$ = 一个螺旋运动&quot;这一 Chasles 结论变成可计算的工具，也是机器人学指数积（PoE）正运动学的语言。</p>
+<h2 id="10-伴随矩阵：旋量与力旋量的换系">10. 伴随矩阵：旋量与力旋量的换系</h2>
+<p>$T=(R,\mathbf p)$ 的 $6\times6$ 伴随矩阵为：</p>
+$$
+[\mathrm{Ad}_T]=\begin{bmatrix}R&\mathbf 0\\[\mathbf p]_\times R&R\end{bmatrix}
+$$
+<p>它有两类用途：</p>
+<ul>
+<li><strong>旋量（速度）换系</strong>：体速度 $\mathcal V_b$ 与空间速度 $\mathcal V_s$ 由伴随矩阵联系，$\mathcal V_s=[\mathrm{Ad}_T]\mathcal V_b$（体 → 空间）。</li>
+<li><strong>力旋量换系（与速度反向）</strong>：由&quot;功率与坐标系无关&quot;$\mathcal F_s^\top\mathcal V_s=\mathcal F_b^\top\mathcal V_b$，代入 $\mathcal V_s=[\mathrm{Ad}_T]\mathcal V_b$ 得 $\mathcal F_b=[\mathrm{Ad}_T]^\top\mathcal F_s$（空间 → 体）。速度从体到空间用 $[\mathrm{Ad}_T]$，力从空间到体用 $[\mathrm{Ad}_T]^\top$——方向恰好相反。</li>
+</ul>
+<p><img src="ht_adjoint.png" srcset="/img/loading.gif" lazyload alt="伴随矩阵：速度用本身换系，力旋量用转置换系，方向相反"></p>
+<p><strong>左</strong>：体速度 $\mathcal V_b$ 经 $[\mathrm{Ad}_T]$ 变为空间速度 $\mathcal V_s$（体→空间）。<strong>右</strong>：空间力旋量 $\mathcal F_s$ 经 $[\mathrm{Ad}_T]^\top$ 变为体力旋量 $\mathcal F_b$（空间→体）。正用与转置方向相反，并排对照一目了然；下方的功率等式 $F_s^\top V_s=F_b^\top V_b$ 正是这一相反方向的根源。</p>
+<p>力旋量换系用的是 $[\mathrm{Ad}_T]^\top$（转置）而非 $[\mathrm{Ad}_T]^{-1}=[\mathrm{Ad}_{T^{-1}}]$，这是&quot;功率不变&quot;所强制的（用错了功率就会变）。这条对偶正是雅可比&quot;正用映射速度、转置映射力&quot;的群论根据。</p>
+<h2 id="11-数值实践：正交化、快速求逆、误差累积">11. 数值实践：正交化、快速求逆、误差累积</h2>
+<p>工程实现中 $T$ 有几个常用技巧：</p>
+<ul>
+<li><strong>SE(3) 快速求逆</strong>：无需 $4\times4$ 通用求逆，利用 $R^{-1}=R^\top$，直接：</li>
+</ul>
+$$
+T^{-1}=\begin{bmatrix}R^\top&-R^\top\mathbf p\\\mathbf 0^\top&1\end{bmatrix}
+$$
+<p>仅需 $3\times3$ 转置加一次矩阵-向量乘。</p>
+<ul>
+<li><strong>正交性漂移</strong>：多次连乘 $R$ 后浮点误差使结果漂离 SO(3)（$R^\top R\ne I$）。常用 SVD 正交化：对漂移矩阵 $M=U\Sigma V^\top$，取：</li>
+</ul>
+$$
+R=U\,\mathrm{diag}(1,1,\det(UV^\top))\,V^\top
+$$
+<p>内层 $\mathrm{diag}$ 纠正反射、保证 $\det R=+1$。SVD 正交化精度约是 Gram-Schmidt 的两倍。长时间仿真应周期性对 $R$ 块做正交化以抑制累积误差。</p>
+<ul>
+<li><strong>分量顺序</strong>：不同教材对旋量/伴随的分量顺序约定不同——有的 $[\boldsymbol\omega;\mathbf v]$、有的 $[\mathbf v;\boldsymbol\omega]$，引用公式前须先确认。</li>
+</ul>
+<h2 id="12-小结">12. 小结</h2>
+${}^{A}T_B$ 把 $\mathbf x^{(B)}$ 变为 $R\mathbf x^{(B)}+\mathbf p$；先转还是先移取决于平移量用哪个系（目标系 $\mathbf p$ → 先转后移，源系 $R^{-1}\mathbf p$ → 先移后转），两种分解等价；作用于点（主动，$R$）与作用于坐标系（被动，$R^{\top}$）互为转置；纯旋转的轴过原点、完整 $T$ 的螺旋轴一般不过（Chasles 定理，螺距 $h=d/\theta$）；任意 $T$ 可经矩阵对数反解为单一螺旋运动；伴随矩阵 $[\mathrm{Ad}_T]$ 换系（旋量用本身、力旋量用转置）；连续旋转中外旋（世界轴）左乘、内旋（机体轴）右乘，内旋 ZYX = 外旋 XYZ，二者可表姿态相同、死锁也同处（详见《万向节死锁》）。
+<hr>
+<h2 id="参考资料">参考资料</h2>
+<ul>
+<li>Murray, Li, Sastry. <em>A Mathematical Introduction to Robotic Manipulation</em> (CRC, 1994) — <a target="_blank" rel="noopener" href="https://www.cse.lehigh.edu/~jingli/teaching/spring2016/Murray-Li-Sastry-94-complete.pdf">https://www.cse.lehigh.edu/~jingli/teaching/spring2016/Murray-Li-Sastry-94-complete.pdf</a></li>
+<li>Lynch &amp; Park. <em>Modern Robotics</em>, §3.3.3 Exponential Coordinates of Rigid-Body Motion — <a target="_blank" rel="noopener" href="https://modernrobotics.northwestern.edu/nu-gm-book-resource/3-3-3-exponential-coordinates-of-rigid-body-motion/">https://modernrobotics.northwestern.edu/nu-gm-book-resource/3-3-3-exponential-coordinates-of-rigid-body-motion/</a></li>
+<li>Lynch &amp; Park. <em>Modern Robotics</em>, §3.4 Wrenches — <a target="_blank" rel="noopener" href="https://modernrobotics.northwestern.edu/nu-gm-book-resource/3-4-wrenches/">https://modernrobotics.northwestern.edu/nu-gm-book-resource/3-4-wrenches/</a></li>
+<li>Dellaert (Georgia Tech). <em>Transforming Twists and Wrenches with the Adjoint Map in SE(3)</em> — <a target="_blank" rel="noopener" href="https://dellaert.github.io/20S-8803MM/Readings/3D-Adjoints-note.pdf">https://dellaert.github.io/20S-8803MM/Readings/3D-Adjoints-note.pdf</a></li>
+<li>Wikipedia. <em>Chasles’ theorem (kinematics)</em> — <a target="_blank" rel="noopener" href="https://en.wikipedia.org/wiki/Chasles%27_theorem_(kinematics)">https://en.wikipedia.org/wiki/Chasles’_theorem_(kinematics)</a></li>
+<li>Levinson et al. <em>An Analysis of SVD for Deep Rotation Estimation</em>, NeurIPS 2020 — <a target="_blank" rel="noopener" href="https://papers.nips.cc/paper/2020/file/fec3392b0dc073244d38eba1feb8e6b7-Paper.pdf">https://papers.nips.cc/paper/2020/file/fec3392b0dc073244d38eba1feb8e6b7-Paper.pdf</a></li>
+</ul>
+<link rel="stylesheet" href="/css/spoiler.css" type="text/css"><script src="/js/spoiler.js" type="text/javascript" async></script>
+                
+
+
+				<br /><br />
+				<blockquote>
+					<p>文章链接：<br /> 
+					<a style="font-size: 0.85rem" target="_blank" rel="noopener" href="https://www.zywvvd.com/notes/3d/homogeneous-transform/homogeneous-transform/">https://www.zywvvd.com/notes/3d/homogeneous-transform/homogeneous-transform/</a>
+					</p>
+				</blockquote>
+
+
+              </div>
+            
+            <hr/>
+			
+			<!-- 添加打赏模块 -->
+			<div class="reward-container">
+				
+					<button id="rewardBtn" class="reward-btn">
+						 
+							❤ 打赏
+							
+					</button>
+					<p class="tea">“觉得不错的话，给点打赏吧 ୧(๑•̀⌄•́๑)૭”</p>
+					<div id="rewardImgContainer" class="reward-img-container">
+						<div class="singleImgContainer">
+							<img id="wechatImg" class="reward-img" src="https://uipv4.zywvvd.com:33030/HexoFiles/vvd_pc_upload/wechatpay.png" srcset="/img/loading.gif" lazyload alt="微信二维码">
+							<p class="wechatPay">微信支付</p>
+						</div>
+						<div class="singleImgContainer">
+							<img id="alipayImg" class="reward-img" src="https://uipv4.zywvvd.com:33030/HexoFiles/vvd_pc_upload/alipay.png" srcset="/img/loading.gif" lazyload alt="支付宝二维码">
+							<p class="aliPay">支付宝支付</p>
+						</div>
+					</div>
+				
+			</div>
+			
+            <div>
+              <div class="post-metas my-3">
+  
+    <div class="post-meta mr-3 d-flex align-items-center">
+      <i class="iconfont icon-category"></i>
+      
+
+<span class="category-chains">
+  
+  
+    
+      <span class="category-chain">
+        
+  <a href="/categories/3D/" class="category-chain-item">3D</a>
+  
+  
+
+      </span>
+    
+  
+</span>
+
+    </div>
+  
+  
+    <div class="post-meta">
+      <i class="iconfont icon-tags"></i>
+      
+        <a href="/tags/3D/" class="print-no-link">#3D</a>
+      
+        <a href="/tags/Robotics/" class="print-no-link">#Robotics</a>
+      
+    </div>
+  
+</div>
+
+
+              
+  
+
+  <div class="license-box my-3">
+    <div class="license-title">
+      <div>齐次变换矩阵与 SE(3)</div>
+      <div>https://www.zywvvd.com/notes/3d/homogeneous-transform/homogeneous-transform/</div>
+    </div>
+    <div class="license-meta">
+      
+        <div class="license-meta-item">
+          <div>作者</div>
+          <div>Yiwei Zhang</div>
+        </div>
+      
+      
+        <div class="license-meta-item license-meta-date">
+          <div>发布于</div>
+          <div>2026年7月31日</div>
+        </div>
+      
+      
+      
+        <div class="license-meta-item">
+          <div>许可协议</div>
+          <div>
+            
+              
+              
+                <a class="print-no-link" target="_blank" href="https://creativecommons.org/licenses/by/4.0/">
+                  <span class="hint--top hint--rounded" aria-label="BY - 署名">
+                    <i class="iconfont icon-by"></i>
+                  </span>
+                </a>
+              
+            
+          </div>
+        </div>
+      
+    </div>
+    <div class="license-icon iconfont"></div>
+  </div>
+
+
+
+              
+                <div class="post-prevnext my-3">
+                  <article class="post-prev col-6">
+                    
+                    
+                  </article>
+                  <article class="post-next col-6">
+                    
+                    
+                      <a href="/notes/3d/lidar/lidar-mechanical-vs-solid/" title="激光雷达成像原理：机械式与固态式">
+                        <span class="hidden-mobile">激光雷达成像原理：机械式与固态式</span>
+                        <span class="visible-mobile">下一篇</span>
+                        <i class="iconfont icon-arrowright"></i>
+                      </a>
+                    
+                  </article>
+                </div>
+              
+            </div>
+
+            
+  
+  
+    <article id="comments" lazyload>
+      
+  <div id="waline"></div>
+  <script type="text/javascript">
+    Fluid.utils.loadComments('#waline', function() {
+      Fluid.utils.createCssLink('https://lib.baomitu.com/waline/2.14.8/waline.min.css')
+      Fluid.utils.createScript('https://lib.baomitu.com/waline/2.14.8/waline.min.js', function() {
+        var options = Object.assign(
+          {"serverURL":"https://uipv4.zywvvd.com:33033/","path":"window.location.pathname","meta":["nick","mail","link"],"requiredMeta":["nick"],"lang":"zh-CN","emoji":["https://cdn.jsdelivr.net/gh/walinejs/emojis/weibo"],"dark":"html[data-user-color-scheme=\"dark\"]","wordLimit":0,"pageSize":10,"reaction":true,"locale":{"placeholder":"山高路远，常来玩吖 ~","reactionTitle":null}},
+          {
+            el: '#waline',
+            path: window.location.pathname
+          }
+        )
+        Waline.init(options);
+        Fluid.utils.waitElementVisible('#waline .vcontent', () => {
+          var imgSelector = '#waline .vcontent img:not(.vemoji)';
+          Fluid.plugins.imageCaption(imgSelector);
+          Fluid.plugins.fancyBox(imgSelector);
+        })
+      });
+    });
+  </script>
+  <noscript>Please enable JavaScript to view the comments</noscript>
+
+
+    </article>
+  
+
+
+          </article>
+        </div>
+      </div>
+    </div>
+
+    <div class="side-col d-none d-lg-block col-lg-2">
+      
+  <aside class="sidebar" style="margin-left: -1rem">
+    <div id="toc">
+  <p class="toc-header">
+    <i class="iconfont icon-list"></i>
+    <span>目录</span>
+  </p>
+  <div class="toc-body" id="toc-body"></div>
+</div>
+
+
+
+  </aside>
+
+
+    </div>
+  </div>
+</div>
+
+
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+  
+  
+
+
+
+
+
+  <script>
+  Fluid.utils.createScript('https://lib.baomitu.com/mermaid/8.14.0/mermaid.min.js', function() {
+    mermaid.initialize({"theme":"default"});
+
+    Fluid.utils.listenDOMLoaded(function() {
+      Fluid.events.registerRefreshCallback(function() {
+        if ('mermaid' in window) {
+          mermaid.init();
+        }
+      });
+    });
+  });
+</script>
+
+
+
+
+
+
+    
+
+    
+      <a id="scroll-top-button" aria-label="TOP" href="#" role="button">
+        <i class="iconfont icon-xiangshangjiantou" aria-hidden="true"></i>
+      </a>
+    
+
+    
+      <div class="modal fade" id="modalSearch" tabindex="-1" role="dialog" aria-labelledby="ModalLabel"
+     aria-hidden="true">
+  <div class="modal-dialog modal-dialog-scrollable modal-lg" role="document">
+    <div class="modal-content">
+      <div class="modal-header text-center">
+        <h4 class="modal-title w-100 font-weight-bold">搜索</h4>
+        <button type="button" id="local-search-close" class="close" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body mx-3">
+        <div class="md-form mb-5">
+          <input type="text" id="local-search-input" class="form-control validate">
+          <label data-error="x" data-success="v" for="local-search-input">关键词</label>
+        </div>
+        <div class="list-group" id="local-search-result"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+    
+
+    
+  </main>
+
+  <footer>
+    <div class="footer-inner">
+  
+    <div class="footer-content">
+       <div class="vvd_footer" style="font-size: 0.85rem;"> <a href="https://hexo.io" target="_blank" rel="nofollow noopener" color="#d7d8d9" data-umami-event="Footer-Hexo"><span class="umami--click--Footer-Hexo">Hexo</span></a> <i class="iconfont icon-love"></i> <a href="https://github.com/fluid-dev/hexo-theme-fluid" target="_blank" rel="nofollow noopener" data-umami-event="Footer-Fluid"><span class="umami--click--Footer-Fluid">Fluid</span></a> <i class="iconfont icon-love"></i> <a href="https://uipv4.zywvvd.com:33039/share/0zx3o21oIpZTZqwC/%E5%8F%88%E8%A7%81%E8%8B%8D%E5%B2%9A" target="_blank" rel="nofollow noopener" data-umami-event="Footer-Umami"><span class="umami--click--Footer-Umami">Umami</span></a> <div style="font-size: 0.85rem;"> <span id="timeDate">载入天数...</span> <span id="times">载入时分秒...</span> <script src="/vvd_js/duration.js"></script> </div> <div style="font-size: 0.85rem;"> <span> 总访问量 <span style="color: #d7d8d9;" id="PVstatic">0</span> 次&nbsp</span> <span> 总访客数 <span style="color: #d7d8d9;" id="UVstatic">0</span> 人&nbsp</span> <span> 当前在线 <span style="color: #d7d8d9;" id="ACTstatic">0</span> 人&nbsp</span> <script src="https://uipv4.zywvvd.com:33037/statistics" defer></script> </div> <div> <span> Copyright © 2020-2025. All Rights Reserved.</span> </div> <div style="font-size: 0.88rem;"> <a target="_blank" rel="noopener" href="https://developer.hitokoto.cn/" id="hitokoto_text"><span style="color: #d7d8d9;"  id="hitokoto"></span></a> <script src="https://uipv4.zywvvd.com:33044/?encode=js&select=%23hitokoto" defer></script> </div> <a href="https://icp.gov.moe/?keyword=20230615" target="_blank">萌ICP备20230615号</a>
+
+
+</div> 
+    </div>
+  
+  
+  
+  
+</div>
+
+  </footer>
+
+  <!-- Scripts -->
+  
+  <script  src="https://lib.baomitu.com/nprogress/0.2.0/nprogress.min.js" ></script>
+  <link  rel="stylesheet" href="https://lib.baomitu.com/nprogress/0.2.0/nprogress.min.css" />
+
+  <script>
+    NProgress.configure({"showSpinner":false,"trickleSpeed":100})
+    NProgress.start()
+    window.addEventListener('load', function() {
+      NProgress.done();
+    })
+  </script>
+
+
+<script  src="https://lib.baomitu.com/jquery/3.6.0/jquery.min.js" ></script>
+<script  src="https://lib.baomitu.com/twitter-bootstrap/4.6.1/js/bootstrap.min.js" ></script>
+<script  src="/js/events.js" ></script>
+<script  src="/js/plugins.js" ></script>
+
+
+
+
+
+  
+    <script  src="/js/img-lazyload.js" ></script>
+  
+
+
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/tocbot/4.18.2/tocbot.min.js', function() {
+    var toc = jQuery('#toc');
+    if (toc.length === 0 || !window.tocbot) { return; }
+    var boardCtn = jQuery('#board-ctn');
+    var boardTop = boardCtn.offset().top;
+
+    window.tocbot.init(Object.assign({
+      tocSelector     : '#toc-body',
+      contentSelector : '.markdown-body',
+      linkClass       : 'tocbot-link',
+      activeLinkClass : 'tocbot-active-link',
+      listClass       : 'tocbot-list',
+      isCollapsedClass: 'tocbot-is-collapsed',
+      collapsibleClass: 'tocbot-is-collapsible',
+      scrollSmooth    : true,
+      includeTitleTags: true,
+      headingsOffset  : -boardTop,
+    }, CONFIG.toc));
+    if (toc.find('.toc-list-item').length > 0) {
+      toc.css('visibility', 'visible');
+    }
+
+    Fluid.events.registerRefreshCallback(function() {
+      if ('tocbot' in window) {
+        tocbot.refresh();
+        var toc = jQuery('#toc');
+        if (toc.length === 0 || !tocbot) {
+          return;
+        }
+        if (toc.find('.toc-list-item').length > 0) {
+          toc.css('visibility', 'visible');
+        }
+      }
+    });
+  });
+</script>
+
+
+  <script src=https://lib.baomitu.com/clipboard.js/2.0.10/clipboard.min.js></script>
+
+  <script>Fluid.plugins.codeWidget();</script>
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/anchor-js/4.3.1/anchor.min.js', function() {
+    window.anchors.options = {
+      placement: CONFIG.anchorjs.placement,
+      visible  : CONFIG.anchorjs.visible
+    };
+    if (CONFIG.anchorjs.icon) {
+      window.anchors.options.icon = CONFIG.anchorjs.icon;
+    }
+    var el = (CONFIG.anchorjs.element || 'h1,h2,h3,h4,h5,h6').split(',');
+    var res = [];
+    for (var item of el) {
+      res.push('.markdown-body > ' + item.trim());
+    }
+    if (CONFIG.anchorjs.placement === 'left') {
+      window.anchors.options.class = 'anchorjs-link-left';
+    }
+    window.anchors.add(res.join(', '));
+
+    Fluid.events.registerRefreshCallback(function() {
+      if ('anchors' in window) {
+        anchors.removeAll();
+        var el = (CONFIG.anchorjs.element || 'h1,h2,h3,h4,h5,h6').split(',');
+        var res = [];
+        for (var item of el) {
+          res.push('.markdown-body > ' + item.trim());
+        }
+        if (CONFIG.anchorjs.placement === 'left') {
+          anchors.options.class = 'anchorjs-link-left';
+        }
+        anchors.add(res.join(', '));
+      }
+    });
+  });
+</script>
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/fancybox/3.5.7/jquery.fancybox.min.js', function() {
+    Fluid.plugins.fancyBox();
+  });
+</script>
+
+
+  <script>Fluid.plugins.imageCaption();</script>
+
+  
+      <script>
+        if (!window.MathJax) {
+          window.MathJax = {
+            tex    : {
+              inlineMath: { '[+]': [['$', '$']] }
+            },
+            options: {
+              renderActions: {
+                insertedScript: [200, () => {
+                  document.querySelectorAll('mjx-container').forEach(node => {
+                    let target = node.parentNode;
+                    if (target.nodeName.toLowerCase() === 'li') {
+                      target.parentNode.classList.add('has-jax');
+                    }
+                  });
+                }, '', false]
+              }
+            }
+          };
+        } else {
+          MathJax.startup.document.state(0);
+          MathJax.texReset();
+          MathJax.typeset();
+          MathJax.typesetPromise();
+        }
+
+        Fluid.events.registerRefreshCallback(function() {
+          if ('MathJax' in window && MathJax.startup.document && typeof MathJax.startup.document.state === 'function') {
+            MathJax.startup.document.state(0);
+            MathJax.texReset();
+            MathJax.typeset();
+            MathJax.typesetPromise();
+          }
+        });
+      </script>
+    
+
+  <script  src="https://lib.baomitu.com/mathjax/3.2.1/es5/tex-mml-chtml.js" ></script>
+
+  <script defer src="/js/leancloud.js" ></script>
+
+  <script  src="/js/local-search.js" ></script>
+
+
+
+
+  
+<script src="//cdn.jsdelivr.net/npm/aplayer/dist/APlayer.min.js"></script>
+<script src="//cdn.jsdelivr.net/gh/metowolf/MetingJS@1.2/dist/Meting.min.js"></script>
+<script src="/js/reward.js"></script>
+
+
+
+<!-- 主题的启动项，将它保持在最底部 -->
+<!-- the boot of the theme, keep it at the bottom -->
+<script  src="/js/boot.js" ></script>
+
+
+  <script type="text/javascript">
+    /*窗口监视*/
+    var originalTitle = document.title;
+    window.onblur = function(){document.title = "明眸如初"};
+    window.onfocus = function(){document.title = originalTitle};
+  </script>
+
+
+  <div id="tooltip-rightmenu" class="tooltip-rightmenu">如需原始右键菜单请按下 <strong>Ctrl+右键</strong></div>
+
+<div id="rightmenu-wrapper" style="">
+  <ul class="list-v rightmenu" id="rightmenu-content">
+	  <li class="navigation menuNavigation-Content">
+		<a class="nav icon-only fix-cursor-default" onclick="history.back()"><i class="iconfont icon-zuojiantou1"></i></a>
+		<a class="nav icon-only fix-cursor-default" onclick="history.forward()"><i class="iconfont icon-youjiantou1"></i></a>
+		<a class="nav icon-only fix-cursor-default" onclick="window.location.reload()"><i class="iconfont icon-shuaxin"></i></a>
+		<a  aria-label="TOP" href="#" role="button"><i class="iconfont icon-xiangshang"></i></a>
+	  </li>
+
+		<hr class="menuLoad-Content" style="display: block;">
+	  <li class="menuLoad-Content" style="display: block;">
+		<a class="vlts-menu fix-cursor-default" target="_self" href="javascript:;" data-toggle="modal" data-target="#modalSearch" aria-label="Search">
+		  <span>
+			  <i class="iconfont icon-sousuo1 rightmenu-icon"></i>
+			  站内搜索
+		  </span>
+		</a>
+	  </li>
+
+	  <li class="menuLoad-Content" style="display: block;">
+		<a class="vlts-menu fix-cursor-default"  href="https://www.zywvvd.com/messagebd/" data-group="link">
+		  <span>
+			  <i class="iconfont icon-yangshi_icon_tongyong_chat rightmenu-icon">  </i>
+			   留言吐槽 
+		   </span>
+		</a>
+	  </li>
+
+
+	  <li class="menuLoad-Content" style="display: block;">
+		<a class="vlts-menu fix-cursor-default" id="help" target="_blank" rel="noopener" href="https://www.foreverblog.cn/go.html" data-group="link">
+		<span>
+			  <i class="iconfont icon-a-BlackHole rightmenu-icon"></i>
+			  虫洞穿梭
+		  </span>
+		</a>
+	  </li>
+
+	<a id="scroll-top-button" aria-label="TOP" href="#" role="button" style="bottom: 20px; right: 52.6364px;">
+        <i class="iconfont icon-xiangshangjiantou" aria-hidden="true"></i>
+      </a>
+
+	<hr class="menuLoad-Content" style="display: block;">
+	
+	  <li class="menuLoad-Content" style="display: block;">
+		<a class="vlts-menu fix-cursor-default" id="destroy-airplane" target="_blank" rel="noopener"  data-group="link">
+		<span>
+			  <i class="iconfont icon-feiji rightmenu-icon"></i>
+			  破坏小飞机
+		  </span>
+		</a>
+	  </li>
+  </ul>
+</div>
+
+<script>
+	var ua = navigator.userAgent;
+	var ipad = ua.match(/(iPad).*OS\s([\d_]+)/),
+		isIphone = !ipad && ua.match(/(iPhone\sOS)\s([\d_]+)/),
+		isAndroid = ua.match(/(Android)\s+([\d.]+)/),
+		isMobile = isIphone || isAndroid;
+
+	if(!isMobile) {
+		// 为按钮添加事件处理器
+		document.getElementById('destroy-airplane').onclick = function() {
+		  console.log('飞机起飞！');
+		  // 定义要执行的JavaScript代码
+		var KICKASSVERSION='2.0';
+		var s = document.createElement('script');
+		s.type='text/javascript';
+		document.body.appendChild(s);
+		s.src='https://uipv4.zywvvd.com:33030/HexoFiles/js/games/airplane/airplane.js';
+		void(0);
+		};
+	}
+</script>
+
+
+
+
+
+<link href="/css/custom.css"type="text/css"rel="stylesheet"/>
+<script src="/vvd_js/right_menu.js" type="text/javascript"></script>
+<link href="/css/right_menu.css"type="text/css"rel="stylesheet"/>
+<script src="/vvd_js/go.js"></script>
+
+
+  <noscript>
+    <div class="noscript-warning">博客在允许 JavaScript 运行的环境下浏览效果更佳</div>
+  </noscript>
+<script src="/live2dw/lib/L2Dwidget.min.js?094cbace49a39548bed64abff5988b05"></script><script>L2Dwidget.init({"pluginRootPath":"live2dw/","pluginJsPath":"lib/","pluginModelPath":"assets/","tagMode":false,"log":false,"model":{"jsonPath":"/live2dw/assets/z16.model.json"},"display":{"position":"left","width":200,"height":400},"mobile":{"show":false},"react":{"opacity":0.9}});</script></body>
+</html>
