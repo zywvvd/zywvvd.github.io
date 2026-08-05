@@ -1,0 +1,2197 @@
+
+
+<!DOCTYPE html>
+<html lang="zh-CN" data-default-color-scheme=auto>
+
+
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="baidu-site-verification" content="codeva-rLWafCJGYc" />
+  <link rel="apple-touch-icon" sizes="76x76" href="/image/avatar.png">
+  <link rel="icon" href="/image/avatar.png">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, shrink-to-fit=no">
+  <meta http-equiv="x-ua-compatible" content="ie=edge">
+  
+  <meta name="theme-color" content="#2f4154">
+  <meta name="author" content="Yiwei Zhang">
+  <meta name="keywords" content="人工智能, 深度学习, 个人博客, 机器学习">
+  
+    <meta name="description" content="本文梳理激光雷达(纯点云)与机械臂的手眼标定理论,覆盖**眼在手上(eye-in-hand,雷达随臂动)与眼在手外(eye-to-hand,雷达固定)**两种配置:从 $AX&#x3D;XB$ 方程的来源、经典求解器,到纯点云场景下用自然环境替代标定物的可行性、可观测性条件与采集运动设计。一个贯穿全文的判断:外参是雷达与机械臂的固定物理关系,与环境无关;环境只是测量工具——理解它,一类常见疑虑(如&amp;quo">
+<meta property="og:type" content="article">
+<meta property="og:title" content="激光雷达与机械臂手眼标定理论">
+<meta property="og:url" content="https://www.zywvvd.com/notes/3d/handeye-calibration/handeye-calibration/index.html">
+<meta property="og:site_name" content="又见苍岚">
+<meta property="og:description" content="本文梳理激光雷达(纯点云)与机械臂的手眼标定理论,覆盖**眼在手上(eye-in-hand,雷达随臂动)与眼在手外(eye-to-hand,雷达固定)**两种配置:从 $AX&#x3D;XB$ 方程的来源、经典求解器,到纯点云场景下用自然环境替代标定物的可行性、可观测性条件与采集运动设计。一个贯穿全文的判断:外参是雷达与机械臂的固定物理关系,与环境无关;环境只是测量工具——理解它,一类常见疑虑(如&amp;quo">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="https://uipv4.zywvvd.com:33030/HexoFiles/files/handeye-calibration/handeye_setup.png">
+<meta property="article:published_time" content="2026-07-31T01:30:00.000Z">
+<meta property="article:modified_time" content="2026-08-05T03:33:38.250Z">
+<meta property="article:author" content="Yiwei Zhang">
+<meta property="article:tag" content="Robotics">
+<meta property="article:tag" content="HandEye">
+<meta property="article:tag" content="Calibration">
+<meta property="article:tag" content="LiDAR">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:image" content="https://uipv4.zywvvd.com:33030/HexoFiles/files/handeye-calibration/handeye_setup.png">
+  
+  
+  
+  <title>激光雷达与机械臂手眼标定理论 - 又见苍岚</title>
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/twitter-bootstrap/4.6.1/css/bootstrap.min.css" />
+
+
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/github-markdown-css/4.0.0/github-markdown.min.css" />
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/hint.css/2.7.0/hint.min.css" />
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/fancybox/3.5.7/jquery.fancybox.min.css" />
+
+
+
+<!-- 主题依赖的图标库，不要自行修改 -->
+<!-- Do not modify the link that theme dependent icons -->
+
+<link rel="stylesheet" href="//at.alicdn.com/t/font_1749284_hj8rtnfg7um.css">
+
+
+
+<link rel="stylesheet" href="//at.alicdn.com/t/font_1736178_lbnruvf0jn.css">
+
+
+<link  rel="stylesheet" href="/css/main.css" />
+
+
+  <link id="highlight-css" rel="stylesheet" href="/css/highlight.css" />
+  
+    <link id="highlight-css-dark" rel="stylesheet" href="/css/highlight-dark.css" />
+  
+
+
+
+  
+<link rel="stylesheet" href="/css/custom.css">
+<link rel="stylesheet" href="/css/reward.css">
+<link rel="stylesheet" href="//cdn.jsdelivr.net/npm/aplayer/dist/APlayer.min.css">
+
+
+
+  <script id="fluid-configs">
+    var Fluid = window.Fluid || {};
+    Fluid.ctx = Object.assign({}, Fluid.ctx)
+    var CONFIG = {"hostname":"www.zywvvd.com","root":"/","version":"1.9.7","typing":{"enable":true,"typeSpeed":90,"cursorChar":"_","loop":false,"scope":["home"]},"anchorjs":{"enable":true,"element":"h1,h2,h3,h4,h5,h6","placement":"left","visible":"hover","icon":""},"progressbar":{"enable":true,"height_px":3,"color":"#29d","options":{"showSpinner":false,"trickleSpeed":100}},"code_language":{"enable":true,"default":"TEXT"},"copy_btn":true,"image_caption":{"enable":true},"image_zoom":{"enable":true,"img_url_replace":["",""]},"toc":{"enable":true,"placement":"right","headingSelector":"h1,h2,h3,h4,h5,h6","collapseDepth":0},"lazyload":{"enable":true,"loading_img":"/img/loading.gif","onlypost":false,"offset_factor":2},"web_analytics":{"enable":true,"follow_dnt":true,"baidu":null,"google":null,"tencent":{"sid":null,"cid":null},"woyaola":null,"cnzz":null,"leancloud":{"app_id":"Cv0XNeBSBdAPAIuVj3PsyM3R-MdYXbMMI","app_key":"4PU1rNlGrqXWzhfW3dgq98oX","server_url":null,"path":"window.location.pathname","ignore_local":false},"gtag":null},"search_path":"/local-search.xml","include_content_in_search":true};
+
+    if (CONFIG.web_analytics.follow_dnt) {
+      var dntVal = navigator.doNotTrack || window.doNotTrack || navigator.msDoNotTrack;
+      Fluid.ctx.dnt = dntVal && (dntVal.startsWith('1') || dntVal.startsWith('yes') || dntVal.startsWith('on'));
+    }
+  </script>
+  <script  src="/js/utils.js" ></script>
+  <script  src="/js/color-schema.js" ></script>
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+    
+  
+
+
+
+  
+<meta name="generator" content="Hexo 7.2.0"><link rel="alternate" href="/atom.xml" title="又见苍岚" type="application/atom+xml">
+</head>
+
+<script>
+// 页面加载完成后隐藏加载动画
+document.addEventListener("readystatechange", function() {
+    const loader = document.getElementById('Loadanimation');
+    if (loader) {
+        // 停留1秒后开始淡出
+        setTimeout(function() {
+            loader.style.transition = 'opacity 1.2s';
+            loader.style.opacity = '0';
+            // 淡出完成后隐藏
+            setTimeout(() => {
+                loader.style.display = 'none';
+            }, 1000); // 等待淡出动画完成
+        }, 700); // 停留0.8秒
+    }
+});
+</script>
+
+
+
+<body>
+  
+<div id="Loadanimation" style="z-index:999999;">
+<div id="Loadanimation-center">
+   <div id="Loadanimation-center-absolute">
+       <div class="xccx_object" id="xccx_four"></div>
+       <div class="xccx_object" id="xccx_three"></div>
+       <div class="xccx_object" id="xccx_two"></div>
+       <div class="xccx_object" id="xccx_one"></div>
+   </div>
+</div>
+</div>
+
+<link href="/css/loading.css"type="text/css"rel="stylesheet"/>
+
+
+
+
+
+
+<div>
+	<div class='real_mask' style="
+		background-color: rgba(0,0,0,0.4);
+		width: 100%;
+		height: 100%;
+		position: fixed;
+		z-index: -777;
+	"></div>
+	<div id="banner_video_insert">
+	</div>	
+	<div id='vvd_banner_img'>
+	</div>
+</div>
+<div id="banner"></div>
+
+
+
+
+
+
+
+  <header>
+    
+
+<div class="header-inner" style="height: 80vh;">
+  <nav id="navbar" class="navbar fixed-top  navbar-expand-lg navbar-dark scrolling-navbar">
+  <div class="container">
+    <a class="navbar-brand" href="/">
+      <strong>CangLan</strong>
+    </a>
+
+    <button id="navbar-toggler-btn" class="navbar-toggler" type="button" data-toggle="collapse"
+            data-target="#navbarSupportedContent"
+            aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
+      <div class="animated-icon"><span></span><span></span><span></span></div>
+    </button>
+
+    <!-- Collapsible content -->
+    <div class="collapse navbar-collapse" id="navbarSupportedContent">
+      <ul class="navbar-nav ml-auto text-center">
+        
+          
+          
+          
+          
+            <li class="nav-item">
+		<div >
+		      <a class="nav-link" href="/" target="_self" data-umami-event="Navigation-Homepage">
+
+		        <i class="iconfont icon-home-fill"></i>
+		        <span>首页</span>
+		      </a>
+		</div>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item dropdown">
+              <a class="nav-link dropdown-toggle" target="_self" href="javascript:;" role="button"
+                 data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                <i class="iconfont icon-shuji1"></i>
+                <span>文章</span>
+              </a>
+              <div class="dropdown-menu" aria-labelledby="navbarDropdown">
+                
+                  
+                  
+                  
+		<div >
+
+                  <a class="dropdown-item" href="/archives/" target="_self" data-umami-event="Navigation-Archive">
+
+                    <i class="iconfont icon-archive-fill"></i>
+                    <span>归档</span>
+                  </a>
+		</div>
+                
+                  
+                  
+                  
+		<div >
+
+                  <a class="dropdown-item" href="/categories/" target="_self" data-umami-event="Navigation-Category">
+
+                    <i class="iconfont icon-category-fill"></i>
+                    <span>分类</span>
+                  </a>
+		</div>
+                
+                  
+                  
+                  
+		<div >
+
+                  <a class="dropdown-item" href="/tags/" target="_self" data-umami-event="Navigation-Tag">
+
+                    <i class="iconfont icon-tags-fill"></i>
+                    <span>标签</span>
+                  </a>
+		</div>
+                
+                  
+                  
+                  
+		<div >
+
+                  <a class="dropdown-item" href="/shuoshuo/" target="_self" data-umami-event="Navigation-Shuoshuo">
+
+                    <i class="iconfont icon-24gf-bubblesDots4"></i>
+                    <span>说说</span>
+                  </a>
+		</div>
+                
+              </div>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item dropdown">
+              <a class="nav-link dropdown-toggle" target="_self" href="javascript:;" role="button"
+                 data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                <i class="iconfont icon-momo"></i>
+                <span>社交</span>
+              </a>
+              <div class="dropdown-menu" aria-labelledby="navbarDropdown">
+                
+                  
+                  
+                  
+		<div >
+
+                  <a class="dropdown-item" href="/links/" target="_self" data-umami-event="Navigation-Friends">
+
+                    <i class="iconfont icon-link-fill"></i>
+                    <span>友链</span>
+                  </a>
+		</div>
+                
+                  
+                  
+                  
+		<div >
+
+                  <a class="dropdown-item" href="/messagebd/" target="_self" data-umami-event="Navigation-MessageBoard">
+
+                    <i class="iconfont icon-comment"></i>
+                    <span>留言板</span>
+                  </a>
+		</div>
+                
+                  
+                  
+                  
+		<div >
+
+                  <a class="dropdown-item" href="/atom.xml" target="_self" data-umami-event="Navigation-RSS">
+
+                    <i class="iconfont icon-dingyue"></i>
+                    <span>RSS订阅</span>
+                  </a>
+		</div>
+                
+                  
+                  
+                  
+		<div >
+
+                  <a class="dropdown-item" href="/reccomments/" target="_self" data-umami-event="Navigation-Recent-Comments">
+
+                    <i class="iconfont icon-icon-pinglunguanli-pinglunliebiao"></i>
+                    <span>近期评论</span>
+                  </a>
+		</div>
+                
+              </div>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item dropdown">
+              <a class="nav-link dropdown-toggle" target="_self" href="javascript:;" role="button"
+                 data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                <i class="iconfont icon-user-fill"></i>
+                <span>个人</span>
+              </a>
+              <div class="dropdown-menu" aria-labelledby="navbarDropdown">
+                
+                  
+                  
+                  
+		<div >
+
+                  <a class="dropdown-item" href="/about/" target="_self" data-umami-event="Navigation-AboutMe">
+
+                    <i class="iconfont icon-guanyuwomen"></i>
+                    <span>关于</span>
+                  </a>
+		</div>
+                
+                  
+                  
+                  
+		<div >
+
+                  <a class="dropdown-item" href="/playlist/" target="_self" data-umami-event="Navigation-Music">
+
+                    <i class="iconfont icon-music"></i>
+                    <span>歌单</span>
+                  </a>
+		</div>
+                
+                  
+                  
+                  
+		<div >
+
+                  <a class="dropdown-item" href="https://uipv4.zywvvd.com:33035" target="_self" data-umami-event="Navigation-Nextcloud">
+
+                    <i class="iconfont icon-xuniyingpan"></i>
+                    <span>网盘</span>
+                  </a>
+		</div>
+                
+                  
+                  
+                  
+		<div >
+
+                  <a class="dropdown-item" href="https://uipv4.zywvvd.com:33036" target="_self" data-umami-event="Navigation-OneDev">
+
+                    <i class="iconfont icon-git"></i>
+                    <span>仓库</span>
+                  </a>
+		</div>
+                
+                  
+                  
+                  
+		<div >
+
+                  <a class="dropdown-item" href="https://uipv4.zywvvd.com:33041" target="_self" data-umami-event="Navigation-Wiki">
+
+                    <i class="iconfont icon-wiki"></i>
+                    <span>百科</span>
+                  </a>
+		</div>
+                
+              </div>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item dropdown">
+              <a class="nav-link dropdown-toggle" target="_self" href="javascript:;" role="button"
+                 data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                <i class="iconfont icon-ic_fly"></i>
+                <span>导航</span>
+              </a>
+              <div class="dropdown-menu" aria-labelledby="navbarDropdown">
+                
+                  
+                  
+                  
+		<div >
+
+                  <a class="dropdown-item" href="/site-map/" target="_self" data-umami-event="Navigation-SiteMap">
+
+                    <i class="iconfont icon-lianjie"></i>
+                    <span>链接</span>
+                  </a>
+		</div>
+                
+                  
+                  
+                  
+		<div >
+
+                  <a class="dropdown-item" href="/nodeppt/hexo/snavigation/" target="_self" data-umami-event="Navigation-Search">
+
+                    <i class="iconfont icon-sousuo"></i>
+                    <span>搜索</span>
+                  </a>
+		</div>
+                
+              </div>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item dropdown">
+              <a class="nav-link dropdown-toggle" target="_self" href="javascript:;" role="button"
+                 data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                <i class="iconfont icon-wangzhan"></i>
+                <span>站点</span>
+              </a>
+              <div class="dropdown-menu" aria-labelledby="navbarDropdown">
+                
+                  
+                  
+                  
+		<div >
+
+                  <a class="dropdown-item" href="https://uipv4.zywvvd.com:33039/share/0zx3o21oIpZTZqwC/%E5%8F%88%E8%A7%81%E8%8B%8D%E5%B2%9A" target="_self" data-umami-event="Navigation-Umami">
+
+                    <i class="iconfont icon-tongji2"></i>
+                    <span>站点分析</span>
+                  </a>
+		</div>
+                
+                  
+                  
+                  
+		<div >
+
+                  <a class="dropdown-item" href="/earth_sta/" target="_self" data-umami-event="Navigation-Globe">
+
+                    <i class="iconfont icon-tongjifenxi-xiangmubiaogetongji"></i>
+                    <span>访问统计</span>
+                  </a>
+		</div>
+                
+                  
+                  
+                  
+		<div >
+
+                  <a class="dropdown-item" href="https://uipv4.zywvvd.com:33034/status/show" target="_self" data-umami-event="Navigation-Monitor">
+
+                    <i class="iconfont icon-jiankong"></i>
+                    <span>站点监控</span>
+                  </a>
+		</div>
+                
+              </div>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item dropdown">
+              <a class="nav-link dropdown-toggle" target="_self" href="javascript:;" role="button"
+                 data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                <i class="iconfont icon-chuansong"></i>
+                <span>传送</span>
+              </a>
+              <div class="dropdown-menu" aria-labelledby="navbarDropdown">
+                
+                  
+                  
+                  
+		<div >
+
+                  <a class="dropdown-item" href="https://www.foreverblog.cn/go.html" target="_self" data-umami-event="Navigation-ForeverBolg">
+
+                    <i class="iconfont icon-a-BlackHole"></i>
+                    <span>十年之约</span>
+                  </a>
+		</div>
+                
+                  
+                  
+                  
+		<div >
+
+                  <a class="dropdown-item" href="https://www.travellings.cn/go.html" target="_self" data-umami-event="Navigation-DriveTo">
+
+                    <i class="iconfont icon-train1"></i>
+                    <span>开往</span>
+                  </a>
+		</div>
+                
+                  
+                  
+                  
+		<div >
+
+                  <a class="dropdown-item" href="https://bf.zzxworld.com/" target="_self" data-umami-event="Navigation-BlogFinder">
+
+                    <i class="iconfont icon-icon-"></i>
+                    <span>BlogFinder</span>
+                  </a>
+		</div>
+                
+                  
+                  
+                  
+		<div >
+
+                  <a class="dropdown-item" href="https://www.perass.com/" target="_self" data-umami-event="Navigation-Bloghome">
+
+                    <i class="iconfont icon-home-fill"></i>
+                    <span>博客之家</span>
+                  </a>
+		</div>
+                
+              </div>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item dropdown">
+              <a class="nav-link dropdown-toggle" target="_self" href="javascript:;" role="button"
+                 data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                <i class="iconfont icon-gongju"></i>
+                <span>工具</span>
+              </a>
+              <div class="dropdown-menu" aria-labelledby="navbarDropdown">
+                
+                  
+                  
+                  
+		<div >
+
+                  <a class="dropdown-item" href="/navigates/calculator" target="_self" data-umami-event="Navigation-Calculator">
+
+                    <i class="iconfont icon-jisuan"></i>
+                    <span>计算器</span>
+                  </a>
+		</div>
+                
+                  
+                  
+                  
+		<div >
+
+                  <a class="dropdown-item" href="/navigates/webgraphviz" target="_self" data-umami-event="Navigation-WebGtaphviz">
+
+                    <i class="iconfont icon-tongyong-huatugongju2"></i>
+                    <span>Graphviz</span>
+                  </a>
+		</div>
+                
+                  
+                  
+                  
+		<div >
+
+                  <a class="dropdown-item" href="/navigates/formular_reco" target="_self" data-umami-event="Navigation-Formular-Reco">
+
+                    <i class="iconfont icon-a-checkformula"></i>
+                    <span>公式识别</span>
+                  </a>
+		</div>
+                
+              </div>
+            </li>
+          
+        
+        
+          <li class="nav-item" id="search-btn">
+            <a class="nav-link" target="_self" href="javascript:;" data-toggle="modal" data-target="#modalSearch" aria-label="Search">
+              <i class="iconfont icon-search"></i>
+            </a>
+          </li>
+          
+        
+        
+          <li class="nav-item" id="color-toggle-btn">
+            <a class="nav-link" target="_self" href="javascript:;" aria-label="Color Toggle">
+              <i class="iconfont icon-dark" id="color-toggle-icon"></i>
+            </a>
+          </li>
+        
+      </ul>
+    </div>
+  </div>
+</nav>
+
+  
+
+<div id="banner" class="banner" parallax=true
+     style="background: url('https://uipv4.zywvvd.com:33030/HexoFiles/new/bg-trans.png') no-repeat center center; background-size: cover;">
+  <div class="full-bg-img">
+    <div class="mask flex-center" style="background-color: rgba(0, 0, 0, 0)">
+      <div class="banner-text text-center fade-in-up">
+        <div class="h2">
+          
+            <span id="subtitle">激光雷达与机械臂手眼标定理论</span>
+          
+        </div>
+
+        
+          
+  <div class="mt-3">
+    
+      <span class="post-meta mr-2">
+        <i class="iconfont icon-author" aria-hidden="true"></i>
+        Yiwei Zhang
+      </span>
+    
+    
+      <span class="post-meta">
+        <i class="iconfont icon-date-fill" aria-hidden="true"></i>
+        <time datetime="2026-07-31 09:30" pubdate>
+          2026年7月31日 上午
+        </time>
+      </span>
+    
+  </div>
+
+  <div class="mt-1">
+    
+      <span class="post-meta mr-2">
+        <i class="iconfont icon-chart"></i>
+        
+          <!-- compatible with older versions-->
+          14k 字
+        
+      </span>
+    
+
+    
+      <span class="post-meta mr-2">
+        <i class="iconfont icon-clock-fill"></i>
+        
+        
+        
+          <!-- compatible with older versions-->
+          121 分钟
+        
+      </span>
+    
+
+    
+    
+      
+        <span id="vvdpost_container_page_pvuv" style="display: none">
+          <i class="iconfont icon-eye" aria-hidden="true"></i>
+          <span id="vvdpost_value_page_pv">0</span> 次&nbsp&nbsp
+		  <i class="iconfont icon-users" aria-hidden="true"></i>
+		  <span id="vvdpost_value_page_uv">0</span> 人&nbsp&nbsp
+		  <i class="iconfont icon-comment" aria-hidden="true"></i>
+		  <span id="vvdpost_value_page_cn">0</span> 条
+        </span>
+
+    <script>
+    document.addEventListener("DOMContentLoaded", function() {
+	      console.log("PVUV_" + window.location.pathname);
+
+	      // 使用 fetch API 发送 POST 请求
+	      fetch('https://uipv4.zywvvd.com:33037/poststats', { 
+		  method: 'POST',
+		  headers: {
+		      'Content-Type': 'application/json'
+		  },
+		  body: JSON.stringify(window.location.pathname) // 将路径名作为对象发送，以便在服务器端更容易处理
+	      })
+	      .then(response => {
+		  // 检查响应状态
+		  if (!response.ok) {
+		      throw new Error('Network response was not ok ' + response.statusText);
+		  }
+		  return response.json(); // 解析 JSON 响应
+	      })
+	      .then(data => {
+		  // 处理解析后的数据
+		  console.log(data.pv);
+		  var pvCtn = document.querySelector('#vvdpost_container_page_pvuv');
+		  if (pvCtn) {
+		      var pvEle = document.querySelector('#vvdpost_value_page_pv');
+		      var uvEle = document.querySelector('#vvdpost_value_page_uv');
+		      var cnEle = document.querySelector('#vvdpost_value_page_cn');
+		      if (pvEle && uvEle) {
+		          pvEle.innerText = data.pv;
+		          uvEle.innerText = data.uv;
+		          cnEle.innerText = data.cn;
+		          pvCtn.style.display = 'inline';
+		      }
+		  }
+	      })
+	      .catch(error => {
+		  // 处理请求错误
+		  console.error('There has been a problem with your fetch operation:', error);
+	      });
+      });
+  </script>
+      
+    
+  </div>
+
+
+        
+      </div>
+
+      
+        <div class="scroll-down-bar">
+          <i class="iconfont icon-arrowdown"></i>
+        </div>
+      
+    </div>
+  </div>
+</div>
+
+</div>
+
+
+	<script type="text/javascript" src="/vvd_js/jquery.js"></script>
+	<script async src="https://uipv4.zywvvd.com:33039/script.js" data-website-id="dd4a05c6-dde2-4743-9c3a-a79d6bee0778"></script>
+	<div class="banner" id='banner' >
+
+		<div class="full-bg-img" >
+
+			
+				<script>
+					var ua = navigator.userAgent;
+					var ipad = ua.match(/(iPad).*OS\s([\d_]+)/),
+						isIphone = !ipad && ua.match(/(iPhone\sOS)\s([\d_]+)/),
+						isAndroid = ua.match(/(Android)\s+([\d.]+)/),
+						isMobile = isIphone || isAndroid;
+
+					function set_video_attr(id){
+						var height = document.body.clientHeight
+						var width = document.body.clientWidth
+						var video_item = document.getElementById(id);
+
+						if (height / width < 0.56){
+							video_item.setAttribute('width', '100%');
+							video_item.setAttribute('height', 'auto');
+						} else {
+							video_item.setAttribute('height', '100%');
+							video_item.setAttribute('width', 'auto');
+						}
+					}
+
+					fetch('https://uipv4.zywvvd.com:33037/wallpaper-pair')
+					  .then(response => response.json()) // 解析JSON数据
+					  .then(data => {
+						console.log('获取链接成功');
+						video_url = data[0][0]
+						pre_show_image_url = data[0][1]
+
+						banner_obj = document.getElementById("banner")
+						banner_obj.style.cssText = "background: url('" + pre_show_image_url + "') no-repeat;"
+
+						vvd_banner_obj = document.getElementById("vvd_banner_img")
+						vvd_banner_content = "<img id='banner_img_item' src='" + pre_show_image_url + "'style='position: fixed; z-index: -999'>"
+						vvd_banner_obj.innerHTML = vvd_banner_content 
+
+						if (!isMobile) {
+							video_html_res = "<video id='video_item' style='position: fixed; z-index: -888;'  muted='muted' src=" + video_url + " autoplay='autoplay' loop='loop'></video>"
+							document.getElementById("banner_video_insert").innerHTML = video_html_res;
+							set_video_attr('video_item')
+							set_video_attr('banner_img_item')
+						}
+					    
+					  })
+					  .catch((error) => {
+					    console.error('请求失败,尝试本地获取背景图像：', error);
+	    					$.getJSON('/vvd_js/video_url.json', function(data){
+
+							var video_list_length = data.length
+							var seed = Math.random()
+							index = Math.floor(seed * video_list_length)
+
+							video_url = data[index][0]
+							pre_show_image_url = data[index][1]
+
+							banner_obj = document.getElementById("banner")
+							banner_obj.style.cssText = "background: url('" + pre_show_image_url + "') no-repeat;"
+
+							vvd_banner_obj = document.getElementById("vvd_banner_img")
+							vvd_banner_content = "<img id='banner_img_item' src='" + pre_show_image_url + "'style='position: fixed; z-index: -999'>"
+							vvd_banner_obj.innerHTML = vvd_banner_content 
+
+							if (!isMobile) {
+								video_html_res = "<video id='video_item' style='position: fixed; z-index: -888;'  muted='muted' src=" + video_url + " autoplay='autoplay' loop='loop'></video>"
+								document.getElementById("banner_video_insert").innerHTML = video_html_res;
+								set_video_attr('video_item')
+								set_video_attr('banner_img_item')
+							}
+						});
+					  });
+
+
+
+
+
+
+					if (!isMobile){
+						window.onresize = function(){
+							set_video_attr('video_item')
+							set_video_attr('banner_img_item')
+							}
+						}
+				</script>
+
+			
+
+
+			
+			</div>
+		</div>
+    </div>
+
+  </header>
+
+  <main>
+    
+      
+
+
+
+<div class="container-fluid nopadding-x">
+  <div class="row nomargin-x">
+    <div class="side-col d-none d-lg-block col-lg-2">
+      
+
+    </div>
+
+    <div class="col-lg-8 nopadding-x-md">
+      <div class="container nopadding-x-md" id="board-ctn">
+        <div id="board">
+          <article class="post-content mx-auto">
+
+            <!-- <h1 id="seo-header">激光雷达与机械臂手眼标定理论</h1> -->
+
+            
+              <p id="updated-time" class="note note-info" style="">
+                
+                  
+                    <!-- compatible with older versions-->
+                    本文最后更新于：2026年8月5日 中午
+                  
+                
+              </p>
+            
+            
+              <div class="markdown-body">
+                
+                <blockquote>
+<p>本文梳理激光雷达(纯点云)与机械臂的手眼标定理论,覆盖**眼在手上(eye-in-hand,雷达随臂动)<strong>与</strong>眼在手外(eye-to-hand,雷达固定)**两种配置:从 $AX=XB$ 方程的来源、经典求解器,到纯点云场景下用自然环境替代标定物的可行性、可观测性条件与采集运动设计。一个贯穿全文的判断:<strong>外参是雷达与机械臂的固定物理关系,与环境无关;环境只是测量工具</strong>——理解它,一类常见疑虑(如&quot;换个房间会不会得到不同外参&quot;)就有了答案。</p>
+<p>本文属 Robotics 笔记系列;齐次变换与机械臂基础另见《<a href="/notes/3d/homogeneous-transform/homogeneous-transform/">齐次变换矩阵与 SE(3)</a>》《<a href="/notes/3d/robot-arm-fundamentals/robot-arm-fundamentals/">机械臂技术基础</a>》,本文涉及处不再展开。结论来自文末公开文献与几何推导。</p>
+</blockquote>
+<span id="more"></span>
+<p><strong>本文脉络</strong>:§1 立问题、符号与两类配置 → §2 推出方程(eye-in-hand 的 $AX=XB$;eye-to-hand 消元后归为同形)→ §3 经典闭式求解器;§4 指出纯点云场景下 $B$ 只能靠点云配准(eye-in-hand)或逐帧标定物拟合(eye-to-hand)间接获得 → §5 回答核心问题:eye-in-hand 能否弃用标定物、仅靠环境(严格等价于 $AX=XB$)→ §6 哪些运动能解出 $X$、精度从哪来(含单面墙平面退化)→ §7 配准的精度边界 → §8 工程实操;§9 总结。</p>
+<h3 id="1-问题设定与符号约定">1. 问题设定与符号约定</h3>
+<h4 id="1-1-两类配置与坐标系">1.1 两类配置与坐标系</h4>
+<p>激光雷达与机械臂的手眼标定有两类配置,外参 $X$ 的定义随之不同:</p>
+<ul>
+<li><strong>眼在手上(eye-in-hand)</strong>:雷达刚性固连在机械臂末端、随臂运动,外参 $X={}^{E}T_L$ 是雷达系在末端系下的位姿,固定不变、待标定;</li>
+<li><strong>眼在手外(eye-to-hand)</strong>:雷达固定在外部(三脚架、天花板),不随臂动,待标定的是雷达在基座系下的位姿 $X={}^{W}T_L$。</li>
+</ul>
+<p>两种配置下机械臂底座都固定安装,世界系 $W$ 与基座系重合(见《机械臂技术基础》第 2 节)。eye-in-hand 涉及三个坐标系:世界系 $W$(固定)、末端系 $E_i$(随位姿变化,可取法兰 tool0 或已标定的 TCP,见《机械臂技术基础》第 11、12 节)、雷达系 $L_i$(随末端一起运动);eye-to-hand 中雷达系 $L$ 固定不动,随时间变化的是被观测物(末端上的标定物)在雷达系里的位姿。</p>
+<p><img src="https://uipv4.zywvvd.com:33030/HexoFiles/files/handeye-calibration/handeye_setup.png" srcset="/img/loading.gif" lazyload alt="eye-in-hand 配置:世界系 W、末端系 E、雷达系 L,雷达刚性固连末端,外参 X 固定不变"></p>
+<p><img src="https://uipv4.zywvvd.com:33030/HexoFiles/files/handeye-calibration/handeye_setup_e2h.png" srcset="/img/loading.gif" lazyload alt="eye-to-hand 配置:雷达固定在外部(三脚架),观测末端上的标定物,外参 X 为雷达在基座系的位姿"></p>
+<p>本文以 eye-in-hand 为主线展开(其点云配准与&quot;用环境替代标定物&quot;的故事更丰富,§4–§7),eye-to-hand 的方程与差异在 §2.3 给出,并在相关处标注两种配置的不同。</p>
+<h4 id="1-2-记号约定">1.2 记号约定</h4>
+<p>全文用 4×4 齐次变换描述刚体位姿,记 ${}^{A}T_B$ 为 $B$ 系在 $A$ 系下的位姿。齐次变换同时承载坐标变换、位姿描述、相对运动三层含义,以及复合、求逆的链式规则——完整论述见《<a href="/notes/3d/homogeneous-transform/homogeneous-transform/">齐次变换矩阵与 SE(3)</a>》,这里只列后文反复用到的两条:</p>
+<ul>
+<li><strong>逆</strong>:$({}^{A}T_B)^{-1}={}^{B}T_A$(对调观察者);</li>
+<li><strong>复合(右乘链)</strong>:${}^{A}T_C={}^{A}T_B\cdot{}^{B}T_C$,要求中间系匹配(前项尾 = 后项头),故 ${}^{A}T_B$ 只能右乘到&quot;以 $A$ 结尾&quot;的位姿链上、把它延续到 $B$。</li>
+</ul>
+<p>一条定义性质贯穿推导(尤其 §5.1):<strong>${}^{A}T_B$ 既描述 $B$ 在 $A$ 下的位姿,也实现把点从 $B$ 系坐标换算到 $A$ 系——两者由同一组 $(\mathbf{R},\mathbf{t})$ 决定</strong>。记号上,本文把变换的平移列记作 $\mathbf{t}$、把点的坐标记作 $\mathbf{p}$ 以示区分(姊妹文统一记作 $\mathbf{p}$,同一量、记法偏好不同)。任意变换 $T$ 由旋转 $R$ 与平移 $\mathbf{t}$ 组成,记 $T=(R,\mathbf{t})$;后文 $R_X,\mathbf{t}_X$、$R_A,\mathbf{t}_A$ 等带下标者,指对应变换的旋转、平移部分;也写作 $R(T),\mathbf{t}(T)$。</p>
+<h4 id="1-3-符号表">1.3 符号表</h4>
+<p>为避免符号随用随定义造成的混乱,全文符号集中如下:</p>
+<table>
+<thead>
+<tr>
+<th>符号</th>
+<th>含义</th>
+<th>性质</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>$W$</td>
+<td>世界系(= 基座系)</td>
+<td>固定</td>
+</tr>
+<tr>
+<td>$E_i$</td>
+<td>第 $i$ 时刻末端系</td>
+<td>法兰或 TCP</td>
+</tr>
+<tr>
+<td>$L_i$</td>
+<td>第 $i$ 时刻雷达系</td>
+<td>随末端运动</td>
+</tr>
+<tr>
+<td>$G_i={}^{W}T_{E_i}$</td>
+<td>末端在世界的位姿</td>
+<td>正运动学给出,已知</td>
+</tr>
+<tr>
+<td>$X={}^{E}T_L$</td>
+<td>外参:雷达系在末端系的位姿($={}^{E_i}T_{L_i}$,对所有 $i$ 相同)</td>
+<td>固定,<strong>待求</strong></td>
+</tr>
+<tr>
+<td>$P_i$</td>
+<td>第 $i$ 帧点云(各点坐标在 $L_i$ 系下)</td>
+<td>雷达测量</td>
+</tr>
+<tr>
+<td>$A_i={}^{E_{i+1}}T_{E_i}=G_{i+1}^{-1}G_i$</td>
+<td>末端相对运动</td>
+<td>由 $G_i$ 算出,已知</td>
+</tr>
+<tr>
+<td>$B_i={}^{L_{i+1}}T_{L_i}$</td>
+<td>雷达相对运动</td>
+<td>由点云配准测出,观测</td>
+</tr>
+<tr>
+<td>${}^{W}T_{L_i}=G_iX$</td>
+<td>雷达在世界的位姿</td>
+<td>复合中间量</td>
+</tr>
+<tr>
+<td>$C_i={}^{L_i}T_{\text{obj}}$</td>
+<td>标定物在传感器系下的位姿</td>
+<td>由观测得到(§2.1)</td>
+</tr>
+</tbody>
+</table>
+<p><strong>方向约定(重要)</strong>:$A_i$ 与 $B_i$ 都取<strong>新看旧</strong>方向(下标大的系看下标小的系),二者同向配对。这一约定是第 5 节 $AX=XB$ 对称性的来源——若把其中一个取逆,方程形式会随之改变。</p>
+<blockquote>
+<p>上表为 eye-in-hand 的符号;eye-to-hand 下外参改为 $X={}^{W}T_L$(雷达固定),并引入标定物位姿 $Z={}^{E}T_{\text{obj}}$,推导见 §2.3。</p>
+<p>手眼标定的目标:从若干组 $(G_i,P_i)$ 估计外参 $X$。</p>
+</blockquote>
+<h3 id="2-经典手眼标定-AX-XB-的来源">2. 经典手眼标定:AX=XB 的来源</h3>
+<h4 id="2-1-标定物场景的推导">2.1 标定物场景的推导</h4>
+<p>下面是 <strong>eye-in-hand</strong> 场景的经典推导:传感器随末端运动、标定物固定在世界系中(传统相机标定用棋盘格,雷达可用三维标定靶)。设第 $i$ 个时刻:</p>
+<ul>
+<li>末端位姿 $G_i = {}^{W}T_{E_i}$(由正运动学已知);</li>
+<li>相机/雷达看到标定物,得到标定物在传感器系下的位姿 $C_i = {}^{L_i}T_{\text{obj}}$;</li>
+<li>外参 $X = {}^{E}T_L$ 固定。</li>
+</ul>
+<p>标定物在世界系中固定,故其世界位姿 ${}^{W}T_{\text{obj}}$ 不随时间变。从两个方向都能表达它:</p>
+$${}^{W}T_{\text{obj}} = {}^{W}T_{E_i}\,{}^{E_i}T_{L_i}\,{}^{L_i}T_{\text{obj}} = G_i\, X\, C_i$$
+<p>由于 ${}^{W}T_{\text{obj}}$ 对所有 $i$ 相同,相邻两帧有:</p>
+$$G_i\, X\, C_i = G_{i+1}\, X\, C_{i+1}$$
+<p>两边左乘 $G_{i+1}^{-1}$、右乘 $C_i^{-1}$,等号两端的 $G_{i+1}$、$C_i$ 消去:</p>
+$$\underbrace{G_{i+1}^{-1}G_i}_{A_i}\, X = X\, \underbrace{C_{i+1}C_i^{-1}}_{B_i}$$
+<p>把这两项相对运动显式展开(套用 §1.2 的逆规则 $({}^{A}T_B)^{-1}={}^{B}T_A$ 与右乘链,中间系需匹配):</p>
+$$A_i = G_{i+1}^{-1}G_i = ({}^{W}T_{E_{i+1}})^{-1}\,{}^{W}T_{E_i} = {}^{E_{i+1}}T_W\,{}^{W}T_{E_i} = {}^{E_{i+1}}T_{E_i}$$
+<p>即末端从 $E_i$ 到 $E_{i+1}$ 的相对运动(新系 $E_{i+1}$ 回看旧系 $E_i$,由正运动学已知)。同理:</p>
+$$B_i = C_{i+1}C_i^{-1} = {}^{L_{i+1}}T_{\text{obj}}\,({}^{L_i}T_{\text{obj}})^{-1} = {}^{L_{i+1}}T_{\text{obj}}\,{}^{\text{obj}}T_{L_i} = {}^{L_{i+1}}T_{L_i}$$
+<p>即传感器从 $L_i$ 到 $L_{i+1}$ 的相对运动(新系 $L_{i+1}$ 回看旧系 $L_i$,由观测标定物得到)。两者同取“新看旧”方向、同向配对——这正是 $AX=XB$ 形式对称的来源。记作:</p>
+$$\boxed{A_i\, X = X\, B_i}$$
+<p>这就是手眼标定方程 $AX = XB$:$A$ 已知、$B$ 由观测得到、$X$ 待求。</p>
+<p><img src="https://uipv4.zywvvd.com:33030/HexoFiles/files/handeye-calibration/handeye_axxb.png" srcset="/img/loading.gif" lazyload alt="AX=XB 的闭环推导链:标定物世界位姿经 W→E→L→obj 两条路径表达,消去后得 A·X = X·B"></p>
+<h4 id="2-2-数据要求">2.2 数据要求</h4>
+<p>把 $A=(R_A,\mathbf{t}_A)$、$X=(R_X,\mathbf{t}_X)$、$B=(R_B,\mathbf{t}_B)$ 代入 $AX=XB$:两端都是齐次变换,左端 $AX=(R_A R_X,\ R_A\mathbf{t}_X+\mathbf{t}_A)$、右端 $XB=(R_X R_B,\ R_X\mathbf{t}_B+\mathbf{t}_X)$。两个齐次变换相等,要求旋转块、平移块分别相等:</p>
+<ul>
+<li><strong>旋转</strong>:$R_A R_X = R_X R_B$(只含 $R$,可先解 $R_X$);</li>
+<li><strong>平移</strong>:$R_A \mathbf{t}_X + \mathbf{t}_A = R_X \mathbf{t}_B + \mathbf{t}_X$($R_X$ 解出后代入,线性求 $\mathbf{t}_X$)。</li>
+</ul>
+<p>&quot;先 $R$ 后 $\mathbf{t}$&quot;正是分离法(§3)的依据。理论下界是<strong>至少 2 组相对运动</strong>(即 3 个站位),且<strong>两组运动的旋转轴不平行</strong>。实际工程中建议 10–20 组以上,约 50 组后精度增益趋缓。</p>
+<h4 id="2-3-eye-to-hand-配置">2.3 eye-to-hand 配置</h4>
+<p>§2.1 是 eye-in-hand(传感器随末端动)的推导。eye-to-hand 正相反:雷达固定在外部不动,被观测的是固连在末端的标定物。设末端位姿 $G_i={}^{W}T_{E_i}$,雷达观测到标定物在雷达系下的位姿 $C_i={}^{L}T_{\text{obj}}$(雷达不动,故 $L$ 无下标)。两个固定未知量:外参 $X={}^{W}T_L$(雷达在基座系下的位姿)、标定物在末端系下的位姿 $Z={}^{E}T_{\text{obj}}$。标定物的世界位姿既可经末端链、也可经雷达链表达,二者相等:</p>
+$$G_i\, Z = X\, C_i$$
+<p>用相邻两帧 $i, i+1$ 消去 $Z$:由 $G_iZ=XC_i$ 得 $Z=G_i^{-1}XC_i$,代入 $G_{i+1}Z=XC_{i+1}$ 并右乘 $C_i^{-1}$,得与 eye-in-hand 同形的方程:</p>
+$$\underbrace{G_{i+1}G_i^{-1}}_{A}\, X = X\, \underbrace{C_{i+1}C_i^{-1}}_{B}$$
+<p>仍是 $AX=XB$。展开看物理含义。代入 $G_i={}^{W}T_{E_i}$:</p>
+$$A = G_{i+1}G_i^{-1} = {}^{W}T_{E_{i+1}}\,({}^{W}T_{E_i})^{-1} = {}^{W}T_{E_{i+1}}\,{}^{E_i}T_W$$
+<p>即末端从 $E_i$ 到 $E_{i+1}$ 的相对运动、以<strong>世界系</strong>为参考(空间描述)。它<strong>不再约成单个 ${}^{A}T_B$</strong>:链式复合 ${}^{A}T_B\cdot{}^{B}T_C={}^{A}T_C$ 要求中间系前后是同一个系,而这里中间是末端系的两个不同时刻 $E_{i+1}\neq E_i$。对比 eye-in-hand 的 $A_i={}^{E_{i+1}}T_W\cdot{}^{W}T_{E_i}$:中间系是固定的世界 $W$(同一个系),故约成 ${}^{E_{i+1}}T_{E_i}$。同理 $B$($C_i={}^{L}T_{\text{obj}_i}$,$\text{obj}_i$ 为标定物在第 $i$ 帧的位姿):</p>
+$$B = C_{i+1}C_i^{-1} = {}^{L}T_{\text{obj}_{i+1}}\,({}^{L}T_{\text{obj}_i})^{-1} = {}^{L}T_{\text{obj}_{i+1}}\,{}^{\text{obj}_i}T_L$$
+<p>是标定物相对运动、以<strong>雷达系</strong>为参考;中间系 $\text{obj}_{i+1}\neq\text{obj}_i$ 同样不是同一个系,故也不约(eye-in-hand 的 $B_i={}^{L_{i+1}}T_{\text{obj}}\cdot{}^{\text{obj}}T_{L_i}$ 因标定物固定而约成 ${}^{L_{i+1}}T_{L_i}$)。根因是 eye-to-hand 里<strong>运动的是末端与标定物、雷达固定</strong>,与 eye-in-hand(传感器动、标定物固定)对偶,故 $A$、$B$ 都呈 $XY^{-1}$ 的空间形式。它们虽不约简,却都是确定的相对运动;而 $AX=XB \Leftrightarrow A=XBX^{-1}$ 表明两者是同一刚体运动经外参 $X={}^{W}T_L$ 的共轭——这正是 eye-to-hand 与 eye-in-hand 共享 $AX=XB$ 的几何根源。</p>
+<p>因此 eye-to-hand 与 eye-in-hand 共享同一方程与 §3 的全套求解器,差别只有两点:其一,$X$ 的物理含义不同(基座-雷达 vs 末端-雷达);其二,$B$ 的来源不同——eye-in-hand 的 $B$ 是雷达自身运动(靠相邻帧点云配准,§4),eye-to-hand 的 $B$ 是标定物的运动(靠逐帧拟合标定物:球心、平面法向等)。</p>
+<blockquote>
+<p>若不消去 $Z$ 而是同时求 $X$、$Z$,即 robot-world-hand-eye 问题 $AX=ZB$(传感器随末端动、且机器人基座到世界的关系也未知,同时求手眼 $X$ 与基座-世界 $Z$)。Dornaika-Horaud 给出四元数线性闭式解(先解旋转 $a\otimes q=q\otimes b$,$a,q,b$ 为 $A,X,B$ 的旋转四元数,再回代平移),Li 等用对偶四元数把 $R,\mathbf{t}$ 同时线性化;它与 eye-to-hand 同属“两个未知刚体”骨架,数据要求相同(≥2 组运动、旋转轴不平行)。</p>
+</blockquote>
+<h3 id="3-经典闭式求解器">3. 经典闭式求解器</h3>
+<p>$AX=XB$ 的求解有成熟的闭式方法谱系。按&quot;是否把旋转和平移解耦&quot;可分为两类(eye-in-hand 与 eye-to-hand 同形,以下求解器两者通用)。</p>
+<blockquote>
+<p>记号:下文 $[\mathbf v]_\times$ 为向量 $\mathbf v$ 的反对称矩阵;$\mathbf n_A$ 等为 $A$ 等的旋转轴单位向量、$\theta_X$ 为 $X$ 的旋转角,Tsai 法的 $\mathbf n'_X$ 为其旋转轴的修正参数;Park 法的 $\boldsymbol\alpha_i,\boldsymbol\beta_i$ 是 $A_i,B_i$ 的旋转向量(即李代数对数 $\log A_i,\log B_i$)。</p>
+</blockquote>
+<p><img src="https://uipv4.zywvvd.com:33030/HexoFiles/files/handeye-calibration/handeye_solvers.png" srcset="/img/loading.gif" lazyload alt="闭式求解器谱系:分离法(先 R 后 t:Tsai-Lenz / Park / Shah)vs 同时法(R、t 联立:Andreff / Daniilidis / Horaud)"></p>
+<p><strong>分离法(先解旋转 $R_X$,再代入解平移 $\mathbf{t}_X$)</strong>:</p>
+<ul>
+<li><strong>Tsai-Lenz (1989)</strong>:用旋转轴的对偶性 $[\mathbf{n}_A+\mathbf{n}_B]_\times \mathbf{n}'_X = \mathbf{n}_A-\mathbf{n}_B$ 解旋转,旋转角 $\theta_X=2\tan^{-1}\|\mathbf{n}'_X\|$;平移由 $(R_A-I)\mathbf{t}_X = R_X\mathbf{t}_B-\mathbf{t}_A$ 最小二乘求解。简单、极快,但对旋转噪声敏感。</li>
+<li><strong>Park-Martin (1994)</strong>:基于李群对数映射,把相对旋转映射为旋转向量后线性化,$R_X=(M^\top M)^{-1/2}M^\top$($M=\sum\boldsymbol{\beta}_i\boldsymbol{\alpha}_i^\top$,SVD 取逆矩阵平方根)。在多法中计算最快。</li>
+<li><strong>Shah (2013)</strong>:用 Kronecker 积显式线性化,解出旋转后用 SVD 投影到最近正交矩阵,并<strong>用正交化后的旋转重新计算平移</strong>(区别于下面的 Andreff/Horaud)。在经典法中相对旋转误差最低。</li>
+</ul>
+<p><strong>同时法(旋转和平移一起求解)</strong>:</p>
+<ul>
+<li><strong>Andreff et al. (1999/2001)</strong>:放弃 SO(3) 正交性约束,把旋转矩阵 9 个元素都作未知数,用 Kronecker 积将整个问题化为单一齐次线性系统,SVD 解零空间。缺点是噪声下解出的 $R_X$ 可能偏离 SO(3),正交化后又未同步更新平移,引入平移误差。</li>
+<li><strong>Daniilidis (1999)</strong>:用单位<strong>对偶四元数</strong> $\hat{x}=q_r+\varepsilon q_d$(约束 $\|q_r\|=1,\ q_r^\top q_d=0$)统一编码旋转($q_r$)与平移($q_d$),$AX=XB$ 化为对偶四元数的 Sandhu 方程 $\hat{a}\hat{x}=\hat{x}\hat{b}$。关键定理:把 $A,B$ 视作螺旋运动,其轴线为 Plücker 直线 $\mathbf{l}+\varepsilon\mathbf{m}$,手眼变换只把&quot;手&quot;的螺旋轴集合刚体映到&quot;眼&quot;的螺旋轴集合;每组运动给出关于该直线系数的 2 个标量线性约束,栈叠后一次 SVD 同时解出 $R$ 和 $\mathbf{t}$(而 Tsai-Lenz 等需先 $R$ 后 $\mathbf{t}$),且只需&quot;线系数&quot;而非完整位姿,几何意义优雅、对旋转噪声最鲁棒。Dekel 等(2020)进一步给出对偶四元数下的精确最小二乘最优解并支持外参先验项,适合有 CAD 初值或需正则化退化方向的场景。</li>
+<li><strong>Horaud-Dornaika (1995)</strong>:同时提供四元数闭式解与 Levenberg-Marquardt 非线性联合优化,后者对噪声最鲁棒但需初值。</li>
+</ul>
+<p>OpenCV 的 <code>cv2.calibrateHandEye</code> 提供五种方法的统一接口,与上述论文一一对应(<code>CALIB_HAND_EYE_TSAI / PARK / HORAUD / ANDREFF / DANIILIDIS</code>)。ROS 生态的 <code>easy_handeye</code> 默认封装 Tsai-Lenz 法。</p>
+<h4 id="两条工程规律">两条工程规律</h4>
+<p>Enebuse et al. (2022) 的系统比较给出两条重要规律:</p>
+<ol>
+<li><strong>同时法对旋转噪声更鲁棒,分离法对平移噪声更鲁棒</strong>。同时法把噪声在 $R$、$\mathbf{t}$ 之间分摊;分离法一旦 $R$ 错,$\mathbf{t}$ 直接受污染。</li>
+<li><strong>运动范围的影响相反</strong>:增大旋转幅度有利于分离法、不利于同时法;增大平移幅度则反之。</li>
+</ol>
+<p>由此:<strong>算法选择应与运动特征匹配,不存在普适最优</strong>——这与&quot;用 Daniilidis 一劳永逸&quot;的直觉不同。在联合噪声下,综合最可靠的是 Daniilidis、Park、Chou。一个实践注意:旋转角接近 0° 或 180° 时,多种方法可能失稳,Park 相对最稳。</p>
+<p>补充两点。其一,近年仍有新的闭式方法提出,例如 Sarabandi 等(IRI/UPC)的两阶段闭式法,求解思路与 Tsai-Lenz 同类(先旋转后平移)但数值上更稳健。其二,一个被反复报告的工程现象:在某些数据集上 Tsai、Andreff、Horaud、Daniilidis 多种方法会给出明显错误乃至发散的结果,只有 Park 法保持稳定,OpenCV 官方仓库的 issue #24871 记录了这一现象。这并非否定其它方法的价值,而是再次印证——<strong>多种方法交叉验证、而非依赖单一方法,才是稳妥的做法</strong>。</p>
+<h3 id="4-纯点云场景的根本差异">4. 纯点云场景的根本差异</h3>
+<blockquote>
+<p>本节针对 eye-in-hand:雷达随臂动,$B$ 来自相邻帧点云配准。eye-to-hand 的 $B$ 来自逐帧拟合末端上的标定物(见 §2.3),不涉及配准难题。</p>
+</blockquote>
+<p>相机手眼标定的 $B_i$ 来自检测棋盘格角点经 PnP 求解,<strong>精确且确定性强</strong>。纯点云激光雷达没有 2D 角点、没有像素灰度,<strong>不存在天然的同名点对应</strong>。要得到 $B_i$,必须先解决一个前置问题——<strong>两帧点云之间的刚体变换估计,即点云配准</strong>。</p>
+<p>这意味着:</p>
+<ol>
+<li>
+$B_i$ 的精度完全取决于点云配准的精度;
+</li>
+<li>配准本身是一个非凸优化问题(ICP 或其变体),有局部最优、初值敏感等固有困难;</li>
+<li>若不使用标定物,$B_i$ 只能从自然环境结构中提取,约束更弱。</li>
+</ol>
+<p><strong>纯点云手眼标定的精度上限,往往受制于配准质量,而非机器人运动学精度。</strong> 这是它与图像手眼标定的根本差异,也是第 7 节要专门讨论配准局限的原因。</p>
+<h4 id="ICP-的角色">ICP 的角色</h4>
+<p>ICP(Iterative Closest Point)通过两步迭代——“在当前变换下为源点云每个点找目标云中最近对应点&quot;与&quot;最小化对应点对距离更新变换”——估计两帧点云间的刚体变换,即雷达自身的相对运动 $B_k$。两种主流变体:point-to-point(通用但收敛慢)与 point-to-plane(利用法向量约束,Open3D 实测 30 次迭代即可达到 point-to-point 需 2000 次的效果)。</p>
+<p>关键定位:ICP 是<strong>局部精配准</strong>,需要粗略初始对齐。标准流程是先用全局配准(RANSAC + FPFH 特征)给初值,再用 ICP 精化。这个初值依赖在第 7 节会再回到。</p>
+<p><strong>比 ICP 更进一步的配准方法。</strong> 配准质量直接决定 $B_k$ 精度,因此现代工具箱远不止 ICP:(1)<strong>概率配准</strong>——GICP 把源/目标局部邻域各建模为高斯,最小化马氏距离 $d^2=(p_i-p_j')^\top(\Sigma_i+R\Sigma_j'R^\top)^{-1}(p_i-p_j')$,统一并推广了 point-to-point 与 point-to-plane;NDT 把参考云体素化为高斯分布、对面到分布优化,无需显式对应——结构化墙面场景下二者比纯 ICP 更稳。(2)<strong>抗外点的全局配准</strong>——对应含大量误匹配时 ICP 会陷局部极小,TEASER++ 用截断最小二乘(TLS)把 SE(3) 配准解耦为 scale/rotation/translation 三步、给出可证明全局最优证书,可承受 &gt;90% 外点率;FGR 用 FPFH 描述子 + $L^1$ 鲁棒核全局优化、免粗对齐,可作为两步法第一步粗配准或退化场景下 $B_k$ 精化的现代替换。这些方法降低了 §7 将讨论的初值敏感与外点脆弱性。</p>
+<p>值得指出,即便使用点云传感器,只要借助已知标定物(如三维标定靶),仍可获得比纯环境配准干净得多的 $B_i$——这正是 Wan 等《基于法兰的 3D 相机手眼标定》一类工作的思路。换言之,点云介质本身不必然带来困难,真正的困难在于&quot;无标定物、纯靠环境配准&quot;这一情形。</p>
+<h3 id="5-用环境替代标定物-严格等价于-AX-XB">5. 用环境替代标定物:严格等价于 AX=XB</h3>
+<p>这一节回答核心问题:<strong>能否不用标定物,仅靠自然环境(如普通办公室)的点云,标定出外参?</strong> 答案是可以,且它严格等价于 $AX=XB$。</p>
+<blockquote>
+<p>本节针对 eye-in-hand:靠相邻帧点云配准测雷达自身运动 $B$。eye-to-hand 若也要免标定物,需在环境点云中分割/跟踪末端,难度高得多,实践中仍多用标定物(见 §2.3)。</p>
+</blockquote>
+<h4 id="5-1-推导-环境标定就是-AX-XB">5.1 推导:环境标定就是 AX=XB</h4>
+<p>记末端位姿序列 $G_i$、点云 $P_i$、外参 $X$(符号定义见 §1.3)。相邻两帧间,雷达自身的相对运动记为 $B_i={}^{L_{i+1}}T_{L_i}$(取&quot;新看旧&quot;方向,与 $A_i$ 同向)。下面先厘清 $B_i$ 的方向直觉,再用四步推出它与 $A_i$、$X$ 的关系。</p>
+<p><strong>$B_i$ 的方向直觉:为什么是&quot;新看旧&quot;。</strong> ${}^{L_{i+1}}T_{L_i}$ 读作&quot;新位置 $L_{i+1}$ 回看旧位置 $L_i$&quot;。举例:雷达沿自身 $x$ 轴(朝前)平移 1 米到达下一帧,则&quot;旧看新&quot;的 ${}^{L_i}T_{L_{i+1}}$ 平移为 $(1,0,0)$(新位置在前方 1 米),而 $B_i={}^{L_{i+1}}T_{L_i}$ 是它的逆,平移为 $(-1,0,0)$(回看:旧位置在后方 1 米)。&quot;回看&quot;方向乍看反直觉,但选它有切实理由:把第 $i$ 帧点云 $P_i$ 配准到第 $i+1$ 帧 $P_{i+1}$ 时,配准器直接吐出的正是&quot;把 $P_i$ 搬到 $P_{i+1}$ 所在系&quot;的变换,即 $B_i={}^{L_{i+1}}T_{L_i}$,无需再取逆。对应地,末端相对运动也取同向 $A_i={}^{E_{i+1}}T_{E_i}=G_{i+1}^{-1}G_i$——$A_i$、$B_i$ 同向配对,正是下面 $AX=XB$ 形式对称的根源。</p>
+<p><strong>四步推导。</strong></p>
+<p><strong>① 雷达在世界的位姿。</strong> 雷达固连末端,外参 $X={}^{E_i}T_{L_i}$ 对所有 $i$ 相同;末端在世界的位姿为 $G_i={}^{W}T_{E_i}$。按右乘链复合(中间系 $E_i$ 匹配):</p>
+$${}^{W}T_{L_i} = {}^{W}T_{E_i}\cdot{}^{E_i}T_{L_i} = G_i\, X, \qquad {}^{W}T_{L_{i+1}} = G_{i+1}X$$
+<p><strong>② 经世界系中转求相对运动。</strong> $L_i$ 与 $L_{i+1}$ 之间没有共同中间系、无法直连,需经固定的世界系 $W$ 中转:$L_i\to W\to L_{i+1}$。用逆规则 $({}^{A}T_B)^{-1}={}^{B}T_A$ 把 ${}^{L_{i+1}}T_W$ 换成 $({}^{W}T_{L_{i+1}})^{-1}$:</p>
+$${}^{L_{i+1}}T_{L_i} = \underbrace{{}^{L_{i+1}}T_W}_{=({}^{W}T_{L_{i+1}})^{-1}}\cdot\underbrace{{}^{W}T_{L_i}}_{=G_iX} = (G_{i+1}X)^{-1}(G_iX)$$
+<p><strong>③ 展开逆,归并中间项。</strong> 用 $(AB)^{-1}=B^{-1}A^{-1}$ 拆开 $(G_{i+1}X)^{-1}$,再用结合律:</p>
+$$(G_{i+1}X)^{-1}(G_iX) = \big(X^{-1}G_{i+1}^{-1}\big)(G_iX) = X^{-1}\,\underbrace{G_{i+1}^{-1}G_i}_{A_i}\, X$$
+<p>关键是 $X$ 与 $X^{-1}$ 被挤到等号两端,中间的 $G_{i+1}^{-1}G_i$ 自成一项,正是 §1.3 定义的 $A_i$。</p>
+<p><strong>④ 整理成 $AX=XB$。</strong> 由 ②③,$B_i={}^{L_{i+1}}T_{L_i}=X^{-1}A_iX$。两边左乘 $X$ 消去左端 $X^{-1}$:</p>
+$$XB_i = X(X^{-1}A_iX) = A_iX \;\;\Longrightarrow\;\; \boxed{\,A_iX = XB_i\,}$$
+<p>这就是 $AX=XB$:$A_i$ 由机器人位姿算出(已知),$B_i$ 由点云配准测出(观测),$X$ 待求。</p>
+<p><strong>$B_i$ 如何测出。</strong> 把第 $i$ 帧点云 $P_i$ 配准到第 $i+1$ 帧 $P_{i+1}$,所得相对变换即为 $B_i={}^{L_{i+1}}T_{L_i}$(同一片环境、两个雷达位姿之间的变换 = 雷达自身的相对运动)。注意这与第 2.1 节用标定物得到的 $B_i=C_{i+1}C_i^{-1}$ 是同一个物理量,只是测量途径不同:标定物靠已知角点对应,环境靠点云配准。</p>
+<p><strong>位姿递推:为什么是 ${}^{W}T_{L_i}\cdot B_i^{-1}$ 而非乘 $B_i$。</strong> 把雷达在世界的位姿 ${}^{W}T_{L_i}=G_iX$ 往下一帧递推,位姿复合要求复合进去的是&quot;旧看新&quot;的 ${}^{L_i}T_{L_{i+1}}=B_i^{-1}$(右乘链:前项尾 $L_i$ = 后项头 $L_i$):</p>
+$${}^{W}T_{L_{i+1}} = {}^{W}T_{L_i}\cdot{}^{L_i}T_{L_{i+1}} = {}^{W}T_{L_i}\cdot B_i^{-1}$$
+<p>而<strong>不是</strong>乘 $B_i$:$B_i={}^{L_{i+1}}T_{L_i}$ 是&quot;新看旧&quot;,其头部是 $L_{i+1}$,与链尾的 $L_i$ 对不上,复合非法。验证:${}^{W}T_{L_i}\cdot B_i^{-1}=G_iX\cdot X^{-1}G_i^{-1}G_{i+1}X=G_{i+1}X={}^{W}T_{L_{i+1}}$ ✓。反向亦成立:${}^{W}T_{L_i}={}^{W}T_{L_{i+1}}\cdot B_i$(从 $L_{i+1}$ 回退,右乘链合法)。一句话规则(§1.2 已述):<strong>${}^{A}T_B$ 永远右乘到&quot;以 $A$ 结尾&quot;的位姿上</strong>——$B_i={}^{L_{i+1}}T_{L_i}$ 右乘到 ${}^{W}T_{L_{i+1}}$ 上得到 ${}^{W}T_{L_i}$,左乘则无意义。</p>
+<p><strong>别和点坐标变换搞混(方向相反,但不矛盾)。</strong> 位姿递推用的是 $B_i^{-1}$(右乘),而点坐标变换 $\mathbf{p}^{(L_{i+1})}=B_i\,\mathbf{p}^{(L_i)}$ 用的是 $B_i$(左乘)。一个右乘其逆、一个左乘本身,只因对象不同:前者复合的是坐标系位姿,后者搬动的是点坐标。这正是 SE(3) 的对偶——坐标系(雷达)前进 1 米,固定的点在它眼里就后退 1 米。从位姿复合式取逆即得点变换式,两者完全自洽,根源都在 §1.2 那条&quot;$B\to A$ 变换 = $B$ 在 $A$ 的位姿&quot;的定义性质。</p>
+<blockquote>
+<p><strong>整个推导里,环境只在&quot;如何测量 $B_i$&quot;这一步登场。</strong> $B_i$ 的物理真值由 $A_i$ 和 $X$ 决定(刚体运动学),与环境无关。环境是一把测量尺:观察环境特征在两帧间的变化,反推雷达怎么动了。一旦 $B_i$ 测出,后面就是纯几何的 $AX=XB$,环境长什么样不再参与。</p>
+</blockquote>
+<h4 id="5-2-正确性检验-旋转环境-结果不变">5.2 正确性检验:旋转环境,结果不变</h4>
+<p>一个检验方法正确性的思想实验:把整个办公室物理旋转 90°,机械臂保持不动、重复<strong>完全相同</strong>的位姿序列 $\{G_i\}$,采到新点云 $\{P'_i\}$。逐项看:</p>
+<table>
+<thead>
+<tr>
+<th>量</th>
+<th>旋转后</th>
+<th>原因</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>$A_i = G_{i+1}^{-1}G_i$</td>
+<td>不变</td>
+<td>机械臂动作相同</td>
+</tr>
+<tr>
+<td>$X$(外参)</td>
+<td>不变</td>
+<td>雷达-末端物理连接没动</td>
+</tr>
+<tr>
+<td>$B_i = X^{-1}A_iX$(物理真值)</td>
+<td>不变</td>
+<td>$A_i,X$ 都没变</td>
+</tr>
+<tr>
+<td>配准测出的 $B_i$</td>
+<td>不变</td>
+<td>配准测的是&quot;雷达怎么动&quot;,不是&quot;环境怎么长&quot;</td>
+</tr>
+</tbody>
+</table>
+<p>虽然雷达看到的点云<strong>内容</strong>变了($P'_i \neq P_i$),但雷达<strong>自己</strong>从 $L_i$ 到 $L_{i+1}$ 的运动没变。点云配准测量的是雷达的相对运动,不是环境的内容;办公室旋转对第 $i$ 帧和第 $i+1$ 帧是同一个刚体变换,在&quot;两帧之间求相对运动&quot;时被消掉了。</p>
+<p>所以 $A_i$ 不变、$B_i$ 不变 → $AX=XB$ 是完全相同的方程 → 解出完全相同的 $X$。<strong>旋转环境,标定结果不变</strong>,正好说明环境标定是正确的——它把&quot;外参&quot;(雷达-末端关系,与环境无关)和&quot;环境&quot;(测量工具)正确分离了。类比:用尺子量一根棍子的长度,把尺子转 90°,量出的长度不变——长度是棍子的属性,不是尺子的属性。</p>
+<h4 id="5-3-两步法-vs-自洽融合法">5.3 两步法 vs 自洽融合法</h4>
+<p>得到 $B$ 之后有两种用法,二者<strong>理论等价(用同样的数据),区别在工程组织</strong>:</p>
+<ul>
+<li><strong>两步法(解耦)</strong>:步骤 1,先用点云配准独立估计每个 $B_k$;步骤 2,把 $B_k$ 和已知的 $A_k$ 代入 $AX=XB$ 闭式求解。$X$ 与地图解耦。</li>
+<li><strong>自洽融合法(耦合)</strong>:不单独求 $B$,让 $X$ 直接优化&quot;所有帧点云在世界系融合后的全局一致性&quot;(残差最小)。</li>
+</ul>
+<p>理论等价性:$B_k$ 本身就是由&quot;两帧点云融合&quot;定义的,自洽融合法的全局优化在相邻帧层面隐含了同样的 $B_k$ 约束,用的数据完全一样。区别在于:</p>
+<table>
+<thead>
+<tr>
+<th>维度</th>
+<th>两步法</th>
+<th>自洽融合法</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>$X$ 与 $B$ 的关系</td>
+<td>解耦,$B$ 先独立测出</td>
+<td>耦合,$B$ 与 $X$ 一起优化</td>
+</tr>
+<tr>
+<td>优化性质</td>
+<td>步骤 2 是闭式线性,稳定</td>
+<td>全局非线性,易陷局部最优</td>
+</tr>
+<tr>
+<td>可诊断性</td>
+<td>$B_k$ 可逐个检查、剔除坏帧</td>
+<td>误差纠缠,难定位</td>
+</tr>
+<tr>
+<td>误差结构</td>
+<td>配准误差与求解误差分离</td>
+<td>两类误差耦合,可能有偏</td>
+</tr>
+</tbody>
+</table>
+<p>所以推荐两步法:它把&quot;配准&quot;和&quot;求解&quot;分离,每一步都可独立检查,误差结构清晰。这不是说自洽融合法&quot;理论上行不通&quot;,而是说它把本可分离的误差耦合在一起,在工程上更难诊断和控制。</p>
+<p><img src="https://uipv4.zywvvd.com:33030/HexoFiles/files/handeye-calibration/handeye_twostep.png" srcset="/img/loading.gif" lazyload alt="两步法(配准求 B 与求解 X 解耦)与自洽融合法(B 与 X 耦合优化)的流程对比"></p>
+<h4 id="5-4-环境对称性是另一个独立问题">5.4 环境对称性是另一个独立问题</h4>
+<p>需要明确区分:5.2 讨论的是&quot;物理旋转一个<strong>不对称</strong>环境&quot;,结果是 $X$ 不变。但如果环境<strong>本身具有对称性</strong>(房间精确 90° 旋转对称、长走廊的平移对称、重复柱阵),那确实会出问题——但那是另一个机制:</p>
+<ul>
+<li>点云配准可能把雷达的真实运动 $\theta$ 误配成对称等价的 $\theta+90°$,估出错误的 $B_i$,$X$ 跟着错。</li>
+<li>这是<strong>信息缺失</strong>(环境给不出足够信息区分等价位姿),根源在数据(配准退化),与&quot;物理旋转不对称环境&quot;无关。</li>
+</ul>
+<p>这个风险是真的,但它要求环境精确对称,普通结构不对称的办公室不会触发;在真实场景里它降级为&quot;在大片平整墙面、地面这类局部对称区域,沿对称方向约束弱、$B_i$ 估得松、该方向精度打折&quot;——是连续打折而非崩溃,且能用第 6 节的可观测性判据量化。详见第 7 节的走廊退化分析。</p>
+<h3 id="6-可观测性-什么运动能解出-X">6. 可观测性:什么运动能解出 X</h3>
+<p>本节回答&quot;哪些采集运动能解出 X、解出的 X 有多准&quot;:先给可解性条件(§6.1),建立可观测性雅可比(§6.2)与指标(§6.3),枚举退化运动(§6.4)与一个反直觉结论(§6.5);§6.6 用&quot;只用一面墙&quot;这一典型退化情形把前面的判据走一遍,最后是运动设计原则(§6.7)与误差来源(§6.8)。可观测性只依赖运动的 $AX=XB$ 结构,对两种配置同样适用——eye-to-hand 把标定物运动代入同一个雅可比即可。(本节用 $k$ 编号第 $k$ 组运动对,共 $L$ 组,与 §1–§2 的帧下标 $i$ 同义;雅可比奇异值降序记 $\sigma_1\geq\dots\geq\sigma_L$,$\sigma_1$ 最大、$\sigma_L$ 最小即 $\sigma_{\min}$。)</p>
+<h4 id="6-1-可解性的基本条件">6.1 可解性的基本条件</h4>
+<p>$AX=XB$ 并非对任意运动都有唯一解。Shiu-Ahmad (1989)、Tsai-Lenz (1989) 最早指出:解的唯一性的充分条件是<strong>存在两个旋转轴不平行(非共线)的标定运动</strong>(Chen 1991 给出几何证明)。若所有运动旋转轴相互平行(如 SCARA,所有关节轴同向),旋转部分构成的矩阵秩不超过 2,系统不可解。</p>
+<h4 id="6-2-可观测性雅可比">6.2 可观测性雅可比</h4>
+<p>可观测性分析的标准做法是把约束方程在解附近线性化,考察&quot;识别雅可比&quot;的秩。先约定记号(李群工具,详见《机械臂技术基础》§3.7):$\boldsymbol\xi=[\boldsymbol\omega;\mathbf v]\in\mathbb R^6$ 是位姿的微小扰动(前三维角速度 $\boldsymbol\omega$、后三维线速度 $\mathbf v$);$\hat{\boldsymbol\xi}\in\mathfrak{se}(3)$ 是它的 4×4 矩阵形式(&quot;hat&quot;映射);$\exp$、$\log$ 为矩阵指数/对数,在 $\mathfrak{se}(3)$ 与 $SE(3)$ 间互逆;$\mathrm{Ad}_T$ 是 $T$ 的 6×6 伴随,满足共轭关系 $T\hat{\boldsymbol\eta}T^{-1}=\widehat{\mathrm{Ad}_T\boldsymbol\eta}$;$I_6$ 为 6 阶单位阵。</p>
+<p>衡量 $X$ 偏离真解的残差定义为</p>
+$$\mathbf{r}_k(X) = \log(A_k\, X\, B_k^{-1}\, X^{-1}) \;\in\; \mathbb{R}^6$$
+<p>当 $A_kX=XB_k$ 时括号内为 $I$、残差为零。对 $X$ 施加<strong>右扰动</strong> $X\to X\exp(\hat{\boldsymbol\xi})$,把残差对 $\boldsymbol\xi$ 一阶展开。依次用共轭关系(取 $T=B_k^{-1}$ 得 $\exp(\hat{\boldsymbol\xi})\,B_k^{-1}=B_k^{-1}\exp\!\big(\widehat{\mathrm{Ad}_{B_k}\boldsymbol\xi}\big)$)与 $\exp(\pm\hat{\boldsymbol\xi})\approx I\pm\hat{\boldsymbol\xi}$:</p>
+$$\begin{aligned} A_kX\exp(\hat{\boldsymbol\xi})B_k^{-1}\exp(-\hat{\boldsymbol\xi})X^{-1} &\approx A_kX B_k^{-1}\big(I+\widehat{(\mathrm{Ad}_{B_k}-I_6)\boldsymbol\xi}\big)X^{-1}\\ &\xrightarrow{\,A_kX=XB_k\,\Rightarrow\, A_kXB_k^{-1}=X\,} X\big(I+\widehat{(\mathrm{Ad}_{B_k}-I_6)\boldsymbol\xi}\big)X^{-1}\\ &= I+\widehat{\mathrm{Ad}_X(\mathrm{Ad}_{B_k}-I_6)\boldsymbol\xi} \end{aligned}$$
+<p>再取 $\log$(一阶下 $\log(I+\hat{\boldsymbol\eta})=\boldsymbol\eta$):</p>
+$$\mathbf{r}_k \;\approx\; \mathrm{Ad}_X\,(\mathrm{Ad}_{B_k}-I_6)\,\boldsymbol\xi$$
+<p>把所有 $\mathbf{r}_k$ 堆叠,得到关于扰动 $\boldsymbol\xi$ 的线性系统 $\mathbf{r}=J\boldsymbol\xi$($\mathrm{Ad}_X$ 作为块对角左乘因子出现)。<br>
+对 $J$ 做 SVD 得奇异值 $\sigma_1\geq\dots\geq\sigma_L$。</p>
+<p><strong>关键结论</strong>:雅可比块里的 $\mathrm{Ad}_X$ 恒可逆(任何 $X\in SE(3)$ 的伴随都非奇异),作为<strong>可逆</strong>左乘因子<strong>不改变 $J$ 的秩</strong>——可观测性/零空间判定不受影响;它一般非正交,条件数会偏移 $\kappa(\mathrm{Ad}_X)$ 量级,但不影响秩判定。因此真正决定可观测性的是 $\{B_k\}$ 这组运动本身:</p>
+$$\text{可观测性} \;\longleftarrow\; \text{堆叠的 } (\mathrm{Ad}_{B_k}-I_6) \;\longleftarrow\; \text{运动 } \{B_k\}$$
+<p>这与待估的 $X$ 无关。<strong>实务上直接取</strong> $J_k=\mathrm{Ad}_{B_k}-I_6$ 堆叠做 SVD——它等价于 $I_6-\mathrm{Ad}_{B_k^{-1}}=\mathrm{Ad}_{B_k}^{-1}(\mathrm{Ad}_{B_k}-I_6)$(仅差一个可逆左乘因子,秩与条件数判定完全一致),后文 §8.1 步骤 4 即用此式。工程含义是:<strong>采集传感器数据之前,即可预判可观测性</strong>——先用机器人位姿算出 $A_k$,再用先验或粗估的 $X$ 由 $B_k=X^{-1}A_kX$ 估出 $B_k$,就能算条件数、判断这组运动够不够好,而不必等采完点云才发现不可解。这也是 Nahvi-Hollerbach、Daney 把可观测性用于&quot;位姿试验设计&quot;的理论基础。把约束写成伴随/旋量(screw)形式的思想,见 Pachtrachai 等的伴随变换算法 ATA,其 6×6 伴随矩阵正是上式中的 $\mathrm{Ad}_X$(与《机械臂技术基础》§3.7 形式一致)。</p>
+<h4 id="6-3-可观测性指标">6.3 可观测性指标</h4>
+<p>基于奇异值,文献定义了多种指标:</p>
+<table>
+<thead>
+<tr>
+<th>指标</th>
+<th>公式</th>
+<th>含义</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>$O_1$</td>
+<td>$(\sigma_1\cdots\sigma_L)^{1/m}/\sqrt{m}$</td>
+<td>超椭球体积(几何均值)</td>
+</tr>
+<tr>
+<td>$O_2$</td>
+<td>$\sigma_L/\sigma_1$</td>
+<td>条件数倒数 $\kappa^{-1}$,越接近 1 越好</td>
+</tr>
+<tr>
+<td>$O_3$</td>
+<td>$\sigma_L$</td>
+<td>最小奇异值,最差方向灵敏度</td>
+</tr>
+<tr>
+<td>$O_4$</td>
+<td>$\sigma_L^2/\sigma_1$</td>
+<td>噪声放大指数($=O_2\times O_3$)</td>
+</tr>
+</tbody>
+</table>
+<p>($m$ 为雅可比的行数,见各指标定义。)</p>
+<p>Nahvi &amp; Hollerbach (1996) 证明 <strong>$O_4$ 对标定误差最敏感</strong>;Schroer 等建议<strong>条件数应低于 100</strong> 才能获得可靠结果。Sun &amp; Hollerbach (2008) 的比较表明 $O_1$ 表现差于 $O_2$–$O_4$。</p>
+<p><img src="https://uipv4.zywvvd.com:33030/HexoFiles/files/handeye-calibration/handeye_observability.png" srcset="/img/loading.gif" lazyload alt="可观测性:雅可比 J=Ad_B−I 的奇异值椭球,σ_min 越小该方向越不可观;纯平移/共轴旋转使椭球塌缩"></p>
+<h4 id="6-4-退化运动">6.4 退化运动</h4>
+<p>退化运动的本质是雅可比降秩(某些奇异值趋于零),对应方向参数不可辨识:</p>
+<ol>
+<li><strong>纯平移($R=I$)</strong>:经典两阶段法的旋转方程退化为恒等式,旋转不可观测(见 §6.5 的反直觉结论);</li>
+<li><strong>绕同一轴旋转(共轴)</strong>:旋转轴全平行,无法定完整三自由度旋转(SCARA);</li>
+<li><strong>共面运动</strong>:运动限制在单一平面内,垂直该平面的自由度不可观测;</li>
+<li><strong>旋转角过小</strong>😒\theta\to 0$ 时最小参数化奇异,Daniilidis 的 screw 参数化用 $\sin(\theta/2)$ 做分母,数值不稳。</li>
+</ol>
+<h4 id="6-5-反直觉结论-纯平移不能定平移-却能约束旋转">6.5 反直觉结论:纯平移不能定平移,却能约束旋转</h4>
+<p>Andreff et al. (2001) 给出不同运动组合的可观测性表($\lambda$ 为结构恢复带来的未知尺度因子,用标定板时已知):</p>
+<table>
+<thead>
+<tr>
+<th>运动 1</th>
+<th>运动 2</th>
+<th>可求解</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>纯平移</td>
+<td>纯平移</td>
+<td>$R_X$, $\lambda$(无 $\mathbf{t}_X$)</td>
+</tr>
+<tr>
+<td>纯平移</td>
+<td>纯旋转</td>
+<td>$R_X$, $\lambda$, $\mathbf{t}_X$(部分)</td>
+</tr>
+<tr>
+<td>纯旋转</td>
+<td>纯旋转</td>
+<td>$R_X$, $\mathbf{t}_X$(带尺度 $\lambda$)</td>
+</tr>
+<tr>
+<td>一般运动</td>
+<td>一般运动</td>
+<td>$R_X$, $\mathbf{t}_X$, $\lambda$(完全解)</td>
+</tr>
+</tbody>
+</table>
+<p>关键且反直觉的一点:<strong>三个线性无关的纯平移运动,可以线性估计出手眼旋转 $R_X$,但平移 $\mathbf{t}_X$ 不可观测。</strong> 物理解释:纯平移时方程退化为 $\mathbf{t}_A = R_X\,\mathbf{t}_B$,相机/雷达平移方向与末端平移方向之间的&quot;旋转映射&quot;恰好暴露了 $R_X$;但纯平移不含尺度信息,无法定位 $\mathbf{t}_X$。</p>
+<p>但需注意:<strong>同一退化运动在不同算法框架下可观测性不同</strong>。Daniilidis 的对偶四元数解耦解法无法利用纯平移的旋转信息——纯平移对应 screw 角 $\theta=0$,旋转方程退化为恒等 $q_r=q_r$,对旋转无约束。也就是说,同样的数据,用 Andreff 的线性框架能提取旋转,用 Daniilidis 的对偶四元数框架却不能——这是选择算法时必须留意的。</p>
+<h4 id="6-6-退化专题-只用一面墙的平面约束">6.6 退化专题:只用一面墙的平面约束</h4>
+<p>前几节的环境标定用到了两帧点云的<strong>完整</strong>配准($B_k$ 是 6 自由度刚体变换)。一个常见的简化想法是:办公室里有平整墙面,能否只利用&quot;墙是一个固定平面&quot;这个约束?这避开了完整 ICP 的初值与退化难题(平面拟合是凸问题,RANSAC + 主成分稳定),代价是只用到了环境的低维信息。这一节分析它到底能解出多少、精度受什么制约。一个关键结论先行:<strong>单面墙缺的不是一个固定的旋转自由度,而是要求运动里有&quot;横向旋转&quot;;运动选对了,一面墙就够。</strong></p>
+<p><img src="https://uipv4.zywvvd.com:33030/HexoFiles/files/handeye-calibration/handeye_single_wall.png" srcset="/img/loading.gif" lazyload alt="单面墙平面约束:法向(只含旋转)定 R_X,距离(含平移)定 t_X;退化运动是纯绕墙法向自转"></p>
+<p><strong>(1) 平面的变换。</strong> 设墙在世界系 $W$ 中是固定平面,方程 ${}^{W}\mathbf{n}^\top\mathbf{x}={}^{W}d$(${}^{W}\mathbf{n}$ 单位法向,${}^{W}d$ 有向距离,$\mathbf{x}$ 为平面上任意一点)。雷达在位姿 ${}^{W}T_{L_i}=G_iX$ 下观测墙面,拟合出雷达系内的平面 ${}^{L_i}\mathbf{n}_i^\top\mathbf{x}={}^{L_i}d_i$。把点变换 ${}^{W}\mathbf{x}=R(G_iX)\,{}^{L}\mathbf{x}+\mathbf{t}(G_iX)$ 代入墙方程,比对系数得平面参数的变换关系:</p>
+<ul>
+<li><strong>法向(只含旋转)</strong>:${}^{L_i}\mathbf{n}_i = R_X^\top\, R_{G_i}^\top\,{}^{W}\mathbf{n}$</li>
+<li><strong>距离(含平移)</strong>:${}^{L_i}d_i = {}^{W}d - {}^{W}\mathbf{n}^\top\bigl(R_{G_i}\mathbf{t}_X+\mathbf{t}_{G_i}\bigr)$</li>
+</ul>
+<p>法向与距离的分离是关键:法向只通过旋转 $R_X$ 进入,距离才含平移 $\mathbf{t}_X$。这把标定在物理上拆成两段——先靠法向定旋转、再靠距离定平移,与第 3 节分离求解器&quot;先 $R$ 后 $\mathbf{t}$&quot;的思路同构,只是这里是几何上的天然解耦。</p>
+<p><strong>(2) 法向约束 → 旋转 $R_X$,可观测条件是&quot;运动有横向旋转&quot;。</strong> 法向方程消去未知的世界法向 ${}^{W}\mathbf{n}$,等价于对所有 $i$:</p>
+$$R_{G_i}\,R_X\,{}^{L_i}\mathbf{n}_i \;=\; {}^{W}\mathbf{n} \qquad(\text{同一个世界法向})$$
+<p>即各姿态下&quot;末端系看到的墙法向 $R_X{}^{L_i}\mathbf{n}_i$,经机器人姿态 $R_{G_i}$ 转回世界系后处处一致&quot;。这是关于 $R_X$ 与 ${}^{W}\mathbf{n}$ 的约束,可用正交 Procrustes 或线性化求解。</p>
+<p>可观测性取决于一个量:<strong>末端系内的墙法向</strong> $\mathbf{a}_i=R_{G_i}^{\top}{}^{W}\mathbf{n}$ 是否随姿态变化。</p>
+<ul>
+<li>若运动<strong>包含垂直于墙法向的旋转分量</strong>,$\mathbf{a}_i$ 随姿态指向不同方向,$R_X$ 受到约束——理论上约 3 个不同朝向的姿态即可定出 $R_X$ 与 ${}^{W}\mathbf{n}$。</li>
+<li>退化运动是<strong>纯绕墙法向 ${}^{W}\mathbf{n}$ 的旋转</strong>:此时 $R_{G_i}^{\top}{}^{W}\mathbf{n}\equiv{}^{W}\mathbf{n}$ 不变,各姿态的雷达系法向观测 ${}^{L_i}\mathbf{n}_i=R_X^{-1}\mathbf{a}_i$ 完全相同,$R_X$ 无从约束。直观理解:雷达绕墙法向自转时,墙面在雷达系内的法向不动、距离不动,这一自转不可观测。</li>
+</ul>
+<p>需要澄清一个常见误解:这里缺的<strong>不是</strong>&quot;绕墙法向那个固定的旋转自由度&quot;。单帧时,绕该帧雷达系法向的自转固然不可观测;但多姿态聚合后,只要运动让 $\mathbf{a}_i$ 有变化,旋转 $R_X$ 就能完整定出。换言之,单面墙的退化是<strong>运动设计</strong>问题(有无横向旋转),而非自由度缺失;选对运动,一面墙即可解旋转。</p>
+<p><strong>(3) 距离约束 → 平移 $\mathbf{t}_X$,退化条件与旋转相同。</strong> 把距离方程按 $\mathbf{t}_X$ 整理成线性形式:</p>
+$$\bigl(R_{G_i}^\top\,{}^{W}\mathbf{n}\bigr)^\top\,\mathbf{t}_X \;=\; {}^{W}d - {}^{L_i}d_i - {}^{W}\mathbf{n}^\top\mathbf{t}_{G_i}$$
+<p>左端系数 $\mathbf{a}_i=R_{G_i}^\top{}^{W}\mathbf{n}$ 即第(2)步定义的末端系法向。每帧给一个关于 $\mathbf{t}_X$ 的标量方程,堆叠成线性最小二乘。能解出 3 个平移分量的条件是 $\{\mathbf{a}_i\}$ 张满三维——这与法向可观测条件<strong>完全是同一个</strong>:都要 $R_{G_i}^\top{}^{W}\mathbf{n}$ 随姿态变化。纯平移($R_{G_i}=I$)时所有 $\mathbf{a}_i={}^{W}\mathbf{n}$ 相同,秩为 1,只能定 $\mathbf{t}_X$ 沿墙法向的一个分量;墙内两个切向平移不可观测。</p>
+<p><strong>(4) 单面墙到底解了多少。</strong> 汇总平面约束的可观测性:</p>
+<table>
+<thead>
+<tr>
+<th>运动类型</th>
+<th>旋转 $R_X$</th>
+<th>平移 $\mathbf{t}_X$</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>一般旋转(含横向旋转)</td>
+<td>可定($\geq3$ 不同朝向姿态)</td>
+<td>可定(需旋转覆盖三维)</td>
+</tr>
+<tr>
+<td>纯平移</td>
+<td>法向观测不变,无信息</td>
+<td>仅沿墙法向 1 个分量</td>
+</tr>
+<tr>
+<td>纯绕墙法向旋转</td>
+<td>无信息</td>
+<td>仅沿墙法向 1 个分量</td>
+</tr>
+</tbody>
+</table>
+<p>所以&quot;一面墙够不够&quot;的答案是:<strong>只要机械臂做包含横向旋转(垂直于墙法向的轴)的运动,一面墙就能解出完整的 $R_X$ 与 $\mathbf{t}_X$</strong>(连同墙参数 ${}^{W}\mathbf{n},{}^{W}d$ 一起)。办公室机械臂做几个不同朝向的姿态即可满足。多面不平行墙(如地面 + 两面相邻墙)的作用主要是<strong>改善条件数、增加冗余与鲁棒性</strong>,降低对运动设计的敏感,而非数学上不可或缺。PlaneHEC 等工作利用机械臂多视角下的平面/任意点云约束做手眼标定,可作为这类方法的实现参考。</p>
+<p><strong>(5) 精度:受什么制约,大概到什么量级。</strong> 平面法的精度上限由三层叠加决定:</p>
+<ol>
+<li><strong>平面拟合精度</strong>:墙面越平、点云越密、距离越近,拟合的法向 ${}^{L_i}\mathbf{n}_i$ 与距离 ${}^{L_i}d_i$ 越准。平整墙面、近距(1–5 m)、点数充足时,法向角误差通常在 $0.05°$–$0.5°$ 量级(取决于雷达测距噪声)。</li>
+<li><strong>可观测性放大</strong>:求解的条件数 $\kappa$ 把拟合误差放大后落地——这与第 6.3 节的 $O_2$/$O_4$ 指标是同一回事。法向信息天然集中在一个二维子空间,单面墙的 $\kappa$ 通常比完整配准或多面墙差,这是它精度上的主要短板。</li>
+<li><strong>退化方向的残留</strong>:若运动里横向旋转不足,$\kappa$ 飙升,对应方向误差被剧烈放大。</li>
+</ol>
+<p>据此给出<strong>量级估计</strong>(须强调这是基于误差传播的估计、非实测;实际精度取决于雷达型号、墙面质量与运动设计,建议标定后用留出残差验证):</p>
+<ul>
+<li><strong>旋转</strong>:横向旋转充分、姿态数足够时,$R_X$ 角误差有望压到 $0.1°$–$1°$ 量级;横向旋转不足则该方向系统偏差大。</li>
+<li><strong>平移</strong>:距离观测受雷达测距噪声限制(近距毫米级、远距厘米级),经运动几何(条件数)放大后,$\mathbf{t}_X$ 典型 $1$–$10\text{ mm}$;条件数差时可劣化到厘米级。</li>
+</ul>
+<p><strong>(6) 平面法 vs 完整配准:信息更少,但更稳。</strong> 把平面法放回第 5 节框架:完整的环境配准(两帧 6 自由度 $B_k$)用到环境全部三维结构,信息充分;平面法只用每个平面 3 个参数,是环境信息的低维投影,因此条件数更差、对运动更敏感。但平面法有完整配准不具备的鲁棒性:平面拟合是凸优化(RANSAC + 主成分),没有 ICP 的初值敏感与局部最优,也不受墙上非平面杂物干扰(可 RANSAC 剔除)。所以在结构化室内(墙面清晰、平整),平面法往往比直接做全局 ICP 更可靠;在几何杂乱、缺乏大平面的场景,完整配准或标定物更合适。两者可以混用——平面给稳健初值,再按需精化。</p>
+<h4 id="6-7-运动设计原则">6.7 运动设计原则</h4>
+<p>综合各文献,设计采集动作的原则:</p>
+<ol>
+<li><strong>旋转轴多样化</strong>:至少两组非平行轴,理想覆盖三维不同方向;</li>
+<li><strong>最小化条件数</strong>:选使 $\kappa=\sigma_1/\sigma_L$ 尽量小的运动组;</li>
+<li><strong>足够旋转幅度</strong>:几十度量级,避免过小(轴估计不准)和接近 180°(参数奇异);</li>
+<li><strong>旋转与平移搭配</strong>:分离法(先 $R$ 后 $\mathbf{t}$)适合大旋转 + 小平移;同时法适合小旋转 + 大平移;</li>
+<li><strong>数据剪枝</strong>:用向量量化等方法使旋转轴在旋转空间均匀分布,剔除冗余和近退化运动。</li>
+</ol>
+<h4 id="6-8-误差来源与传播">6.8 误差来源与传播</h4>
+<p>可观测性回答&quot;运动能否解出 $X$“,误差传播回答&quot;解出的 $X$ 有多准”。两者经同一个雅可比 $J$ 相连:残差 $\mathbf{r}\approx J\boldsymbol\xi$ 反演给出外参扰动 $\Delta\boldsymbol\xi\approx J^+\mathbf{r}$($J^+$ 为 $J$ 的伪逆),被条件数 $\kappa=\sigma_1/\sigma_L$ 放大(§6.3)。残差 $\mathbf{r}$ 有两个来源:</p>
+<ul>
+<li><strong>$A_i$ 的误差(机器人侧)</strong>:$A_i=G_{i+1}^{-1}G_i$ 由正运动学给出,误差来自关节编码器噪声与连杆几何参数(即绝对精度)。工业机器人重复精度高(典型 $\pm0.02$–$0.1\text{ mm}$)、绝对精度低($\pm0.1$–$2\text{ mm}$,且与构型相关),故 $A_i$ 常含<strong>系统性、构型相关</strong>的偏差,可能给 $X$ 带来偏置。</li>
+<li><strong>$B_i$ 的误差(配准侧)</strong>:来自点云配准残差,含测距噪声、退化方向的模糊、ICP 收敛误差(详见 §7)。</li>
+</ul>
+<p><strong>主导关系</strong>:纯点云手眼标定中,$B_i$ 的配准误差通常是主导项——机器人重复性远高于单次点云配准精度(§4)。因此提升精度的首要杠杆在配准侧:更优的配准初值、几何更丰富的场景、更密的点云、退化检测与剔除,而不是一味追求机器人绝对精度。一个容易被忽略的误差源是<strong>时间同步</strong>:雷达帧与机器人位姿若未对齐,运动中的错位会等效成位姿误差,需用硬件触发或在时间戳间插值对齐。</p>
+<h3 id="7-点云配准的局限与精度边界">7. 点云配准的局限与精度边界</h3>
+<blockquote>
+<p>本节针对 eye-in-hand 的点云配准精度;eye-to-hand 用标定物、不走配准,可略过。</p>
+</blockquote>
+<p>第 4 节指出纯点云标定的精度受制于配准。本节展开配准的固有局限——这是理解&quot;用环境标定&quot;可行边界的最后一块拼图。</p>
+<h4 id="7-1-局部最优与初值敏感">7.1 局部最优与初值敏感</h4>
+<p>ICP 总是单调收敛到均方误差距离指标的<strong>最近局部最小值</strong>,初值不够好则收敛到错误结果。Li et al. (2023) 的实验定量验证:纯 ICP 在&quot;部分点云 + 大位姿差异&quot;场景下成功率仅 5.4%;FGR-FPFH 5.2%,TEASER++ 仅 1.2%——需要深度学习网络提供优质初值后 ICP 才生效。这意味着:<strong>相邻帧的位姿差异不宜过大</strong>,否则配准失败,$B_k$ 无效。Yan 等针对基于 ICP 的手眼标定精度做了专门的改进研究,其结论同样指向初值质量与场景几何丰富度的关键性。</p>
+<h4 id="7-2-对称-重复结构导致的退化">7.2 对称/重复结构导致的退化</h4>
+<p><strong>走廊/隧道效应</strong>:走廊中法向量主要分布在两个轴上(来自地面、天花板、墙壁),“normal vectors are predominantly distributed along only two axes, leading to pose ambiguity along the direction of the corridor”——沿走廊方向产生位姿模糊,这是<strong>单向退化</strong>。退化恶化的机制:与走廊方向正交的平面因远、稀疏而在迭代中被拒绝,法向量分布失衡导致位姿漂移,条件数急增。</p>
+<p>这正是 §5.4 提到的&quot;局部对称区域精度打折&quot;的机理:不是标定方法的问题,而是配准在这些方向给不出约束。</p>
+<h4 id="7-3-应对-退化检测与自适应">7.3 应对:退化检测与自适应</h4>
+<p>GenZ-ICP 按平面度(planarity)分类对应点,自适应混合 point-to-plane(结构化环境)与 point-to-point(非结构化)。关键数学:point-to-point 的 Hessian 平移部分为单位矩阵,<strong>条件数恒为 1</strong>,加入 point-to-point 分量能稳定数值条件,防止退化场景下的位姿发散。在 SubT-MRS Long_Corridor 数据集上,GenZ-ICP 的 APE 均值为 1.69 m,远优于 CT-ICP(44.18 m)和 point-to-plane ICP(32.84 m)。</p>
+<p>工程启示:采集标定数据时,应选择<strong>几何丰富、非退化</strong>的场景(多方向平面、家具、建筑结构),避开空旷走廊、隧道、大块平整墙面朝向的运动方向。</p>
+<h3 id="8-工程实践">8. 工程实践</h3>
+<p>综合以上各节,给出环境两步法的实操要点(以下针对 eye-in-hand;eye-to-hand 用标定物,见 §2.3)。</p>
+<h4 id="8-1-两步法流程">8.1 两步法流程</h4>
+<ol>
+<li><strong>采数据</strong>:控制机械臂走一组位姿序列 $\{G_i\}$,每个位姿同步采一帧点云 $P_i$。</li>
+<li><strong>求 $B_k$</strong>:对相邻帧 $(P_i, P_{i+1})$ 做点云配准,得到 $B_k = {}^{L_{i+1}}T_{L_i}$。配准建议:全局配准(FPFH + RANSAC)给初值,point-to-plane ICP 精化。</li>
+<li><strong>算 $A_k$</strong>:$A_k = G_{i+1}^{-1}G_i$(由控制器位姿直接算)。</li>
+<li><strong>可观测性预检</strong>:用 $J_k = \mathrm{Ad}_{B_k}-I_6$ 堆叠求条件数(§6.2),剔除使 $\kappa$ 飙升的帧,目标 $\kappa &lt; 100$。</li>
+<li><strong>解 $AX=XB$</strong>:用 OpenCV <code>calibrateHandEye</code> 或自实现求解器;建议同时跑几种方法交叉验证。</li>
+<li><strong>验证</strong>:用留出的位姿对检查重投影/配准残差,或用 §5.2 的思想实验做正确性抽检。</li>
+</ol>
+<h4 id="8-2-采集运动清单">8.2 采集运动清单</h4>
+<table>
+<thead>
+<tr>
+<th>项目</th>
+<th>建议</th>
+<th>依据</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>运动组数</td>
+<td>≥10–20 组(理论下界 2 组相对运动)</td>
+<td></td>
+</tr>
+<tr>
+<td>收益拐点</td>
+<td>~50 组后趋平</td>
+<td></td>
+</tr>
+<tr>
+<td>旋转轴</td>
+<td>至少 2 个非平行,尽量 3 正交方向</td>
+<td></td>
+</tr>
+<tr>
+<td>单次旋转幅度</td>
+<td>几十度量级,避免 &lt;5° 和接近 180°</td>
+<td></td>
+</tr>
+<tr>
+<td>平移幅度</td>
+<td>与算法匹配:分离法小平移,同时法大平移</td>
+<td></td>
+</tr>
+<tr>
+<td>相邻帧位姿差</td>
+<td>不宜过大(否则 ICP 配准失败)</td>
+<td></td>
+</tr>
+<tr>
+<td>避开位姿</td>
+<td>纯平移、共轴旋转、共面运动、机构奇异</td>
+<td>第 6.4 节、《机械臂技术基础》第 7 节</td>
+</tr>
+<tr>
+<td>场景</td>
+<td>几何丰富、非退化;避开走廊/隧道/大块平整墙面</td>
+<td></td>
+</tr>
+</tbody>
+</table>
+<h4 id="8-3-何时该用标定物">8.3 何时该用标定物</h4>
+<p>标定物不是数学上的必需品(第 5 节已证明环境标定等价于 $AX=XB$),而是<strong>工程捷径</strong>:它提供精确、无歧义的 $B_k$(角点 + PnP),绕开了点云配准的所有困难(局部最优、初值敏感、退化)。当对精度要求高、或环境几何贫乏、或需要可重复的标定基准时,标定物仍是首选。eye-to-hand 尤其依赖标定物:固定雷达免标定物需分割末端、工程上不现实,常用球靶(球心位姿稳健、易从点云提取)逐帧给出 $C_i$。</p>
+<h4 id="8-4-连续时间与可观测性感知标定-现代方法">8.4 连续时间与可观测性感知标定(现代方法)</h4>
+<p>上述两步法把位姿当作离散时刻的快照。高频率、异步的 LiDAR/IMU 用离散时间会引入运动畸变与时刻错配,现代方法用<strong>连续时间批优化</strong>克服:用累积三次 B 样条参数化 6-DoF 轨迹,其解析导数直接给出任意时刻的加速度/角速度,使雷达点时刻可在 IMU 时间轴上精确插值(含时间偏移),把外参与轨迹统一进单一非线性最小二乘。代表工作 <strong>OA-LICalib</strong> 在此框架下用 Fisher 信息矩阵的截断 SVD(TSVD)<strong>自动识别并锁定不可观方向</strong>——只更新可观方向、把不可观方向冻结在先验上(与 §6 的条件数判据同源,但落地为数值更新规则);其结构化环境(墙、地面 surfel)point-to-plane 约束联合标定 LiDAR/IMU 内外参、免任何标定物,精度基准(仿真、全激励)约<strong>平移 0.40 cm、旋转 0.18°</strong>,真实多段联合标定重复性约<strong>平移 ±2 cm、旋转 ±0.2°</strong>,时间偏移可达毫秒级。该方法显式印证 §6 的退化结论:单轴旋转使沿该轴的外参平移不可观(被自动锁定)。同类近期工作还有 GRIL-Calib(地面机器人平面运动免标定物)、iKalibr(统一多传感器免标定物时空标定);可观测性感知的思路也常以信息度量(trace/det/最大特征值)驱动段选择。</p>
+<h3 id="9-总结">9. 总结</h3>
+<ol>
+<li>手眼标定求解 $AX=XB$,eye-in-hand 与 eye-to-hand 同形:$A$ 是末端相对运动(已知),$B$ 是观测得到的相对运动(eye-in-hand 为传感器自身运动,eye-to-hand 为末端上标定物的运动),$X$ 是外参(eye-in-hand 为末端-雷达,eye-to-hand 为基座-雷达)。</li>
+<li>经典求解器分分离法(Tsai、Park、Shah)与同时法(Andreff、Daniilidis、Horaud);同时法对旋转噪声鲁棒,分离法对平移噪声鲁棒,且运动范围影响相反——算法应与运动匹配,无普适最优。</li>
+<li>纯点云场景的根本差异:$B$ 必须经点云配准间接获得,多了一层非凸优化,引入局部最优、初值敏感、退化等误差源;精度上限受制于配准而非运动学。</li>
+<li>用环境替代标定物<strong>严格等价于 $AX=XB$</strong>:环境只是测量 $B$ 的工具,$B$ 的物理真值由 $A$ 和 $X$ 决定,与环境无关。旋转环境而机械臂不动,$X$ 不变——这正是正确性的证明。</li>
+<li>两步法(先配准求 $B$,再闭式解 $X$)与自洽融合法理论等价,但两步法把配准与求解解耦,可诊断、误差结构清晰,工程上更优。</li>
+<li>可观测性可用雅可比 $J_k = \mathrm{Ad}_{B_k}-I_6$ 的条件数量化,且<strong>只依赖 $B_k$,可在采数据前预判</strong>。纯平移不能定平移却能约束旋转(反直觉),且不同算法框架下同一退化运动的可观测性不同。</li>
+<li>标定物是工程捷径(提供干净 $B$),不是数学门槛。</li>
+<li>退化情形——只用一面墙的平面约束:法向定旋转、距离定平移,二者可观测的充要条件都是运动含横向旋转(垂直墙法向的轴)。运动选对,一面墙即可解出完整外参;纯平移或纯绕墙法向转则信息崩溃。平面法信息少于完整配准、条件数更差,但拟合凸、抗干扰、无需初值,结构化室内常更稳健(详见 §6.6)。</li>
+</ol>
+<h3 id="参考资料">参考资料</h3>
+<ul>
+<li>
+<p>1-tsai. R.Y. Tsai, R.K. Lenz. <em>A New Technique for Fully Autonomous and Efficient 3D Robotics Hand/Eye Calibration.</em> IEEE Trans. R&amp;A, 5(3):345–358, 1989. — <a target="_blank" rel="noopener" href="https://kmlee.gatech.edu/me6406/handeye.pdf">https://kmlee.gatech.edu/me6406/handeye.pdf</a></p>
+</li>
+<li>
+<p>2-park. F.C. Park, B.J. Martin. <em>Robot Sensor Calibration: Solving AX=XB on the Euclidean Group.</em> IEEE Trans. R&amp;A, 10(5):717–721, 1994.</p>
+</li>
+<li>
+<p>3-horaud. R. Horaud, F. Dornaika. <em>Hand-Eye Calibration.</em> IJRR, 14(3):195–210, 1995. — <a target="_blank" rel="noopener" href="https://arxiv.org/abs/2311.12655">https://arxiv.org/abs/2311.12655</a></p>
+</li>
+<li>
+<p>4-andreff. N. Andreff, R. Horaud, B. Espiau. <em>On-line Hand-Eye Calibration.</em> 3DIM’99, pp.430–436, 1999; 期刊版 IJRR 20(3):228–248, 2001. — <a target="_blank" rel="noopener" href="https://inria.hal.science/inria-00590109v1/document">https://inria.hal.science/inria-00590109v1/document</a></p>
+</li>
+<li>
+<p>5-daniilidis. K. Daniilidis. <em>Hand-Eye Calibration Using Dual Quaternions.</em> IJRR, 18(3):286–298, 1999. — <a target="_blank" rel="noopener" href="https://journals.sagepub.com/doi/10.1177/02783649922066213">https://journals.sagepub.com/doi/10.1177/02783649922066213</a></p>
+</li>
+<li>
+<p>6-shah. M.A. Shah. <em>Solving the Robot-World/Hand-Eye Calibration Problem Using the Kronecker Product.</em> ASME J. Mech. Robotics, 5(3):031007, 2013. — <a target="_blank" rel="noopener" href="https://tsapps.nist.gov/publication/get_pdf.cfm?pub_id=910225">https://tsapps.nist.gov/publication/get_pdf.cfm?pub_id=910225</a></p>
+</li>
+<li>
+<p>6-strobl. K.H. Strobl, G. Hirzinger. <em>Optimal Hand-Eye Calibration.</em> IROS 2006, pp.4647–4653. — <a target="_blank" rel="noopener" href="https://www.robotic.dlr.de/fileadmin/robotic/stroblk/publications/strobl_2006iros.pdf">https://www.robotic.dlr.de/fileadmin/robotic/stroblk/publications/strobl_2006iros.pdf</a></p>
+</li>
+<li>
+<p>8-li2018. W. Li et al. <em>Simultaneous Robot–World and Hand–Eye Calibration without a Calibration Object.</em> Sensors, 18(11):3949, 2018. — <a target="_blank" rel="noopener" href="https://www.mdpi.com/1424-8220/18/11/3949">https://www.mdpi.com/1424-8220/18/11/3949</a></p>
+</li>
+<li>
+<p>9-sarabandi. Sarabandi et al. <em>Hand-Eye Calibration Made Easy through a Closed-Form Two-Stage Method.</em> IRI/UPC, 2022. — <a target="_blank" rel="noopener" href="https://www.iri.upc.edu/files/scidoc/2525-Hand-Eye-Calibration-Made-Easy-through-a-Closed-Form-Two-Stage-Method.pdf">https://www.iri.upc.edu/files/scidoc/2525-Hand-Eye-Calibration-Made-Easy-through-a-Closed-Form-Two-Stage-Method.pdf</a></p>
+</li>
+<li>
+<p>15-pachtrachai. K. Pachtrachai, F. Vasconcelos, F. Chadebecq, M. Allan, S. Hailes, V. Pawar, D. Stoyanov. <em>Adjoint Transformation Algorithm for Hand–Eye Calibration with Applications in Robotic Assisted Surgery.</em> Annals of Biomedical Engineering, 46(10):1606–1620, 2018. — <a target="_blank" rel="noopener" href="https://pmc.ncbi.nlm.nih.gov/articles/PMC6154014/">https://pmc.ncbi.nlm.nih.gov/articles/PMC6154014/</a>(代码 <a target="_blank" rel="noopener" href="https://github.com/surgical-vision/handeye-ata">https://github.com/surgical-vision/handeye-ata</a>)</p>
+</li>
+<li>
+<p>dornaika-rwhe. Dornaika, Horaud. <em>Simultaneous Robot-World and Hand-Eye Calibration.</em> IEEE Trans. R&amp;A, 14(4):617–622, 1998. — <a target="_blank" rel="noopener" href="https://hal.science/hal-00946579v1/file/calibration.pdf">https://hal.science/hal-00946579v1/file/calibration.pdf</a></p>
+</li>
+<li>
+<p>dekel-dq. Dekel et al. <em>Optimal Least-Squares Solution to the Hand-Eye Calibration Problem</em>, CVPR 2020. — <a target="_blank" rel="noopener" href="https://arxiv.org/abs/2002.10838">https://arxiv.org/abs/2002.10838</a></p>
+</li>
+<li>
+<p>2-andreff. N. Andreff, R. Horaud, B. Espiau. <em>Robot Hand-Eye Calibration Using Structure-from-Motion.</em> IJRR 20(3), 2001 / arXiv 重印. — <a target="_blank" rel="noopener" href="https://arxiv.org/abs/2311.11808">https://arxiv.org/abs/2311.11808</a></p>
+</li>
+<li>
+<p>4-nahvi. A. Nahvi, J.M. Hollerbach. <em>The Noise Amplification Index for Optimal Pose Selection in Robot Calibration.</em> ICRA 1996, pp.646–651. — <a target="_blank" rel="noopener" href="https://users.cs.utah.edu/~jmh/Papers/Nahvi_ICRA96.pdf">https://users.cs.utah.edu/~jmh/Papers/Nahvi_ICRA96.pdf</a></p>
+</li>
+<li>
+<p>5-daneyey. D. Daney, Y. Papegay, B. Madeline. <em>Choosing Measurement Poses for Robot Calibration with the Local POE Method.</em> IJRR, 2005. — <a target="_blank" rel="noopener" href="http://www-sop.inria.fr/coprin/PDF/ijrr2005.pdf">http://www-sop.inria.fr/coprin/PDF/ijrr2005.pdf</a></p>
+</li>
+<li>
+<p>6-sun. Y. Sun, J.M. Hollerbach. <em>Observability Index Selection for Robot Calibration.</em> ICRA 2008. — <a target="_blank" rel="noopener" href="https://cse.usf.edu/~yusun/lab_pub/icra0801.pdf">https://cse.usf.edu/~yusun/lab_pub/icra0801.pdf</a></p>
+</li>
+<li>
+<p>7-enebuse. I. Enebuse et al. <em>Accuracy evaluation of hand-eye calibration techniques for vision-guided robots.</em> PLoS One / Sensors, 2022. — <a target="_blank" rel="noopener" href="https://pmc.ncbi.nlm.nih.gov/articles/PMC9581431/">https://pmc.ncbi.nlm.nih.gov/articles/PMC9581431/</a></p>
+</li>
+<li>
+<p>8-schmidt. J. Schmidt, H. Niemann. <em>Data Selection for Hand-eye Calibration: A Vector Quantization Approach.</em> IJRR, 27(9):1027–1053, 2008. — <a target="_blank" rel="noopener" href="https://journals.sagepub.com/doi/10.1177/0278364908095172">https://journals.sagepub.com/doi/10.1177/0278364908095172</a></p>
+</li>
+<li>
+<p>10-brookshire. J. Brookshire. <em>Extrinsic Calibration from Per-Sensor Egomotion.</em> RSS VIII, 2012. — <a target="_blank" rel="noopener" href="https://www.roboticsproceedings.org/rss08/p04.pdf">https://www.roboticsproceedings.org/rss08/p04.pdf</a></p>
+</li>
+<li>
+<p>11-ulrich-scara. M. Ulrich, C. Steger et al. <em>Hand-Eye Calibration of SCARA Robots.</em> TUM/MVTec, 2014. — <a target="_blank" rel="noopener" href="https://mv.in.tum.de/_media/members/steger/publications/2014/ogrw-2014-ulrich-et-al.pdf">https://mv.in.tum.de/_media/members/steger/publications/2014/ogrw-2014-ulrich-et-al.pdf</a></p>
+</li>
+<li>
+<p>1-li2023. L. Li, X. Yang, R. Wang, X. Zhang. <em>Automatic Robot Hand-Eye Calibration Enabled by Learning-Based 3D Vision(LRBO: Look at Robot Base Once).</em> J. Intelligent &amp; Robotic Systems, 110(3):130, 2024;arXiv:2311.01335. — <a target="_blank" rel="noopener" href="https://arxiv.org/html/2311.01335v3">https://arxiv.org/html/2311.01335v3</a></p>
+</li>
+<li>
+<p>2-open3d. Open3D. <em>ICP Registration.</em> — <a target="_blank" rel="noopener" href="https://www.open3d.org/docs/latest/tutorial/pipelines/icp_registration.html">https://www.open3d.org/docs/latest/tutorial/pipelines/icp_registration.html</a></p>
+</li>
+<li>
+<p>gicp. Segal, Haehnel, Thrun. <em>Generalized-ICP.</em> RSS 2009. — <a target="_blank" rel="noopener" href="https://www.roboticsproceedings.org/rss05/p21.pdf">https://www.roboticsproceedings.org/rss05/p21.pdf</a></p>
+</li>
+<li>
+<p>teasercpp. Yang, Shi, Carlone. <em>TEASER: Fast and Certifiable Point Cloud Registration.</em> IEEE Trans. Robotics, 37(2):314–333, 2021(代码 <a target="_blank" rel="noopener" href="https://github.com/MIT-SPARK/TEASER-plusplus">https://github.com/MIT-SPARK/TEASER-plusplus</a>). — <a target="_blank" rel="noopener" href="https://arxiv.org/abs/2001.07715">https://arxiv.org/abs/2001.07715</a></p>
+</li>
+<li>
+<p>fgr. Zhou, Park, Koltun. <em>Fast Global Registration.</em> ECCV 2016(代码 <a target="_blank" rel="noopener" href="https://github.com/isl-org/FastGlobalRegistration">https://github.com/isl-org/FastGlobalRegistration</a>). — <a target="_blank" rel="noopener" href="http://vladlen.info/papers/fast-global-registration.pdf">http://vladlen.info/papers/fast-global-registration.pdf</a></p>
+</li>
+<li>
+<p>3-pcl. PCL. <em>Module Registration.</em> — <a target="_blank" rel="noopener" href="https://pointclouds.org/documentation/group__registration.html">https://pointclouds.org/documentation/group__registration.html</a></p>
+</li>
+<li>
+<p>4-yan2023. T. Yan et al. <em>Research on Hand–Eye Calibration Accuracy Improvement Method Based on ICP.</em> MDPI Agriculture, 13(10):2026, 2023. — <a target="_blank" rel="noopener" href="https://www.mdpi.com/2077-0472/13/10/2026">https://www.mdpi.com/2077-0472/13/10/2026</a></p>
+</li>
+<li>
+<p>5-mlcc. X. Liu, C. Yuan, F. Zhang. <em>Targetless Extrinsic Calibration of Multiple Small FoV LiDARs and Cameras Using Adaptive Voxelization.</em> IEEE TIM, 71, 2022. — <a target="_blank" rel="noopener" href="https://github.com/hku-mars/mlcc">https://github.com/hku-mars/mlcc</a></p>
+</li>
+<li>
+<p>6-huang2020. J.K. Huang et al. <em>Global Unifying Intrinsic Calibration for Spinning and Solid-State LiDARs.</em> arXiv:2012.03321, 2020. — <a target="_blank" rel="noopener" href="https://arxiv.org/abs/2012.03321">https://arxiv.org/abs/2012.03321</a></p>
+</li>
+<li>
+<p>7-genz. D. Lee, H. Lim, S. Han. <em>GenZ-ICP: Generalizable and Degeneracy-Robust LiDAR Odometry Using an Adaptive Weighting.</em> arXiv:2411.06766, 2024. — <a target="_blank" rel="noopener" href="https://arxiv.org/html/2411.06766v1">https://arxiv.org/html/2411.06766v1</a></p>
+</li>
+<li>
+<p>8-planehec. Y. Wang et al. <em>Efficient Hand-Eye Calibration for Multi-view Robotic Arm via Any Point Cloud: PlaneHEC.</em> arXiv:2507.19851, 2025. — <a target="_blank" rel="noopener" href="https://arxiv.org/html/2507.19851v1">https://arxiv.org/html/2507.19851v1</a></p>
+</li>
+<li>
+<p>9-pandey. G. Pandey et al. <em>Automatic Targetless Extrinsic Calibration of a 3D Lidar and Camera by Maximizing Mutual Information.</em> ICRA 2012. — <a target="_blank" rel="noopener" href="http://robots.engin.umich.edu/publications/gpandey-2012a.pdf">http://robots.engin.umich.edu/publications/gpandey-2012a.pdf</a></p>
+</li>
+<li>
+<p>10-koide. K. Koide et al. <em>General, Single-shot, Target-less, and Automatic LiDAR-Camera Calibration.</em> ICRA 2023. — <a target="_blank" rel="noopener" href="https://staff.aist.go.jp/k.koide/assets/pdf/icra2023.pdf">https://staff.aist.go.jp/k.koide/assets/pdf/icra2023.pdf</a></p>
+</li>
+<li>
+<p>11-mints. M.O. Mints. <em>Online Calibration of Extrinsic Parameters for Solid-State LIDAR Systems.</em> 2024. — <a target="_blank" rel="noopener" href="https://pmc.ncbi.nlm.nih.gov/articles/PMC11014319/">https://pmc.ncbi.nlm.nih.gov/articles/PMC11014319/</a></p>
+</li>
+<li>
+<p>12-tan2024. X. Tan et al. <em>A Review of Deep Learning-Based LiDAR and Camera Extrinsic Calibration.</em> MDPI Sensors, 24(12):3878, 2024. — <a target="_blank" rel="noopener" href="https://www.mdpi.com/1424-8220/24/12/3878">https://www.mdpi.com/1424-8220/24/12/3878</a></p>
+</li>
+<li>
+<p>13-wan2020. Wan et al. <em>Flange-Based Hand-Eye Calibration Using a 3D Camera.</em> Frontiers in Robotics and AI, 7:65, 2020. — <a target="_blank" rel="noopener" href="https://www.frontiersin.org/journals/robotics-and-ai/articles/10.3389/frobt.2020.00065/full">https://www.frontiersin.org/journals/robotics-and-ai/articles/10.3389/frobt.2020.00065/full</a></p>
+</li>
+<li>
+<p>16-song2025. Z. Song et al. <em>Robotic Hand–Eye Calibration Method Using Arbitrary Targets Based on Refined Two-Step Registration.</em> Sensors, 25(10):2976, 2025. — <a target="_blank" rel="noopener" href="https://www.mdpi.com/1424-8220/25/10/2976">https://www.mdpi.com/1424-8220/25/10/2976</a></p>
+</li>
+<li>
+<p>furgale-ct. Furgale et al. <em>Continuous-Time Batch Estimation Using Temporal Basis Functions.</em> ICRA 2012. — <a target="_blank" rel="noopener" href="https://furgalep.github.io/bib/furgale_icra12.pdf">https://furgalep.github.io/bib/furgale_icra12.pdf</a></p>
+</li>
+<li>
+<p>oa-licalib. Lv et al. <em>Observability-Aware Intrinsic and Extrinsic Calibration of LiDAR-IMU Systems.</em> IEEE Trans. Robotics, 38(4), 2022(代码 <a target="_blank" rel="noopener" href="https://github.com/APRIL-ZJU/OA-LICalib">https://github.com/APRIL-ZJU/OA-LICalib</a>). — <a target="_blank" rel="noopener" href="https://april.zju.edu.cn/wp-content/papercite-data/pdf/lv2022oai.pdf">https://april.zju.edu.cn/wp-content/papercite-data/pdf/lv2022oai.pdf</a></p>
+</li>
+<li>
+<p>ikalibr. iKalibr. <em>A Unified Targetless Spatiotemporal Calibration Framework</em>, 2024. — <a target="_blank" rel="noopener" href="https://arxiv.org/html/2407.11420v1">https://arxiv.org/html/2407.11420v1</a></p>
+</li>
+<li>
+<p>schneider-obs. Schneider et al. <em>Observability-Aware Self-Calibration of Visual and Inertial Sensors.</em> IEEE Sensors J., 19(10):3846–3860, 2019. — <a target="_blank" rel="noopener" href="https://ieeexplore.ieee.org/document/8605299">https://ieeexplore.ieee.org/document/8605299</a></p>
+</li>
+<li>
+<p>7-ali. I. Ali et al. <em>Methods for Simultaneous Robot-World-Hand–Eye Calibration: A Comparative Study.</em> Sensors, 19(12):2837, 2019. — <a target="_blank" rel="noopener" href="https://pmc.ncbi.nlm.nih.gov/articles/PMC6631330/">https://pmc.ncbi.nlm.nih.gov/articles/PMC6631330/</a></p>
+</li>
+<li>
+<p>11-opencv. OpenCV. <code>calibration_handeye.cpp</code> 源码(4.x),含五法实现与论文引用 — <a target="_blank" rel="noopener" href="https://github.com/opencv/opencv/blob/4.x/modules/calib3d/src/calibration_handeye.cpp">https://github.com/opencv/opencv/blob/4.x/modules/calib3d/src/calibration_handeye.cpp</a></p>
+</li>
+<li>
+<p>11-opencv-docs. OpenCV 官方文档. <em>cv::calibrateHandEye / cv::calibrateRobotWorldHandEye</em> — <a target="_blank" rel="noopener" href="https://docs.opencv.org/4.x/d9/d0c/group__calib3d.html#gaebfc1c9f7434196a374c382abf43439b">https://docs.opencv.org/4.x/d9/d0c/group__calib3d.html#gaebfc1c9f7434196a374c382abf43439b</a></p>
+</li>
+<li>
+<p>11-opencv-issue. OpenCV GitHub Issue #24871. <em>Most hand-eye calibration methods don’t work</em> — <a target="_blank" rel="noopener" href="https://github.com/opencv/opencv/issues/24871">https://github.com/opencv/opencv/issues/24871</a></p>
+</li>
+<li>
+<p>12-wiki-he. Wikipedia. <em>Hand–eye calibration problem.</em> — <a target="_blank" rel="noopener" href="https://en.wikipedia.org/wiki/Hand%E2%80%93eye_calibration_problem">https://en.wikipedia.org/wiki/Hand–eye_calibration_problem</a></p>
+</li>
+<li>
+<p>13-wiki-icp. Wikipedia. <em>Iterative closest point.</em> — <a target="_blank" rel="noopener" href="https://en.wikipedia.org/wiki/Iterative_closest_point">https://en.wikipedia.org/wiki/Iterative_closest_point</a></p>
+</li>
+<li>
+<p>14-matlab. MathWorks. <em>What Is Robot Hand-Eye Calibration?</em> — <a target="_blank" rel="noopener" href="https://www.mathworks.com/help/vision/ug/what-is-robot-hand-eye-calibration.html">https://www.mathworks.com/help/vision/ug/what-is-robot-hand-eye-calibration.html</a></p>
+</li>
+</ul>
+<link rel="stylesheet" href="/css/spoiler.css" type="text/css"><script src="/js/spoiler.js" type="text/javascript" async></script>
+                
+
+
+				<br /><br />
+				<blockquote>
+					<p>文章链接：<br /> 
+					<a style="font-size: 0.85rem" target="_blank" rel="noopener" href="https://www.zywvvd.com/notes/3d/handeye-calibration/handeye-calibration/">https://www.zywvvd.com/notes/3d/handeye-calibration/handeye-calibration/</a>
+					</p>
+				</blockquote>
+
+
+              </div>
+            
+            <hr/>
+			
+			<!-- 添加打赏模块 -->
+			<div class="reward-container">
+				
+					<button id="rewardBtn" class="reward-btn">
+						 
+							❤ 打赏
+							
+					</button>
+					<p class="tea">“觉得不错的话，给点打赏吧 ୧(๑•̀⌄•́๑)૭”</p>
+					<div id="rewardImgContainer" class="reward-img-container">
+						<div class="singleImgContainer">
+							<img id="wechatImg" class="reward-img" src="https://uipv4.zywvvd.com:33030/HexoFiles/vvd_pc_upload/wechatpay.png" srcset="/img/loading.gif" lazyload alt="微信二维码">
+							<p class="wechatPay">微信支付</p>
+						</div>
+						<div class="singleImgContainer">
+							<img id="alipayImg" class="reward-img" src="https://uipv4.zywvvd.com:33030/HexoFiles/vvd_pc_upload/alipay.png" srcset="/img/loading.gif" lazyload alt="支付宝二维码">
+							<p class="aliPay">支付宝支付</p>
+						</div>
+					</div>
+				
+			</div>
+			
+            <div>
+              <div class="post-metas my-3">
+  
+    <div class="post-meta mr-3 d-flex align-items-center">
+      <i class="iconfont icon-category"></i>
+      
+
+<span class="category-chains">
+  
+  
+    
+      <span class="category-chain">
+        
+  <a href="/categories/Robotics/" class="category-chain-item">Robotics</a>
+  
+  
+
+      </span>
+    
+  
+</span>
+
+    </div>
+  
+  
+    <div class="post-meta">
+      <i class="iconfont icon-tags"></i>
+      
+        <a href="/tags/Robotics/" class="print-no-link">#Robotics</a>
+      
+        <a href="/tags/HandEye/" class="print-no-link">#HandEye</a>
+      
+        <a href="/tags/Calibration/" class="print-no-link">#Calibration</a>
+      
+        <a href="/tags/LiDAR/" class="print-no-link">#LiDAR</a>
+      
+    </div>
+  
+</div>
+
+
+              
+  
+
+  <div class="license-box my-3">
+    <div class="license-title">
+      <div>激光雷达与机械臂手眼标定理论</div>
+      <div>https://www.zywvvd.com/notes/3d/handeye-calibration/handeye-calibration/</div>
+    </div>
+    <div class="license-meta">
+      
+        <div class="license-meta-item">
+          <div>作者</div>
+          <div>Yiwei Zhang</div>
+        </div>
+      
+      
+        <div class="license-meta-item license-meta-date">
+          <div>发布于</div>
+          <div>2026年7月31日</div>
+        </div>
+      
+      
+      
+        <div class="license-meta-item">
+          <div>许可协议</div>
+          <div>
+            
+              
+              
+                <a class="print-no-link" target="_blank" href="https://creativecommons.org/licenses/by/4.0/">
+                  <span class="hint--top hint--rounded" aria-label="BY - 署名">
+                    <i class="iconfont icon-by"></i>
+                  </span>
+                </a>
+              
+            
+          </div>
+        </div>
+      
+    </div>
+    <div class="license-icon iconfont"></div>
+  </div>
+
+
+
+              
+                <div class="post-prevnext my-3">
+                  <article class="post-prev col-6">
+                    
+                    
+                      <a href="/notes/3d/homogeneous-transform/homogeneous-transform/" title="齐次变换矩阵与 SE(3)">
+                        <i class="iconfont icon-arrowleft"></i>
+                        <span class="hidden-mobile">齐次变换矩阵与 SE(3)</span>
+                        <span class="visible-mobile">上一篇</span>
+                      </a>
+                    
+                  </article>
+                  <article class="post-next col-6">
+                    
+                    
+                      <a href="/notes/3d/robot-arm-fundamentals/robot-arm-fundamentals/" title="机械臂技术基础">
+                        <span class="hidden-mobile">机械臂技术基础</span>
+                        <span class="visible-mobile">下一篇</span>
+                        <i class="iconfont icon-arrowright"></i>
+                      </a>
+                    
+                  </article>
+                </div>
+              
+            </div>
+
+            
+  
+  
+    <article id="comments" lazyload>
+      
+  <div id="waline"></div>
+  <script type="text/javascript">
+    Fluid.utils.loadComments('#waline', function() {
+      Fluid.utils.createCssLink('https://lib.baomitu.com/waline/2.14.8/waline.min.css')
+      Fluid.utils.createScript('https://lib.baomitu.com/waline/2.14.8/waline.min.js', function() {
+        var options = Object.assign(
+          {"serverURL":"https://uipv4.zywvvd.com:33033/","path":"window.location.pathname","meta":["nick","mail","link"],"requiredMeta":["nick"],"lang":"zh-CN","emoji":["https://cdn.jsdelivr.net/gh/walinejs/emojis/weibo"],"dark":"html[data-user-color-scheme=\"dark\"]","wordLimit":0,"pageSize":10,"reaction":true,"locale":{"placeholder":"山高路远，常来玩吖 ~","reactionTitle":null}},
+          {
+            el: '#waline',
+            path: window.location.pathname
+          }
+        )
+        Waline.init(options);
+        Fluid.utils.waitElementVisible('#waline .vcontent', () => {
+          var imgSelector = '#waline .vcontent img:not(.vemoji)';
+          Fluid.plugins.imageCaption(imgSelector);
+          Fluid.plugins.fancyBox(imgSelector);
+        })
+      });
+    });
+  </script>
+  <noscript>Please enable JavaScript to view the comments</noscript>
+
+
+    </article>
+  
+
+
+          </article>
+        </div>
+      </div>
+    </div>
+
+    <div class="side-col d-none d-lg-block col-lg-2">
+      
+  <aside class="sidebar" style="margin-left: -1rem">
+    <div id="toc">
+  <p class="toc-header">
+    <i class="iconfont icon-list"></i>
+    <span>目录</span>
+  </p>
+  <div class="toc-body" id="toc-body"></div>
+</div>
+
+
+
+  </aside>
+
+
+    </div>
+  </div>
+</div>
+
+
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+  
+  
+
+
+
+
+
+  <script>
+  Fluid.utils.createScript('https://lib.baomitu.com/mermaid/8.14.0/mermaid.min.js', function() {
+    mermaid.initialize({"theme":"default"});
+
+    Fluid.utils.listenDOMLoaded(function() {
+      Fluid.events.registerRefreshCallback(function() {
+        if ('mermaid' in window) {
+          mermaid.init();
+        }
+      });
+    });
+  });
+</script>
+
+
+
+
+
+
+    
+
+    
+      <a id="scroll-top-button" aria-label="TOP" href="#" role="button">
+        <i class="iconfont icon-xiangshangjiantou" aria-hidden="true"></i>
+      </a>
+    
+
+    
+      <div class="modal fade" id="modalSearch" tabindex="-1" role="dialog" aria-labelledby="ModalLabel"
+     aria-hidden="true">
+  <div class="modal-dialog modal-dialog-scrollable modal-lg" role="document">
+    <div class="modal-content">
+      <div class="modal-header text-center">
+        <h4 class="modal-title w-100 font-weight-bold">搜索</h4>
+        <button type="button" id="local-search-close" class="close" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body mx-3">
+        <div class="md-form mb-5">
+          <input type="text" id="local-search-input" class="form-control validate">
+          <label data-error="x" data-success="v" for="local-search-input">关键词</label>
+        </div>
+        <div class="list-group" id="local-search-result"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+    
+
+    
+  </main>
+
+  <footer>
+    <div class="footer-inner">
+  
+    <div class="footer-content">
+       <div class="vvd_footer" style="font-size: 0.85rem;"> <a href="https://hexo.io" target="_blank" rel="nofollow noopener" color="#d7d8d9" data-umami-event="Footer-Hexo"><span class="umami--click--Footer-Hexo">Hexo</span></a> <i class="iconfont icon-love"></i> <a href="https://github.com/fluid-dev/hexo-theme-fluid" target="_blank" rel="nofollow noopener" data-umami-event="Footer-Fluid"><span class="umami--click--Footer-Fluid">Fluid</span></a> <i class="iconfont icon-love"></i> <a href="https://uipv4.zywvvd.com:33039/share/0zx3o21oIpZTZqwC/%E5%8F%88%E8%A7%81%E8%8B%8D%E5%B2%9A" target="_blank" rel="nofollow noopener" data-umami-event="Footer-Umami"><span class="umami--click--Footer-Umami">Umami</span></a> <div style="font-size: 0.85rem;"> <span id="timeDate">载入天数...</span> <span id="times">载入时分秒...</span> <script src="/vvd_js/duration.js"></script> </div> <div style="font-size: 0.85rem;"> <span> 总访问量 <span style="color: #d7d8d9;" id="PVstatic">0</span> 次&nbsp</span> <span> 总访客数 <span style="color: #d7d8d9;" id="UVstatic">0</span> 人&nbsp</span> <span> 当前在线 <span style="color: #d7d8d9;" id="ACTstatic">0</span> 人&nbsp</span> <script src="https://uipv4.zywvvd.com:33037/statistics" defer></script> </div> <div> <span> Copyright © 2020-2025. All Rights Reserved.</span> </div> <div style="font-size: 0.88rem;"> <a target="_blank" rel="noopener" href="https://developer.hitokoto.cn/" id="hitokoto_text"><span style="color: #d7d8d9;"  id="hitokoto"></span></a> <script src="https://uipv4.zywvvd.com:33044/?encode=js&select=%23hitokoto" defer></script> </div> <a href="https://icp.gov.moe/?keyword=20230615" target="_blank">萌ICP备20230615号</a>
+
+
+</div> 
+    </div>
+  
+  
+  
+  
+</div>
+
+  </footer>
+
+  <!-- Scripts -->
+  
+  <script  src="https://lib.baomitu.com/nprogress/0.2.0/nprogress.min.js" ></script>
+  <link  rel="stylesheet" href="https://lib.baomitu.com/nprogress/0.2.0/nprogress.min.css" />
+
+  <script>
+    NProgress.configure({"showSpinner":false,"trickleSpeed":100})
+    NProgress.start()
+    window.addEventListener('load', function() {
+      NProgress.done();
+    })
+  </script>
+
+
+<script  src="https://lib.baomitu.com/jquery/3.6.0/jquery.min.js" ></script>
+<script  src="https://lib.baomitu.com/twitter-bootstrap/4.6.1/js/bootstrap.min.js" ></script>
+<script  src="/js/events.js" ></script>
+<script  src="/js/plugins.js" ></script>
+
+
+
+
+
+  
+    <script  src="/js/img-lazyload.js" ></script>
+  
+
+
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/tocbot/4.18.2/tocbot.min.js', function() {
+    var toc = jQuery('#toc');
+    if (toc.length === 0 || !window.tocbot) { return; }
+    var boardCtn = jQuery('#board-ctn');
+    var boardTop = boardCtn.offset().top;
+
+    window.tocbot.init(Object.assign({
+      tocSelector     : '#toc-body',
+      contentSelector : '.markdown-body',
+      linkClass       : 'tocbot-link',
+      activeLinkClass : 'tocbot-active-link',
+      listClass       : 'tocbot-list',
+      isCollapsedClass: 'tocbot-is-collapsed',
+      collapsibleClass: 'tocbot-is-collapsible',
+      scrollSmooth    : true,
+      includeTitleTags: true,
+      headingsOffset  : -boardTop,
+    }, CONFIG.toc));
+    if (toc.find('.toc-list-item').length > 0) {
+      toc.css('visibility', 'visible');
+    }
+
+    Fluid.events.registerRefreshCallback(function() {
+      if ('tocbot' in window) {
+        tocbot.refresh();
+        var toc = jQuery('#toc');
+        if (toc.length === 0 || !tocbot) {
+          return;
+        }
+        if (toc.find('.toc-list-item').length > 0) {
+          toc.css('visibility', 'visible');
+        }
+      }
+    });
+  });
+</script>
+
+
+  <script src=https://lib.baomitu.com/clipboard.js/2.0.10/clipboard.min.js></script>
+
+  <script>Fluid.plugins.codeWidget();</script>
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/anchor-js/4.3.1/anchor.min.js', function() {
+    window.anchors.options = {
+      placement: CONFIG.anchorjs.placement,
+      visible  : CONFIG.anchorjs.visible
+    };
+    if (CONFIG.anchorjs.icon) {
+      window.anchors.options.icon = CONFIG.anchorjs.icon;
+    }
+    var el = (CONFIG.anchorjs.element || 'h1,h2,h3,h4,h5,h6').split(',');
+    var res = [];
+    for (var item of el) {
+      res.push('.markdown-body > ' + item.trim());
+    }
+    if (CONFIG.anchorjs.placement === 'left') {
+      window.anchors.options.class = 'anchorjs-link-left';
+    }
+    window.anchors.add(res.join(', '));
+
+    Fluid.events.registerRefreshCallback(function() {
+      if ('anchors' in window) {
+        anchors.removeAll();
+        var el = (CONFIG.anchorjs.element || 'h1,h2,h3,h4,h5,h6').split(',');
+        var res = [];
+        for (var item of el) {
+          res.push('.markdown-body > ' + item.trim());
+        }
+        if (CONFIG.anchorjs.placement === 'left') {
+          anchors.options.class = 'anchorjs-link-left';
+        }
+        anchors.add(res.join(', '));
+      }
+    });
+  });
+</script>
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/fancybox/3.5.7/jquery.fancybox.min.js', function() {
+    Fluid.plugins.fancyBox();
+  });
+</script>
+
+
+  <script>Fluid.plugins.imageCaption();</script>
+
+  
+      <script>
+        if (!window.MathJax) {
+          window.MathJax = {
+            tex    : {
+              inlineMath: { '[+]': [['$', '$']] }
+            },
+            options: {
+              renderActions: {
+                insertedScript: [200, () => {
+                  document.querySelectorAll('mjx-container').forEach(node => {
+                    let target = node.parentNode;
+                    if (target.nodeName.toLowerCase() === 'li') {
+                      target.parentNode.classList.add('has-jax');
+                    }
+                  });
+                }, '', false]
+              }
+            }
+          };
+        } else {
+          MathJax.startup.document.state(0);
+          MathJax.texReset();
+          MathJax.typeset();
+          MathJax.typesetPromise();
+        }
+
+        Fluid.events.registerRefreshCallback(function() {
+          if ('MathJax' in window && MathJax.startup.document && typeof MathJax.startup.document.state === 'function') {
+            MathJax.startup.document.state(0);
+            MathJax.texReset();
+            MathJax.typeset();
+            MathJax.typesetPromise();
+          }
+        });
+      </script>
+    
+
+  <script  src="https://lib.baomitu.com/mathjax/3.2.1/es5/tex-mml-chtml.js" ></script>
+
+  <script defer src="/js/leancloud.js" ></script>
+
+  <script  src="/js/local-search.js" ></script>
+
+
+
+
+  
+<script src="//cdn.jsdelivr.net/npm/aplayer/dist/APlayer.min.js"></script>
+<script src="//cdn.jsdelivr.net/gh/metowolf/MetingJS@1.2/dist/Meting.min.js"></script>
+<script src="/js/reward.js"></script>
+
+
+
+<!-- 主题的启动项，将它保持在最底部 -->
+<!-- the boot of the theme, keep it at the bottom -->
+<script  src="/js/boot.js" ></script>
+
+
+  <script type="text/javascript">
+    /*窗口监视*/
+    var originalTitle = document.title;
+    window.onblur = function(){document.title = "明眸如初"};
+    window.onfocus = function(){document.title = originalTitle};
+  </script>
+
+
+  <div id="tooltip-rightmenu" class="tooltip-rightmenu">如需原始右键菜单请按下 <strong>Ctrl+右键</strong></div>
+
+<div id="rightmenu-wrapper" style="">
+  <ul class="list-v rightmenu" id="rightmenu-content">
+	  <li class="navigation menuNavigation-Content">
+		<a class="nav icon-only fix-cursor-default" onclick="history.back()"><i class="iconfont icon-zuojiantou1"></i></a>
+		<a class="nav icon-only fix-cursor-default" onclick="history.forward()"><i class="iconfont icon-youjiantou1"></i></a>
+		<a class="nav icon-only fix-cursor-default" onclick="window.location.reload()"><i class="iconfont icon-shuaxin"></i></a>
+		<a  aria-label="TOP" href="#" role="button"><i class="iconfont icon-xiangshang"></i></a>
+	  </li>
+
+		<hr class="menuLoad-Content" style="display: block;">
+	  <li class="menuLoad-Content" style="display: block;">
+		<a class="vlts-menu fix-cursor-default" target="_self" href="javascript:;" data-toggle="modal" data-target="#modalSearch" aria-label="Search">
+		  <span>
+			  <i class="iconfont icon-sousuo1 rightmenu-icon"></i>
+			  站内搜索
+		  </span>
+		</a>
+	  </li>
+
+	  <li class="menuLoad-Content" style="display: block;">
+		<a class="vlts-menu fix-cursor-default"  href="https://www.zywvvd.com/messagebd/" data-group="link">
+		  <span>
+			  <i class="iconfont icon-yangshi_icon_tongyong_chat rightmenu-icon">  </i>
+			   留言吐槽 
+		   </span>
+		</a>
+	  </li>
+
+
+	  <li class="menuLoad-Content" style="display: block;">
+		<a class="vlts-menu fix-cursor-default" id="help" target="_blank" rel="noopener" href="https://www.foreverblog.cn/go.html" data-group="link">
+		<span>
+			  <i class="iconfont icon-a-BlackHole rightmenu-icon"></i>
+			  虫洞穿梭
+		  </span>
+		</a>
+	  </li>
+
+	<a id="scroll-top-button" aria-label="TOP" href="#" role="button" style="bottom: 20px; right: 52.6364px;">
+        <i class="iconfont icon-xiangshangjiantou" aria-hidden="true"></i>
+      </a>
+
+	<hr class="menuLoad-Content" style="display: block;">
+	
+	  <li class="menuLoad-Content" style="display: block;">
+		<a class="vlts-menu fix-cursor-default" id="destroy-airplane" target="_blank" rel="noopener"  data-group="link">
+		<span>
+			  <i class="iconfont icon-feiji rightmenu-icon"></i>
+			  破坏小飞机
+		  </span>
+		</a>
+	  </li>
+  </ul>
+</div>
+
+<script>
+	var ua = navigator.userAgent;
+	var ipad = ua.match(/(iPad).*OS\s([\d_]+)/),
+		isIphone = !ipad && ua.match(/(iPhone\sOS)\s([\d_]+)/),
+		isAndroid = ua.match(/(Android)\s+([\d.]+)/),
+		isMobile = isIphone || isAndroid;
+
+	if(!isMobile) {
+		// 为按钮添加事件处理器
+		document.getElementById('destroy-airplane').onclick = function() {
+		  console.log('飞机起飞！');
+		  // 定义要执行的JavaScript代码
+		var KICKASSVERSION='2.0';
+		var s = document.createElement('script');
+		s.type='text/javascript';
+		document.body.appendChild(s);
+		s.src='https://uipv4.zywvvd.com:33030/HexoFiles/js/games/airplane/airplane.js';
+		void(0);
+		};
+	}
+</script>
+
+
+
+
+
+<link href="/css/custom.css"type="text/css"rel="stylesheet"/>
+<script src="/vvd_js/right_menu.js" type="text/javascript"></script>
+<link href="/css/right_menu.css"type="text/css"rel="stylesheet"/>
+<script src="/vvd_js/go.js"></script>
+
+
+  <noscript>
+    <div class="noscript-warning">博客在允许 JavaScript 运行的环境下浏览效果更佳</div>
+  </noscript>
+<script src="/live2dw/lib/L2Dwidget.min.js?094cbace49a39548bed64abff5988b05"></script><script>L2Dwidget.init({"pluginRootPath":"live2dw/","pluginJsPath":"lib/","pluginModelPath":"assets/","tagMode":false,"log":false,"model":{"jsonPath":"/live2dw/assets/z16.model.json"},"display":{"position":"left","width":200,"height":400},"mobile":{"show":false},"react":{"opacity":0.9}});</script></body>
+</html>

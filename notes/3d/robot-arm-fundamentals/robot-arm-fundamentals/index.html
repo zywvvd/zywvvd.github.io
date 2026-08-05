@@ -25,14 +25,8 @@
 <meta property="og:description" content="本文整理机械臂的基础:坐标系体系、位姿与旋转表示、正&#x2F;逆运动学、雅可比、奇异与冗余、动力学与力控,以及 TCP 与坐标系标定,作为后续雷达—机械臂手眼标定的前置准备。属 Robotics 笔记系列,另两篇为《齐次变换矩阵与 SE(3)》与《万向节死锁》。">
 <meta property="og:locale" content="zh_CN">
 <meta property="og:image" content="https://uipv4.zywvvd.com:33030/HexoFiles/files/robot-arm-fundamentals/raf_structure.png">
-<meta property="og:image" content="https://uipv4.zywvvd.com:33030/HexoFiles/files/robot-arm-fundamentals/raf_coords.png">
-<meta property="og:image" content="https://uipv4.zywvvd.com:33030/HexoFiles/files/robot-arm-fundamentals/raf_rotations.png">
-<meta property="og:image" content="https://uipv4.zywvvd.com:33030/HexoFiles/files/robot-arm-fundamentals/raf_dh.png">
-<meta property="og:image" content="https://uipv4.zywvvd.com:33030/HexoFiles/files/robot-arm-fundamentals/raf_fk.png">
-<meta property="og:image" content="https://uipv4.zywvvd.com:33030/HexoFiles/files/robot-arm-fundamentals/raf_singularity.png">
-<meta property="og:image" content="https://uipv4.zywvvd.com:33030/HexoFiles/files/robot-arm-fundamentals/raf_manipulability.png">
 <meta property="article:published_time" content="2026-07-31T01:00:00.000Z">
-<meta property="article:modified_time" content="2026-08-03T06:33:00.718Z">
+<meta property="article:modified_time" content="2026-08-05T03:33:38.252Z">
 <meta property="article:author" content="Yiwei Zhang">
 <meta property="article:tag" content="Robotics">
 <meta property="article:tag" content="Kinematics">
@@ -899,7 +893,7 @@ document.addEventListener("readystatechange", function() {
                 
                   
                     <!-- compatible with older versions-->
-                    本文最后更新于：2026年8月3日 下午
+                    本文最后更新于：2026年8月5日 中午
                   
                 
               </p>
@@ -914,7 +908,7 @@ document.addEventListener("readystatechange", function() {
 <blockquote>
 <p><strong>本文脉络</strong>:几何与表示(§1–§3)→ 运动学(§4–§7,雅可比 §5 是主线)→ 控制与动力学(§8–§10)→ 标定(§11)。雅可比(§5)同时支撑逆运动学(§6)、奇异与冗余(§7)与力控(§10),是后文反复回指的核心。</p>
 </blockquote>
-<h2 id="1-机器人、关节与自由度">1. 机器人、关节与自由度</h2>
+<h3 id="1-机器人、关节与自由度">1. 机器人、关节与自由度</h3>
 <p>工业机械臂通常由基座、若干连杆(link)和连接连杆的关节(joint)串联而成,末端安装末端执行器(end-effector)或工具。每个关节提供一个自由度(degree of freedom, DoF):</p>
 <ul>
 <li><strong>旋转关节(revolute joint)</strong>:绕一根轴转动,变量是角度;</li>
@@ -923,8 +917,7 @@ document.addEventListener("readystatechange", function() {
 <p>一个机械臂的&quot;几轴&quot;通常指旋转关节数。常见的六轴(6-DoF)工业机器人之所以是主流,是因为在三维空间中完整确定一个刚体的位姿(position + orientation)恰好需要 6 个自由度——3 个位置 + 3 个姿态。少于 6 个自由度的机械臂无法在任意位姿下定位末端;多于 6 个则称为<strong>冗余</strong>机械臂(见第 7 节)。</p>
 <p>末端位姿是关节变量的函数,这个&quot;关节 → 末端&quot;的映射由**运动学(kinematics)**描述。运动学不涉及力,只关心几何关系。</p>
 <p><img src="https://uipv4.zywvvd.com:33030/HexoFiles/files/robot-arm-fundamentals/raf_structure.png" srcset="/img/loading.gif" lazyload alt="机械臂的基本结构:基座、连杆、关节与末端执行器,旋转关节与移动关节,6 自由度对应 3 位置 + 3 姿态"></p>
-<hr>
-<h2 id="2-坐标系体系">2. 坐标系体系</h2>
+<h3 id="2-坐标系体系">2. 坐标系体系</h3>
 <p>机器人用一组分层的(parent-child)坐标系来描述自身与工件。这一套坐标系由国际标准 ISO 8373(术语) 与 ISO 9787(坐标系与命名) 规范。常用的有以下几个:</p>
 <table>
 <thead>
@@ -963,21 +956,20 @@ document.addEventListener("readystatechange", function() {
 <p>ISO 8373 对 TCP 的定义原文是:“tool centre point (TCP): point defined for a given application with regard to the mechanical interface coordinate system”。换句话说,TCP 是相对法兰定义的功能工作点——焊枪的焊嘴尖、夹爪的抓取中心、钻头的尖端,而不是法兰安装面本身。这一点在第 11 节还会展开。</p>
 <p>需要区分的一个细节:World 与 Base 不是天然相同的两个概念,但在最常见的&quot;机器人用螺栓固定在地面、不做底座偏移&quot;的安装下,二者数值上重合。在本文以及后续标定文档中,只要底座固定,<strong>用 World 还是 Base 指代同一个固定参考系都成立</strong>。</p>
 <p><img src="https://uipv4.zywvvd.com:33030/HexoFiles/files/robot-arm-fundamentals/raf_coords.png" srcset="/img/loading.gif" lazyload alt="机器人坐标系体系:World / Base / Joint / Flange(tool0) / Tool(TCP) / User Frame 的分层关系"></p>
-<hr>
-<h2 id="3-位姿与旋转的数学表示">3. 位姿与旋转的数学表示</h2>
+<h3 id="3-位姿与旋转的数学表示">3. 位姿与旋转的数学表示</h3>
 <p>一个刚体在三维空间中的位姿由<strong>位置</strong>(3 个量)和<strong>姿态/朝向</strong>(3 个自由度)组成。姿态的表示方式有多种,各有取舍。这一节先建立数学对象,再给出工程选型建议。</p>
-<h3 id="3-1-旋转矩阵与-SO-3">3.1 旋转矩阵与 SO(3)</h3>
+<h4 id="3-1-旋转矩阵与-SO-3">3.1 旋转矩阵与 SO(3)</h4>
 <p>一个 3×3 矩阵 $R$ 是旋转矩阵,当且仅当它是行列式为 +1 的正交矩阵:</p>
 $$R^\top R = I, \quad \det R = +1$$
 <p>所有这样的矩阵构成<strong>特殊正交群 SO(3)</strong>。SO(3) 对三维旋转<strong>不满足交换律</strong>($R_1 R_2 \neq R_2 R_1$),这是旋转与平移的一个重要区别。</p>
 <p>由旋转轴(单位向量 $\hat{u}$)和旋转角 $\theta$ 构造旋转矩阵,用 <strong>Rodrigues 公式</strong>:</p>
 $$R = (\cos\theta)\, I + (\sin\theta)\,[\hat{u}]_\times + (1-\cos\theta)\,(\hat{u}\otimes\hat{u})$$
 <p>其中 $[\hat{u}]_\times$ 是 $\hat{u}$ 的 3×3 反对称矩阵(skew-symmetric matrix)。反之,由 $R$ 可经 $\mathrm{tr}®=1+2\cos\theta$ 提取旋转角,由 $R-R^\top$ 的反对称部分提取旋转轴。</p>
-<h3 id="3-2-齐次变换矩阵与-SE-3">3.2 齐次变换矩阵与 SE(3)</h3>
+<h4 id="3-2-齐次变换矩阵与-SE-3">3.2 齐次变换矩阵与 SE(3)</h4>
 <p>把旋转 $R$ 和平移 $\mathbf{p}$ 嵌入 4×4 矩阵得齐次变换 $T=\begin{bmatrix}R&\mathbf{p}\\\mathbf{0}^\top&1\end{bmatrix}$,构成特殊欧氏群 SE(3),使位姿描述与复合变换都化为矩阵乘法($T_{ac}=T_{ab}\,T_{bc}$)。本文记号 ${}^{A}T_B$ 同时表示&quot;把 $B$ 系坐标变到 $A$ 系&quot;和&quot;$B$ 在 $A$ 系下的位姿&quot;;第 4 节 DH 连乘 ${}^{0}T_n=A_1A_2\cdots A_n$ 就是右乘复合的典型例子。</p>
 <p>这个矩阵<strong>同时是坐标变换、位姿描述、相对运动</strong>;而&quot;作用于点 vs 作用于坐标系&quot;“先转后移 vs 先移后转”“旋转轴过不过原点”“内/外旋”&quot;左乘/右乘&quot;等几组概念容易混淆,已配数值算例与示意图整理到专门文档:</p>
 <p>→ 详见 <strong>《齐次变换矩阵与 SE(3)》</strong>(<code>homogeneous-transform.md</code>)。</p>
-<h3 id="3-3-欧拉角与万向节死锁">3.3 欧拉角与万向节死锁</h3>
+<h4 id="3-3-欧拉角与万向节死锁">3.3 欧拉角与万向节死锁</h4>
 <p>欧拉角用三个角(如 yaw-pitch-roll)表示姿态,直观且最小参数,但有两个工程问题:</p>
 <ol>
 <li><strong>约定不统一</strong>:12 种轴序加上&quot;固定轴(外旋)/动轴(内旋)&quot;之分,各厂商不同(FANUC/KUKA 固定轴 XYZ、ABB 动轴 ZYX 等),比较位姿数据前须先确认约定。</li>
@@ -986,18 +978,18 @@ $$R = (\cos\theta)\, I + (\sin\theta)\,[\hat{u}]_\times + (1-\cos\theta)\,(\hat{
 <p>死锁的本质(是嵌套万向节<strong>环的轴承轴</strong>重合、而非物体自身轴重合)、飞机比喻、数学机理与规避方案,已配 3D 嵌套环图、飞机示意图与动画整理到专门文档:</p>
 <p>→ 详见 <strong>《万向节死锁》</strong>(<code>gimbal-lock.md</code>)。</p>
 <p>工程上的通常做法:内部计算与姿态解算用四元数或旋转矩阵避开奇点,需要给人看时再转欧拉角显示(四元数/旋转矩阵见 3.4–3.6)。另需区分:<strong>表示奇异</strong>(欧拉角的数学奇点,换表示即消失)与<strong>机构奇异</strong>(机械臂特定构型下物理丧失运动能力,见第 7 节)是两回事,只是都叫&quot;奇异&quot;。</p>
-<h3 id="3-4-轴角与旋转向量">3.4 轴角与旋转向量</h3>
+<h4 id="3-4-轴角与旋转向量">3.4 轴角与旋转向量</h4>
 <p>由欧拉旋转定理,任意绕固定点的刚体位移等价于绕某单一轴的一次旋转,可用旋转轴 $\hat{u}$(2 个参数)+ 旋转角 $\theta$(1 个参数)表示;也可合并为<strong>旋转向量</strong>(3 个标量):</p>
 $$
 \mathbf{r}=\theta\hat{u}
 $$
 <p>优点是最小参数、几何直观;缺点是 $\theta=0$ 时轴不确定,且两次旋转不能像向量那样直接相加。</p>
-<h3 id="3-5-单位四元数">3.5 单位四元数</h3>
+<h4 id="3-5-单位四元数">3.5 单位四元数</h4>
 <p>绕单位轴 $\hat{u}$ 旋转角 $\theta$ 对应单位四元数:</p>
 $$q = \cos(\theta/2) + \sin(\theta/2)\,(u_x\mathbf{i}+u_y\mathbf{j}+u_z\mathbf{k})$$
 <p>旋转通过共轭实现 $\mathbf{p}' = q\,\mathbf{p}\,q^{-1}$,旋转复合是四元数乘法。它有一个<strong>双覆盖</strong>性质:$q$ 与 $-q$ 表示同一个物理旋转(SU(2) → SO(3) 的二对一映射)。</p>
 <p>四元数的工程价值在于:比旋转矩阵更紧凑(4 个参数 vs 9 个)、数值上更稳定、组合更简单、<strong>避免万向节死锁</strong>,且支持平滑的球面线性插值(Slerp)。代价是不如欧拉角直观,且带一个模长约束。</p>
-<h3 id="3-6-工程选型">3.6 工程选型</h3>
+<h4 id="3-6-工程选型">3.6 工程选型</h4>
 <p>综合多方资料,工程中常见的分工是:</p>
 <table>
 <thead>
@@ -1032,17 +1024,16 @@ $$q = \cos(\theta/2) + \sin(\theta/2)\,(u_x\mathbf{i}+u_y\mathbf{j}+u_z\mathbf{k
 </table>
 <p>一句话:<strong>控制器内部与插值用四元数,变换与运算用旋转矩阵,与用户交流用欧拉角。</strong></p>
 <p><img src="https://uipv4.zywvvd.com:33030/HexoFiles/files/robot-arm-fundamentals/raf_rotations.png" srcset="/img/loading.gif" lazyload alt="四种旋转表示的对比:欧拉角、旋转矩阵、轴角/旋转向量、单位四元数,各自的参数数与适用场景"></p>
-<h3 id="3-7-伴随-Adjoint-矩阵">3.7 伴随(Adjoint)矩阵</h3>
+<h4 id="3-7-伴随-Adjoint-矩阵">3.7 伴随(Adjoint)矩阵</h4>
 <p>在更现代的几何框架(如 Lynch &amp; Park《Modern Robotics》)中,刚体瞬时速度用 6 维<strong>旋量(twist)<strong>表示(3 维角速度 + 3 维线速度)。一个 SE(3) 变换 $T$(旋转 $R$、平移 $\mathbf{p}$)的</strong>伴随矩阵</strong>用于在坐标系之间变换旋量与力旋量:</p>
 $$[\mathrm{Ad}_T] = \begin{bmatrix} R & \mathbf{0} \\ [\mathbf{p}]_\times R & R \end{bmatrix}$$
 <p>其中 $[\mathbf{p}]_\times$ 是 $\mathbf{p}$ 的反对称矩阵。这个 6×6 矩阵在后文手眼标定的<strong>可观测性分析</strong>中会再次出现,届时它的具体形式是推导的关键。</p>
-<hr>
-<h2 id="4-正运动学与-DH-参数">4. 正运动学与 DH 参数</h2>
-<h3 id="4-1-正运动学-Forward-Kinematics-FK">4.1 正运动学(Forward Kinematics, FK)</h3>
+<h3 id="4-正运动学与-DH-参数">4. 正运动学与 DH 参数</h3>
+<h4 id="4-1-正运动学-Forward-Kinematics-FK">4.1 正运动学(Forward Kinematics, FK)</h4>
 <p>正运动学研究:<strong>已知各关节变量,求末端执行器的位姿</strong>。它实现的是从<strong>关节空间</strong>到<strong>笛卡尔/任务空间</strong>的映射:</p>
 $$\text{关节变量 } (q_1,\dots,q_n) \;\longrightarrow\; \text{末端位姿 } T$$
 <p>FK 是机器人学最基础的映射,用于碰撞检测、工作空间分析、可视化,以及作为逆运动学/动力学求解器的正向模型。</p>
-<h3 id="4-2-DH-参数法">4.2 DH 参数法</h3>
+<h4 id="4-2-DH-参数法">4.2 DH 参数法</h4>
 <p>由 Denavit 与 Hartenberg 于 1955 年提出的 <strong>DH 参数法</strong>,用<strong>四个参数</strong>描述相邻两个关节坐标系之间的刚体变换,是串联机械臂最通用的建模约定。四个参数的几何含义如下:</p>
 <table>
 <thead>
@@ -1078,7 +1069,7 @@ $$\text{关节变量 } (q_1,\dots,q_n) \;\longrightarrow\; \text{末端位姿 } 
 <p>每个关节的四个参数中<strong>只有一个是变量</strong>:旋转关节为 $\theta_i$,移动关节为 $d_i$;其余三个是结构常量。</p>
 <p>坐标系分配的规则是:$z_i$ 轴对齐关节轴线;$x_i$ 轴沿 $z_{i-1}$ 与 $z_i$ 的公垂线(公法线),指向从 $z_{i-1}$ 到 $z_i$;$y_i$ 由右手定则确定。当相邻两 $z$ 轴平行时公垂线不唯一($d_i$ 有任意性),相交时 $x_i$ 取两轴所在平面的法线($a_i=0$)——这导致 DH 参数<strong>并非唯一</strong>,同一台机器人可有多组等价参数表,比较不同教材/软件的参数时须先确认约定。</p>
 <p><img src="https://uipv4.zywvvd.com:33030/HexoFiles/files/robot-arm-fundamentals/raf_dh.png" srcset="/img/loading.gif" lazyload alt="DH 四参数的几何含义:连杆长度 a、扭角 α、偏距 d、关节角 θ,以及 z 轴对齐关节轴线、x 轴沿公垂线的坐标系分配"></p>
-<h3 id="4-3-标准-DH-与修正-DH">4.3 标准 DH 与修正 DH</h3>
+<h4 id="4-3-标准-DH-与修正-DH">4.3 标准 DH 与修正 DH</h4>
 <p>这是最常见的混淆点。两种约定的差异体现在三处:</p>
 <table>
 <thead>
@@ -1112,12 +1103,12 @@ $$A_i = \begin{bmatrix} c_\theta & -s_\theta c_\alpha & s_\theta s_\alpha & a_i 
 <p>作为对照,<strong>修正 DH(Craig)的变换矩阵</strong>(注意 $\alpha$、$a$ 下标为 $i-1$):</p>
 $${}^{i-1}T_i = \begin{bmatrix} c_\theta & -s_\theta & 0 & a_{i-1} \\ s_\theta c_{\alpha^*} & c_\theta c_{\alpha^*} & -s_{\alpha^*} & -d_i s_{\alpha^*} \\ s_\theta s_{\alpha^*} & c_\theta s_{\alpha^*} & c_{\alpha^*} & d_i c_{\alpha^*} \\ 0 & 0 & 0 & 1 \end{bmatrix}, \quad \alpha^*=\alpha_{i-1}$$
 <p>两种矩阵结构明显不同,<strong>不可混用</strong>。一个易错细节:沿同一根轴的平移与旋转可交换($\mathrm{Trans}_z$ 与 $\mathrm{Rot}_z$ 互换、$\mathrm{Trans}_x$ 与 $\mathrm{Rot}_x$ 互换),所以同一约定内组内顺序可调,但&quot;先 $z$ 组后 $x$ 组&quot;或反之的<strong>组间顺序不可打乱</strong>。</p>
-<h3 id="4-4-FK-连乘">4.4 FK 连乘</h3>
+<h4 id="4-4-FK-连乘">4.4 FK 连乘</h4>
 <p>$n$ 关节串联机械臂末端(相对基座)的位姿,等于各连杆变换矩阵的依次乘积:</p>
 $$T_n^0 = A_1(q_1)\, A_2(q_2)\, \cdots\, A_n(q_n)$$
 <p>其中每个 $A_i$ 仅是单个关节变量 $q_i$ 的函数。结果的左上 3×3 子矩阵是末端姿态,右上 3×1 列向量是末端位置。这条连乘关系是后续一切(逆运动学、控制、标定)的出发点。</p>
 <p><img src="https://uipv4.zywvvd.com:33030/HexoFiles/files/robot-arm-fundamentals/raf_fk.png" srcset="/img/loading.gif" lazyload alt="正运动学连乘:各连杆变换矩阵 A₁·A₂·…·Aₙ 依次相乘,把关节变量映射为末端位姿"></p>
-<h3 id="4-5-DH-数值算例">4.5 DH 数值算例</h3>
+<h4 id="4-5-DH-数值算例">4.5 DH 数值算例</h4>
 <p>三个典型机型可对照&quot;标准 DH vs 修正 DH&quot;与不同自由度。</p>
 <p><strong>Universal Robots UR5(标准 DH)。</strong> UR 官方公布的标准 DH 参数:</p>
 <table>
@@ -1229,8 +1220,7 @@ $$T_n^0 = A_1(q_1)\, A_2(q_2)\, \cdots\, A_n(q_n)$$
 <p><strong>SCARA(RRP + 工具回转,4-DoF)。</strong> Spong 教材的 AdeptOne 类 SCARA 连乘末端为:</p>
 $$T_0^4=\begin{bmatrix} c_{12}c_4+s_{12}s_4 & -c_{12}s_4+s_{12}c_4 & 0 & a_1c_1+a_2c_{12}\\ s_{12}c_4-c_{12}s_4 & -s_{12}s_4-c_{12}c_4 & 0 & a_1s_1+a_2s_{12}\\ 0&0&-1&-d_3-d_4\\0&0&0&1\end{bmatrix}$$
 <p>末端 $z$ 向位姿仅由 $d_3+d_4$ 决定(垂直运动与平面运动解耦),$xy$ 由平面 2R 决定,$\theta_4$ 为工具回转——对应 SCARA “平面 + 垂直” 的结构特点。</p>
-<hr>
-<h2 id="5-雅可比矩阵-速度、力与秩的统一工具">5. 雅可比矩阵:速度、力与秩的统一工具</h2>
+<h3 id="5-雅可比矩阵-速度、力与秩的统一工具">5. 雅可比矩阵:速度、力与秩的统一工具</h3>
 <p>雅可比 $J$ 是 6×n 矩阵($n$ 为关节数),承担两项映射:</p>
 <p><strong>速度映射</strong>把关节速度映射为末端螺旋速度(3 线速度 + 3 角速度):</p>
 $$
@@ -1241,11 +1231,10 @@ $$
 \boldsymbol{\tau} = J^\top \mathbf{f}_{\text{tip}}
 $$
 <p>同一个 $J$,正用映射速度、转置映射力,构成&quot;速度—力&quot;对偶,这是力控与阻抗控制的理论基础。雅可比是贯穿后文的统一工具:其伪逆 $J^+$ 支撑逆运动学(§6)与冗余分辨率,其秩的下降定义奇异(§7)。</p>
-<hr>
-<h2 id="6-逆运动学">6. 逆运动学</h2>
-<h3 id="6-1-定义">6.1 定义</h3>
+<h3 id="6-逆运动学">6. 逆运动学</h3>
+<h4 id="6-1-定义">6.1 定义</h4>
 <p>逆运动学(Inverse Kinematics, IK)是 FK 的逆问题:<strong>给定末端期望位姿,求所需的各关节变量</strong>。任务在笛卡尔空间定义,而控制施加在关节上,IK 就是两者之间的桥梁。</p>
-<h3 id="6-2-解析解与数值解">6.2 解析解与数值解</h3>
+<h4 id="6-2-解析解与数值解">6.2 解析解与数值解</h4>
 <table>
 <thead>
 <tr>
@@ -1278,20 +1267,20 @@ $$
 </tbody>
 </table>
 <p>工业控制器做笛卡尔实时控制时优先用解析解;无闭式解的构型(许多协作臂)只能用数值法,并配合阻尼最小二乘等方法避免奇异附近的数值爆炸。</p>
-<h3 id="6-3-数值法-雅可比迭代">6.3 数值法:雅可比迭代</h3>
+<h4 id="6-3-数值法-雅可比迭代">6.3 数值法:雅可比迭代</h4>
 <p>把 FK 写成 $\mathbf{x}=f(\boldsymbol{\theta})$,在当前估计 $\boldsymbol{\theta}_k$ 处一阶泰勒展开线性化,得到更新公式:</p>
 $$\boldsymbol{\theta}_{k+1} = \boldsymbol{\theta}_k + J^{+}(\boldsymbol{\theta}_k)\,(\mathbf{x}_d - f(\boldsymbol{\theta}_k))$$
 <p>其中 $J^+$ 是雅可比矩阵的 Moore-Penrose 伪逆($J$ 可逆时即 $J^{-1}$)。Buss(2009)的综述系统比较了雅可比转置、伪逆、阻尼最小二乘(DLS)三种变体:伪逆在非奇异点附近二次收敛,奇异附近需 DLS 保证数值稳定。</p>
-<h3 id="6-4-PIEPER-准则与球腕">6.4 PIEPER 准则与球腕</h3>
+<h4 id="6-4-PIEPER-准则与球腕">6.4 PIEPER 准则与球腕</h4>
 <p>一般 6 自由度机械臂的 IK 方程高度非线性,难以直接求得闭式解。Pieper(1968)在其斯坦福博士论文中证明了一个关键结论:</p>
 <blockquote>
 <p><strong>若三个连续的关节轴线交于一点(三个平行轴视为在无穷远处相交),则逆运动学存在解析解。</strong></p>
 </blockquote>
 <p>工业上最常见的满足方式是<strong>球腕(spherical wrist)</strong>:最后三个关节轴线交于一点(腕心)。这带来<strong>位置与姿态的解耦</strong>——前三个关节控制腕心位置(纯位置问题),后三个关节控制末端姿态(纯姿态问题),从而把一个耦合的 6 维问题拆成两个 3 维问题分别求解。这类机器人通常可用 Paden-Kahan 子问题分解,可达至多 8 组解。</p>
 <p>若无球腕(如某些轻量协作臂构型),PIEPER 方法不直接适用,只能退回数值解。</p>
-<h3 id="6-5-多解性">6.5 多解性</h3>
+<h4 id="6-5-多解性">6.5 多解性</h4>
 <p>IK 的非线性导致同一末端位姿可能对应多个关节构型(flip/no-flip、elbow-up/down、front/back)。具备球腕的 6-DoF 机器人对给定位置姿态最多可有 8 组独立解。还需注意:<strong>在不同解(臂构型)之间切换,必须经过奇异位形</strong>。</p>
-<h3 id="6-6-Paden-Kahan-子问题">6.6 Paden-Kahan 子问题</h3>
+<h4 id="6-6-Paden-Kahan-子问题">6.6 Paden-Kahan 子问题</h4>
 <p>基于旋量/指数积(PoE)的解析 IK 方法,把结构方程 $e^{\hat\xi_1\theta_1}\cdots e^{\hat\xi_n\theta_n}=g$ 分解为若干规范几何子问题,逐个求闭合解,无需 DH 代数消元。三个经典子问题:</p>
 <ul>
 <li><strong>PK1(绕单轴 $\omega$ 旋转使点 $p\to q$)</strong>:</li>
@@ -1314,9 +1303,8 @@ $$
 \theta=\theta_0\pm\cos^{-1}\!\big(\frac{\|p'\|^2+\|q'\|^2-\delta^2}{2\|p'\|\|q'\|}\big)
 $$
 <p>化简策略:取轴上点(对绕该轴的旋转不变)消去未知关节,或取范数消去平移。对满足 Pieper 准则(腕部三轴汇交)的 6R 臂,该方法可给出全部 8 组闭合解,是 §6.4 球腕解析解的现代几何语言。Elias &amp; Wen(2022)将子问题统一扩展为 6 个规范形式。</p>
-<hr>
-<h2 id="7-奇异点、工作空间与冗余度">7. 奇异点、工作空间与冗余度</h2>
-<h3 id="7-1-奇异点">7.1 奇异点</h3>
+<h3 id="7-奇异点、工作空间与冗余度">7. 奇异点、工作空间与冗余度</h3>
+<h4 id="7-1-奇异点">7.1 奇异点</h4>
 <p>奇异位形的严格定义建立在<strong>雅可比矩阵秩下降</strong>之上:某构型 $\boldsymbol{\theta}^*$ 处的雅可比秩低于其能达到的最大秩。对 6×6 的方阵雅可比,这等价于 $\det(J)=0$。</p>
 <p>物理含义是:<strong>在该构型下,机器人丧失沿一个或多个方向运动的能力</strong>。奇异点附近会出现以下现象:雅可比行列式趋零,逆速度方程 $\dot{\mathbf{q}}=J^{-1}\mathbf{v}$ 等效于&quot;除以一个非常小的数&quot;,关节速度趋于无穷,数值上 IK 不稳定,笛卡尔路径精度显著恶化。多数工业机器人在笛卡尔模式下<strong>无法穿越腕部奇异</strong>。</p>
 <p>对常见的腕部分离式垂直关节型 6 轴臂(如 PUMA 型:关节 2、3 轴线平行;4、5、6 轴线交于一点),奇异点分三类:</p>
@@ -1351,7 +1339,7 @@ $$
 <p>工程启示:采集标定数据时应主动避开奇异位姿,否则即使能运动,IK 的数值误差也会污染位姿读数。</p>
 </blockquote>
 <p><img src="https://uipv4.zywvvd.com:33030/HexoFiles/files/robot-arm-fundamentals/raf_singularity.png" srcset="/img/loading.gif" lazyload alt="6 轴臂的三类奇异:腕部奇异(关节 4、6 轴线重合)、肘部奇异(臂完全伸直)、肩部奇异(腕心在关节 1、2 轴线平面内)"></p>
-<h3 id="7-2-工作空间">7.2 工作空间</h3>
+<h4 id="7-2-工作空间">7.2 工作空间</h4>
 <p>Modern Robotics 区分几个相关概念:</p>
 <ul>
 <li><strong>任务空间(task space)</strong>:任务可自然表达的空间,<strong>只取决于任务、与机器人无关</strong>。</li>
@@ -1359,12 +1347,12 @@ $$
 <li><strong>灵巧工作空间(dexterous workspace)</strong>:能以<strong>所有姿态</strong>到达的位置集合。</li>
 </ul>
 <p>核心区别:<strong>可达工作空间</strong>只要求至少一种姿态能到达;<strong>灵巧工作空间</strong>要求任意姿态都能到达,条件严格得多,是前者的子集。</p>
-<h3 id="7-3-冗余度">7.3 冗余度</h3>
+<h4 id="7-3-冗余度">7.3 冗余度</h4>
 <p>当自由度数 $n$ 大于任务维数 $m$ 时,机械臂是<strong>冗余</strong>的。此时雅可比是 $m\times n$ 的&quot;胖&quot;矩阵,存在<strong>零空间(null space)</strong>——满足 $J\dot{\mathbf{q}}=\mathbf{0}$ 的关节速度子空间。零空间内的关节运动称为<strong>自运动(self-motion)</strong>:末端保持静止,而机器人内部构型改变。</p>
 <p>冗余分辨率的公式是:</p>
 $$\dot{\mathbf{q}} = J^{+}\mathbf{v} + (I - J^{+}J)\,\dot{\mathbf{z}}$$
 <p>第一项完成主任务(末端轨迹),第二项利用冗余自由度优化次要目标 $\dot{\mathbf{z}}$。零空间的工程用途包括避奇异(沿降低可操作度的梯度投影)、避障、避关节极限、故障容忍。</p>
-<h3 id="7-4-操作度椭球与可操作度">7.4 操作度椭球与可操作度</h3>
+<h4 id="7-4-操作度椭球与可操作度">7.4 操作度椭球与可操作度</h4>
 <p>§7.1 用&quot;雅可比是否降秩&quot;定性判断奇异,这里补充定量度量。对雅可比 $J$,$JJ^\top$ 的特征值 $\sigma_1^2\ge\dots\ge\sigma_m^2$($\sigma_i$ 为奇异值)定义<strong>操作度椭球(manipulability ellipsoid)</strong>:主轴方向是末端最易运动的方向,主轴长度为 $\sigma_i$。常用标量指标:</p>
 <ul>
 <li><strong>Yoshikawa 操作度</strong>(椭球体积,$w=0$ 即奇异):</li>
@@ -1378,9 +1366,8 @@ $$
 </ul>
 <p>冗余臂可在 §7.3 的零空间项里取 $\dot{\mathbf{z}}=\nabla f(\mathbf{q})$,$f=-\log w$ 以最大化操作度、主动规避奇异;或与阻尼最小二乘(DLS)$\dot{\mathbf{q}}=J^\top(JJ^\top+\lambda^2 I)^{-1}\dot{\mathbf{x}}$ 结合,$\lambda$ 随 $\sigma_m$ 减小而增大。</p>
 <p><img src="https://uipv4.zywvvd.com:33030/HexoFiles/files/robot-arm-fundamentals/raf_manipulability.png" srcset="/img/loading.gif" lazyload alt="操作度椭球:雅可比奇异值 σᵢ 为各主轴长度,椭球越接近球则各向同性越好、越扁则该方向运动能力越差,塌缩即奇异"></p>
-<hr>
-<h2 id="8-关节空间与笛卡尔空间控制">8. 关节空间与笛卡尔空间控制</h2>
-<h3 id="8-1-两种控制空间">8.1 两种控制空间</h3>
+<h3 id="8-关节空间与笛卡尔空间控制">8. 关节空间与笛卡尔空间控制</h3>
+<h4 id="8-1-两种控制空间">8.1 两种控制空间</h4>
 <p>机器人可以在两个空间中受控:</p>
 <ul>
 <li><strong>关节空间控制</strong>:直接指定各关节角度/速度。不经过坐标变换,TCP 在笛卡尔空间走出的路径<strong>不可控</strong>(是各关节协调运动的副产物)。</li>
@@ -1424,7 +1411,7 @@ $$
 </tbody>
 </table>
 <p>适用场景的分界很自然:<strong>只关心到达终点、不关心中间路径</strong>的任务(点焊、上下料、码垛)用关节空间;<strong>必须沿指定路径走</strong>的工艺(焊接、涂胶、打磨、激光切割)用笛卡尔空间。</p>
-<h3 id="8-2-轨迹插补-PTP-LIN-CIRC">8.2 轨迹插补:PTP / LIN / CIRC</h3>
+<h4 id="8-2-轨迹插补-PTP-LIN-CIRC">8.2 轨迹插补:PTP / LIN / CIRC</h4>
 <ul>
 <li><strong>PTP(point-to-point,关节空间插补)</strong>:各轴以最大加速度和速度同步运动到目标,TCP 空间路径是关节协调的副产物。时间最优。</li>
 <li><strong>LIN(笛卡尔直线)</strong>:TCP 在两点间走直线,须沿直线逐点 IK。</li>
@@ -1442,7 +1429,7 @@ $$
 <li><strong>S 曲线</strong>:7 段式,jerk 限幅分段恒定,适合高速精密作业,但参数整定复杂。</li>
 </ul>
 <p>给定几何路径 $\mathbf{q}(s)$ 与关节力矩界 $|\tau_i|\le\tau_i^{\max}$,时间最优可用相平面法求最短时间:把动力学(见 §9)沿路径参数化为关于 $\ddot s$ 的仿射约束,求最大允许速度曲线 $\dot s_{\max}(s)$,在其上以最大加/减速积分。过多个路径点(via-point)的关节空间轨迹常用三次/五次样条插值(段间位置、速度、加速度连续)。</p>
-<h3 id="8-3-工业机器人运动指令">8.3 工业机器人运动指令</h3>
+<h4 id="8-3-工业机器人运动指令">8.3 工业机器人运动指令</h4>
 <p>各厂商命名不同,但底层二分法一致——<strong>关节插补 vs 笛卡尔插补</strong>:</p>
 <table>
 <thead>
@@ -1467,7 +1454,7 @@ $$
 </tbody>
 </table>
 <p>例如 UR 的 MoveJ/MoveL/MoveC、ABB RAPID 的 MoveJ/MoveL/MoveC(及只关轴角的 MoveAbsJ)、KUKA 的 PTP/LIN/CIRC。其中 ABB 的 robtarget 数据用四元数编码姿态,jointtarget 编码关节角。</p>
-<h3 id="8-4-控制器分层与轨迹前瞻">8.4 控制器分层与轨迹前瞻</h3>
+<h4 id="8-4-控制器分层与轨迹前瞻">8.4 控制器分层与轨迹前瞻</h4>
 <p>工业控制器通常分三层,运行周期不同:</p>
 <table>
 <thead>
@@ -1492,47 +1479,44 @@ $$
 </tbody>
 </table>
 <p>笛卡尔直线/圆弧插补要求<strong>每个插补周期完成一次 IK</strong>。当路径由大量小线段组成时,常规逐点启停会降精度、损机构,因此现代控制器用<strong>轨迹前瞻(look-ahead)</strong>:在相邻线段尖角处插入平滑曲线(如五次贝塞尔,实现 G² 连续),并通过双向扫描在满足加速度/加加速度约束下规划速度,实现高速且平滑的运动。</p>
-<h3 id="8-5-优缺点权衡">8.5 优缺点权衡</h3>
+<h4 id="8-5-优缺点权衡">8.5 优缺点权衡</h4>
 <ul>
 <li><strong>关节空间规划</strong>:优点是无奇异、计算简单、时间最优;缺点是 TCP 笛卡尔路径不可控。</li>
 <li><strong>笛卡尔空间规划</strong>:优点是路径精确可控、编程直观;缺点是会遇到奇异、需实时 IK、接近奇异时关节速度飙升。</li>
 </ul>
 <p>工业实践通常是:<strong>关节空间做大范围转移(MoveJ/PTP),笛卡尔空间做局部工艺(MoveL/LIN)</strong>,并配合 zone/blending 实现段间平滑过渡。一句话权衡——<strong>要路径精度选笛卡尔,要速度与稳健选关节</strong>。</p>
-<hr>
-<h2 id="9-机器人动力学">9. 机器人动力学</h2>
+<h3 id="9-机器人动力学">9. 机器人动力学</h3>
 <p>前几节是运动学(只关几何)。动力学(dynamics)研究力/力矩与运动的关系,是力控、仿真与高性能轨迹跟踪的基础。</p>
-<h3 id="9-1-Euler-Lagrange-方程">9.1 Euler-Lagrange 方程</h3>
+<h4 id="9-1-Euler-Lagrange-方程">9.1 Euler-Lagrange 方程</h4>
 <p>把机械臂视为串联刚体系统,其封闭运动方程为:</p>
 $$M(\mathbf{q})\ddot{\mathbf{q}} + C(\mathbf{q},\dot{\mathbf{q}})\dot{\mathbf{q}} + \mathbf{g}(\mathbf{q}) = \boldsymbol{\tau}$$
 <p>其中 $M(\mathbf{q})\in\mathbb{R}^{n\times n}$ 为对称正定的惯性(质量)矩阵;$C(\mathbf{q},\dot{\mathbf{q}})\dot{\mathbf{q}}$ 为科氏与离心项($C$ 可由 Christoffel 符号 $c_{ijk}=\tfrac12(\partial M_{ij}/\partial q_k+\partial M_{ik}/\partial q_j-\partial M_{jk}/\partial q_i)$ 构造);$\mathbf{g}(\mathbf{q})=\partial U/\partial\mathbf{q}$ 为重力项;$\boldsymbol\tau$ 为关节力矩。该结构保证能量守恒:$\dot M-2C$ 反对称。$M,C,\mathbf{g}$ 均可由各连杆的质量、一阶矩(质心)、惯性张量经运动学递推得到。</p>
-<h3 id="9-2-递归-Newton-Euler-算法">9.2 递归 Newton-Euler 算法</h3>
+<h4 id="9-2-递归-Newton-Euler-算法">9.2 递归 Newton-Euler 算法</h4>
 <p>Euler-Lagrange 适合理论分析,实时控制则用 $O(n)$ 的**递归 Newton-Euler 算法(RNEA)**计算逆动力学(已知 $\mathbf{q},\dot{\mathbf{q}},\ddot{\mathbf{q}}$ 求 $\boldsymbol\tau$),分两步:</p>
 <ol>
 <li><strong>前向迭代(基座→末端)</strong>:由关节变量递推各连杆的速度旋量 $\mathcal{V}_i$ 与加速度 $\dot{\mathcal{V}}_i$;</li>
 <li><strong>后向迭代(末端→基座)</strong>:由牛顿/欧拉方程递推各连杆的力旋量 $\mathcal{F}_i$,投影到关节轴得 $\tau_i=\mathcal{A}_i^\top\mathcal{F}_i$。</li>
 </ol>
 <p>重力通过令基座线加速度为 $-\mathbf{g}$ 引入。该算法无符号微分、计算高效,与 Euler-Lagrange 在数学上等价,是实时力矩计算的标准选择。</p>
-<h3 id="9-3-动力学参数的线性参数化与辨识">9.3 动力学参数的线性参数化与辨识</h3>
+<h4 id="9-3-动力学参数的线性参数化与辨识">9.3 动力学参数的线性参数化与辨识</h4>
 <p>一个关键性质:动力学方程可恒等改写为对参数的线性形式:</p>
 $$M(\mathbf{q})\ddot{\mathbf{q}} + C(\mathbf{q},\dot{\mathbf{q}})\dot{\mathbf{q}} + \mathbf{g}(\mathbf{q}) = Y(\mathbf{q},\dot{\mathbf{q}},\ddot{\mathbf{q}})\,\mathbf{a} = \boldsymbol{\tau}$$
 <p>其中 $Y\in\mathbb{R}^{n\times p}$ 为回归矩阵(仅依赖运动学量),$\mathbf{a}\in\mathbb{R}^p$ 为<strong>基参数</strong>(base parameters)。每个连杆有 10 个标准参数(质量 $m$、一阶矩 $m\mathbf{r}_c$、惯性张量 $\mathbf{I}$),但经分组后 $p\ll 10n$。辨识流程:设计充分激励的周期轨迹 → 采集 $\{\mathbf{q},\dot{\mathbf{q}},\ddot{\mathbf{q}},\boldsymbol\tau\}$ → 堆叠 $\bar Y\mathbf{a}=\bar{\boldsymbol\tau}$ → 最小二乘 $\mathbf{a}=(\bar Y^\top\bar Y)^{-1}\bar Y^\top\bar{\boldsymbol\tau}$,要求 $\mathrm{rank}(\bar Y)=p$。摩擦(粘滞、库仑)可作为额外参数加入。这是 §11.6 几何标定之外的<strong>动力学参数标定</strong>,用于前馈控制与仿真保真度。</p>
-<hr>
-<h2 id="10-力控与柔顺控制">10. 力控与柔顺控制</h2>
+<h3 id="10-力控与柔顺控制">10. 力控与柔顺控制</h3>
 <p>§8 的关节/笛卡尔控制是位姿控制(让末端到达指定位姿)。接触式作业(装配、打磨、拖拽示教)需要控制<strong>力</strong>或<strong>柔顺度</strong>。</p>
-<h3 id="10-1-阻抗控制">10.1 阻抗控制</h3>
+<h4 id="10-1-阻抗控制">10.1 阻抗控制</h4>
 <p>Hogan(1985)提出不直接控位姿或力,而是控制机械臂末端的<strong>动态阻抗</strong>,使其呈现为目标二阶系统:</p>
 $$M_d\ddot{\mathbf{x}} + B_d\dot{\mathbf{x}} + K_d(\mathbf{x}-\mathbf{x}_d) = \mathbf{F}_{\text{ext}}$$
 <p>其中 $M_d,B_d,K_d$ 分别为期望(虚拟)惯量、阻尼、刚度,$\mathbf{x}_d$ 为期望平衡位姿,$\mathbf{F}_{\text{ext}}$ 为与环境的作用力。调 $K_d$ 控柔顺度、$B_d$ 抑制振荡、$M_d$ 影响瞬态。适合背驱性好的低减速比关节,是协作机器人&quot;柔顺接触&quot;的理论基础。</p>
-<h3 id="10-2-导纳控制">10.2 导纳控制</h3>
+<h4 id="10-2-导纳控制">10.2 导纳控制</h4>
 <p>导纳控制是阻抗控制的对偶:测外部力 $\mathbf{F}_{\text{ext}}$ → 代入目标阻抗方程解出期望位置偏移 → 由高刚度位置内环跟踪。因工业机器人(高减速比、位置内环刚性)本质是位置源,导纳结构能保证稳定性,故协作机器人(KUKA iiwa、Franka Panda、UR)的拖拽示教与安全接触几乎都采用导纳架构。</p>
-<h3 id="10-3-混合位置-力控制">10.3 混合位置/力控制</h3>
+<h4 id="10-3-混合位置-力控制">10.3 混合位置/力控制</h4>
 <p>Raibert &amp; Craig(1981)用对角选择矩阵 $S=\mathrm{diag}(s_1,\dots,s_6)$($s_i\in\{0,1\}$)把任务空间正交分解:$S$ 方向做位置控制,$I-S$ 方向做力控制。典型场景:沿表面滑动(切向位置控 + 法向恒力控)。实现时需正确处理 $S$ 是笛卡尔空间的变换(投影到关节空间时用雅可比 $J$ 换算)。</p>
-<hr>
-<h2 id="11-TCP-与坐标系标定">11. TCP 与坐标系标定</h2>
-<h3 id="11-1-TCP-与为何需要标定">11.1 TCP 与为何需要标定</h3>
+<h3 id="11-TCP-与坐标系标定">11. TCP 与坐标系标定</h3>
+<h4 id="11-1-TCP-与为何需要标定">11.1 TCP 与为何需要标定</h4>
 <p>如第 2 节所述,TCP 是相对法兰定义的功能工作点。机器人默认的控制点是法兰中心(tool0);装上工具后,控制器并不知道工具的几何,若不标定 TCP,笛卡尔规划仍按法兰中心做,工具尖的实际轨迹就会偏。</p>
 <p>标定 TCP 就是告诉控制器:法兰坐标系到工具工作点的固定偏移(平移 + 旋转)。之后控制器在笛卡尔模式下跟踪的是 TCP 而非法兰。准确 TCP 的重要性体现在:所有笛卡尔运动都相对 TCP 计算,定义误差会传递到每一次运动;尤其对<strong>曲线运动和绕 TCP 的旋转运动</strong>,错误的 TCP 相当于绕错了旋转中心,误差会被放大,表现为轨迹畸变——直线运动误差尚可容忍,曲线运动会出现明显偏差。</p>
-<h3 id="11-2-四点法-four-point-method">11.2 四点法(four-point method)</h3>
+<h4 id="11-2-四点法-four-point-method">11.2 四点法(four-point method)</h4>
 <p>标定 TCP 平移的标准做法是四点法:</p>
 <ol>
 <li>驱动机器人,让工具尖(同一个物理点)从<strong>至少 4 个不同姿态</strong>去接触空间中<strong>同一个固定参考点</strong>(标定尖或标定球);</li>
@@ -1546,21 +1530,20 @@ $$
 $$
 <p>其中 $T_i$ 是该姿态下法兰到世界的变换(已知),$\mathbf{t}$ 是待求的法兰→TCP 偏移(法兰系下为常量),$\mathbf{P}_{\text{world}}$ 是不变接触点。因 $\mathbf{P}_{\text{world}}$ 各次相同,得 $T_1\mathbf{t}=T_2\mathbf{t}=\dots$,联立即可解 $\mathbf{t}$。实际实现常用 4 点以上的最小二乘球面拟合,配 SVD 提升鲁棒性。</p>
 <p>为何要 8 点以上更精:理想机器人单点即可,实际有定位误差,多点取平均/最小二乘能降低随机误差;RoboDK 推荐至少 8 个位姿。KUKA 的 “XYZ 4-point” 只解平移、要求轴 4/5/6 姿态差异尽量大以保证方程良态,误差 &lt;0.3 mm 视为合格;FANUC 的 Six Point 法还含姿态。验证方法:标定后手动 jog 变换多种姿态,工具尖不偏离参考点即为准。</p>
-<h3 id="11-3-关节零点标定-mastering">11.3 关节零点标定(mastering)</h3>
+<h4 id="11-3-关节零点标定-mastering">11.3 关节零点标定(mastering)</h4>
 <p>关节的机械参考点与电子(编码器)参考点必须保持同步,失步则所有路径产生位置误差。触发场景包括编码器电池失电、电机/编码器更换、控制器更换、机械拆装/齿轮维修。标定方法是利用每轴的物理零位刻线/参考标线(witness marks),jog 到刻线对齐后执行零位标定;ABB 区分&quot;转数计数器更新&quot;与&quot;精标定(fine calibration,计入齿轮背隙与机械公差)&quot;两步。</p>
-<h3 id="11-4-用户-工件坐标系标定">11.4 用户/工件坐标系标定</h3>
+<h4 id="11-4-用户-工件坐标系标定">11.4 用户/工件坐标系标定</h4>
 <p>工件坐标系常用三点法定义(三点确定一个笛卡尔系):精确原点(OO)、+X 方向上一点(XX,离原点越远方向越准)、+Y 半平面侧一点(XY),Z 轴由右手定则自动确定。注意记录前须确认当前工具号正确,否则整个 User Frame 标定作废。</p>
-<h3 id="11-5-精度退化与维护">11.5 精度退化与维护</h3>
+<h4 id="11-5-精度退化与维护">11.5 精度退化与维护</h4>
 <p>工业机器人的特点是&quot;<strong>重复性高、绝对精度低</strong>&quot;——能一致地回到同一点,但实际位置与编程的世界坐标并不精确吻合。未标定时误差可达 2–5 mm,仅做 TCP 标定通常可降到 0.25–1 mm。TCP 精度会随时间退化,原因包括:工具磨损、碰撞/法兰变形、热膨胀、换工具、关节零点丢失。因此高精度应用需建立定期重标定流程。</p>
-<h3 id="11-6-运动学标定与绝对精度">11.6 运动学标定与绝对精度</h3>
+<h4 id="11-6-运动学标定与绝对精度">11.6 运动学标定与绝对精度</h4>
 <p>需区分两个概念:<strong>重复精度</strong>(同一目标多次到位的散布,工业机器人典型 ±0.02–0.1 mm)与<strong>绝对精度</strong>(实际位姿与控制器指令位姿之差,未标定时可达 1–10 mm)。§11.5 的 TCP 标定只修正工具偏移;绝对精度的主要误差源是连杆/关节的几何参数偏差($\Delta a,\Delta d,\Delta\alpha$ 及零点偏置),即 DH 参数误差。</p>
 <p><strong>运动学标定</strong>四阶段:(1) 建立含误差参数的运动学模型;(2) 用激光跟踪仪等测量一组末端位姿;(3) 最小二乘辨识参数误差:</p>
 $$
 \Delta p=(J_p^\top J_p)^{-1}J_p^\top \mathbf{e}
 $$
 <p>其中 $J_p=\partial\text{位姿}/\partial p$ 是位姿对几何参数的偏置雅可比;(4) 在控制器中补偿。文献报告标定后最大位置误差可降 50–80%。用指数积(PoE)模型代替 DH 建模可避免 DH 在平行轴处的奇异性,在标定中更稳健。注意三个层面的区分:§11.2 TCP 标定修正工具偏移、§11.3 关节零点标定校准编码器参考、本节运动学标定修正连杆几何。</p>
-<hr>
-<h2 id="参考资料">参考资料</h2>
+<h3 id="参考资料">参考资料</h3>
 <ul>
 <li>
 <p>1-iso-8373. ISO 8373:2021 <em>Robotics — Vocabulary</em> — <a target="_blank" rel="noopener" href="https://www.iso.org/obp/ui/#iso:std:iso:8373:ed-3:v1:en">https://www.iso.org/obp/ui/#iso:std:iso:8373:ed-3:v1:en</a></p>
@@ -1857,9 +1840,9 @@ $$
                   <article class="post-prev col-6">
                     
                     
-                      <a href="/notes/3d/homogeneous-transform/homogeneous-transform/" title="齐次变换矩阵与 SE(3)">
+                      <a href="/notes/3d/handeye-calibration/handeye-calibration/" title="激光雷达与机械臂手眼标定理论">
                         <i class="iconfont icon-arrowleft"></i>
-                        <span class="hidden-mobile">齐次变换矩阵与 SE(3)</span>
+                        <span class="hidden-mobile">激光雷达与机械臂手眼标定理论</span>
                         <span class="visible-mobile">上一篇</span>
                       </a>
                     

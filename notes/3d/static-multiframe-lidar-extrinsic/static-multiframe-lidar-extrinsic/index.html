@@ -1,0 +1,2650 @@
+
+
+<!DOCTYPE html>
+<html lang="zh-CN" data-default-color-scheme=auto>
+
+
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="baidu-site-verification" content="codeva-rLWafCJGYc" />
+  <link rel="apple-touch-icon" sizes="76x76" href="/image/avatar.png">
+  <link rel="icon" href="/image/avatar.png">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, shrink-to-fit=no">
+  <meta http-equiv="x-ua-compatible" content="ie=edge">
+  
+  <meta name="theme-color" content="#2f4154">
+  <meta name="author" content="Yiwei Zhang">
+  <meta name="keywords" content="人工智能, 深度学习, 个人博客, 机器学习">
+  
+    <meta name="description" content="本文记录一组静态多帧点云融合实验：用 5 路传感器（禾赛 QT128、速腾 RSAIRY ×2、Livox HAP、图漾 FM815 结构光）各采 100 静态帧，定量评估融合 $k$ 帧对 LiDAR 外参标定精密度与准确度的影响，并严格区分二者。">
+<meta property="og:type" content="article">
+<meta property="og:title" content="多雷达静态多帧点云测试">
+<meta property="og:url" content="https://www.zywvvd.com/notes/3d/static-multiframe-lidar-extrinsic/static-multiframe-lidar-extrinsic/index.html">
+<meta property="og:site_name" content="又见苍岚">
+<meta property="og:description" content="本文记录一组静态多帧点云融合实验：用 5 路传感器（禾赛 QT128、速腾 RSAIRY ×2、Livox HAP、图漾 FM815 结构光）各采 100 静态帧，定量评估融合 $k$ 帧对 LiDAR 外参标定精密度与准确度的影响，并严格区分二者。">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="https://uipv4.zywvvd.com:33030/HexoFiles/files/static-multiframe-lidar-extrinsic/viz/room.jpg">
+<meta property="article:published_time" content="2026-08-05T02:00:00.000Z">
+<meta property="article:modified_time" content="2026-08-05T02:55:36.815Z">
+<meta property="article:author" content="Yiwei Zhang">
+<meta property="article:tag" content="3D">
+<meta property="article:tag" content="LiDAR">
+<meta property="article:tag" content="外参标定">
+<meta property="article:tag" content="点云">
+<meta property="article:tag" content="ICP">
+<meta property="article:tag" content="精密度">
+<meta property="article:tag" content="准确度">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:image" content="https://uipv4.zywvvd.com:33030/HexoFiles/files/static-multiframe-lidar-extrinsic/viz/room.jpg">
+  
+  
+  
+  <title>多雷达静态多帧点云测试 - 又见苍岚</title>
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/twitter-bootstrap/4.6.1/css/bootstrap.min.css" />
+
+
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/github-markdown-css/4.0.0/github-markdown.min.css" />
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/hint.css/2.7.0/hint.min.css" />
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/fancybox/3.5.7/jquery.fancybox.min.css" />
+
+
+
+<!-- 主题依赖的图标库，不要自行修改 -->
+<!-- Do not modify the link that theme dependent icons -->
+
+<link rel="stylesheet" href="//at.alicdn.com/t/font_1749284_hj8rtnfg7um.css">
+
+
+
+<link rel="stylesheet" href="//at.alicdn.com/t/font_1736178_lbnruvf0jn.css">
+
+
+<link  rel="stylesheet" href="/css/main.css" />
+
+
+  <link id="highlight-css" rel="stylesheet" href="/css/highlight.css" />
+  
+    <link id="highlight-css-dark" rel="stylesheet" href="/css/highlight-dark.css" />
+  
+
+
+
+  
+<link rel="stylesheet" href="/css/custom.css">
+<link rel="stylesheet" href="/css/reward.css">
+<link rel="stylesheet" href="//cdn.jsdelivr.net/npm/aplayer/dist/APlayer.min.css">
+
+
+
+  <script id="fluid-configs">
+    var Fluid = window.Fluid || {};
+    Fluid.ctx = Object.assign({}, Fluid.ctx)
+    var CONFIG = {"hostname":"www.zywvvd.com","root":"/","version":"1.9.7","typing":{"enable":true,"typeSpeed":90,"cursorChar":"_","loop":false,"scope":["home"]},"anchorjs":{"enable":true,"element":"h1,h2,h3,h4,h5,h6","placement":"left","visible":"hover","icon":""},"progressbar":{"enable":true,"height_px":3,"color":"#29d","options":{"showSpinner":false,"trickleSpeed":100}},"code_language":{"enable":true,"default":"TEXT"},"copy_btn":true,"image_caption":{"enable":true},"image_zoom":{"enable":true,"img_url_replace":["",""]},"toc":{"enable":true,"placement":"right","headingSelector":"h1,h2,h3,h4,h5,h6","collapseDepth":0},"lazyload":{"enable":true,"loading_img":"/img/loading.gif","onlypost":false,"offset_factor":2},"web_analytics":{"enable":true,"follow_dnt":true,"baidu":null,"google":null,"tencent":{"sid":null,"cid":null},"woyaola":null,"cnzz":null,"leancloud":{"app_id":"Cv0XNeBSBdAPAIuVj3PsyM3R-MdYXbMMI","app_key":"4PU1rNlGrqXWzhfW3dgq98oX","server_url":null,"path":"window.location.pathname","ignore_local":false},"gtag":null},"search_path":"/local-search.xml","include_content_in_search":true};
+
+    if (CONFIG.web_analytics.follow_dnt) {
+      var dntVal = navigator.doNotTrack || window.doNotTrack || navigator.msDoNotTrack;
+      Fluid.ctx.dnt = dntVal && (dntVal.startsWith('1') || dntVal.startsWith('yes') || dntVal.startsWith('on'));
+    }
+  </script>
+  <script  src="/js/utils.js" ></script>
+  <script  src="/js/color-schema.js" ></script>
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+    
+  
+
+
+
+  
+<meta name="generator" content="Hexo 7.2.0"><link rel="alternate" href="/atom.xml" title="又见苍岚" type="application/atom+xml">
+</head>
+
+<script>
+// 页面加载完成后隐藏加载动画
+document.addEventListener("readystatechange", function() {
+    const loader = document.getElementById('Loadanimation');
+    if (loader) {
+        // 停留1秒后开始淡出
+        setTimeout(function() {
+            loader.style.transition = 'opacity 1.2s';
+            loader.style.opacity = '0';
+            // 淡出完成后隐藏
+            setTimeout(() => {
+                loader.style.display = 'none';
+            }, 1000); // 等待淡出动画完成
+        }, 700); // 停留0.8秒
+    }
+});
+</script>
+
+
+
+<body>
+  
+<div id="Loadanimation" style="z-index:999999;">
+<div id="Loadanimation-center">
+   <div id="Loadanimation-center-absolute">
+       <div class="xccx_object" id="xccx_four"></div>
+       <div class="xccx_object" id="xccx_three"></div>
+       <div class="xccx_object" id="xccx_two"></div>
+       <div class="xccx_object" id="xccx_one"></div>
+   </div>
+</div>
+</div>
+
+<link href="/css/loading.css"type="text/css"rel="stylesheet"/>
+
+
+
+
+
+
+<div>
+	<div class='real_mask' style="
+		background-color: rgba(0,0,0,0.4);
+		width: 100%;
+		height: 100%;
+		position: fixed;
+		z-index: -777;
+	"></div>
+	<div id="banner_video_insert">
+	</div>	
+	<div id='vvd_banner_img'>
+	</div>
+</div>
+<div id="banner"></div>
+
+
+
+
+
+
+
+  <header>
+    
+
+<div class="header-inner" style="height: 80vh;">
+  <nav id="navbar" class="navbar fixed-top  navbar-expand-lg navbar-dark scrolling-navbar">
+  <div class="container">
+    <a class="navbar-brand" href="/">
+      <strong>CangLan</strong>
+    </a>
+
+    <button id="navbar-toggler-btn" class="navbar-toggler" type="button" data-toggle="collapse"
+            data-target="#navbarSupportedContent"
+            aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
+      <div class="animated-icon"><span></span><span></span><span></span></div>
+    </button>
+
+    <!-- Collapsible content -->
+    <div class="collapse navbar-collapse" id="navbarSupportedContent">
+      <ul class="navbar-nav ml-auto text-center">
+        
+          
+          
+          
+          
+            <li class="nav-item">
+		<div >
+		      <a class="nav-link" href="/" target="_self" data-umami-event="Navigation-Homepage">
+
+		        <i class="iconfont icon-home-fill"></i>
+		        <span>首页</span>
+		      </a>
+		</div>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item dropdown">
+              <a class="nav-link dropdown-toggle" target="_self" href="javascript:;" role="button"
+                 data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                <i class="iconfont icon-shuji1"></i>
+                <span>文章</span>
+              </a>
+              <div class="dropdown-menu" aria-labelledby="navbarDropdown">
+                
+                  
+                  
+                  
+		<div >
+
+                  <a class="dropdown-item" href="/archives/" target="_self" data-umami-event="Navigation-Archive">
+
+                    <i class="iconfont icon-archive-fill"></i>
+                    <span>归档</span>
+                  </a>
+		</div>
+                
+                  
+                  
+                  
+		<div >
+
+                  <a class="dropdown-item" href="/categories/" target="_self" data-umami-event="Navigation-Category">
+
+                    <i class="iconfont icon-category-fill"></i>
+                    <span>分类</span>
+                  </a>
+		</div>
+                
+                  
+                  
+                  
+		<div >
+
+                  <a class="dropdown-item" href="/tags/" target="_self" data-umami-event="Navigation-Tag">
+
+                    <i class="iconfont icon-tags-fill"></i>
+                    <span>标签</span>
+                  </a>
+		</div>
+                
+                  
+                  
+                  
+		<div >
+
+                  <a class="dropdown-item" href="/shuoshuo/" target="_self" data-umami-event="Navigation-Shuoshuo">
+
+                    <i class="iconfont icon-24gf-bubblesDots4"></i>
+                    <span>说说</span>
+                  </a>
+		</div>
+                
+              </div>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item dropdown">
+              <a class="nav-link dropdown-toggle" target="_self" href="javascript:;" role="button"
+                 data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                <i class="iconfont icon-momo"></i>
+                <span>社交</span>
+              </a>
+              <div class="dropdown-menu" aria-labelledby="navbarDropdown">
+                
+                  
+                  
+                  
+		<div >
+
+                  <a class="dropdown-item" href="/links/" target="_self" data-umami-event="Navigation-Friends">
+
+                    <i class="iconfont icon-link-fill"></i>
+                    <span>友链</span>
+                  </a>
+		</div>
+                
+                  
+                  
+                  
+		<div >
+
+                  <a class="dropdown-item" href="/messagebd/" target="_self" data-umami-event="Navigation-MessageBoard">
+
+                    <i class="iconfont icon-comment"></i>
+                    <span>留言板</span>
+                  </a>
+		</div>
+                
+                  
+                  
+                  
+		<div >
+
+                  <a class="dropdown-item" href="/atom.xml" target="_self" data-umami-event="Navigation-RSS">
+
+                    <i class="iconfont icon-dingyue"></i>
+                    <span>RSS订阅</span>
+                  </a>
+		</div>
+                
+                  
+                  
+                  
+		<div >
+
+                  <a class="dropdown-item" href="/reccomments/" target="_self" data-umami-event="Navigation-Recent-Comments">
+
+                    <i class="iconfont icon-icon-pinglunguanli-pinglunliebiao"></i>
+                    <span>近期评论</span>
+                  </a>
+		</div>
+                
+              </div>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item dropdown">
+              <a class="nav-link dropdown-toggle" target="_self" href="javascript:;" role="button"
+                 data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                <i class="iconfont icon-user-fill"></i>
+                <span>个人</span>
+              </a>
+              <div class="dropdown-menu" aria-labelledby="navbarDropdown">
+                
+                  
+                  
+                  
+		<div >
+
+                  <a class="dropdown-item" href="/about/" target="_self" data-umami-event="Navigation-AboutMe">
+
+                    <i class="iconfont icon-guanyuwomen"></i>
+                    <span>关于</span>
+                  </a>
+		</div>
+                
+                  
+                  
+                  
+		<div >
+
+                  <a class="dropdown-item" href="/playlist/" target="_self" data-umami-event="Navigation-Music">
+
+                    <i class="iconfont icon-music"></i>
+                    <span>歌单</span>
+                  </a>
+		</div>
+                
+                  
+                  
+                  
+		<div >
+
+                  <a class="dropdown-item" href="https://uipv4.zywvvd.com:33035" target="_self" data-umami-event="Navigation-Nextcloud">
+
+                    <i class="iconfont icon-xuniyingpan"></i>
+                    <span>网盘</span>
+                  </a>
+		</div>
+                
+                  
+                  
+                  
+		<div >
+
+                  <a class="dropdown-item" href="https://uipv4.zywvvd.com:33036" target="_self" data-umami-event="Navigation-OneDev">
+
+                    <i class="iconfont icon-git"></i>
+                    <span>仓库</span>
+                  </a>
+		</div>
+                
+                  
+                  
+                  
+		<div >
+
+                  <a class="dropdown-item" href="https://uipv4.zywvvd.com:33041" target="_self" data-umami-event="Navigation-Wiki">
+
+                    <i class="iconfont icon-wiki"></i>
+                    <span>百科</span>
+                  </a>
+		</div>
+                
+              </div>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item dropdown">
+              <a class="nav-link dropdown-toggle" target="_self" href="javascript:;" role="button"
+                 data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                <i class="iconfont icon-ic_fly"></i>
+                <span>导航</span>
+              </a>
+              <div class="dropdown-menu" aria-labelledby="navbarDropdown">
+                
+                  
+                  
+                  
+		<div >
+
+                  <a class="dropdown-item" href="/site-map/" target="_self" data-umami-event="Navigation-SiteMap">
+
+                    <i class="iconfont icon-lianjie"></i>
+                    <span>链接</span>
+                  </a>
+		</div>
+                
+                  
+                  
+                  
+		<div >
+
+                  <a class="dropdown-item" href="/nodeppt/hexo/snavigation/" target="_self" data-umami-event="Navigation-Search">
+
+                    <i class="iconfont icon-sousuo"></i>
+                    <span>搜索</span>
+                  </a>
+		</div>
+                
+              </div>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item dropdown">
+              <a class="nav-link dropdown-toggle" target="_self" href="javascript:;" role="button"
+                 data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                <i class="iconfont icon-wangzhan"></i>
+                <span>站点</span>
+              </a>
+              <div class="dropdown-menu" aria-labelledby="navbarDropdown">
+                
+                  
+                  
+                  
+		<div >
+
+                  <a class="dropdown-item" href="https://uipv4.zywvvd.com:33039/share/0zx3o21oIpZTZqwC/%E5%8F%88%E8%A7%81%E8%8B%8D%E5%B2%9A" target="_self" data-umami-event="Navigation-Umami">
+
+                    <i class="iconfont icon-tongji2"></i>
+                    <span>站点分析</span>
+                  </a>
+		</div>
+                
+                  
+                  
+                  
+		<div >
+
+                  <a class="dropdown-item" href="/earth_sta/" target="_self" data-umami-event="Navigation-Globe">
+
+                    <i class="iconfont icon-tongjifenxi-xiangmubiaogetongji"></i>
+                    <span>访问统计</span>
+                  </a>
+		</div>
+                
+                  
+                  
+                  
+		<div >
+
+                  <a class="dropdown-item" href="https://uipv4.zywvvd.com:33034/status/show" target="_self" data-umami-event="Navigation-Monitor">
+
+                    <i class="iconfont icon-jiankong"></i>
+                    <span>站点监控</span>
+                  </a>
+		</div>
+                
+              </div>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item dropdown">
+              <a class="nav-link dropdown-toggle" target="_self" href="javascript:;" role="button"
+                 data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                <i class="iconfont icon-chuansong"></i>
+                <span>传送</span>
+              </a>
+              <div class="dropdown-menu" aria-labelledby="navbarDropdown">
+                
+                  
+                  
+                  
+		<div >
+
+                  <a class="dropdown-item" href="https://www.foreverblog.cn/go.html" target="_self" data-umami-event="Navigation-ForeverBolg">
+
+                    <i class="iconfont icon-a-BlackHole"></i>
+                    <span>十年之约</span>
+                  </a>
+		</div>
+                
+                  
+                  
+                  
+		<div >
+
+                  <a class="dropdown-item" href="https://www.travellings.cn/go.html" target="_self" data-umami-event="Navigation-DriveTo">
+
+                    <i class="iconfont icon-train1"></i>
+                    <span>开往</span>
+                  </a>
+		</div>
+                
+                  
+                  
+                  
+		<div >
+
+                  <a class="dropdown-item" href="https://bf.zzxworld.com/" target="_self" data-umami-event="Navigation-BlogFinder">
+
+                    <i class="iconfont icon-icon-"></i>
+                    <span>BlogFinder</span>
+                  </a>
+		</div>
+                
+                  
+                  
+                  
+		<div >
+
+                  <a class="dropdown-item" href="https://www.perass.com/" target="_self" data-umami-event="Navigation-Bloghome">
+
+                    <i class="iconfont icon-home-fill"></i>
+                    <span>博客之家</span>
+                  </a>
+		</div>
+                
+              </div>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item dropdown">
+              <a class="nav-link dropdown-toggle" target="_self" href="javascript:;" role="button"
+                 data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                <i class="iconfont icon-gongju"></i>
+                <span>工具</span>
+              </a>
+              <div class="dropdown-menu" aria-labelledby="navbarDropdown">
+                
+                  
+                  
+                  
+		<div >
+
+                  <a class="dropdown-item" href="/navigates/calculator" target="_self" data-umami-event="Navigation-Calculator">
+
+                    <i class="iconfont icon-jisuan"></i>
+                    <span>计算器</span>
+                  </a>
+		</div>
+                
+                  
+                  
+                  
+		<div >
+
+                  <a class="dropdown-item" href="/navigates/webgraphviz" target="_self" data-umami-event="Navigation-WebGtaphviz">
+
+                    <i class="iconfont icon-tongyong-huatugongju2"></i>
+                    <span>Graphviz</span>
+                  </a>
+		</div>
+                
+                  
+                  
+                  
+		<div >
+
+                  <a class="dropdown-item" href="/navigates/formular_reco" target="_self" data-umami-event="Navigation-Formular-Reco">
+
+                    <i class="iconfont icon-a-checkformula"></i>
+                    <span>公式识别</span>
+                  </a>
+		</div>
+                
+              </div>
+            </li>
+          
+        
+        
+          <li class="nav-item" id="search-btn">
+            <a class="nav-link" target="_self" href="javascript:;" data-toggle="modal" data-target="#modalSearch" aria-label="Search">
+              <i class="iconfont icon-search"></i>
+            </a>
+          </li>
+          
+        
+        
+          <li class="nav-item" id="color-toggle-btn">
+            <a class="nav-link" target="_self" href="javascript:;" aria-label="Color Toggle">
+              <i class="iconfont icon-dark" id="color-toggle-icon"></i>
+            </a>
+          </li>
+        
+      </ul>
+    </div>
+  </div>
+</nav>
+
+  
+
+<div id="banner" class="banner" parallax=true
+     style="background: url('https://uipv4.zywvvd.com:33030/HexoFiles/new/bg-trans.png') no-repeat center center; background-size: cover;">
+  <div class="full-bg-img">
+    <div class="mask flex-center" style="background-color: rgba(0, 0, 0, 0)">
+      <div class="banner-text text-center fade-in-up">
+        <div class="h2">
+          
+            <span id="subtitle">多雷达静态多帧点云测试</span>
+          
+        </div>
+
+        
+          
+  <div class="mt-3">
+    
+      <span class="post-meta mr-2">
+        <i class="iconfont icon-author" aria-hidden="true"></i>
+        Yiwei Zhang
+      </span>
+    
+    
+      <span class="post-meta">
+        <i class="iconfont icon-date-fill" aria-hidden="true"></i>
+        <time datetime="2026-08-05 10:00" pubdate>
+          2026年8月5日 上午
+        </time>
+      </span>
+    
+  </div>
+
+  <div class="mt-1">
+    
+      <span class="post-meta mr-2">
+        <i class="iconfont icon-chart"></i>
+        
+          <!-- compatible with older versions-->
+          8.2k 字
+        
+      </span>
+    
+
+    
+      <span class="post-meta mr-2">
+        <i class="iconfont icon-clock-fill"></i>
+        
+        
+        
+          <!-- compatible with older versions-->
+          69 分钟
+        
+      </span>
+    
+
+    
+    
+      
+        <span id="vvdpost_container_page_pvuv" style="display: none">
+          <i class="iconfont icon-eye" aria-hidden="true"></i>
+          <span id="vvdpost_value_page_pv">0</span> 次&nbsp&nbsp
+		  <i class="iconfont icon-users" aria-hidden="true"></i>
+		  <span id="vvdpost_value_page_uv">0</span> 人&nbsp&nbsp
+		  <i class="iconfont icon-comment" aria-hidden="true"></i>
+		  <span id="vvdpost_value_page_cn">0</span> 条
+        </span>
+
+    <script>
+    document.addEventListener("DOMContentLoaded", function() {
+	      console.log("PVUV_" + window.location.pathname);
+
+	      // 使用 fetch API 发送 POST 请求
+	      fetch('https://uipv4.zywvvd.com:33037/poststats', { 
+		  method: 'POST',
+		  headers: {
+		      'Content-Type': 'application/json'
+		  },
+		  body: JSON.stringify(window.location.pathname) // 将路径名作为对象发送，以便在服务器端更容易处理
+	      })
+	      .then(response => {
+		  // 检查响应状态
+		  if (!response.ok) {
+		      throw new Error('Network response was not ok ' + response.statusText);
+		  }
+		  return response.json(); // 解析 JSON 响应
+	      })
+	      .then(data => {
+		  // 处理解析后的数据
+		  console.log(data.pv);
+		  var pvCtn = document.querySelector('#vvdpost_container_page_pvuv');
+		  if (pvCtn) {
+		      var pvEle = document.querySelector('#vvdpost_value_page_pv');
+		      var uvEle = document.querySelector('#vvdpost_value_page_uv');
+		      var cnEle = document.querySelector('#vvdpost_value_page_cn');
+		      if (pvEle && uvEle) {
+		          pvEle.innerText = data.pv;
+		          uvEle.innerText = data.uv;
+		          cnEle.innerText = data.cn;
+		          pvCtn.style.display = 'inline';
+		      }
+		  }
+	      })
+	      .catch(error => {
+		  // 处理请求错误
+		  console.error('There has been a problem with your fetch operation:', error);
+	      });
+      });
+  </script>
+      
+    
+  </div>
+
+
+        
+      </div>
+
+      
+        <div class="scroll-down-bar">
+          <i class="iconfont icon-arrowdown"></i>
+        </div>
+      
+    </div>
+  </div>
+</div>
+
+</div>
+
+
+	<script type="text/javascript" src="/vvd_js/jquery.js"></script>
+	<script async src="https://uipv4.zywvvd.com:33039/script.js" data-website-id="dd4a05c6-dde2-4743-9c3a-a79d6bee0778"></script>
+	<div class="banner" id='banner' >
+
+		<div class="full-bg-img" >
+
+			
+				<script>
+					var ua = navigator.userAgent;
+					var ipad = ua.match(/(iPad).*OS\s([\d_]+)/),
+						isIphone = !ipad && ua.match(/(iPhone\sOS)\s([\d_]+)/),
+						isAndroid = ua.match(/(Android)\s+([\d.]+)/),
+						isMobile = isIphone || isAndroid;
+
+					function set_video_attr(id){
+						var height = document.body.clientHeight
+						var width = document.body.clientWidth
+						var video_item = document.getElementById(id);
+
+						if (height / width < 0.56){
+							video_item.setAttribute('width', '100%');
+							video_item.setAttribute('height', 'auto');
+						} else {
+							video_item.setAttribute('height', '100%');
+							video_item.setAttribute('width', 'auto');
+						}
+					}
+
+					fetch('https://uipv4.zywvvd.com:33037/wallpaper-pair')
+					  .then(response => response.json()) // 解析JSON数据
+					  .then(data => {
+						console.log('获取链接成功');
+						video_url = data[0][0]
+						pre_show_image_url = data[0][1]
+
+						banner_obj = document.getElementById("banner")
+						banner_obj.style.cssText = "background: url('" + pre_show_image_url + "') no-repeat;"
+
+						vvd_banner_obj = document.getElementById("vvd_banner_img")
+						vvd_banner_content = "<img id='banner_img_item' src='" + pre_show_image_url + "'style='position: fixed; z-index: -999'>"
+						vvd_banner_obj.innerHTML = vvd_banner_content 
+
+						if (!isMobile) {
+							video_html_res = "<video id='video_item' style='position: fixed; z-index: -888;'  muted='muted' src=" + video_url + " autoplay='autoplay' loop='loop'></video>"
+							document.getElementById("banner_video_insert").innerHTML = video_html_res;
+							set_video_attr('video_item')
+							set_video_attr('banner_img_item')
+						}
+					    
+					  })
+					  .catch((error) => {
+					    console.error('请求失败,尝试本地获取背景图像：', error);
+	    					$.getJSON('/vvd_js/video_url.json', function(data){
+
+							var video_list_length = data.length
+							var seed = Math.random()
+							index = Math.floor(seed * video_list_length)
+
+							video_url = data[index][0]
+							pre_show_image_url = data[index][1]
+
+							banner_obj = document.getElementById("banner")
+							banner_obj.style.cssText = "background: url('" + pre_show_image_url + "') no-repeat;"
+
+							vvd_banner_obj = document.getElementById("vvd_banner_img")
+							vvd_banner_content = "<img id='banner_img_item' src='" + pre_show_image_url + "'style='position: fixed; z-index: -999'>"
+							vvd_banner_obj.innerHTML = vvd_banner_content 
+
+							if (!isMobile) {
+								video_html_res = "<video id='video_item' style='position: fixed; z-index: -888;'  muted='muted' src=" + video_url + " autoplay='autoplay' loop='loop'></video>"
+								document.getElementById("banner_video_insert").innerHTML = video_html_res;
+								set_video_attr('video_item')
+								set_video_attr('banner_img_item')
+							}
+						});
+					  });
+
+
+
+
+
+
+					if (!isMobile){
+						window.onresize = function(){
+							set_video_attr('video_item')
+							set_video_attr('banner_img_item')
+							}
+						}
+				</script>
+
+			
+
+
+			
+			</div>
+		</div>
+    </div>
+
+  </header>
+
+  <main>
+    
+      
+
+
+
+<div class="container-fluid nopadding-x">
+  <div class="row nomargin-x">
+    <div class="side-col d-none d-lg-block col-lg-2">
+      
+
+    </div>
+
+    <div class="col-lg-8 nopadding-x-md">
+      <div class="container nopadding-x-md" id="board-ctn">
+        <div id="board">
+          <article class="post-content mx-auto">
+
+            <!-- <h1 id="seo-header">多雷达静态多帧点云测试</h1> -->
+
+            
+              <p id="updated-time" class="note note-info" style="">
+                
+                  
+                    <!-- compatible with older versions-->
+                    本文最后更新于：2026年8月5日 上午
+                  
+                
+              </p>
+            
+            
+              <div class="markdown-body">
+                
+                <blockquote>
+<p>本文记录一组静态多帧点云融合实验：用 5 路传感器（禾赛 QT128、速腾 RSAIRY ×2、Livox HAP、图漾 FM815 结构光）各采 100 静态帧，定量评估融合 $k$ 帧对 LiDAR 外参标定<strong>精密度</strong>与<strong>准确度</strong>的影响，并严格区分二者。</p>
+</blockquote>
+<span id="more"></span>
+<h3 id="符号说明">符号说明</h3>
+<table>
+<thead>
+<tr>
+<th>符号</th>
+<th>含义</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>$k$</td>
+<td>融合帧数(把 $k$ 帧静态数据合成 1 张云)</td>
+</tr>
+<tr>
+<td>$N$</td>
+<td>一个桶(一条射线)跨帧累积的样本数,约等于帧数</td>
+</tr>
+<tr>
+<td>$N_{\text{sub}}$</td>
+<td>ICP 配准前把源云<strong>均匀随机</strong>降到固定的 40000 点。随机抽样只减点数、不平均点,故保住单点噪声 $\sigma$(不可体素);全 $k$ 取同一值,把&quot;融合让点变密&quot;的收益剔除掉,只留&quot;每点噪声 $\sigma\to\sigma/\sqrt{k}$&quot;一项</td>
+</tr>
+<tr>
+<td>$\sigma_r$</td>
+<td>单波束径向噪声:一条射线(桶)跨帧的深度散布(§4.1),是&quot;精密度&quot;的原料</td>
+</tr>
+<tr>
+<td>$\sigma(k)$</td>
+<td>融合 $k$ 帧后的噪声,帧独立时 $\sigma(k)=\sigma_1/\sqrt{k}$</td>
+</tr>
+<tr>
+<td>$k^\star$</td>
+<td>精密度曲线进入平台的转折帧数,即&quot;采几帧够用&quot;</td>
+</tr>
+<tr>
+<td>$R$</td>
+<td>公共评估区域,去飞点密集 SL 的世界包围盒(§3.1),所有评估在 $R$ 内</td>
+</tr>
+<tr>
+<td>$T_{\text{nominal}}$</td>
+<td>标称外参,CloudCompare 三面角人工对齐得到</td>
+</tr>
+<tr>
+<td>$T_c$</td>
+<td>ICP 精化后的最佳外参($k{=}1$)</td>
+</tr>
+<tr>
+<td>$\text{corr}_d$</td>
+<td>point-to-plane ICP 的对应距离:源云每个点只与参考云里距它 $\le\text{corr}_d$ 的最近点配对,更远的丢弃(匹配半径),锁定 0.05 m</td>
+</tr>
+<tr>
+<td>sd</td>
+<td>点到拟合面的符号距离 $\text{sd}=n\cdot x+d$(mm),$n$ 法向、$d$ 偏置</td>
+</tr>
+<tr>
+<td>GATE</td>
+<td>评估门:足迹内多厚的 sd 算&quot;真在面上&quot;,取 25 mm(§3.1)</td>
+</tr>
+<tr>
+<td>spread / bias</td>
+<td>残差去 bias 的 $\sigma$(波束间贴面一致性)/ 残差均值(系统偏移);$\text{RMSE}=\sqrt{\text{spread}<sup>2+\text{bias}</sup>2}$</td>
+</tr>
+<tr>
+<td>MAD</td>
+<td>中位绝对偏差;$1.4826\times$MAD 对正态与 std 等价,抗离群</td>
+</tr>
+</tbody>
+</table>
+<p>术语:</p>
+<ul>
+<li>精密度(precision):多次估计互相聚拢的程度,即重复性。噪声主导时随 $k$ 以 $\sigma/\sqrt{k}$ 改善。</li>
+<li>准确度(accuracy):估计逼近真值的程度,受系统偏差地板限制,融合不能改善,必须有参考。</li>
+<li>桶(bucket):同一射线的跨帧聚合单元。机械式按 (ring/俯仰, 方位) 分,固态/结构光按相机中心 (方位, 俯仰) 角域分。一桶 = 一条射线 = 一个表面点。</li>
+<li>飞点(flying point):分两类。<strong>桶内 σ 飞点</strong> = 深度跳变(混像素/边缘/多回波)的桶,沿射线 $\sigma$ 远超噪声底,净化时按 $\sigma&gt;3\times$ 噪声底丢弃;<strong>空间飞点</strong> = 三维空间孤立的稀疏点(近邻均距远大于板面点),逐桶 σ 滤波漏掉,用 SOR 去除(§3.1)。</li>
+<li>外参(extrinsic):传感器到世界系的 6 自由度刚体变换 $(R|t)$。</li>
+<li>conditioning 数:ICP Hessian 最大/最小特征值之比,大说明存在弱约束轴,外参易触地板。</li>
+<li>参考系 $L_1$:禾赛 QT128 的 100 帧融合云 <code>ref_qt128</code>,外参为单位阵,定义世界坐标。SL 三面(两两角 78.5°/86.6°/89.2°)为准确度参考。</li>
+</ul>
+<h3 id="一、目标">一、目标</h3>
+<p>5 路传感器各采 100 静态帧,场景静态、安装固定,同一射线跨帧打中同一表面点——这是 $\sigma/\sqrt{k}$ 净化的物理基础。本实验定量评估「融合 $k$ 帧」对外参标定精密度/准确度的收益,作为后续动态实验的 baseline。</p>
+<h4 id="1-1-精密度与准确度">1.1 精密度与准确度</h4>
+<table>
+<thead>
+<tr>
+<th>概念</th>
+<th>含义</th>
+<th>随 $k$</th>
+<th>如何获得</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>精密度</td>
+<td>多次估计互相聚拢</td>
+<td>$\propto 1/\sqrt{k}$(噪声主导时)</td>
+<td>重采样散布直接得</td>
+</tr>
+<tr>
+<td>准确度</td>
+<td>逼近真值</td>
+<td>受偏差地板限,到平台后不降</td>
+<td>必须有参考(SL 平面)</td>
+</tr>
+</tbody>
+</table>
+<p>融合让估计更可重复,不让它更准——这是精密度与准确度的核心区分。</p>
+<h4 id="1-2-目标">1.2 目标</h4>
+<table>
+<thead>
+<tr>
+<th>目标</th>
+<th>描述</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>G1 精密度-帧数曲线</td>
+<td>每传感器精密度随 $k$ 的曲线:是否服从 $\sigma/\sqrt{k}$、地板在哪</td>
+</tr>
+<tr>
+<td>G2 点云质量</td>
+<td>点云平面 RMSE 与逐点噪声随 $k$ 的变化;独立于配准的直接净化度量</td>
+</tr>
+<tr>
+<td>G3 准确度天花板</td>
+<td>到固定 SL 参考面的 RMSE / 跨传感器一致性</td>
+</tr>
+<tr>
+<td>G4 实操帧数 $k^\star$</td>
+<td>每台达目标精密度需要多少帧</td>
+</tr>
+<tr>
+<td>G5 外参地板机理</td>
+<td>地板拆成 conditioning / corr_d / 点噪声 / 密度 各占多少</td>
+</tr>
+<tr>
+<td>G6 最优融合配方</td>
+<td>$k^\star$ + 选帧策略 + 聚合方式</td>
+</tr>
+</tbody>
+</table>
+<h3 id="二、数据采集">二、数据采集</h3>
+<p>数据在 <code>data/cap100_20260731_110342/</code>(2026-07-31),5 传感器并发各采 100 静态帧,共 500 帧、约 1.9 亿点、7.5 GB。点数帧间高度一致(速腾 ±0.1%、SL ±0.04%、Livox 逐帧相同 410016)。加载过滤:禾赛剔除 (0,0,0) 无回波,Livox 剔远点,SL 按帧号关联文件。rear 的 frame0(difop 校准未加载,fitness 0.65、偏 8.7mm)判为启动离群,用 99 帧。</p>
+<p><img src="https://uipv4.zywvvd.com:33030/HexoFiles/files/static-multiframe-lidar-extrinsic/viz/devices.jpg" srcset="/img/loading.gif" lazyload alt="采集设备现场"></p>
+<blockquote>
+<p>采集设备现场:5 路传感器(禾赛 QT128 / 速腾 RSAIRY 前·后 / Livox HAP / 图漾 FM815)在工位固定安装,各对同一静态场景并发采 100 帧。</p>
+</blockquote>
+<p><img src="https://uipv4.zywvvd.com:33030/HexoFiles/files/static-multiframe-lidar-extrinsic/viz/room.jpg" srcset="/img/loading.gif" lazyload alt="拍摄场景:三面角"></p>
+<blockquote>
+<p>拍摄场景:左墙(白板)+ 右墙(木饰面)+ 地板(灰瓷砖)构成三面角,即 p1/p2 墙、p3 地板三参考平面(§3.1,两两角 78.5°/86.6°/89.2°)与公共区域 $R$ 所在;直接用墙体与地面作平面参考,无独立标定板。</p>
+</blockquote>
+<table>
+<thead>
+<tr>
+<th>传感器</th>
+<th>扫描类型</th>
+<th>点/帧(med,范围)</th>
+<th>角色</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>禾赛 QT128</td>
+<td>机械 128 线(有 ring)</td>
+<td>230400(150k–230k)</td>
+<td>世界系 ref(外参=单位阵)</td>
+</tr>
+<tr>
+<td>速腾 RSAIRY 前</td>
+<td>机械(无 ring)</td>
+<td>81799(81701–81909)</td>
+<td>被评估</td>
+</tr>
+<tr>
+<td>速腾 RSAIRY 后</td>
+<td>机械(无 ring)</td>
+<td>83179(83056–83258)</td>
+<td>被评估</td>
+</tr>
+<tr>
+<td>Livox HAP</td>
+<td>固态 rosette</td>
+<td>410016(逐帧一致)</td>
+<td>被评估</td>
+</tr>
+<tr>
+<td>图漾 FM815</td>
+<td>结构光</td>
+<td>1100138(1.094M–1.102M)</td>
+<td>准确度锚 + 被评估</td>
+</tr>
+</tbody>
+</table>
+<p><img src="https://uipv4.zywvvd.com:33030/HexoFiles/files/static-multiframe-lidar-extrinsic/viz/data_overview.png" srcset="/img/loading.gif" lazyload alt="数据量与质量"></p>
+<h3 id="三、方法">三、方法</h3>
+<p>所有评估在公共区域 $R$ 内进行:裁到 $R$ 后跨传感器同区域、conditioning 可比。不做全 FOV 对照——全量含各传感器非重叠区与长墙退化区,度量不公。</p>
+<ul>
+<li>实验域:$R$(含三面角)+ SL 三面参考面,禾赛作世界系。</li>
+<li>净化:角域分桶(不用体素/内参),跨帧均值,$\sigma/\sqrt{N}$。</li>
+<li>配准:CloudCompare 人工粗对 + 局部 ICP(不体素,固定 $N{=}40000$ 保噪)。</li>
+<li>度量:std 与 MAD 双报;$\sigma/\sqrt{k}$ 斜率仅用 groups≥10 的点拟合(避小样本下偏);bootstrap 30。</li>
+</ul>
+<h4 id="3-1-实验域-R-与参考面">3.1 实验域 $R$ 与参考面</h4>
+<p><strong>$R$ = 去飞点密集 SL 世界系包围盒 + 5 cm margin</strong> = $x[-0.69,3.06];y[-4.57,-1.04];z[-1.32,1.04]$,尺寸 $3.75\times3.53\times2.36$ m(含三面角,<code>crop/region.json</code>)。选 SL 视场作 $R$:SL 拍摄区正是三面参考平面所在的公共区(本身是跨传感器共同平面区),且 SL 是 5 路里精度最高的(亚 mm 结构光),FOV 最窄、该可见区是唯一被全部传感器覆盖的近场前向区。源云与 ref 都裁到 $R$ → 同区域、同 conditioning。</p>
+<p><strong>SL 参考云去空间飞点(<code>dense_region.py</code>)。</strong> SL 干净云约 0.35%(3853 点)是逐桶 σ 滤波漏掉的空间孤立飞点。对 SL 世界系云每点取 $k{=}20$ 近邻均距 $d_m$(板面点 $\sim3.7$ mm、飞点 $&gt;10$ mm),用鲁棒阈值 $\text{thr}=10^{\text{med}(\log_{10}d_m)+5\cdot1.4826\cdot\text{MAD}}\approx10.5$ mm 切分,保留 99.65%(1,100,321 点)→ <code>crop/SL_dense_world.ply</code>。去飞点只对 SL(区域/参考定义者)做;传感器云靠足迹门 + 评估门排除离面点。</p>
+<p><img src="https://uipv4.zywvvd.com:33030/HexoFiles/files/static-multiframe-lidar-extrinsic/diag/defly_before_after.png" srcset="/img/loading.gif" lazyload alt="去飞点结果"></p>
+<blockquote>
+<p>左:k-NN 近邻均距直方图(对数横轴),绿=稠密(99.65%)、红=飞点(0.35%),竖线=阈值,板面峰与飞点峰分离清晰。右三视图:灰=密集、红=飞点。</p>
+</blockquote>
+<p><img src="https://uipv4.zywvvd.com:33030/HexoFiles/files/static-multiframe-lidar-extrinsic/diag/sensor_region_overview.png" srcset="/img/loading.gif" lazyload alt="各雷达 $R$ 内点云"></p>
+<blockquote>
+<p>5 路 + 叠加共 6 面板。每路 → 世界系 → 裁到 $R$,点按最近面 sd 着色(p1 红/p2 蓝/p3 绿/其他灰),叠 $R$ 线框 + 三面角顶点。SL/livox 稠密全覆盖;禾赛/速腾稀疏(角分辨率低)。</p>
+</blockquote>
+<p>$R$ 内裁剪保留率:</p>
+<table>
+<thead>
+<tr>
+<th>传感器</th>
+<th>干净云点数</th>
+<th>$R$ 内保留%</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>禾赛 QT128(ref)</td>
+<td>74892</td>
+<td>15.9</td>
+</tr>
+<tr>
+<td>速腾前</td>
+<td>85823</td>
+<td>24.7</td>
+</tr>
+<tr>
+<td>速腾后</td>
+<td>95952</td>
+<td>34.1</td>
+</tr>
+<tr>
+<td>Livox HAP</td>
+<td>315193</td>
+<td>92.1</td>
+</tr>
+<tr>
+<td>FM815 SL</td>
+<td>1104174</td>
+<td>99.9</td>
+</tr>
+</tbody>
+</table>
+<p><strong>三面参考面。</strong> 从 SL 干净云 RANSAC 提三面(两两角 78.5°/86.6°/89.2°,角顶 $(0.94,-2.72,-0.71)$;<code>crop/ref_planes.json</code>),SL 亚 mm、三面约束 6 自由度,作全传感器公共平面参考。</p>
+<p><strong>三面评估足迹 = 去飞点密集 SL 的紧表面实心足迹。</strong> 每面取密集云 $|\text{sd}|&lt;5$ mm 内点(p3 的 5–50 mm 是地板过渡杂波,会把足迹撑到 2.77 m,故 p3 必须卡 5 mm),投到切平面 $(a,b)$ → 1.5 cm 网格 → 只留有点的格子 → 形态学闭运算桥接采样缝 + 填内部空洞 → 实心足迹(<code>crop/plane_footprints.npz</code>)。尺寸:</p>
+<table>
+<thead>
+<tr>
+<th>面</th>
+<th>实心区域 (m²)</th>
+<th>外接矩形 (m)</th>
+<th>填充率</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>p1 墙</td>
+<td>1.61</td>
+<td>1.38×1.35</td>
+<td>87%</td>
+</tr>
+<tr>
+<td>p2 墙</td>
+<td>1.35</td>
+<td>1.49×1.27</td>
+<td>71%</td>
+</tr>
+<tr>
+<td>p3 地板</td>
+<td>1.72</td>
+<td>1.54×1.42</td>
+<td>78%</td>
+</tr>
+</tbody>
+</table>
+<p>三面均为真实标定板尺寸(~1.5×1.45 m)。p2 填充率 71% 最低:sd 门扫描(5–40 mm 均为 71–75%)证实非门太紧,而是 SL 对该倾斜墙面的真实覆盖凹口(遮挡),评估本就只在 SL 真实覆盖处评,该凹口天然排除。</p>
+<p><img src="https://uipv4.zywvvd.com:33030/HexoFiles/files/static-multiframe-lidar-extrinsic/diag/plane_regions_precise.png" srcset="/img/loading.gif" lazyload alt="三面评估足迹"></p>
+<blockquote>
+<p>上:每面切平面 $(a,b)$,彩点=密集紧表面,半透明=实心足迹。下:3D 密集云三色 + $R$ 线框。</p>
+</blockquote>
+<p><strong>评估门 GATE = 25 mm(板面深度峰,数据驱动)。</strong> 足迹内池化 |sd| 直方图:0–5 mm 是板面主峰,5–25 mm 快速衰减,~25 mm 跌到谷底,其后是平坦/抬升的背景尾(p3 在 55–95 mm 还有第二杂波峰)。故 25 mm = 板面峰与背景尾的分界,作内点门(与 <code>board_segment.py</code> 独立测得的板面峰一致)。<strong>足迹(面在哪)与评估门(多厚算在面上)是两件事,分开定。</strong></p>
+<h4 id="3-2-净化-角域分桶">3.2 净化:角域分桶</h4>
+<p>静态 + 固定安装 → 同一射线每帧打中同一表面点 → $N$ 帧得 $N$ 个带噪样本 → 取均值,噪声 $\sigma/\sqrt{N}$。每桶 = 一条射线 = 同一表面点。</p>
+<table>
+<thead>
+<tr>
+<th>传感器</th>
+<th>怎么扫描</th>
+<th>桶怎么定</th>
+<th>为什么</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>禾赛(机械)</td>
+<td>固定线束旋转,精确重复</td>
+<td>(ring, 方位角)</td>
+<td>线束×方位=固定射线,帧间天然对齐</td>
+</tr>
+<tr>
+<td>速腾(机械,无 ring)</td>
+<td>旋转</td>
+<td>(俯仰, 方位),由 xyz 反算</td>
+<td>无线束号,用俯仰代替</td>
+</tr>
+<tr>
+<td>Livox(固态)</td>
+<td>双棱镜 rosette,非重复</td>
+<td>相机中心(方位, 俯仰)角域</td>
+<td>无固定射线,按方向分桶</td>
+</tr>
+<tr>
+<td>结构光</td>
+<td>全像素深度图</td>
+<td>相机中心(方位, 俯仰),按原生像素</td>
+<td>像素=射线</td>
+</tr>
+</tbody>
+</table>
+<p>规则:桶=射线→均值→$\sigma/\sqrt{N}$;用均值(匹配理论、可向量化);桶内 σ 飞点按 $\sigma&gt;3\times$ 距离噪声底剔除;不体素(体素质心去噪会污染 $\sigma/\sqrt{k}$ 信号);不用内参(SL/Livox 直接从 xyz 算相机中心角)。</p>
+<p>两个 $\sigma$ 要分清:逐点 $\sigma$(桶内点散布,含桶格宽结构)与每帧桶质心 $\sigma$($\sigma/\sqrt{k}$ 真正平均的量)。桶须足够细二者才一致——禾赛 (ring,az) az 0.2°→1 beam/桶;速腾 (el,az) az 0.1°×el 0.7°(3600×256)→1 beam/桶;SL 原生像素 2×(2560×1920)→1 点/桶;Livox 角步 0.1°。$\sigma/\sqrt{k}$ 律用的是质心 $\sigma$,不受桶宽影响。</p>
+<h4 id="3-3-配准-局部-point-to-plane-ICP">3.3 配准:局部 point-to-plane ICP</h4>
+<p>世界系 = 禾赛 <code>ref_qt128</code>(单位阵)。CloudCompare 三面角人工对齐得 $T_{\text{nominal}}$,再从 $T_{\text{nominal}}$ 起做 point-to-plane ICP 精化(<code>align_icp.py</code>)。源云均匀随机降采样到固定 $N{=}40000$ 保噪,全 $k$ 同 $N$ 以隔离密度效应;<code>corr_d=0.05</code>、<code>init=T_nominal</code>。</p>
+<h4 id="3-4-度量口径">3.4 度量口径</h4>
+<p>精密度各轴报 std 与 MAD。$\sigma/\sqrt{k}$ 斜率用 log-log 拟合,仅取 groups≥10 的点并做 per-bucket Bessel 校正。外参 $\sigma/\sqrt{k}$ 用 bootstrap $k$ 帧融合×30,$k{=}1$ 复用 100 单帧。</p>
+<h4 id="3-5-准确度的度量">3.5 准确度的度量</h4>
+<p>5 路看同一组物理平面(三面角),谁到 SL 参考面的残差小谁就准。每传感器干净云 → $T_c$ 最佳外参 → 世界系 → 到 SL 三参考面的符号距离,逐面墙拆开评估。</p>
+<ul>
+<li><strong>评估区域 = 去飞点密集 SL 的紧表面实心足迹(§3.1)</strong>:传感器候选点的 $(a,b)$ 距足迹 $\le10$ cm(KDTree 近邻)才算&quot;落在区内&quot;——跟随 SL 实际稠密覆盖。</li>
+<li><strong>内点门 GATE=25 mm(§3.1)</strong>:足迹内 $|\text{sd}|&lt;25$ mm = 内点(真贴面);25 mm–15 cm = 外点(背景拖尾/混像素);$&gt;15$ cm 不计。</li>
+<li><strong>残差分解:RMSE = √(spread² + bias²)(计算与含义,<code>plane_wall.py</code>)。</strong> 对某传感器在某面的<strong>内点集</strong>(足迹内 $|\text{sd}|&lt;25$ mm 的点),记残差 $r=\text{sd}$(mm,带符号):
+<ul>
+<li><strong>bias</strong> $=\overline{r}=\tfrac{1}{n}\sum r_i$:残差<strong>均值</strong>(带符号 mm)。整片云相对平面的整体平移量。$|$bias$|$ 大 = 系统性偏(整片读高/读低,或外参平移误差),融合降不动(系统项)。符号:正 = 偏向法向正侧(p3 地板法向朝上,正 bias = 读高)。</li>
+<li><strong>spread</strong> $=\sqrt{\overline{(r-\overline r)^2}}$:残差<strong>标准差</strong>(去均值,mm)。各波束之间对表面位置的不一致(残差绕自身均值的散布)。spread 大 = 贴面&quot;厚/散&quot;、跨波束一致性差;融合降单点噪声但不降跨波束系统散布。</li>
+<li><strong>RMSE</strong> $=\sqrt{\overline{r<sup>2}}=\sqrt{\text{spread}</sup>2+\text{bias}^2}$:二者按勾股合成,是总误差(spread 用总体标准差,故等式精确)。</li>
+<li>另报:<strong>中位</strong> $=\text{median}(|r|)$、<strong>p95</strong> $=|r|$ 的 95 分位(鲁棒补充,抗拖尾)。</li>
+<li><strong>怎么读</strong>:bias 主导($|$bias$|\gg$spread)= 整体偏(如 p3 地板速腾读高);spread 主导(spread $\gg |$bias$|$)= 散(如 p1/p2 墙 bias≈0、贴面散)。SL 残差是自拟合(~4 mm = 墙/地板平整度上界),其余是到 SL 面的误差 = 外参对齐残差 + 自身系统项。</li>
+</ul>
+</li>
+</ul>
+<h3 id="四、结果">四、结果</h3>
+<h4 id="4-1-净化与逐点噪声">4.1 净化与逐点噪声</h4>
+<p>每传感器 100 帧 → 角域分桶 → 1 张干净云 + per-bucket 方差(产物在 <code>purify/</code>)。下表列:桶数、干净云保留%(丢飞点与样本不足桶后)、单帧逐点 $\sigma$(单桶内点散布 = 单条射线径向深度噪声)、$\sigma/\sqrt{n}$ 残差($=\sigma/\sqrt{n}$,平均 $n$ 帧后每桶质心残余噪声)、飞点%(因 $\sigma&gt;3\times$ 噪声底判废的桶)。</p>
+<table>
+<thead>
+<tr>
+<th>传感器</th>
+<th>桶数</th>
+<th>干净云保留%</th>
+<th>单帧逐点 $\sigma$ (mm)</th>
+<th>$\sigma/\sqrt{n}$ 残差 (mm)</th>
+<th>飞点%</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>禾赛</td>
+<td>86472</td>
+<td>86.9</td>
+<td>8.05</td>
+<td>0.57</td>
+<td>13.1</td>
+</tr>
+<tr>
+<td>速腾前</td>
+<td>88652</td>
+<td>96.8</td>
+<td>2.88</td>
+<td>0.29</td>
+<td>3.2</td>
+</tr>
+<tr>
+<td>速腾后</td>
+<td>100720</td>
+<td>95.3</td>
+<td>3.42</td>
+<td>0.34</td>
+<td>4.7</td>
+</tr>
+<tr>
+<td>Livox</td>
+<td>320188</td>
+<td>98.4</td>
+<td>6.26</td>
+<td>0.59</td>
+<td>0.9</td>
+</tr>
+<tr>
+<td>结构光</td>
+<td>1141990</td>
+<td>96.7</td>
+<td>3.03</td>
+<td>0.30</td>
+<td>2.1</td>
+</tr>
+</tbody>
+</table>
+<p>禾赛飞点 13.1% 是双回波跨距桶(两回波相距 ~0.6m),均值落半空故弃之。</p>
+<p><img src="https://uipv4.zywvvd.com:33030/HexoFiles/files/static-multiframe-lidar-extrinsic/viz/purify_overview.png" srcset="/img/loading.gif" lazyload alt="净化结果总览"></p>
+<p>桶内噪声分解(<code>bucket_diag.py</code>,细桶),把每桶点散布按方向拆开:$\sigma_{3D}$(三维总散布)、$\sigma_{\text{radial}}$(沿射线/深度,真测距噪声)、$\sigma_{\text{lateral}}$(垂直射线/角向,细桶下应接近 0)、lat/rad(接近 0 说明桶是干净单射线)、时间(后/前)(后半段 σ 除以前半段,接近 1 说明无慢漂移)。</p>
+<table>
+<thead>
+<tr>
+<th>传感器</th>
+<th>$\sigma_{3D}$ 中位 (mm)</th>
+<th>$\sigma_{\text{radial}}$</th>
+<th>$\sigma_{\text{lateral}}$</th>
+<th>lat/rad</th>
+<th>时间(后/前)</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>禾赛</td>
+<td>8.40</td>
+<td>8.40</td>
+<td>0.00</td>
+<td>0.000</td>
+<td>1.000</td>
+</tr>
+<tr>
+<td>速腾前</td>
+<td>2.94</td>
+<td>2.94</td>
+<td>0.03</td>
+<td>0.000</td>
+<td>1.000</td>
+</tr>
+<tr>
+<td>速腾后</td>
+<td>3.51</td>
+<td>3.51</td>
+<td>0.06</td>
+<td>0.000</td>
+<td>1.000</td>
+</tr>
+<tr>
+<td>Livox</td>
+<td>6.28</td>
+<td>6.08</td>
+<td>1.15</td>
+<td>0.032</td>
+<td>0.998</td>
+</tr>
+<tr>
+<td>SL</td>
+<td>3.07</td>
+<td>3.07</td>
+<td>0.00</td>
+<td>0.000</td>
+<td>0.963</td>
+</tr>
+</tbody>
+</table>
+<p>全部传感器 lateral≈0,桶是干净单射线(散布纯来自深度)。径向深度噪声 SL 3.1 / 速腾 ~3 / Livox 6.1 / 禾赛 8.4 mm。</p>
+<p><strong>4.1.1 逐点方差热力图</strong></p>
+<p>每雷达一张俯视平面图(各雷达竖直方向展开最小,故取 X-Y),每个桶按其 3D $\sigma$ 对数上色(蓝=稳、红=抖),远距离飞点已过滤。高方差几乎全聚在表面边缘与角落(混像素飞点),大平面内部一律低方差:速腾前近场飞点中位 $\sigma$~20mm,平面内部测距噪声 ~3mm。</p>
+<p><img src="https://uipv4.zywvvd.com:33030/HexoFiles/files/static-multiframe-lidar-extrinsic/diag/var_heatmap_hesai.png" srcset="/img/loading.gif" lazyload alt="禾赛 QT128 方差热力图"><br>
+<img src="https://uipv4.zywvvd.com:33030/HexoFiles/files/static-multiframe-lidar-extrinsic/diag/var_heatmap_front.png" srcset="/img/loading.gif" lazyload alt="速腾前 方差热力图"><br>
+<img src="https://uipv4.zywvvd.com:33030/HexoFiles/files/static-multiframe-lidar-extrinsic/diag/var_heatmap_rear.png" srcset="/img/loading.gif" lazyload alt="速腾后 方差热力图"><br>
+<img src="https://uipv4.zywvvd.com:33030/HexoFiles/files/static-multiframe-lidar-extrinsic/diag/var_heatmap_livox.png" srcset="/img/loading.gif" lazyload alt="Livox HAP 方差热力图"><br>
+<img src="https://uipv4.zywvvd.com:33030/HexoFiles/files/static-multiframe-lidar-extrinsic/diag/var_heatmap_SL.png" srcset="/img/loading.gif" lazyload alt="结构光 FM815 方差热力图"></p>
+<p>色标对数 1mm–1.5m 共享。禾赛近场飞点中位 ~600mm 是双回波跨距桶,非单点抖动。</p>
+<h4 id="4-2-精密度随帧数的变化">4.2 精密度随帧数的变化</h4>
+<p>核心问题:静态多帧融合,精密度是否随 $k$ 按 $\sigma/\sqrt{k}$ 改善?用两条互相独立的路径检验——Path B 测点本身(免配准),Path A 测外参标定精密度(基于配准)。</p>
+<p><strong>Path B · 免配准点噪声</strong></p>
+<p>做法(<code>kcurve_noise.py</code>,全程不经外参/配准):100 帧按时间交错分 $g=100/k$ 组(跨时间段取帧降相关)→ 组内同桶 $k$ 帧取均值(桶质心)→ 同桶跨 $g$ 组质心逐桶算标准差(Bessel)再对所有桶取中位 = 实测 $\sigma(k)$ → 与 $\sigma_1/\sqrt{k}$ 理想线比;另画 $\sigma(k)\cdot\sqrt{k}$ 诊断帧独立(平=独立、随 $k$ 升=相关)。$k$ 取 1,2,4,5,10,20,25,50。</p>
+<p><img src="https://uipv4.zywvvd.com:33030/HexoFiles/files/static-multiframe-lidar-extrinsic/kcurve/noise_detail.png" srcset="/img/loading.gif" lazyload alt="Path B 点噪声"></p>
+<blockquote>
+<p>左 log-log:横轴 $k$、纵轴桶质心 $\sigma(k)$(mm),实线=实测、虚线=$\sigma_1/\sqrt{k}$,贴虚线即服从 $\sigma/\sqrt{k}$。右半对数:纵轴 $\sigma(k)\cdot\sqrt{k}$,平=帧独立、升=帧相关。</p>
+</blockquote>
+<p>结论:除 Livox 外 4 路斜率 $\approx-0.5$,实测贴 $\sigma_1/\sqrt{k}$ → 点噪声降到 $\sigma/\sqrt{k}$;Livox 斜率 $-0.414$ 且 $\sigma\cdot\sqrt{k}$ 从 5.2 升到 6.5 → 帧相关,$k_{\text{eff}}\approx0.66k$。单点噪声 $\sigma_1$ 排序:前 2.95 &lt; SL 3.09 &lt; 后 3.56 &lt; livox 5.22 &lt; 禾赛 7.64 mm。</p>
+<table>
+<thead>
+<tr>
+<th>传感器</th>
+<th>$\sigma_1$(mm)</th>
+<th>斜率(理想 $-0.5$)</th>
+<th>$\sigma\cdot\sqrt{k}$</th>
+<th>帧独立性</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>速腾前</td>
+<td>2.95</td>
+<td>$-0.505$</td>
+<td>平 ~2.9</td>
+<td>独立</td>
+</tr>
+<tr>
+<td>结构光</td>
+<td>3.09</td>
+<td>$-0.539$</td>
+<td>平 ~2.8</td>
+<td>独立</td>
+</tr>
+<tr>
+<td>速腾后</td>
+<td>3.56</td>
+<td>$-0.489$</td>
+<td>平 ~3.6</td>
+<td>独立</td>
+</tr>
+<tr>
+<td>Livox</td>
+<td>5.22</td>
+<td>$-0.414$</td>
+<td>升 5.2→6.5</td>
+<td>相关($k_{\text{eff}}\approx0.66k$)</td>
+</tr>
+<tr>
+<td>禾赛</td>
+<td>7.64</td>
+<td>$-0.514$</td>
+<td>平 ~7.0</td>
+<td>独立</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Path A · 基于配准的外参</strong></p>
+<p>做法(<code>kcurve_extrinsics.py</code>):每个非 ref 传感器 $k$ 帧一组、bootstrap 30 → 角域分桶融合成 1 云 → point-to-plane ICP(初值 $T_{\text{nominal}}$,$\text{corr}<em>d=0.05$,$N</em>{\text{sub}}=40000$)配到 ref → 30 个 $T_i$ 各分解 6 自由度,每自由度跨 30 次 std $=\sigma_T(k)$。</p>
+<p><img src="https://uipv4.zywvvd.com:33030/HexoFiles/files/static-multiframe-lidar-extrinsic/kcurve/extrinsics_trans.png" srcset="/img/loading.gif" lazyload alt="Path A 平移 3 自由度"><br>
+<img src="https://uipv4.zywvvd.com:33030/HexoFiles/files/static-multiframe-lidar-extrinsic/kcurve/extrinsics_rot.png" srcset="/img/loading.gif" lazyload alt="Path A 旋转 3 自由度"></p>
+<blockquote>
+<p>三轴 RSS 的 std(mm) vs $k$(log-log),虚线=$\sigma_1/\sqrt{k}$,数据在虚线上方即触地板。</p>
+</blockquote>
+<p>4 路平移都不服从 $\sigma/\sqrt{k}$,大 $k$ 触地板。三轴 RSS 的斜率 / $k{=}1$ / $k{=}49$:front $-0.45$ / 0.40 / 0.07mm;rear $-0.19$ / 0.69 / 0.33;livox $-0.24$ / 1.36 / 0.50;SL $-0.15$ / 0.48 / 0.29。旋转 $k{=}1$ 约 0.005–0.028°,同样触地板但量级小得多。</p>
+<p><strong>front vs rear:同型号、两维度排名反转。</strong> front 与 rear 是同一款雷达(速腾 RSAIRY),世界系原点挨得近(front $(0.22,-0.13,-0.36)$、rear $(0.37,-0.17,-0.55)$,距三面角顶点 2.71 / 2.61m)。数据分两层,排名正好反过来:</p>
+<ul>
+<li><strong>精密度(Path A):front 更好。</strong> 三轴 RSS $k{=}1\to49$:front 0.40→0.07mm,rear 0.69→0.33mm。front 三轴都干净降到 ~0.05mm;rear 的 $t_z$ 非单调($k{=}4,9$ 反升到 0.41/0.47 再回落)。</li>
+<li><strong>准确度(§4.4,密集足迹到 SL 平面):三面均值 rear 更好</strong> front 10.6 &gt; rear 10.1mm;spread 均 front 10.3 &gt; rear 9.0mm。front 贴墙一致性最差。</li>
+</ul>
+<p><img src="https://uipv4.zywvvd.com:33030/HexoFiles/files/static-multiframe-lidar-extrinsic/diag/fused_cloud_topdown.png" srcset="/img/loading.gif" lazyload alt="各雷达最佳外参融合云俯视"></p>
+<blockquote>
+<p>5 路各自最佳外参($T_c$)的融合云 → 世界系 → 俯视 X-Y。灰点=全体云(看形状);彩色点=密集足迹内点(去飞点密集 SL 实心足迹 ±10cm 内且 $|\text{sd}|&lt;25$mm,§3.1),按符号残差着色(红/蓝=偏墙前/后,±25mm);★=三面角顶点,✕=传感器原点。标题 RMSE/spread/bias 即该密集足迹统计。SL(最右)最干净;front/rear 彩点最花=贴墙一致性差,front 尤甚(密集足迹 RMSE ~10.6mm,5 路最高)。front 精度数字最低(0.07mm)但云贴墙最差——精度=外参估计重复性,不是贴墙准不准。</p>
+</blockquote>
+<p>逐轴 $k{=}1\to49$ 的 std(mm):</p>
+<table>
+<thead>
+<tr>
+<th></th>
+<th>$t_x$</th>
+<th>$t_y$</th>
+<th>$t_z$</th>
+<th>RSS</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>front</td>
+<td>0.200→0.026</td>
+<td>0.292→0.040</td>
+<td>0.186→0.051</td>
+<td>0.40→0.07</td>
+</tr>
+<tr>
+<td>rear</td>
+<td>0.286→0.171</td>
+<td>0.491→0.151</td>
+<td>0.383→0.237</td>
+<td>0.69→0.33</td>
+</tr>
+<tr>
+<td>livox</td>
+<td>0.304→0.197</td>
+<td>0.378→0.073</td>
+<td>1.273→0.456</td>
+<td>1.36→0.50</td>
+</tr>
+<tr>
+<td>SL</td>
+<td>0.329→0.177</td>
+<td>0.214→0.107</td>
+<td>0.277→0.199</td>
+<td>0.48→0.29</td>
+</tr>
+</tbody>
+</table>
+<ul>
+<li>front:三轴都降 ~8×、单调,贴 $\sigma/\sqrt{k}$——唯一没有任何一轴卡住的传感器;单点噪声也最低($\sigma_1$ 2.95mm &lt; rear 3.56mm),理论地板最低,故 $\sigma/\sqrt{k}$ 干净传到外参。</li>
+<li>rear:$t_y$ 降了(0.49→0.15),$t_x/t_z$ 降不动;$t_z$ 非单调。conditioning 与 front 相当(最弱特征值 1409 ≥ front 1262),成因留动态实验。</li>
+<li>livox:$t_z$ 在 $k{=}1$ 就 1.27mm,主导 RSS,$k{=}49$ 还有 0.46——这一轴卡死,§4.3 用几何弱轴(特征值 224)解释。</li>
+<li>SL:三轴都只降 ~2×、均匀浅降,无特别差的轴,但整体降不下去。</li>
+</ul>
+<p><img src="https://uipv4.zywvvd.com:33030/HexoFiles/files/static-multiframe-lidar-extrinsic/kcurve/pathAB_compare.png" srcset="/img/loading.gif" lazyload alt="Path B vs Path A 归一化对照"></p>
+<blockquote>
+<p>左(Path B 归一化):点噪声 $\sigma(k)/\sigma(1)$ 全部贴 $1/\sqrt{k}$(Livox 略高=相关)。右(Path A 归一化):外参 $\sigma_T(k)/\sigma_T(1)$ 大 $k$ 明显高于 $1/\sqrt{k}$、趋平台。一句话:融合提点云精密度($\sigma/\sqrt{k}$),不提外参标定精密度(触地板)。外参进平台的 $k^\star\approx4\sim16$ 帧。</p>
+</blockquote>
+<h4 id="4-3-外参地板的成因">4.3 外参地板的成因</h4>
+<p>§4.2 Path A:融合帧数 $k$ 加大,外参精度很快停在地板上(rear ~0.33mm、livox ~0.50mm)。本节问地板是谁抬起来的。固定其余条件、只拧一个旋钮,看 $k{=}1$ 单帧外参精度怎么变(单帧无融合收益,精度纯由配准本身决定)。三个候选:</p>
+<ol>
+<li><strong>匹配半径 $\text{corr}_d$。</strong> 扫 $\text{corr}_d\in[0.02, 0.1]$m:0.02m 太紧,有效配对骤减,地板反被抬高(front 1.23 / rear 2.18 / livox 1.90 / SL 0.60mm);到 0.05m 即触底,再放大不改善。<strong>排除,锁 0.05m。</strong></li>
+</ol>
+<p><img src="https://uipv4.zywvvd.com:33030/HexoFiles/files/static-multiframe-lidar-extrinsic/diag/floor_sweep.png" srcset="/img/loading.gif" lazyload alt="地板扫描"></p>
+<blockquote>
+<p>左:地板 vs corr_d(对应离散);右:地板 vs $N_{\text{sub}}$(点密度,对数横轴)。</p>
+</blockquote>
+<ol start="2">
+<li>
+<p><strong>点密度 $N_{\text{sub}}$。</strong> 扫源云点数 10k–80k:Livox 地板随密度持续降(1.64→0.57mm,到 80k 还在降)= 密度受限;rear 随密度降(0.79→0.34)= 部分受限;front 40k 即饱和(~0.38)= 不缺;SL 基本持平(~0.48)。<strong>密度是 Livox(强)、rear(弱)的地板来源之一。</strong></p>
+</li>
+<li>
+<p><strong>几何弱轴(Hessian)。</strong> point-to-plane ICP 把&quot;云贴参考面有多好&quot;写成误差,微扰外参 6 自由度、量误差变化排成 6×6 <strong>Hessian</strong>,对角化得 6 个<strong>特征值</strong>(大=约束强估得准,小=弱轴估不稳,最小特征值卡地板);<strong>conditioning 数</strong> = 最大÷最小特征值。</p>
+</li>
+</ol>
+<p><img src="https://uipv4.zywvvd.com:33030/HexoFiles/files/static-multiframe-lidar-extrinsic/diag/floor_hessian.png" srcset="/img/loading.gif" lazyload alt="Hessian 各轴信息"></p>
+<blockquote>
+<p>横轴 e1–e6:Hessian 的 6 个特征值按大小降序(e1 最强 → e6 最弱),每个对应 6 自由度(3 旋转 $\omega$ + 3 平移 $v$)对角化后的一个信息主轴(非直接的 $t_x/t_y/t_z$/roll/pitch/yaw,而是混合主方向)。纵轴:特征值大小(信息量,对数轴)= 沿该方向微扰外参时 point-to-plane 残差增长量;大=约束强,小=弱轴(e6 卡地板)。构造:雅可比 $J=[p\times n,;n]$(前 3 列旋转、后 3 列平移),信息矩阵 $H=J^\top J$,特征值降序。</p>
+</blockquote>
+<p>结果:最弱轴 / conditioning front 1262 / 38、rear 1409 / 44、SL 624 / 91、livox 224 / 277。Livox 最弱轴只有 224(其余三者最弱轴的 1/3~1/6),有一个几何上几乎约束不到的方向 → 地板最高(~0.57mm @k=1)且融合降不下去。<strong>几何弱轴仅命中 Livox。</strong> 反证:front 与 rear 最弱轴相当、conditioning 相近(38 vs 44),可 front 能降到 0.07mm、rear 卡 0.33mm——&quot;front 比 rear 好&quot;不是 conditioning 之功,而是单点噪声更低 + 三轴干净(精密度维度);准确度维度 front 反不如 rear。</p>
+<table>
+<thead>
+<tr>
+<th>原因</th>
+<th>检验</th>
+<th>命中谁</th>
+<th>结论</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>$\text{corr}_d$(匹配半径)</td>
+<td>扫 0.02–0.1m</td>
+<td>无(≥0.05 都平)</td>
+<td>排除,锁 0.05m</td>
+</tr>
+<tr>
+<td>$N_{\text{sub}}$(点密度)</td>
+<td>扫 10k–80k</td>
+<td>Livox(强)、rear(弱)</td>
+<td>部分原因</td>
+</tr>
+<tr>
+<td>几何弱轴(Hessian)</td>
+<td>特征值</td>
+<td>仅 Livox(224)</td>
+<td>部分原因</td>
+</tr>
+</tbody>
+</table>
+<p>两条证实来源解释最差的 Livox(密度+弱轴都中)与精密度最好的 front(都不中);解释不了 rear(conditioning 与 front 相当却卡 0.33mm)与 SL——那里残留平均不掉的散布(rear 表现为 $t_z$ 非单调、SL 三轴均匀浅降),成因留动态实验。</p>
+<h4 id="4-4-准确度">4.4 准确度</h4>
+<p>逐面墙评估(<code>plane_wall.py</code>),口径见 §3.5。热力图每传感器一面板:内点按符号残差着色(红=墙前/近、蓝=墙后/远,±25mm)、外点灰、★=三面角顶点,标题给 内点%/外点%/RMSE/spread/bias(mm)。</p>
+<p>区域裁剪前后对照:</p>
+<p><img src="https://uipv4.zywvvd.com:33030/HexoFiles/files/static-multiframe-lidar-extrinsic/diag/region_crop_overview.png" srcset="/img/loading.gif" lazyload alt="区域裁剪前后对照"></p>
+<blockquote>
+<p>左=全体近面点广角;右=仅密集足迹 ±10cm 区内;黑=SL 足迹,★=顶点。</p>
+</blockquote>
+<p><strong>p1 墙</strong></p>
+<p><img src="https://uipv4.zywvvd.com:33030/HexoFiles/files/static-multiframe-lidar-extrinsic/diag/wall1_heatmap.png" srcset="/img/loading.gif" lazyload alt="p1 墙逐传感器残差热力图"></p>
+<table>
+<thead>
+<tr>
+<th>传感器</th>
+<th>区内点 n</th>
+<th>内%</th>
+<th>外%</th>
+<th>RMSE</th>
+<th>spread</th>
+<th>bias</th>
+<th>中位</th>
+<th>p95</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>结构光</td>
+<td>462849</td>
+<td>92</td>
+<td>8</td>
+<td>5.4</td>
+<td>5.2</td>
+<td>−1.1</td>
+<td>3.3</td>
+<td>10.5</td>
+</tr>
+<tr>
+<td>禾赛</td>
+<td>1347</td>
+<td>89</td>
+<td>11</td>
+<td>6.4</td>
+<td>6.3</td>
+<td>−1.0</td>
+<td>5.1</td>
+<td>10.8</td>
+</tr>
+<tr>
+<td>Livox</td>
+<td>65392</td>
+<td>90</td>
+<td>10</td>
+<td>7.3</td>
+<td>6.8</td>
+<td>+2.6</td>
+<td>4.9</td>
+<td>13.7</td>
+</tr>
+<tr>
+<td>速腾后</td>
+<td>5257</td>
+<td>84</td>
+<td>16</td>
+<td>10.7</td>
+<td>10.7</td>
+<td>+0.7</td>
+<td>7.3</td>
+<td>20.4</td>
+</tr>
+<tr>
+<td>速腾前</td>
+<td>3190</td>
+<td>79</td>
+<td>21</td>
+<td>11.7</td>
+<td>11.4</td>
+<td>−2.7</td>
+<td>8.9</td>
+<td>22.2</td>
+</tr>
+</tbody>
+</table>
+<p>误差几乎全是 spread(bias ≈ 0)——&quot;贴面一致性&quot;差,不是整体偏移。SL 最干净(5.4),禾赛/Livox 接近(6.4–7.3),速腾前/后最差(10.7–11.7)。禾赛在这面只有 1347 个区内点(角分辨率低,小 patch 落点稀疏),但一致性并不差。</p>
+<p><strong>p2 墙</strong></p>
+<p><img src="https://uipv4.zywvvd.com:33030/HexoFiles/files/static-multiframe-lidar-extrinsic/diag/wall2_heatmap.png" srcset="/img/loading.gif" lazyload alt="p2 墙逐传感器残差热力图"></p>
+<table>
+<thead>
+<tr>
+<th>传感器</th>
+<th>区内点 n</th>
+<th>内%</th>
+<th>外%</th>
+<th>RMSE</th>
+<th>spread</th>
+<th>bias</th>
+<th>中位</th>
+<th>p95</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>结构光</td>
+<td>405438</td>
+<td>88</td>
+<td>12</td>
+<td>4.5</td>
+<td>4.4</td>
+<td>−0.4</td>
+<td>2.2</td>
+<td>8.9</td>
+</tr>
+<tr>
+<td>禾赛</td>
+<td>1321</td>
+<td>85</td>
+<td>15</td>
+<td>6.6</td>
+<td>6.5</td>
+<td>−1.1</td>
+<td>4.0</td>
+<td>13.0</td>
+</tr>
+<tr>
+<td>Livox</td>
+<td>57929</td>
+<td>88</td>
+<td>12</td>
+<td>6.7</td>
+<td>6.7</td>
+<td>+0.5</td>
+<td>4.8</td>
+<td>12.3</td>
+</tr>
+<tr>
+<td>速腾前</td>
+<td>3111</td>
+<td>87</td>
+<td>13</td>
+<td>7.8</td>
+<td>7.8</td>
+<td>−0.2</td>
+<td>4.7</td>
+<td>16.5</td>
+</tr>
+<tr>
+<td>速腾后</td>
+<td>4811</td>
+<td>85</td>
+<td>15</td>
+<td>9.5</td>
+<td>9.1</td>
+<td>−2.6</td>
+<td>5.6</td>
+<td>19.5</td>
+</tr>
+</tbody>
+</table>
+<p>与 p1 不同:这面 <strong>front(7.8)&lt; rear(9.5),front 更准</strong>——三面均值里 rear 更优是由 p1、p3 主导,p2 单看反转(两台 RSAIRY 对这面倾斜墙入射角不同)。仍 spread 主导、bias≈0,p2 与 p1 同构:SL &lt; 禾赛 ≈ Livox &lt; 速腾。</p>
+<p><strong>p3 地板</strong></p>
+<p><img src="https://uipv4.zywvvd.com:33030/HexoFiles/files/static-multiframe-lidar-extrinsic/diag/wall3_heatmap.png" srcset="/img/loading.gif" lazyload alt="p3 地板逐传感器残差热力图"></p>
+<table>
+<thead>
+<tr>
+<th>传感器</th>
+<th>区内点 n</th>
+<th>内%</th>
+<th>外%</th>
+<th>RMSE</th>
+<th>spread</th>
+<th>bias</th>
+<th>中位</th>
+<th>p95</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>结构光</td>
+<td>406898</td>
+<td>82</td>
+<td>18</td>
+<td>3.0</td>
+<td>2.9</td>
+<td>−0.3</td>
+<td>1.4</td>
+<td>3.8</td>
+</tr>
+<tr>
+<td>禾赛</td>
+<td>1230</td>
+<td>87</td>
+<td>13</td>
+<td>4.7</td>
+<td>4.7</td>
+<td>+0.0</td>
+<td>3.2</td>
+<td>7.8</td>
+</tr>
+<tr>
+<td>Livox</td>
+<td>44701</td>
+<td>72</td>
+<td>28</td>
+<td>5.1</td>
+<td>4.6</td>
+<td>−2.2</td>
+<td>3.2</td>
+<td>8.6</td>
+</tr>
+<tr>
+<td>速腾后</td>
+<td>3471</td>
+<td>83</td>
+<td>17</td>
+<td>10.0</td>
+<td>7.3</td>
+<td>+6.9</td>
+<td>8.1</td>
+<td>17.2</td>
+</tr>
+<tr>
+<td>速腾前</td>
+<td>2435</td>
+<td>75</td>
+<td>25</td>
+<td>12.2</td>
+<td>11.9</td>
+<td>+2.9</td>
+<td>9.5</td>
+<td>22.6</td>
+</tr>
+</tbody>
+</table>
+<p>SL 最准(3.0),禾赛次之(4.7),Livox 5.1,速腾后/前又是倒数(10.0/12.2)。与前两面不同,速腾在地板上带<strong>正 bias</strong>(后 +6.9、前 +2.9mm,把地板读高)——地板入射角大、回波易偏,这是真系统项(rear 在地板上 bias 6.9 ≈ spread 7.3,误差从&quot;贴面散&quot;变成&quot;系统读高&quot;)。Livox 外点% 高(28%):地板足迹内容易捕到墙根/物体。</p>
+<p><strong>三面联合:结论一致吗?</strong></p>
+<p>三面逐传感器并排(RMSE / spread / bias,mm):</p>
+<table>
+<thead>
+<tr>
+<th>面</th>
+<th>SL</th>
+<th>禾赛</th>
+<th>Livox</th>
+<th>速腾后</th>
+<th>速腾前</th>
+<th>误差结构</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>p1 墙</td>
+<td>5.4 / 5.2 / −1.1</td>
+<td>6.4 / 6.3 / −1.0</td>
+<td>7.3 / 6.8 / +2.6</td>
+<td>10.7 / 10.7 / +0.7</td>
+<td>11.7 / 11.4 / −2.7</td>
+<td>spread 主导,bias≈0</td>
+</tr>
+<tr>
+<td>p2 墙</td>
+<td>4.5 / 4.4 / −0.4</td>
+<td>6.6 / 6.5 / −1.1</td>
+<td>6.7 / 6.7 / +0.5</td>
+<td>9.5 / 9.1 / −2.6</td>
+<td>7.8 / 7.8 / −0.2</td>
+<td>spread 主导,bias≈0</td>
+</tr>
+<tr>
+<td>p3 地板</td>
+<td>3.0 / 2.9 / −0.3</td>
+<td>4.7 / 4.7 / 0.0</td>
+<td>5.1 / 4.6 / −2.2</td>
+<td>10.0 / 7.3 / <strong>+6.9</strong></td>
+<td>12.2 / 11.9 / <strong>+2.9</strong></td>
+<td>速腾带正 bias(读高)</td>
+</tr>
+</tbody>
+</table>
+<p>三面 spread 均值 <strong>SL 4.2 &lt; 禾赛 5.9 &lt; Livox 6.0 &lt; 速腾后 9.0 &lt; 速腾前 10.3 mm</strong>;RMSE 均值 SL 4.3 &lt; 禾赛 5.9 &lt; Livox 6.4 &lt; 速腾后 10.1 &lt; 速腾前 10.6。<strong>大体一致,两处真实不一致:</strong></p>
+<p>一致(三面都成立):</p>
+<ul>
+<li>总排序 SL 最准 &lt; 禾赛 ≈ Livox(中)&lt; 速腾(最差)。SL 3.0–5.4、速腾 7.8–12.2,三面都拉开。</li>
+<li>SL/禾赛/Livox 三家三面 bias 都 ≈ 0——&quot;不准&quot;全是 spread,不是整体偏移。</li>
+<li>两面墙 p1、p2 同构:bias≈0、spread 主导。</li>
+<li>禾赛核心区稳定第 2(5.9),优于 Livox(6.0):单点噪声虽大,贴面一致性却好。</li>
+</ul>
+<p>不一致:</p>
+<ul>
+<li><strong>front/rear 排序 p2 翻转</strong>:p1、p3 rear 更准(rear 10.7/10.0 &lt; front 11.7/12.2);p2 反过来 front(7.8)&lt; rear(9.5)。三面均值 rear 9.0 &lt; front 10.3 由 p1/p3 主导,p2 单看相反。&quot;front 准确度最差、rear 更好&quot;只在 p1/p3 成立。</li>
+<li><strong>p3 地板误差结构不同</strong>:p1/p2 速腾 bias≈0(纯 spread);p3 速腾带正 bias(后 +6.9、前 +2.9mm,读高)。速腾&quot;不准&quot;在墙上=跨波束散布,在地板上=散布+系统读高,成因不同。</li>
+</ul>
+<p>入射角被排除:SL 在地板上入射最掠却残差最低(3.0mm)→ 几何入射非主导,残差由系统项决定。</p>
+<p><img src="https://uipv4.zywvvd.com:33030/HexoFiles/files/static-multiframe-lidar-extrinsic/diag/plane_residual_dist.png" srcset="/img/loading.gif" lazyload alt="残差分布直方图"></p>
+<blockquote>
+<p>去 bias 残差:SL 窄而对称(纯噪声),LiDAR 宽且有拖尾(系统偏差 + 边缘混像素)。RMSE 不随 $k$ 降($k{=}1\to49$ 变化 &lt;1mm):残差被系统项主导,$\sigma/\sqrt{k}$ 噪声在 $k{=}100$ 只剩 0.3–0.8mm,远小于残差地板。</p>
+</blockquote>
+<p><strong>实验 B:以 SL 平均云为基准的准确度</strong></p>
+<p>实验 A(上)= 到 SL 拟合<strong>理想平面</strong>的残差(分解 spread/bias,<code>plane_wall.py</code>)。实验 B(本节)= <strong>直接以 SL 平均点云为参考面</strong>,度量各传感器点云到 SL 的近邻距离(sensor→SL,<code>sl_baseline.py</code>,密集足迹区内,与实验 A 同域)。好处:不引入理想平面抽象、绕开墙平整度地板(SL 自拟合 ~4.3mm),跟着 SL 实测平均面走;SL 自身到自身近邻(k=2 去自身)= 1.73mm(分辨率,0 基线)。</p>
+<p><img src="https://uipv4.zywvvd.com:33030/HexoFiles/files/static-multiframe-lidar-extrinsic/diag/sl_baseline_accuracy.png" srcset="/img/loading.gif" lazyload alt="以SL平均云为基准的准确度"></p>
+<table>
+<thead>
+<tr>
+<th>传感器</th>
+<th>区内点 n</th>
+<th>中位</th>
+<th>均值</th>
+<th>p90</th>
+<th>RMSE (mm, 到 SL 云)</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Livox</td>
+<td>136699</td>
+<td>4.3</td>
+<td>9.5</td>
+<td>14.9</td>
+<td>19.9</td>
+</tr>
+<tr>
+<td>禾赛</td>
+<td>3311</td>
+<td>4.3</td>
+<td>12.6</td>
+<td>45.7</td>
+<td>25.5</td>
+</tr>
+<tr>
+<td>速腾后</td>
+<td>11591</td>
+<td>8.2</td>
+<td>15.9</td>
+<td>44.1</td>
+<td>26.8</td>
+</tr>
+<tr>
+<td>速腾前</td>
+<td>7370</td>
+<td>8.3</td>
+<td>15.8</td>
+<td>40.5</td>
+<td>26.1</td>
+</tr>
+</tbody>
+</table>
+<p>逐面中位(d_nn)mm:</p>
+<table>
+<thead>
+<tr>
+<th>传感器</th>
+<th>p1</th>
+<th>p2</th>
+<th>p3</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>禾赛</td>
+<td>4.7</td>
+<td>4.7</td>
+<td>4.1</td>
+</tr>
+<tr>
+<td>速腾前</td>
+<td>9.3</td>
+<td>6.6</td>
+<td>12.8</td>
+</tr>
+<tr>
+<td>速腾后</td>
+<td>8.5</td>
+<td>7.6</td>
+<td>10.0</td>
+</tr>
+<tr>
+<td>Livox</td>
+<td>5.4</td>
+<td>3.6</td>
+<td>4.1</td>
+</tr>
+</tbody>
+</table>
+<p>实验 A、B 同向:速腾前/后离 SL 最远(最不准),Livox/禾赛最贴。禾赛在 A(spread 5.9)和 B(中位 4.3)都好——单点噪声大($\sigma_r$ 8.1)但核心区贴 SL 很准,印证&quot;噪 ≠ 不准&quot;。</p>
+<p><strong>单点噪声 vs 贴面一致性</strong></p>
+<p>把单波束噪声 $\sigma_r$(§4.1,精密度)与三面 spread 均值(实验 A,准确度)并排:</p>
+<table>
+<thead>
+<tr>
+<th>传感器</th>
+<th>$\sigma_r$ 精密度(mm)</th>
+<th>spread 准确度(mm)</th>
+<th>判定</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>结构光</td>
+<td>3.0</td>
+<td>4.2</td>
+<td>既精又准</td>
+</tr>
+<tr>
+<td>速腾前</td>
+<td>2.9</td>
+<td>10.3</td>
+<td>精而不准</td>
+</tr>
+<tr>
+<td>速腾后</td>
+<td>3.4</td>
+<td>9.0</td>
+<td>精而不准</td>
+</tr>
+<tr>
+<td>Livox</td>
+<td>6.3</td>
+<td>6.0</td>
+<td>居中</td>
+</tr>
+<tr>
+<td>禾赛</td>
+<td>8.1</td>
+<td>5.9</td>
+<td>噪,但核心区准</td>
+</tr>
+</tbody>
+</table>
+<p>速腾(Airy)单点噪声最低(2.9–3.4mm,“精”)但跨波束贴面一致性最差(spread 9–10mm,“不准”)——vs SL 差距明显(4.2 vs 9–10)。禾赛单点噪声最大(8.1)但核心区贴面准(spread 5.9,实验 B 中位 4.3)。二者&quot;不准&quot;成因不同:禾赛=单点噪声大但均值贴,Airy=跨波束散布大。</p>
+<h4 id="4-5-选帧与聚合">4.5 选帧与聚合</h4>
+<p>选帧策略(连续 / 跨步 stride / 随机)对 $\sigma/\sqrt{k}$ 的影响,在 Livox(已知帧相关)与禾赛(对照)上测。</p>
+<p><img src="https://uipv4.zywvvd.com:33030/HexoFiles/files/static-multiframe-lidar-extrinsic/diag/recipe_selection.png" srcset="/img/loading.gif" lazyload alt="选帧策略"></p>
+<p>在 groups≥5 的 $k$($k\le20$)上,三种分组几乎重合:Livox $k{=}10$ 连续 1.86 / 跨步 2.03 / 随机 1.94mm,禾赛 $k{=}10$ 2.33 / 2.33 / 2.18mm,都在 ~10% 以内。选帧策略无影响,任取 $k$ 帧即可——Livox 的帧相关是每射线固有的慢漂,不是&quot;连续帧更相关&quot;的时间聚集,跨步采帧也去不掉。聚合用均值(匹配理论、可向量化)。</p>
+<h3 id="五、结论">五、结论</h3>
+<ol>
+<li>
+<p><strong>点噪声服从 $\sigma/\sqrt{k}$,外参不服从。</strong> Path B 斜率 −0.49~−0.54(Livox −0.41 帧相关,$k_{\text{eff}}\approx0.66k$);Path A 触地板 0.07–0.5mm。融合提点云精密度,不提外参标定精密度。</p>
+</li>
+<li>
+<p><strong>精密度 ≠ 准确度。</strong> 融合提精密度(点级 $\sigma/\sqrt{k}$、标定级到地板),不提准确度(到 SL 面 RMSE 不随 $k$ 降,系统地板 4–11mm)。</p>
+</li>
+<li>
+<p><strong>外参地板两证实来源:点密度(Livox 强、rear 弱)+ 几何弱轴(仅 Livox,特征值 224);$\text{corr}_d$ 排除(锁 0.05)。</strong> 解释最差的 Livox 与精密度最好的 front,解释不了 rear/SL(残留平均不掉的散布,成因留动态)。</p>
+</li>
+<li>
+<p><strong>同型号 front/rear 两维度排名反转。</strong> front 精密度最好(Path A 0.07mm)、准确度三面均值最差(RMSE 10.6mm);rear 精密度触地板(0.33mm)、准确度更好(10.1mm)。注意 p2 单面 front 反更准(7.8&lt;9.5),反转在 p1/p3 成立。</p>
+</li>
+<li>
+<p><strong>准确度排序(密集足迹,三面 RMSE 均值)SL &gt; 禾赛 &gt; Livox &gt; 速腾后 &gt; 速腾前</strong>(4.3 / 5.9 / 6.4 / 10.1 / 10.6mm)。速腾单波束噪声最低(~3mm)但跨波束贴面散最差(spread 9–10mm),精而不准;禾赛噪($\sigma_r$ 8mm)但核心区贴 SL 准(实验 B 中位 4.3mm);SL 既精又准。误差 p1/p2 spread 主导、p3 地板速腾带读高 bias;三面总排序一致,front/rear 排序与误差结构逐面有差异。</p>
+</li>
+<li>
+<p><strong>选帧策略无影响($k\le20$ 连续/跨步/随机差 &lt;10%),聚合用均值;$k^\star\approx$ 4–16 帧。</strong></p>
+</li>
+<li>
+<p><strong>还要不要多帧(按用途):</strong></p>
+</li>
+</ol>
+<table>
+<thead>
+<tr>
+<th>用途</th>
+<th>多帧的意义</th>
+<th>建议</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>外参标定</td>
+<td>仅 $k^\star\approx4\sim16$ 前提精密度(触地板后不降);准确度完全不提</td>
+<td>够用即止,$k^\star$ 帧足够</td>
+</tr>
+<tr>
+<td>测量(单点/测距)</td>
+<td>单点噪声 $\sigma/\sqrt{k}$,多帧让点更精、云更干净</td>
+<td>有意义(到 Livox 帧相关限)</td>
+</tr>
+<tr>
+<td>逼近真值(绝对准确度)</td>
+<td>多帧无能为力——平均去随机噪声,不去系统偏差(地板)</td>
+<td>须另除系统项(更好外参/建模地板 bias/动态标定)</td>
+</tr>
+</tbody>
+</table>
+<p>核心区分:融合提精密度,不提准确度。要&quot;重复性/点更稳&quot;(标定稳定、干净云)→ 多帧有用(标定取 $k^\star$、测量可更多);要&quot;测得准/逼近真值&quot;→ 多帧无能为力,得去系统误差。静态只测天花板,真准确度与泛化留动态实验。</p>
+<ol start="8">
+<li>
+<p><strong>多帧静态平均去不掉边缘拖影,方差滤波也去不掉——只有离谱飞点能被方差滤掉;且都不提升准确度。</strong></p>
+<ul>
+<li><strong>离谱飞点</strong>(dual-return / 孤立大跳点,σ 极大):飞点桶 σ 中位 front 21 / 禾赛 612 / rear 43mm,远超 3×floor 阈值(front 8.5 / 禾赛 24.6 / rear 10.5mm)→ <strong>方差滤波能去掉</strong>。</li>
+<li><strong>边缘拖影</strong>(混像素桶,σ 中等、与板面噪声同量级):保留桶 σ 中位 front 2.9 / rear 3.4mm,p95 仅 4.8 / 5.8mm,远低于阈值 → 过不了阈值,<strong>方差滤波也去不掉,留在干净云里</strong>;多帧平均更去不掉(只把拖影合成半空均值点)。</li>
+<li><strong>准确度</strong>:融合不降(到 SL 面 RMSE 不随 $k$ 降,系统地板 4–11mm,§4.4)。</li>
+</ul>
+<p>即:σ 滤波只剪得掉远超阈值的离谱大跳点,治不了阈值内的边缘拖影;多帧静态平均既不消拖影、也不提准确度,只提点级精密度($\sigma/\sqrt{k}$)。</p>
+</li>
+</ol>
+<link rel="stylesheet" href="/css/spoiler.css" type="text/css"><script src="/js/spoiler.js" type="text/javascript" async></script>
+                
+
+
+				<br /><br />
+				<blockquote>
+					<p>文章链接：<br /> 
+					<a style="font-size: 0.85rem" target="_blank" rel="noopener" href="https://www.zywvvd.com/notes/3d/static-multiframe-lidar-extrinsic/static-multiframe-lidar-extrinsic/">https://www.zywvvd.com/notes/3d/static-multiframe-lidar-extrinsic/static-multiframe-lidar-extrinsic/</a>
+					</p>
+				</blockquote>
+
+
+              </div>
+            
+            <hr/>
+			
+			<!-- 添加打赏模块 -->
+			<div class="reward-container">
+				
+					<button id="rewardBtn" class="reward-btn">
+						 
+							❤ 打赏
+							
+					</button>
+					<p class="tea">“觉得不错的话，给点打赏吧 ୧(๑•̀⌄•́๑)૭”</p>
+					<div id="rewardImgContainer" class="reward-img-container">
+						<div class="singleImgContainer">
+							<img id="wechatImg" class="reward-img" src="https://uipv4.zywvvd.com:33030/HexoFiles/vvd_pc_upload/wechatpay.png" srcset="/img/loading.gif" lazyload alt="微信二维码">
+							<p class="wechatPay">微信支付</p>
+						</div>
+						<div class="singleImgContainer">
+							<img id="alipayImg" class="reward-img" src="https://uipv4.zywvvd.com:33030/HexoFiles/vvd_pc_upload/alipay.png" srcset="/img/loading.gif" lazyload alt="支付宝二维码">
+							<p class="aliPay">支付宝支付</p>
+						</div>
+					</div>
+				
+			</div>
+			
+            <div>
+              <div class="post-metas my-3">
+  
+    <div class="post-meta mr-3 d-flex align-items-center">
+      <i class="iconfont icon-category"></i>
+      
+
+<span class="category-chains">
+  
+  
+    
+      <span class="category-chain">
+        
+  <a href="/categories/3D/" class="category-chain-item">3D</a>
+  
+  
+    <span>></span>
+    
+  <a href="/categories/3D/LiDAR/" class="category-chain-item">LiDAR</a>
+  
+  
+
+  
+
+      </span>
+    
+  
+</span>
+
+    </div>
+  
+  
+    <div class="post-meta">
+      <i class="iconfont icon-tags"></i>
+      
+        <a href="/tags/3D/" class="print-no-link">#3D</a>
+      
+        <a href="/tags/LiDAR/" class="print-no-link">#LiDAR</a>
+      
+        <a href="/tags/%E5%A4%96%E5%8F%82%E6%A0%87%E5%AE%9A/" class="print-no-link">#外参标定</a>
+      
+        <a href="/tags/%E7%82%B9%E4%BA%91/" class="print-no-link">#点云</a>
+      
+        <a href="/tags/ICP/" class="print-no-link">#ICP</a>
+      
+        <a href="/tags/%E7%B2%BE%E5%AF%86%E5%BA%A6/" class="print-no-link">#精密度</a>
+      
+        <a href="/tags/%E5%87%86%E7%A1%AE%E5%BA%A6/" class="print-no-link">#准确度</a>
+      
+    </div>
+  
+</div>
+
+
+              
+  
+
+  <div class="license-box my-3">
+    <div class="license-title">
+      <div>多雷达静态多帧点云测试</div>
+      <div>https://www.zywvvd.com/notes/3d/static-multiframe-lidar-extrinsic/static-multiframe-lidar-extrinsic/</div>
+    </div>
+    <div class="license-meta">
+      
+        <div class="license-meta-item">
+          <div>作者</div>
+          <div>Yiwei Zhang</div>
+        </div>
+      
+      
+        <div class="license-meta-item license-meta-date">
+          <div>发布于</div>
+          <div>2026年8月5日</div>
+        </div>
+      
+      
+      
+        <div class="license-meta-item">
+          <div>许可协议</div>
+          <div>
+            
+              
+              
+                <a class="print-no-link" target="_blank" href="https://creativecommons.org/licenses/by/4.0/">
+                  <span class="hint--top hint--rounded" aria-label="BY - 署名">
+                    <i class="iconfont icon-by"></i>
+                  </span>
+                </a>
+              
+            
+          </div>
+        </div>
+      
+    </div>
+    <div class="license-icon iconfont"></div>
+  </div>
+
+
+
+              
+                <div class="post-prevnext my-3">
+                  <article class="post-prev col-6">
+                    
+                    
+                  </article>
+                  <article class="post-next col-6">
+                    
+                    
+                      <a href="/notes/3d/homogeneous-transform/homogeneous-transform/" title="齐次变换矩阵与 SE(3)">
+                        <span class="hidden-mobile">齐次变换矩阵与 SE(3)</span>
+                        <span class="visible-mobile">下一篇</span>
+                        <i class="iconfont icon-arrowright"></i>
+                      </a>
+                    
+                  </article>
+                </div>
+              
+            </div>
+
+            
+  
+  
+    <article id="comments" lazyload>
+      
+  <div id="waline"></div>
+  <script type="text/javascript">
+    Fluid.utils.loadComments('#waline', function() {
+      Fluid.utils.createCssLink('https://lib.baomitu.com/waline/2.14.8/waline.min.css')
+      Fluid.utils.createScript('https://lib.baomitu.com/waline/2.14.8/waline.min.js', function() {
+        var options = Object.assign(
+          {"serverURL":"https://uipv4.zywvvd.com:33033/","path":"window.location.pathname","meta":["nick","mail","link"],"requiredMeta":["nick"],"lang":"zh-CN","emoji":["https://cdn.jsdelivr.net/gh/walinejs/emojis/weibo"],"dark":"html[data-user-color-scheme=\"dark\"]","wordLimit":0,"pageSize":10,"reaction":true,"locale":{"placeholder":"山高路远，常来玩吖 ~","reactionTitle":null}},
+          {
+            el: '#waline',
+            path: window.location.pathname
+          }
+        )
+        Waline.init(options);
+        Fluid.utils.waitElementVisible('#waline .vcontent', () => {
+          var imgSelector = '#waline .vcontent img:not(.vemoji)';
+          Fluid.plugins.imageCaption(imgSelector);
+          Fluid.plugins.fancyBox(imgSelector);
+        })
+      });
+    });
+  </script>
+  <noscript>Please enable JavaScript to view the comments</noscript>
+
+
+    </article>
+  
+
+
+          </article>
+        </div>
+      </div>
+    </div>
+
+    <div class="side-col d-none d-lg-block col-lg-2">
+      
+  <aside class="sidebar" style="margin-left: -1rem">
+    <div id="toc">
+  <p class="toc-header">
+    <i class="iconfont icon-list"></i>
+    <span>目录</span>
+  </p>
+  <div class="toc-body" id="toc-body"></div>
+</div>
+
+
+
+  </aside>
+
+
+    </div>
+  </div>
+</div>
+
+
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+  
+  
+
+
+
+
+
+  <script>
+  Fluid.utils.createScript('https://lib.baomitu.com/mermaid/8.14.0/mermaid.min.js', function() {
+    mermaid.initialize({"theme":"default"});
+
+    Fluid.utils.listenDOMLoaded(function() {
+      Fluid.events.registerRefreshCallback(function() {
+        if ('mermaid' in window) {
+          mermaid.init();
+        }
+      });
+    });
+  });
+</script>
+
+
+
+
+
+
+    
+
+    
+      <a id="scroll-top-button" aria-label="TOP" href="#" role="button">
+        <i class="iconfont icon-xiangshangjiantou" aria-hidden="true"></i>
+      </a>
+    
+
+    
+      <div class="modal fade" id="modalSearch" tabindex="-1" role="dialog" aria-labelledby="ModalLabel"
+     aria-hidden="true">
+  <div class="modal-dialog modal-dialog-scrollable modal-lg" role="document">
+    <div class="modal-content">
+      <div class="modal-header text-center">
+        <h4 class="modal-title w-100 font-weight-bold">搜索</h4>
+        <button type="button" id="local-search-close" class="close" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body mx-3">
+        <div class="md-form mb-5">
+          <input type="text" id="local-search-input" class="form-control validate">
+          <label data-error="x" data-success="v" for="local-search-input">关键词</label>
+        </div>
+        <div class="list-group" id="local-search-result"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+    
+
+    
+  </main>
+
+  <footer>
+    <div class="footer-inner">
+  
+    <div class="footer-content">
+       <div class="vvd_footer" style="font-size: 0.85rem;"> <a href="https://hexo.io" target="_blank" rel="nofollow noopener" color="#d7d8d9" data-umami-event="Footer-Hexo"><span class="umami--click--Footer-Hexo">Hexo</span></a> <i class="iconfont icon-love"></i> <a href="https://github.com/fluid-dev/hexo-theme-fluid" target="_blank" rel="nofollow noopener" data-umami-event="Footer-Fluid"><span class="umami--click--Footer-Fluid">Fluid</span></a> <i class="iconfont icon-love"></i> <a href="https://uipv4.zywvvd.com:33039/share/0zx3o21oIpZTZqwC/%E5%8F%88%E8%A7%81%E8%8B%8D%E5%B2%9A" target="_blank" rel="nofollow noopener" data-umami-event="Footer-Umami"><span class="umami--click--Footer-Umami">Umami</span></a> <div style="font-size: 0.85rem;"> <span id="timeDate">载入天数...</span> <span id="times">载入时分秒...</span> <script src="/vvd_js/duration.js"></script> </div> <div style="font-size: 0.85rem;"> <span> 总访问量 <span style="color: #d7d8d9;" id="PVstatic">0</span> 次&nbsp</span> <span> 总访客数 <span style="color: #d7d8d9;" id="UVstatic">0</span> 人&nbsp</span> <span> 当前在线 <span style="color: #d7d8d9;" id="ACTstatic">0</span> 人&nbsp</span> <script src="https://uipv4.zywvvd.com:33037/statistics" defer></script> </div> <div> <span> Copyright © 2020-2025. All Rights Reserved.</span> </div> <div style="font-size: 0.88rem;"> <a target="_blank" rel="noopener" href="https://developer.hitokoto.cn/" id="hitokoto_text"><span style="color: #d7d8d9;"  id="hitokoto"></span></a> <script src="https://uipv4.zywvvd.com:33044/?encode=js&select=%23hitokoto" defer></script> </div> <a href="https://icp.gov.moe/?keyword=20230615" target="_blank">萌ICP备20230615号</a>
+
+
+</div> 
+    </div>
+  
+  
+  
+  
+</div>
+
+  </footer>
+
+  <!-- Scripts -->
+  
+  <script  src="https://lib.baomitu.com/nprogress/0.2.0/nprogress.min.js" ></script>
+  <link  rel="stylesheet" href="https://lib.baomitu.com/nprogress/0.2.0/nprogress.min.css" />
+
+  <script>
+    NProgress.configure({"showSpinner":false,"trickleSpeed":100})
+    NProgress.start()
+    window.addEventListener('load', function() {
+      NProgress.done();
+    })
+  </script>
+
+
+<script  src="https://lib.baomitu.com/jquery/3.6.0/jquery.min.js" ></script>
+<script  src="https://lib.baomitu.com/twitter-bootstrap/4.6.1/js/bootstrap.min.js" ></script>
+<script  src="/js/events.js" ></script>
+<script  src="/js/plugins.js" ></script>
+
+
+
+
+
+  
+    <script  src="/js/img-lazyload.js" ></script>
+  
+
+
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/tocbot/4.18.2/tocbot.min.js', function() {
+    var toc = jQuery('#toc');
+    if (toc.length === 0 || !window.tocbot) { return; }
+    var boardCtn = jQuery('#board-ctn');
+    var boardTop = boardCtn.offset().top;
+
+    window.tocbot.init(Object.assign({
+      tocSelector     : '#toc-body',
+      contentSelector : '.markdown-body',
+      linkClass       : 'tocbot-link',
+      activeLinkClass : 'tocbot-active-link',
+      listClass       : 'tocbot-list',
+      isCollapsedClass: 'tocbot-is-collapsed',
+      collapsibleClass: 'tocbot-is-collapsible',
+      scrollSmooth    : true,
+      includeTitleTags: true,
+      headingsOffset  : -boardTop,
+    }, CONFIG.toc));
+    if (toc.find('.toc-list-item').length > 0) {
+      toc.css('visibility', 'visible');
+    }
+
+    Fluid.events.registerRefreshCallback(function() {
+      if ('tocbot' in window) {
+        tocbot.refresh();
+        var toc = jQuery('#toc');
+        if (toc.length === 0 || !tocbot) {
+          return;
+        }
+        if (toc.find('.toc-list-item').length > 0) {
+          toc.css('visibility', 'visible');
+        }
+      }
+    });
+  });
+</script>
+
+
+  <script src=https://lib.baomitu.com/clipboard.js/2.0.10/clipboard.min.js></script>
+
+  <script>Fluid.plugins.codeWidget();</script>
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/anchor-js/4.3.1/anchor.min.js', function() {
+    window.anchors.options = {
+      placement: CONFIG.anchorjs.placement,
+      visible  : CONFIG.anchorjs.visible
+    };
+    if (CONFIG.anchorjs.icon) {
+      window.anchors.options.icon = CONFIG.anchorjs.icon;
+    }
+    var el = (CONFIG.anchorjs.element || 'h1,h2,h3,h4,h5,h6').split(',');
+    var res = [];
+    for (var item of el) {
+      res.push('.markdown-body > ' + item.trim());
+    }
+    if (CONFIG.anchorjs.placement === 'left') {
+      window.anchors.options.class = 'anchorjs-link-left';
+    }
+    window.anchors.add(res.join(', '));
+
+    Fluid.events.registerRefreshCallback(function() {
+      if ('anchors' in window) {
+        anchors.removeAll();
+        var el = (CONFIG.anchorjs.element || 'h1,h2,h3,h4,h5,h6').split(',');
+        var res = [];
+        for (var item of el) {
+          res.push('.markdown-body > ' + item.trim());
+        }
+        if (CONFIG.anchorjs.placement === 'left') {
+          anchors.options.class = 'anchorjs-link-left';
+        }
+        anchors.add(res.join(', '));
+      }
+    });
+  });
+</script>
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/fancybox/3.5.7/jquery.fancybox.min.js', function() {
+    Fluid.plugins.fancyBox();
+  });
+</script>
+
+
+  <script>Fluid.plugins.imageCaption();</script>
+
+  
+      <script>
+        if (!window.MathJax) {
+          window.MathJax = {
+            tex    : {
+              inlineMath: { '[+]': [['$', '$']] }
+            },
+            options: {
+              renderActions: {
+                insertedScript: [200, () => {
+                  document.querySelectorAll('mjx-container').forEach(node => {
+                    let target = node.parentNode;
+                    if (target.nodeName.toLowerCase() === 'li') {
+                      target.parentNode.classList.add('has-jax');
+                    }
+                  });
+                }, '', false]
+              }
+            }
+          };
+        } else {
+          MathJax.startup.document.state(0);
+          MathJax.texReset();
+          MathJax.typeset();
+          MathJax.typesetPromise();
+        }
+
+        Fluid.events.registerRefreshCallback(function() {
+          if ('MathJax' in window && MathJax.startup.document && typeof MathJax.startup.document.state === 'function') {
+            MathJax.startup.document.state(0);
+            MathJax.texReset();
+            MathJax.typeset();
+            MathJax.typesetPromise();
+          }
+        });
+      </script>
+    
+
+  <script  src="https://lib.baomitu.com/mathjax/3.2.1/es5/tex-mml-chtml.js" ></script>
+
+  <script defer src="/js/leancloud.js" ></script>
+
+  <script  src="/js/local-search.js" ></script>
+
+
+
+
+  
+<script src="//cdn.jsdelivr.net/npm/aplayer/dist/APlayer.min.js"></script>
+<script src="//cdn.jsdelivr.net/gh/metowolf/MetingJS@1.2/dist/Meting.min.js"></script>
+<script src="/js/reward.js"></script>
+
+
+
+<!-- 主题的启动项，将它保持在最底部 -->
+<!-- the boot of the theme, keep it at the bottom -->
+<script  src="/js/boot.js" ></script>
+
+
+  <script type="text/javascript">
+    /*窗口监视*/
+    var originalTitle = document.title;
+    window.onblur = function(){document.title = "明眸如初"};
+    window.onfocus = function(){document.title = originalTitle};
+  </script>
+
+
+  <div id="tooltip-rightmenu" class="tooltip-rightmenu">如需原始右键菜单请按下 <strong>Ctrl+右键</strong></div>
+
+<div id="rightmenu-wrapper" style="">
+  <ul class="list-v rightmenu" id="rightmenu-content">
+	  <li class="navigation menuNavigation-Content">
+		<a class="nav icon-only fix-cursor-default" onclick="history.back()"><i class="iconfont icon-zuojiantou1"></i></a>
+		<a class="nav icon-only fix-cursor-default" onclick="history.forward()"><i class="iconfont icon-youjiantou1"></i></a>
+		<a class="nav icon-only fix-cursor-default" onclick="window.location.reload()"><i class="iconfont icon-shuaxin"></i></a>
+		<a  aria-label="TOP" href="#" role="button"><i class="iconfont icon-xiangshang"></i></a>
+	  </li>
+
+		<hr class="menuLoad-Content" style="display: block;">
+	  <li class="menuLoad-Content" style="display: block;">
+		<a class="vlts-menu fix-cursor-default" target="_self" href="javascript:;" data-toggle="modal" data-target="#modalSearch" aria-label="Search">
+		  <span>
+			  <i class="iconfont icon-sousuo1 rightmenu-icon"></i>
+			  站内搜索
+		  </span>
+		</a>
+	  </li>
+
+	  <li class="menuLoad-Content" style="display: block;">
+		<a class="vlts-menu fix-cursor-default"  href="https://www.zywvvd.com/messagebd/" data-group="link">
+		  <span>
+			  <i class="iconfont icon-yangshi_icon_tongyong_chat rightmenu-icon">  </i>
+			   留言吐槽 
+		   </span>
+		</a>
+	  </li>
+
+
+	  <li class="menuLoad-Content" style="display: block;">
+		<a class="vlts-menu fix-cursor-default" id="help" target="_blank" rel="noopener" href="https://www.foreverblog.cn/go.html" data-group="link">
+		<span>
+			  <i class="iconfont icon-a-BlackHole rightmenu-icon"></i>
+			  虫洞穿梭
+		  </span>
+		</a>
+	  </li>
+
+	<a id="scroll-top-button" aria-label="TOP" href="#" role="button" style="bottom: 20px; right: 52.6364px;">
+        <i class="iconfont icon-xiangshangjiantou" aria-hidden="true"></i>
+      </a>
+
+	<hr class="menuLoad-Content" style="display: block;">
+	
+	  <li class="menuLoad-Content" style="display: block;">
+		<a class="vlts-menu fix-cursor-default" id="destroy-airplane" target="_blank" rel="noopener"  data-group="link">
+		<span>
+			  <i class="iconfont icon-feiji rightmenu-icon"></i>
+			  破坏小飞机
+		  </span>
+		</a>
+	  </li>
+  </ul>
+</div>
+
+<script>
+	var ua = navigator.userAgent;
+	var ipad = ua.match(/(iPad).*OS\s([\d_]+)/),
+		isIphone = !ipad && ua.match(/(iPhone\sOS)\s([\d_]+)/),
+		isAndroid = ua.match(/(Android)\s+([\d.]+)/),
+		isMobile = isIphone || isAndroid;
+
+	if(!isMobile) {
+		// 为按钮添加事件处理器
+		document.getElementById('destroy-airplane').onclick = function() {
+		  console.log('飞机起飞！');
+		  // 定义要执行的JavaScript代码
+		var KICKASSVERSION='2.0';
+		var s = document.createElement('script');
+		s.type='text/javascript';
+		document.body.appendChild(s);
+		s.src='https://uipv4.zywvvd.com:33030/HexoFiles/js/games/airplane/airplane.js';
+		void(0);
+		};
+	}
+</script>
+
+
+
+
+
+<link href="/css/custom.css"type="text/css"rel="stylesheet"/>
+<script src="/vvd_js/right_menu.js" type="text/javascript"></script>
+<link href="/css/right_menu.css"type="text/css"rel="stylesheet"/>
+<script src="/vvd_js/go.js"></script>
+
+
+  <noscript>
+    <div class="noscript-warning">博客在允许 JavaScript 运行的环境下浏览效果更佳</div>
+  </noscript>
+<script src="/live2dw/lib/L2Dwidget.min.js?094cbace49a39548bed64abff5988b05"></script><script>L2Dwidget.init({"pluginRootPath":"live2dw/","pluginJsPath":"lib/","pluginModelPath":"assets/","tagMode":false,"log":false,"model":{"jsonPath":"/live2dw/assets/z16.model.json"},"display":{"position":"left","width":200,"height":400},"mobile":{"show":false},"react":{"opacity":0.9}});</script></body>
+</html>
