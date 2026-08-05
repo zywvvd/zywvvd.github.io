@@ -25,7 +25,7 @@
 <meta property="og:description" content="DINOv2（Meta AI，2023）是个自监督视觉基础模型——无标签训出对视角&#x2F;光照&#x2F;域鲁棒性强的通用 patch 特征；AnyLoc（2023）把它和经典 VLAD 加按域适配组装起来，零 VPR 专属训练就拿到 SOTA 级的视觉位置检索。这篇拆解 DINOv2 怎么&quot;自己教自己&quot;（自蒸馏 DINO + 掩码 iBOT + 防塌缩）、AnyLoc 怎么零训练用上它，是">
 <meta property="og:locale" content="zh_CN">
 <meta property="article:published_time" content="2026-07-07T06:50:24.000Z">
-<meta property="article:modified_time" content="2026-07-09T02:17:18.367Z">
+<meta property="article:modified_time" content="2026-08-05T08:31:57.383Z">
 <meta property="article:author" content="Yiwei Zhang">
 <meta property="article:tag" content="SLAM">
 <meta name="twitter:card" content="summary_large_image">
@@ -888,7 +888,7 @@ document.addEventListener("readystatechange", function() {
                 
                   
                     <!-- compatible with older versions-->
-                    本文最后更新于：2026年7月9日 上午
+                    本文最后更新于：2026年8月5日 下午
                   
                 
               </p>
@@ -1046,7 +1046,7 @@ $$
 <h4 id="完整流水线">完整流水线</h4>
 <figure class="highlight glsl"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><code class="hljs glsl">输入图像<br>   │  冻结 DINOv2（deeper layers 的 <span class="hljs-keyword">patch</span> 特征）      ← 鲁棒局部特征，零训练<br>   ▼<br>稠密 <span class="hljs-keyword">patch</span> 特征 &#123;x_i&#125;（每位置一个 D 维）<br>   │  按域 VLAD（硬分配到域词表的簇，残差聚合）        ← V_k = Σ_i a_k(x_i)(x_i − c_k)<br>   ▼<br>KD 维 VLAD 向量<br>   │  PCA 白化（降维 + 去相关）+ L2 归一化<br>   ▼<br>紧凑全局描述子（一张图 → 一个向量）<br>   │  检索：FAISS / ANN，找最近邻图像<br>   ▼<br>匹配的数据库图像（同一处地方，跨视角/季节/光照）<br></code></pre></td></tr></table></figure>
 <p>注意 AnyLoc 用的是<strong>经典硬分配 VLAD</strong>（$a_k$ 是 0/1，不是 NetVLAD 的软分配）。连软分配都不需要——因为 DINOv2 特征已经足够好，硬分配的量化损失可以接受，省了 NetVLAD 那套可微软化的复杂度。</p>
-<h3 id="为什么有效">为什么有效</h3>
+<h3 id="有效的原因">有效的原因</h3>
 <p>把胜负拆到三层：</p>
 <ul>
 <li><strong>特征层（决定性）</strong>：DINOv2 的 patch 特征鲁棒性显著超过之前方案（手工 ORB/SIFT、有监督 CNN）。这是 AnyLoc 的地基。</li>

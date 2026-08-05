@@ -26,12 +26,12 @@
 <meta property="og:locale" content="zh_CN">
 <meta property="og:image" content="https://uipv4.zywvvd.com:33030/HexoFiles/files/handeye-calibration/handeye_setup.png">
 <meta property="article:published_time" content="2026-07-31T01:30:00.000Z">
-<meta property="article:modified_time" content="2026-08-05T03:33:38.250Z">
+<meta property="article:modified_time" content="2026-08-05T07:52:15.071Z">
 <meta property="article:author" content="Yiwei Zhang">
 <meta property="article:tag" content="Robotics">
+<meta property="article:tag" content="LiDAR">
 <meta property="article:tag" content="HandEye">
 <meta property="article:tag" content="Calibration">
-<meta property="article:tag" content="LiDAR">
 <meta name="twitter:card" content="summary_large_image">
 <meta name="twitter:image" content="https://uipv4.zywvvd.com:33030/HexoFiles/files/handeye-calibration/handeye_setup.png">
   
@@ -678,7 +678,7 @@ document.addEventListener("readystatechange", function() {
         <i class="iconfont icon-chart"></i>
         
           <!-- compatible with older versions-->
-          14k 字
+          16k 字
         
       </span>
     
@@ -690,7 +690,7 @@ document.addEventListener("readystatechange", function() {
         
         
           <!-- compatible with older versions-->
-          121 分钟
+          134 分钟
         
       </span>
     
@@ -893,7 +893,7 @@ document.addEventListener("readystatechange", function() {
                 
                   
                     <!-- compatible with older versions-->
-                    本文最后更新于：2026年8月5日 中午
+                    本文最后更新于：2026年8月5日 下午
                   
                 
               </p>
@@ -906,7 +906,7 @@ document.addEventListener("readystatechange", function() {
 <p>本文属 Robotics 笔记系列;齐次变换与机械臂基础另见《<a href="/notes/3d/homogeneous-transform/homogeneous-transform/">齐次变换矩阵与 SE(3)</a>》《<a href="/notes/3d/robot-arm-fundamentals/robot-arm-fundamentals/">机械臂技术基础</a>》,本文涉及处不再展开。结论来自文末公开文献与几何推导。</p>
 </blockquote>
 <span id="more"></span>
-<p><strong>本文脉络</strong>:§1 立问题、符号与两类配置 → §2 推出方程(eye-in-hand 的 $AX=XB$;eye-to-hand 消元后归为同形)→ §3 经典闭式求解器;§4 指出纯点云场景下 $B$ 只能靠点云配准(eye-in-hand)或逐帧标定物拟合(eye-to-hand)间接获得 → §5 回答核心问题:eye-in-hand 能否弃用标定物、仅靠环境(严格等价于 $AX=XB$)→ §6 哪些运动能解出 $X$、精度从哪来(含单面墙平面退化)→ §7 配准的精度边界 → §8 工程实操;§9 总结。</p>
+<p><strong>本文脉络</strong>:§1 立问题、符号与两类配置 → §2 推出方程(eye-in-hand 的 $AX=XB$;eye-to-hand 消元后归为同形)→ §3 经典闭式求解器;§4 指出纯点云场景下 $B$ 只能靠点云配准(eye-in-hand)或逐帧标定物拟合(eye-to-hand)间接获得 → §5 回答核心问题:eye-in-hand 能否弃用标定物、仅靠环境(严格等价于 $AX=XB$)→ §6 哪些运动能解出 $X$、精度从哪来 → §7 单面墙平面标定(完整案例)→ §8 配准的精度边界 → §9 工程实操;§10 总结。</p>
 <h3 id="1-问题设定与符号约定">1. 问题设定与符号约定</h3>
 <h4 id="1-1-两类配置与坐标系">1.1 两类配置与坐标系</h4>
 <p>激光雷达与机械臂的手眼标定有两类配置,外参 $X$ 的定义随之不同:</p>
@@ -917,7 +917,7 @@ document.addEventListener("readystatechange", function() {
 <p>两种配置下机械臂底座都固定安装,世界系 $W$ 与基座系重合(见《机械臂技术基础》第 2 节)。eye-in-hand 涉及三个坐标系:世界系 $W$(固定)、末端系 $E_i$(随位姿变化,可取法兰 tool0 或已标定的 TCP,见《机械臂技术基础》第 11、12 节)、雷达系 $L_i$(随末端一起运动);eye-to-hand 中雷达系 $L$ 固定不动,随时间变化的是被观测物(末端上的标定物)在雷达系里的位姿。</p>
 <p><img src="https://uipv4.zywvvd.com:33030/HexoFiles/files/handeye-calibration/handeye_setup.png" srcset="/img/loading.gif" lazyload alt="eye-in-hand 配置:世界系 W、末端系 E、雷达系 L,雷达刚性固连末端,外参 X 固定不变"></p>
 <p><img src="https://uipv4.zywvvd.com:33030/HexoFiles/files/handeye-calibration/handeye_setup_e2h.png" srcset="/img/loading.gif" lazyload alt="eye-to-hand 配置:雷达固定在外部(三脚架),观测末端上的标定物,外参 X 为雷达在基座系的位姿"></p>
-<p>本文以 eye-in-hand 为主线展开(其点云配准与&quot;用环境替代标定物&quot;的故事更丰富,§4–§7),eye-to-hand 的方程与差异在 §2.3 给出,并在相关处标注两种配置的不同。</p>
+<p>本文以 eye-in-hand 为主线展开(其点云配准与&quot;用环境替代标定物&quot;的故事更丰富,§4–§8),eye-to-hand 的方程与差异在 §2.3 给出,并在相关处标注两种配置的不同。</p>
 <h4 id="1-2-记号约定">1.2 记号约定</h4>
 <p>全文用 4×4 齐次变换描述刚体位姿,记 ${}^{A}T_B$ 为 $B$ 系在 $A$ 系下的位姿。齐次变换同时承载坐标变换、位姿描述、相对运动三层含义,以及复合、求逆的链式规则——完整论述见《<a href="/notes/3d/homogeneous-transform/homogeneous-transform/">齐次变换矩阵与 SE(3)</a>》,这里只列后文反复用到的两条:</p>
 <ul>
@@ -1076,11 +1076,11 @@ $B_i$ 的精度完全取决于点云配准的精度;
 <li>配准本身是一个非凸优化问题(ICP 或其变体),有局部最优、初值敏感等固有困难;</li>
 <li>若不使用标定物,$B_i$ 只能从自然环境结构中提取,约束更弱。</li>
 </ol>
-<p><strong>纯点云手眼标定的精度上限,往往受制于配准质量,而非机器人运动学精度。</strong> 这是它与图像手眼标定的根本差异,也是第 7 节要专门讨论配准局限的原因。</p>
+<p><strong>纯点云手眼标定的精度上限,往往受制于配准质量,而非机器人运动学精度。</strong> 这是它与图像手眼标定的根本差异,也是第 8 节要专门讨论配准局限的原因。</p>
 <h4 id="ICP-的角色">ICP 的角色</h4>
 <p>ICP(Iterative Closest Point)通过两步迭代——“在当前变换下为源点云每个点找目标云中最近对应点&quot;与&quot;最小化对应点对距离更新变换”——估计两帧点云间的刚体变换,即雷达自身的相对运动 $B_k$。两种主流变体:point-to-point(通用但收敛慢)与 point-to-plane(利用法向量约束,Open3D 实测 30 次迭代即可达到 point-to-point 需 2000 次的效果)。</p>
-<p>关键定位:ICP 是<strong>局部精配准</strong>,需要粗略初始对齐。标准流程是先用全局配准(RANSAC + FPFH 特征)给初值,再用 ICP 精化。这个初值依赖在第 7 节会再回到。</p>
-<p><strong>比 ICP 更进一步的配准方法。</strong> 配准质量直接决定 $B_k$ 精度,因此现代工具箱远不止 ICP:(1)<strong>概率配准</strong>——GICP 把源/目标局部邻域各建模为高斯,最小化马氏距离 $d^2=(p_i-p_j')^\top(\Sigma_i+R\Sigma_j'R^\top)^{-1}(p_i-p_j')$,统一并推广了 point-to-point 与 point-to-plane;NDT 把参考云体素化为高斯分布、对面到分布优化,无需显式对应——结构化墙面场景下二者比纯 ICP 更稳。(2)<strong>抗外点的全局配准</strong>——对应含大量误匹配时 ICP 会陷局部极小,TEASER++ 用截断最小二乘(TLS)把 SE(3) 配准解耦为 scale/rotation/translation 三步、给出可证明全局最优证书,可承受 &gt;90% 外点率;FGR 用 FPFH 描述子 + $L^1$ 鲁棒核全局优化、免粗对齐,可作为两步法第一步粗配准或退化场景下 $B_k$ 精化的现代替换。这些方法降低了 §7 将讨论的初值敏感与外点脆弱性。</p>
+<p>关键定位:ICP 是<strong>局部精配准</strong>,需要粗略初始对齐。标准流程是先用全局配准(RANSAC + FPFH 特征)给初值,再用 ICP 精化。这个初值依赖在第 8 节会再回到。</p>
+<p><strong>比 ICP 更进一步的配准方法。</strong> 配准质量直接决定 $B_k$ 精度,因此现代工具箱远不止 ICP:(1)<strong>概率配准</strong>——GICP 把源/目标局部邻域各建模为高斯,最小化马氏距离 $d^2=(p_i-p_j')^\top(\Sigma_i+R\Sigma_j'R^\top)^{-1}(p_i-p_j')$,统一并推广了 point-to-point 与 point-to-plane;NDT 把参考云体素化为高斯分布、对面到分布优化,无需显式对应——结构化墙面场景下二者比纯 ICP 更稳。(2)<strong>抗外点的全局配准</strong>——对应含大量误匹配时 ICP 会陷局部极小,TEASER++ 用截断最小二乘(TLS)把 SE(3) 配准解耦为 scale/rotation/translation 三步、给出可证明全局最优证书,可承受 &gt;90% 外点率;FGR 用 FPFH 描述子 + $L^1$ 鲁棒核全局优化、免粗对齐,可作为两步法第一步粗配准或退化场景下 $B_k$ 精化的现代替换。这些方法降低了 §8 将讨论的初值敏感与外点脆弱性。</p>
 <p>值得指出,即便使用点云传感器,只要借助已知标定物(如三维标定靶),仍可获得比纯环境配准干净得多的 $B_i$——这正是 Wan 等《基于法兰的 3D 相机手眼标定》一类工作的思路。换言之,点云介质本身不必然带来困难,真正的困难在于&quot;无标定物、纯靠环境配准&quot;这一情形。</p>
 <h3 id="5-用环境替代标定物-严格等价于-AX-XB">5. 用环境替代标定物:严格等价于 AX=XB</h3>
 <p>这一节回答核心问题:<strong>能否不用标定物,仅靠自然环境(如普通办公室)的点云,标定出外参?</strong> 答案是可以,且它严格等价于 $AX=XB$。</p>
@@ -1190,9 +1190,9 @@ $${}^{W}T_{L_{i+1}} = {}^{W}T_{L_i}\cdot{}^{L_i}T_{L_{i+1}} = {}^{W}T_{L_i}\cdot
 <li>点云配准可能把雷达的真实运动 $\theta$ 误配成对称等价的 $\theta+90°$,估出错误的 $B_i$,$X$ 跟着错。</li>
 <li>这是<strong>信息缺失</strong>(环境给不出足够信息区分等价位姿),根源在数据(配准退化),与&quot;物理旋转不对称环境&quot;无关。</li>
 </ul>
-<p>这个风险是真的,但它要求环境精确对称,普通结构不对称的办公室不会触发;在真实场景里它降级为&quot;在大片平整墙面、地面这类局部对称区域,沿对称方向约束弱、$B_i$ 估得松、该方向精度打折&quot;——是连续打折而非崩溃,且能用第 6 节的可观测性判据量化。详见第 7 节的走廊退化分析。</p>
+<p>这个风险是真的,但它要求环境精确对称,普通结构不对称的办公室不会触发;在真实场景里它降级为&quot;在大片平整墙面、地面这类局部对称区域,沿对称方向约束弱、$B_i$ 估得松、该方向精度打折&quot;——是连续打折而非崩溃,且能用第 6 节的可观测性判据量化。详见第 8 节的走廊退化分析。</p>
 <h3 id="6-可观测性-什么运动能解出-X">6. 可观测性:什么运动能解出 X</h3>
-<p>本节回答&quot;哪些采集运动能解出 X、解出的 X 有多准&quot;:先给可解性条件(§6.1),建立可观测性雅可比(§6.2)与指标(§6.3),枚举退化运动(§6.4)与一个反直觉结论(§6.5);§6.6 用&quot;只用一面墙&quot;这一典型退化情形把前面的判据走一遍,最后是运动设计原则(§6.7)与误差来源(§6.8)。可观测性只依赖运动的 $AX=XB$ 结构,对两种配置同样适用——eye-to-hand 把标定物运动代入同一个雅可比即可。(本节用 $k$ 编号第 $k$ 组运动对,共 $L$ 组,与 §1–§2 的帧下标 $i$ 同义;雅可比奇异值降序记 $\sigma_1\geq\dots\geq\sigma_L$,$\sigma_1$ 最大、$\sigma_L$ 最小即 $\sigma_{\min}$。)</p>
+<p>本节回答&quot;哪些采集运动能解出 X、解出的 X 有多准&quot;:先给可解性条件(§6.1),建立可观测性雅可比(§6.2)与指标(§6.3),枚举退化运动(§6.4)与一个反直觉结论(§6.5),最后是运动设计原则(§6.6)与误差来源(§6.7)。这些判据的完整案例——只用一面墙的平面标定——另立 §7。可观测性只依赖运动的 $AX=XB$ 结构,对两种配置同样适用——eye-to-hand 把标定物运动代入同一个雅可比即可。(本节用 $k$ 编号第 $k$ 组运动对,共 $L$ 组,与 §1–§2 的帧下标 $i$ 同义;雅可比奇异值降序记 $\sigma_1\geq\dots\geq\sigma_L$,$\sigma_1$ 最大、$\sigma_L$ 最小即 $\sigma_{\min}$。)</p>
 <h4 id="6-1-可解性的基本条件">6.1 可解性的基本条件</h4>
 <p>$AX=XB$ 并非对任意运动都有唯一解。Shiu-Ahmad (1989)、Tsai-Lenz (1989) 最早指出:解的唯一性的充分条件是<strong>存在两个旋转轴不平行(非共线)的标定运动</strong>(Chen 1991 给出几何证明)。若所有运动旋转轴相互平行(如 SCARA,所有关节轴同向),旋转部分构成的矩阵秩不超过 2,系统不可解。</p>
 <h4 id="6-2-可观测性雅可比">6.2 可观测性雅可比</h4>
@@ -1207,7 +1207,7 @@ $$\mathbf{r}_k \;\approx\; \mathrm{Ad}_X\,(\mathrm{Ad}_{B_k}-I_6)\,\boldsymbol\x
 对 $J$ 做 SVD 得奇异值 $\sigma_1\geq\dots\geq\sigma_L$。</p>
 <p><strong>关键结论</strong>:雅可比块里的 $\mathrm{Ad}_X$ 恒可逆(任何 $X\in SE(3)$ 的伴随都非奇异),作为<strong>可逆</strong>左乘因子<strong>不改变 $J$ 的秩</strong>——可观测性/零空间判定不受影响;它一般非正交,条件数会偏移 $\kappa(\mathrm{Ad}_X)$ 量级,但不影响秩判定。因此真正决定可观测性的是 $\{B_k\}$ 这组运动本身:</p>
 $$\text{可观测性} \;\longleftarrow\; \text{堆叠的 } (\mathrm{Ad}_{B_k}-I_6) \;\longleftarrow\; \text{运动 } \{B_k\}$$
-<p>这与待估的 $X$ 无关。<strong>实务上直接取</strong> $J_k=\mathrm{Ad}_{B_k}-I_6$ 堆叠做 SVD——它等价于 $I_6-\mathrm{Ad}_{B_k^{-1}}=\mathrm{Ad}_{B_k}^{-1}(\mathrm{Ad}_{B_k}-I_6)$(仅差一个可逆左乘因子,秩与条件数判定完全一致),后文 §8.1 步骤 4 即用此式。工程含义是:<strong>采集传感器数据之前,即可预判可观测性</strong>——先用机器人位姿算出 $A_k$,再用先验或粗估的 $X$ 由 $B_k=X^{-1}A_kX$ 估出 $B_k$,就能算条件数、判断这组运动够不够好,而不必等采完点云才发现不可解。这也是 Nahvi-Hollerbach、Daney 把可观测性用于&quot;位姿试验设计&quot;的理论基础。把约束写成伴随/旋量(screw)形式的思想,见 Pachtrachai 等的伴随变换算法 ATA,其 6×6 伴随矩阵正是上式中的 $\mathrm{Ad}_X$(与《机械臂技术基础》§3.7 形式一致)。</p>
+<p>这与待估的 $X$ 无关。<strong>实务上直接取</strong> $J_k=\mathrm{Ad}_{B_k}-I_6$ 堆叠做 SVD——它等价于 $I_6-\mathrm{Ad}_{B_k^{-1}}=\mathrm{Ad}_{B_k}^{-1}(\mathrm{Ad}_{B_k}-I_6)$(仅差一个可逆左乘因子,秩与条件数判定完全一致),后文 §9.1 步骤 4 即用此式。工程含义是:<strong>采集传感器数据之前,即可预判可观测性</strong>——先用机器人位姿算出 $A_k$,再用先验或粗估的 $X$ 由 $B_k=X^{-1}A_kX$ 估出 $B_k$,就能算条件数、判断这组运动够不够好,而不必等采完点云才发现不可解。这也是 Nahvi-Hollerbach、Daney 把可观测性用于&quot;位姿试验设计&quot;的理论基础。把约束写成伴随/旋量(screw)形式的思想,见 Pachtrachai 等的伴随变换算法 ATA,其 6×6 伴随矩阵正是上式中的 $\mathrm{Ad}_X$(与《机械臂技术基础》§3.7 形式一致)。</p>
 <h4 id="6-3-可观测性指标">6.3 可观测性指标</h4>
 <p>基于奇异值,文献定义了多种指标:</p>
 <table>
@@ -1287,10 +1287,14 @@ $$\text{可观测性} \;\longleftarrow\; \text{堆叠的 } (\mathrm{Ad}_{B_k}-I_
 </table>
 <p>关键且反直觉的一点:<strong>三个线性无关的纯平移运动,可以线性估计出手眼旋转 $R_X$,但平移 $\mathbf{t}_X$ 不可观测。</strong> 物理解释:纯平移时方程退化为 $\mathbf{t}_A = R_X\,\mathbf{t}_B$,相机/雷达平移方向与末端平移方向之间的&quot;旋转映射&quot;恰好暴露了 $R_X$;但纯平移不含尺度信息,无法定位 $\mathbf{t}_X$。</p>
 <p>但需注意:<strong>同一退化运动在不同算法框架下可观测性不同</strong>。Daniilidis 的对偶四元数解耦解法无法利用纯平移的旋转信息——纯平移对应 screw 角 $\theta=0$,旋转方程退化为恒等 $q_r=q_r$,对旋转无约束。也就是说,同样的数据,用 Andreff 的线性框架能提取旋转,用 Daniilidis 的对偶四元数框架却不能——这是选择算法时必须留意的。</p>
-<h4 id="6-6-退化专题-只用一面墙的平面约束">6.6 退化专题:只用一面墙的平面约束</h4>
+<h3 id="7-单面墙平面标定">7. 单面墙平面标定</h3>
 <p>前几节的环境标定用到了两帧点云的<strong>完整</strong>配准($B_k$ 是 6 自由度刚体变换)。一个常见的简化想法是:办公室里有平整墙面,能否只利用&quot;墙是一个固定平面&quot;这个约束?这避开了完整 ICP 的初值与退化难题(平面拟合是凸问题,RANSAC + 主成分稳定),代价是只用到了环境的低维信息。这一节分析它到底能解出多少、精度受什么制约。一个关键结论先行:<strong>单面墙缺的不是一个固定的旋转自由度,而是要求运动里有&quot;横向旋转&quot;;运动选对了,一面墙就够。</strong></p>
 <p><img src="https://uipv4.zywvvd.com:33030/HexoFiles/files/handeye-calibration/handeye_single_wall.png" srcset="/img/loading.gif" lazyload alt="单面墙平面约束:法向(只含旋转)定 R_X,距离(含平移)定 t_X;退化运动是纯绕墙法向自转"></p>
-<p><strong>(1) 平面的变换。</strong> 设墙在世界系 $W$ 中是固定平面,方程 ${}^{W}\mathbf{n}^\top\mathbf{x}={}^{W}d$(${}^{W}\mathbf{n}$ 单位法向,${}^{W}d$ 有向距离,$\mathbf{x}$ 为平面上任意一点)。雷达在位姿 ${}^{W}T_{L_i}=G_iX$ 下观测墙面,拟合出雷达系内的平面 ${}^{L_i}\mathbf{n}_i^\top\mathbf{x}={}^{L_i}d_i$。把点变换 ${}^{W}\mathbf{x}=R(G_iX)\,{}^{L}\mathbf{x}+\mathbf{t}(G_iX)$ 代入墙方程,比对系数得平面参数的变换关系:</p>
+<p><strong>(1) 平面的变换。</strong> 设墙在世界系 $W$ 中是固定平面,方程 ${}^{W}\mathbf{n}^\top\mathbf{x}={}^{W}d$(${}^{W}\mathbf{n}$ 单位法向,${}^{W}d$ 有向距离,$\mathbf{x}$ 为平面上任意一点)。雷达在位姿 ${}^{W}T_{L_i}=G_iX$ 下观测墙面,拟合出雷达系内的平面 ${}^{L_i}\mathbf{n}_i^\top\mathbf{x}={}^{L_i}d_i$。这里 ${}^{W}T_{L_i}=G_iX$ 是雷达的世界位姿(eye-in-hand 链式合成:$G_i={}^{W}T_{E_i}$ 为末端世界位姿、$X={}^{E}T_L$ 为待标手眼)。要用这帧雷达系观测去约束世界系里的墙,得先把点坐标在两系之间搬运——把位姿 ${}^{W}T_{L_i}$ 作用在齐次点上:</p>
+$$\begin{pmatrix}{}^{W}\mathbf{x}\\1\end{pmatrix}=\begin{pmatrix}R(G_iX)&\mathbf{t}(G_iX)\\0&1\end{pmatrix}\begin{pmatrix}{}^{L}\mathbf{x}\\1\end{pmatrix}=\begin{pmatrix}R(G_iX)\,{}^{L}\mathbf{x}+\mathbf{t}(G_iX)\\1\end{pmatrix}$$
+<p>旋转块 $R(G_iX)$ 的三列正是雷达系三轴在世界系里的指向,负责把雷达系下测得的分量 ${}^{L}\mathbf{x}$ 重排成世界朝向;平移块 $\mathbf{t}(G_iX)$ 是雷达原点的世界位置,补上原点偏移。丢掉齐次占位行即点变换 ${}^{W}\mathbf{x}=R(G_iX)\,{}^{L}\mathbf{x}+\mathbf{t}(G_iX)$——齐次位姿左乘点,就是&quot;先按 $R$ 旋回世界朝向、再按 $\mathbf{t}$ 平移到世界原点&quot;。代入墙方程 ${}^{W}\mathbf{n}^\top{}^{W}\mathbf{x}={}^{W}d$ 整理得</p>
+$$\bigl[R(G_iX)^\top\,{}^{W}\mathbf{n}\bigr]^\top{}^{L}\mathbf{x} \;=\; {}^{W}d - {}^{W}\mathbf{n}^\top\mathbf{t}(G_iX)$$
+<p>与 ${}^{L_i}\mathbf{n}_i^\top\mathbf{x}={}^{L_i}d_i$ 逐项比对系数,并展开 $G_iX$ 的旋转块 $R(G_iX)=R_{G_i}R_X$、平移块 $\mathbf{t}(G_iX)=R_{G_i}\mathbf{t}_X+\mathbf{t}_{G_i}$,得平面参数的变换关系:</p>
 <ul>
 <li><strong>法向(只含旋转)</strong>:${}^{L_i}\mathbf{n}_i = R_X^\top\, R_{G_i}^\top\,{}^{W}\mathbf{n}$</li>
 <li><strong>距离(含平移)</strong>:${}^{L_i}d_i = {}^{W}d - {}^{W}\mathbf{n}^\top\bigl(R_{G_i}\mathbf{t}_X+\mathbf{t}_{G_i}\bigr)$</li>
@@ -1336,10 +1340,20 @@ $$\bigl(R_{G_i}^\top\,{}^{W}\mathbf{n}\bigr)^\top\,\mathbf{t}_X \;=\; {}^{W}d - 
 </tbody>
 </table>
 <p>所以&quot;一面墙够不够&quot;的答案是:<strong>只要机械臂做包含横向旋转(垂直于墙法向的轴)的运动,一面墙就能解出完整的 $R_X$ 与 $\mathbf{t}_X$</strong>(连同墙参数 ${}^{W}\mathbf{n},{}^{W}d$ 一起)。办公室机械臂做几个不同朝向的姿态即可满足。多面不平行墙(如地面 + 两面相邻墙)的作用主要是<strong>改善条件数、增加冗余与鲁棒性</strong>,降低对运动设计的敏感,而非数学上不可或缺。PlaneHEC 等工作利用机械臂多视角下的平面/任意点云约束做手眼标定,可作为这类方法的实现参考。</p>
-<p><strong>(5) 精度:受什么制约,大概到什么量级。</strong> 平面法的精度上限由三层叠加决定:</p>
+<p><strong>(5) 精度为何受限:条件数的几何。</strong> 多面墙“主要改善条件数”并非经验之谈——条件数由约束方向的散布决定,单面墙把所有约束方向绑在一根法向上,点数再多也不改变方向,故救不了条件数。这可从平面约束的雅可比推出来:</p>
+<p><strong>(a) 单帧平面只给 3 个有效约束,且都拴在法向上。</strong> 在解附近对 $X$ 线性化。法向是单位向量、只依赖旋转,其扰动为</p>
+$$\delta\mathbf{n}_i \;=\; \mathbf{n}_i\times\delta\boldsymbol\omega \;=\; [\mathbf{n}_i]_\times\,\delta\boldsymbol\omega$$
+<p>其中 $[\mathbf{n}_i]_\times$ 的核为 $\mathrm{span}(\mathbf{n}_i)$——<strong>绕法向自身那一转使 $\mathbf{n}_i$ 不动,法向对它零敏感</strong>;法向的全部旋转信息只落在 $\perp\mathbf{n}_i$ 的二维切面里(秩 2),这正是“法向信息集中在一个二维子空间”的精确含义。距离只依赖平移,扰动 $\delta d_i=-\mathbf{a}_i^\top\delta\mathbf{t}_X$ 只感知沿 $\mathbf{a}_i$ 的平移(秩 1)。故每帧有效约束是 <strong>2(旋转)+1(平移)=3 个</strong>,远少于完整配准每帧的 6 个自由度,且这 3 个的方向全由同一个 $\mathbf{a}_i$ 决定。</p>
+<p><strong>(b) 条件数 = 约束方向散布的各向异性(以平移块看得最清楚)。</strong> 把各帧平移约束 $\mathbf{a}_i^\top\mathbf{t}_X=\cdots$ 堆叠,信息矩阵为墙法向的二阶矩</p>
+$$S \;=\; \sum_{i=1}^{N}\mathbf{a}_i\mathbf{a}_i^\top,\qquad \mathrm{eig}(S)=(\lambda_1\geq\lambda_2\geq\lambda_3)$$
+<p>平移块的奇异值即 $\sqrt{\lambda_1},\sqrt{\lambda_2},\sqrt{\lambda_3}$,最差方向 $\sigma_{\min}\propto\sqrt{\lambda_3}$,条件数 $\kappa\propto\sqrt{\lambda_1/\lambda_3}$。$S$ 的特征值刻画“墙法向在各末端姿态下看出去有多散”。旋转块同理——其可观测充要条件正是 $\{\mathbf{a}_i\}$ 张满三维(本节 (2)),条件数受同一组散布制约,绕法向的“自转”始终是结构上的弱方向。它与可观测性表逐行吻合:纯平移时 $\mathbf{a}_i$ 不变,$S$ 秩为 1($\lambda_2=\lambda_3=0$),只剩沿法向 1 个平移分量;纯绕墙法向转时 $\mathbf{a}_i\equiv{}^{W}\mathbf{n}$ 同样不变,信息崩溃。</p>
+<p><strong>© 单面墙让 $S$ 各向异性,多面墙让它各向同性。</strong> 单面墙的所有 $\mathbf{a}_i=R_{G_i}^\top{}^{W}\mathbf{n}$ 都是<strong>同一个世界法向</strong> ${}^{W}\mathbf{n}$ 在各姿态下的像,方向高度相关、挤在球面一个带状区域 → $S$ 各向异性,$\lambda_3\ll\lambda_1$ → $\sigma_{\min}$ 小、$\kappa$ 大。多面不平行墙提供<strong>相互独立的法向族</strong>:墙 B 的法向照亮墙 A 留下的暗角,$\{\mathbf{a}_i\}$ 在球面铺开 → $S$ 各向同性 → $\kappa$ 小。完整配准每帧给满 6 自由度的 $B_k$,约束方向天然铺满,$\kappa$ 更好。这与 GPS 的精度衰减因子 DOP 同构——DOP 由卫星方向二阶矩的各向异性决定,纯几何、与测距精度无关。</p>
+<p><strong>(d) 点数为什么救不了。</strong> 进入 $S$ 的只是各帧法向的<strong>方向</strong> $\mathbf{a}_i$,而 $\mathbf{a}_i$ 由墙面朝向与机械臂姿态决定。同一面墙上再多的点,只是把同一个 $(\mathbf{n}_i,d_i)$ 拟合得更精(缩小测量噪声 $\sigma_n$),<strong>完全不改变 $\mathbf{a}_i$ 的方向、因而完全不进 $S$ 的特征值</strong>。最终外参误差 $\sim\sigma_n\times\kappa$:点数只缩小分子 $\sigma_n$,分母 $\kappa$ 由几何注定、纹丝不动。一把再准的尺,量一个几乎与尺向垂直的方向,精度也被几何吃掉——这正是 §6.3 的 $O_2=\sigma_L/\sigma_1=\kappa^{-1}$、$O_4=\sigma_L^2/\sigma_1$(Nahvi-Hollerbach 证 $O_4$ 对标定误差最敏感)所量的几何衰减。</p>
+<p><strong>(e) 但运动充分时,单面墙并不注定差——差的不是下限,是门槛与稳健性。</strong> 上面“单面墙 $S$ 各向异性”的前提,是法向方向 $\mathbf{a}_i$ 没铺开。一旦机械臂运动把 $\mathbf{a}_i=R_{G_i}^\top{}^{W}\mathbf{n}$ 在球面上铺到各向同性,$S\to(N/3)I$、$\lambda_1/\lambda_3\to1$,$\kappa$ 逼近最小值,与多面墙理想情形同档——单面墙<strong>没有数学上的 $\kappa$ 下限</strong>,运动充分时精度可与多面墙、完整配准同量级。代价在三处:(i)<strong>门槛高</strong>——世界系里固定的墙法向要扫遍雷达系各方向,得大角度旋转,其中不少姿态让墙面处于掠射(点稀、拟合差)或出视野;多面墙靠几何自带独立法向族,温和运动就各向同性。(ii)<strong>每帧信息减半</strong>(平面 3 标量 vs 完整配准 6),同样 $\kappa$ 需约 2 倍姿态数。(iii)<strong>$\kappa$ 脆</strong>——暗方向(绕法向自转、墙内切向平移)在任一单帧都不可见,只靠多帧 $\mathbf{a}_i$ 散布间接三角化,覆盖稍有空缺 $\kappa$ 即飙升;多面墙每帧直接约束多方向,运动不完美 $\kappa$ 也稳。一句话:多面墙把好条件数白送,单面墙要靠精心设计、充分铺开的运动去挣——挣到了一样好,挣不到就明显差、且更敏感。</p>
+<p><strong>(6) 精度:受什么制约,大概到什么量级。</strong> 平面法的精度上限由三层叠加决定:</p>
 <ol>
 <li><strong>平面拟合精度</strong>:墙面越平、点云越密、距离越近,拟合的法向 ${}^{L_i}\mathbf{n}_i$ 与距离 ${}^{L_i}d_i$ 越准。平整墙面、近距(1–5 m)、点数充足时,法向角误差通常在 $0.05°$–$0.5°$ 量级(取决于雷达测距噪声)。</li>
-<li><strong>可观测性放大</strong>:求解的条件数 $\kappa$ 把拟合误差放大后落地——这与第 6.3 节的 $O_2$/$O_4$ 指标是同一回事。法向信息天然集中在一个二维子空间,单面墙的 $\kappa$ 通常比完整配准或多面墙差,这是它精度上的主要短板。</li>
+<li><strong>可观测性放大</strong>:求解的条件数 $\kappa$ 把拟合误差放大后落地(单面墙 $\kappa$ 天然偏大的几何原因见 (5)),与第 6.3 节的 $O_2$/$O_4$ 指标是同一回事,是平面法精度的主要短板。</li>
 <li><strong>退化方向的残留</strong>:若运动里横向旋转不足,$\kappa$ 飙升,对应方向误差被剧烈放大。</li>
 </ol>
 <p>据此给出<strong>量级估计</strong>(须强调这是基于误差传播的估计、非实测;实际精度取决于雷达型号、墙面质量与运动设计,建议标定后用留出残差验证):</p>
@@ -1347,8 +1361,8 @@ $$\bigl(R_{G_i}^\top\,{}^{W}\mathbf{n}\bigr)^\top\,\mathbf{t}_X \;=\; {}^{W}d - 
 <li><strong>旋转</strong>:横向旋转充分、姿态数足够时,$R_X$ 角误差有望压到 $0.1°$–$1°$ 量级;横向旋转不足则该方向系统偏差大。</li>
 <li><strong>平移</strong>:距离观测受雷达测距噪声限制(近距毫米级、远距厘米级),经运动几何(条件数)放大后,$\mathbf{t}_X$ 典型 $1$–$10\text{ mm}$;条件数差时可劣化到厘米级。</li>
 </ul>
-<p><strong>(6) 平面法 vs 完整配准:信息更少,但更稳。</strong> 把平面法放回第 5 节框架:完整的环境配准(两帧 6 自由度 $B_k$)用到环境全部三维结构,信息充分;平面法只用每个平面 3 个参数,是环境信息的低维投影,因此条件数更差、对运动更敏感。但平面法有完整配准不具备的鲁棒性:平面拟合是凸优化(RANSAC + 主成分),没有 ICP 的初值敏感与局部最优,也不受墙上非平面杂物干扰(可 RANSAC 剔除)。所以在结构化室内(墙面清晰、平整),平面法往往比直接做全局 ICP 更可靠;在几何杂乱、缺乏大平面的场景,完整配准或标定物更合适。两者可以混用——平面给稳健初值,再按需精化。</p>
-<h4 id="6-7-运动设计原则">6.7 运动设计原则</h4>
+<p><strong>(7) 平面法 vs 完整配准:信息更少,但更稳。</strong> 把平面法放回第 5 节框架:完整的环境配准(两帧 6 自由度 $B_k$)用到环境全部三维结构,信息充分;平面法只用每个平面 3 个参数,是环境信息的低维投影,因此条件数更差、对运动更敏感。但平面法有完整配准不具备的鲁棒性:平面拟合是凸优化(RANSAC + 主成分),没有 ICP 的初值敏感与局部最优,也不受墙上非平面杂物干扰(可 RANSAC 剔除)。所以在结构化室内(墙面清晰、平整),平面法往往比直接做全局 ICP 更可靠;在几何杂乱、缺乏大平面的场景,完整配准或标定物更合适。两者可以混用——平面给稳健初值,再按需精化。</p>
+<h4 id="6-6-运动设计原则">6.6 运动设计原则</h4>
 <p>综合各文献,设计采集动作的原则:</p>
 <ol>
 <li><strong>旋转轴多样化</strong>:至少两组非平行轴,理想覆盖三维不同方向;</li>
@@ -1357,29 +1371,29 @@ $$\bigl(R_{G_i}^\top\,{}^{W}\mathbf{n}\bigr)^\top\,\mathbf{t}_X \;=\; {}^{W}d - 
 <li><strong>旋转与平移搭配</strong>:分离法(先 $R$ 后 $\mathbf{t}$)适合大旋转 + 小平移;同时法适合小旋转 + 大平移;</li>
 <li><strong>数据剪枝</strong>:用向量量化等方法使旋转轴在旋转空间均匀分布,剔除冗余和近退化运动。</li>
 </ol>
-<h4 id="6-8-误差来源与传播">6.8 误差来源与传播</h4>
+<h4 id="6-7-误差来源与传播">6.7 误差来源与传播</h4>
 <p>可观测性回答&quot;运动能否解出 $X$“,误差传播回答&quot;解出的 $X$ 有多准”。两者经同一个雅可比 $J$ 相连:残差 $\mathbf{r}\approx J\boldsymbol\xi$ 反演给出外参扰动 $\Delta\boldsymbol\xi\approx J^+\mathbf{r}$($J^+$ 为 $J$ 的伪逆),被条件数 $\kappa=\sigma_1/\sigma_L$ 放大(§6.3)。残差 $\mathbf{r}$ 有两个来源:</p>
 <ul>
 <li><strong>$A_i$ 的误差(机器人侧)</strong>:$A_i=G_{i+1}^{-1}G_i$ 由正运动学给出,误差来自关节编码器噪声与连杆几何参数(即绝对精度)。工业机器人重复精度高(典型 $\pm0.02$–$0.1\text{ mm}$)、绝对精度低($\pm0.1$–$2\text{ mm}$,且与构型相关),故 $A_i$ 常含<strong>系统性、构型相关</strong>的偏差,可能给 $X$ 带来偏置。</li>
-<li><strong>$B_i$ 的误差(配准侧)</strong>:来自点云配准残差,含测距噪声、退化方向的模糊、ICP 收敛误差(详见 §7)。</li>
+<li><strong>$B_i$ 的误差(配准侧)</strong>:来自点云配准残差,含测距噪声、退化方向的模糊、ICP 收敛误差(详见 §8)。</li>
 </ul>
 <p><strong>主导关系</strong>:纯点云手眼标定中,$B_i$ 的配准误差通常是主导项——机器人重复性远高于单次点云配准精度(§4)。因此提升精度的首要杠杆在配准侧:更优的配准初值、几何更丰富的场景、更密的点云、退化检测与剔除,而不是一味追求机器人绝对精度。一个容易被忽略的误差源是<strong>时间同步</strong>:雷达帧与机器人位姿若未对齐,运动中的错位会等效成位姿误差,需用硬件触发或在时间戳间插值对齐。</p>
-<h3 id="7-点云配准的局限与精度边界">7. 点云配准的局限与精度边界</h3>
+<h3 id="8-点云配准的局限与精度边界">8. 点云配准的局限与精度边界</h3>
 <blockquote>
 <p>本节针对 eye-in-hand 的点云配准精度;eye-to-hand 用标定物、不走配准,可略过。</p>
 </blockquote>
 <p>第 4 节指出纯点云标定的精度受制于配准。本节展开配准的固有局限——这是理解&quot;用环境标定&quot;可行边界的最后一块拼图。</p>
-<h4 id="7-1-局部最优与初值敏感">7.1 局部最优与初值敏感</h4>
+<h4 id="8-1-局部最优与初值敏感">8.1 局部最优与初值敏感</h4>
 <p>ICP 总是单调收敛到均方误差距离指标的<strong>最近局部最小值</strong>,初值不够好则收敛到错误结果。Li et al. (2023) 的实验定量验证:纯 ICP 在&quot;部分点云 + 大位姿差异&quot;场景下成功率仅 5.4%;FGR-FPFH 5.2%,TEASER++ 仅 1.2%——需要深度学习网络提供优质初值后 ICP 才生效。这意味着:<strong>相邻帧的位姿差异不宜过大</strong>,否则配准失败,$B_k$ 无效。Yan 等针对基于 ICP 的手眼标定精度做了专门的改进研究,其结论同样指向初值质量与场景几何丰富度的关键性。</p>
-<h4 id="7-2-对称-重复结构导致的退化">7.2 对称/重复结构导致的退化</h4>
+<h4 id="8-2-对称-重复结构导致的退化">8.2 对称/重复结构导致的退化</h4>
 <p><strong>走廊/隧道效应</strong>:走廊中法向量主要分布在两个轴上(来自地面、天花板、墙壁),“normal vectors are predominantly distributed along only two axes, leading to pose ambiguity along the direction of the corridor”——沿走廊方向产生位姿模糊,这是<strong>单向退化</strong>。退化恶化的机制:与走廊方向正交的平面因远、稀疏而在迭代中被拒绝,法向量分布失衡导致位姿漂移,条件数急增。</p>
 <p>这正是 §5.4 提到的&quot;局部对称区域精度打折&quot;的机理:不是标定方法的问题,而是配准在这些方向给不出约束。</p>
-<h4 id="7-3-应对-退化检测与自适应">7.3 应对:退化检测与自适应</h4>
+<h4 id="8-3-应对-退化检测与自适应">8.3 应对:退化检测与自适应</h4>
 <p>GenZ-ICP 按平面度(planarity)分类对应点,自适应混合 point-to-plane(结构化环境)与 point-to-point(非结构化)。关键数学:point-to-point 的 Hessian 平移部分为单位矩阵,<strong>条件数恒为 1</strong>,加入 point-to-point 分量能稳定数值条件,防止退化场景下的位姿发散。在 SubT-MRS Long_Corridor 数据集上,GenZ-ICP 的 APE 均值为 1.69 m,远优于 CT-ICP(44.18 m)和 point-to-plane ICP(32.84 m)。</p>
 <p>工程启示:采集标定数据时,应选择<strong>几何丰富、非退化</strong>的场景(多方向平面、家具、建筑结构),避开空旷走廊、隧道、大块平整墙面朝向的运动方向。</p>
-<h3 id="8-工程实践">8. 工程实践</h3>
+<h3 id="9-工程实践">9. 工程实践</h3>
 <p>综合以上各节,给出环境两步法的实操要点(以下针对 eye-in-hand;eye-to-hand 用标定物,见 §2.3)。</p>
-<h4 id="8-1-两步法流程">8.1 两步法流程</h4>
+<h4 id="9-1-两步法流程">9.1 两步法流程</h4>
 <ol>
 <li><strong>采数据</strong>:控制机械臂走一组位姿序列 $\{G_i\}$,每个位姿同步采一帧点云 $P_i$。</li>
 <li><strong>求 $B_k$</strong>:对相邻帧 $(P_i, P_{i+1})$ 做点云配准,得到 $B_k = {}^{L_{i+1}}T_{L_i}$。配准建议:全局配准(FPFH + RANSAC)给初值,point-to-plane ICP 精化。</li>
@@ -1388,7 +1402,7 @@ $$\bigl(R_{G_i}^\top\,{}^{W}\mathbf{n}\bigr)^\top\,\mathbf{t}_X \;=\; {}^{W}d - 
 <li><strong>解 $AX=XB$</strong>:用 OpenCV <code>calibrateHandEye</code> 或自实现求解器;建议同时跑几种方法交叉验证。</li>
 <li><strong>验证</strong>:用留出的位姿对检查重投影/配准残差,或用 §5.2 的思想实验做正确性抽检。</li>
 </ol>
-<h4 id="8-2-采集运动清单">8.2 采集运动清单</h4>
+<h4 id="9-2-采集运动清单">9.2 采集运动清单</h4>
 <table>
 <thead>
 <tr>
@@ -1440,11 +1454,11 @@ $$\bigl(R_{G_i}^\top\,{}^{W}\mathbf{n}\bigr)^\top\,\mathbf{t}_X \;=\; {}^{W}d - 
 </tr>
 </tbody>
 </table>
-<h4 id="8-3-何时该用标定物">8.3 何时该用标定物</h4>
+<h4 id="9-3-何时该用标定物">9.3 何时该用标定物</h4>
 <p>标定物不是数学上的必需品(第 5 节已证明环境标定等价于 $AX=XB$),而是<strong>工程捷径</strong>:它提供精确、无歧义的 $B_k$(角点 + PnP),绕开了点云配准的所有困难(局部最优、初值敏感、退化)。当对精度要求高、或环境几何贫乏、或需要可重复的标定基准时,标定物仍是首选。eye-to-hand 尤其依赖标定物:固定雷达免标定物需分割末端、工程上不现实,常用球靶(球心位姿稳健、易从点云提取)逐帧给出 $C_i$。</p>
-<h4 id="8-4-连续时间与可观测性感知标定-现代方法">8.4 连续时间与可观测性感知标定(现代方法)</h4>
+<h4 id="9-4-连续时间与可观测性感知标定-现代方法">9.4 连续时间与可观测性感知标定(现代方法)</h4>
 <p>上述两步法把位姿当作离散时刻的快照。高频率、异步的 LiDAR/IMU 用离散时间会引入运动畸变与时刻错配,现代方法用<strong>连续时间批优化</strong>克服:用累积三次 B 样条参数化 6-DoF 轨迹,其解析导数直接给出任意时刻的加速度/角速度,使雷达点时刻可在 IMU 时间轴上精确插值(含时间偏移),把外参与轨迹统一进单一非线性最小二乘。代表工作 <strong>OA-LICalib</strong> 在此框架下用 Fisher 信息矩阵的截断 SVD(TSVD)<strong>自动识别并锁定不可观方向</strong>——只更新可观方向、把不可观方向冻结在先验上(与 §6 的条件数判据同源,但落地为数值更新规则);其结构化环境(墙、地面 surfel)point-to-plane 约束联合标定 LiDAR/IMU 内外参、免任何标定物,精度基准(仿真、全激励)约<strong>平移 0.40 cm、旋转 0.18°</strong>,真实多段联合标定重复性约<strong>平移 ±2 cm、旋转 ±0.2°</strong>,时间偏移可达毫秒级。该方法显式印证 §6 的退化结论:单轴旋转使沿该轴的外参平移不可观(被自动锁定)。同类近期工作还有 GRIL-Calib(地面机器人平面运动免标定物)、iKalibr(统一多传感器免标定物时空标定);可观测性感知的思路也常以信息度量(trace/det/最大特征值)驱动段选择。</p>
-<h3 id="9-总结">9. 总结</h3>
+<h3 id="10-总结">10. 总结</h3>
 <ol>
 <li>手眼标定求解 $AX=XB$,eye-in-hand 与 eye-to-hand 同形:$A$ 是末端相对运动(已知),$B$ 是观测得到的相对运动(eye-in-hand 为传感器自身运动,eye-to-hand 为末端上标定物的运动),$X$ 是外参(eye-in-hand 为末端-雷达,eye-to-hand 为基座-雷达)。</li>
 <li>经典求解器分分离法(Tsai、Park、Shah)与同时法(Andreff、Daniilidis、Horaud);同时法对旋转噪声鲁棒,分离法对平移噪声鲁棒,且运动范围影响相反——算法应与运动匹配,无普适最优。</li>
@@ -1453,7 +1467,7 @@ $$\bigl(R_{G_i}^\top\,{}^{W}\mathbf{n}\bigr)^\top\,\mathbf{t}_X \;=\; {}^{W}d - 
 <li>两步法(先配准求 $B$,再闭式解 $X$)与自洽融合法理论等价,但两步法把配准与求解解耦,可诊断、误差结构清晰,工程上更优。</li>
 <li>可观测性可用雅可比 $J_k = \mathrm{Ad}_{B_k}-I_6$ 的条件数量化,且<strong>只依赖 $B_k$,可在采数据前预判</strong>。纯平移不能定平移却能约束旋转(反直觉),且不同算法框架下同一退化运动的可观测性不同。</li>
 <li>标定物是工程捷径(提供干净 $B$),不是数学门槛。</li>
-<li>退化情形——只用一面墙的平面约束:法向定旋转、距离定平移,二者可观测的充要条件都是运动含横向旋转(垂直墙法向的轴)。运动选对,一面墙即可解出完整外参;纯平移或纯绕墙法向转则信息崩溃。平面法信息少于完整配准、条件数更差,但拟合凸、抗干扰、无需初值,结构化室内常更稳健(详见 §6.6)。</li>
+<li>退化情形——只用一面墙的平面约束:法向定旋转、距离定平移,二者可观测的充要条件都是运动含横向旋转(垂直墙法向的轴)。运动选对,一面墙即可解出完整外参;纯平移或纯绕墙法向转则信息崩溃。平面法信息少于完整配准、条件数更差,但拟合凸、抗干扰、无需初值,结构化室内常更稳健(详见 §7)。</li>
 </ol>
 <h3 id="参考资料">参考资料</h3>
 <ul>
@@ -1670,11 +1684,11 @@ $$\bigl(R_{G_i}^\top\,{}^{W}\mathbf{n}\bigr)^\top\,\mathbf{t}_X \;=\; {}^{W}d - 
       
         <a href="/tags/Robotics/" class="print-no-link">#Robotics</a>
       
+        <a href="/tags/LiDAR/" class="print-no-link">#LiDAR</a>
+      
         <a href="/tags/HandEye/" class="print-no-link">#HandEye</a>
       
         <a href="/tags/Calibration/" class="print-no-link">#Calibration</a>
-      
-        <a href="/tags/LiDAR/" class="print-no-link">#LiDAR</a>
       
     </div>
   
