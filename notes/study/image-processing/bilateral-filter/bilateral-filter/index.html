@@ -27,17 +27,17 @@
 <meta property="og:site_name" content="又见苍岚">
 <meta property="og:description" content="双边滤波是一种非线性滤波器，它可以达到保持边缘、降噪平滑的效果。和其他滤波原理一样，双边滤波也是采用加权平均的方法，用周边像素亮度值的加权平均代表某个像素的强度，本文记录原理与实现。">
 <meta property="og:locale" content="zh_CN">
-<meta property="og:image" content="https://uipv4.zywvvd.com:33030/HexoFiles/vvd_file_mt/202307121218576.jpg">
-<meta property="og:image" content="https://uipv4.zywvvd.com:33030/HexoFiles/vvd_file_mt/202307121221565.jpg">
-<meta property="og:image" content="https://uipv4.zywvvd.com:33030/HexoFiles/vvd_file_mt/202307121224458.jpg">
-<meta property="og:image" content="https://uipv4.zywvvd.com:33030/HexoFiles/vvd_file_mt/202307121226322.jpg">
-<meta property="og:image" content="https://uipv4.zywvvd.com:33030/HexoFiles/mt_images_gitee/20220314201944.png">
+<meta property="og:image" content="https://img.zywvvd.com:61213/HexoFiles/vvd_file_mt/202307121218576.jpg">
+<meta property="og:image" content="https://img.zywvvd.com:61213/HexoFiles/vvd_file_mt/202307121221565.jpg">
+<meta property="og:image" content="https://img.zywvvd.com:61213/HexoFiles/vvd_file_mt/202307121224458.jpg">
+<meta property="og:image" content="https://img.zywvvd.com:61213/HexoFiles/vvd_file_mt/202307121226322.jpg">
+<meta property="og:image" content="https://img.zywvvd.com:61213/HexoFiles/mt_images_gitee/20220314201944.png">
 <meta property="article:published_time" content="2022-03-14T12:07:26.000Z">
-<meta property="article:modified_time" content="2026-10-10T01:09:25.178Z">
+<meta property="article:modified_time" content="2026-11-13T07:07:54.330Z">
 <meta property="article:author" content="Yiwei Zhang">
 <meta property="article:tag" content="Image_Processing">
 <meta name="twitter:card" content="summary_large_image">
-<meta name="twitter:image" content="https://uipv4.zywvvd.com:33030/HexoFiles/vvd_file_mt/202307121218576.jpg">
+<meta name="twitter:image" content="https://img.zywvvd.com:61213/HexoFiles/vvd_file_mt/202307121218576.jpg">
   
   
   
@@ -1081,7 +1081,7 @@ document.addEventListener("readystatechange", function() {
   
 
 <div id="banner" class="banner" parallax=true
-     style="background: url('https://uipv4.zywvvd.com:33030/HexoFiles/new/bg-trans.png') no-repeat center center; background-size: cover;">
+     style="background: url('https://img.zywvvd.com:61213/HexoFiles/new/bg-trans.png') no-repeat center center; background-size: cover;">
   <div class="full-bg-img">
     <div class="mask flex-center" style="background-color: rgba(0, 0, 0, 0)">
       <div class="banner-text text-center fade-in-up">
@@ -1282,7 +1282,7 @@ document.addEventListener("readystatechange", function() {
                 
                   
                     <!-- compatible with older versions-->
-                    本文最后更新于：2026年10月10日 上午
+                    本文最后更新于：2026年11月13日 下午
                   
                 
               </p>
@@ -1304,15 +1304,15 @@ document.addEventListener("readystatechange", function() {
 <p>需要降噪，又想要保留细节，只能根据图像情况决定如何应用卷积核了，如果可以在非边缘区域做模糊，在边缘区域只用和当前像素接近的像素做模糊就好了呢 ~</p>
 <h3 id="原理">原理</h3>
 <p>对图像进行空间域滤波的方法是使用一个结构元素（核）来对原图像进行卷积。比如说高斯核像是这样的：</p>
-<p><img src="https://uipv4.zywvvd.com:33030/HexoFiles/vvd_file_mt/202307121218576.jpg" srcset="/img/loading.gif" lazyload alt=""></p>
+<p><img src="https://img.zywvvd.com:61213/HexoFiles/vvd_file_mt/202307121218576.jpg" srcset="/img/loading.gif" lazyload alt=""></p>
 <p>而这个结构元素就会对原图像进行卷积操作，从而得到一个新的图像，即输出图像。我们知道，这个结构元素是不会变的。但是！但是！但是！在双边滤波算法中就不是如此了。为了使图像的边缘得到保留，就要根据当前被卷积像素的邻域进行观察，“推断”是否是边缘点和接近边缘的点。因此，结构元素就会改变，从而保留边缘点。</p>
 <p>下面的一组图中，图a是原图像，图c是输出。而中间的图像是什么呢？显然，这是原图中根据某个点的邻域生成的，专属于这个点的结构元素。</p>
-<p><img src="https://uipv4.zywvvd.com:33030/HexoFiles/vvd_file_mt/202307121221565.jpg" srcset="/img/loading.gif" lazyload alt=""></p>
+<p><img src="https://img.zywvvd.com:61213/HexoFiles/vvd_file_mt/202307121221565.jpg" srcset="/img/loading.gif" lazyload alt=""></p>
 <p>可以看到，原图中显然有一个灰度的突变，这就表示是边缘。灰度值高的地方不应该和灰度低的区域进行混合，所以，图像中接近边缘的一个点就会生成图b这样的结构元素。</p>
 <p>而生成这样的结构元素的方法，是将我们原本的高斯核，与一个能“推断”出是否在边缘点的结构元素相乘，如下图中间的结构元素。</p>
-<p><img src="https://uipv4.zywvvd.com:33030/HexoFiles/vvd_file_mt/202307121224458.jpg" srcset="/img/loading.gif" lazyload alt=""></p>
+<p><img src="https://img.zywvvd.com:61213/HexoFiles/vvd_file_mt/202307121224458.jpg" srcset="/img/loading.gif" lazyload alt=""></p>
 <p>另一幅原理示意图：</p>
-<p><img src="https://uipv4.zywvvd.com:33030/HexoFiles/vvd_file_mt/202307121226322.jpg" srcset="/img/loading.gif" lazyload alt=""></p>
+<p><img src="https://img.zywvvd.com:61213/HexoFiles/vvd_file_mt/202307121226322.jpg" srcset="/img/loading.gif" lazyload alt=""></p>
 <p>双边滤波器的输出像素依赖于当前被卷积像素的邻域。 $i$ 和 $j$  是当前被卷积像素的坐标点， $k$  和 $l$ 是邻域像素的坐标点:</p>
 <ul>
 <li>输出像素的值依赖于邻域像素的值的加权组合：</li>
@@ -1364,7 +1364,7 @@ $$
 <li>示例代码</li>
 </ul>
 <figure class="highlight stylus"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><code class="hljs stylus"><span class="hljs-selector-tag">img</span> = mt<span class="hljs-selector-class">.cv_rgb_imread</span>(<span class="hljs-string">&#x27;img1.jpg&#x27;</span>, gray=False)<br>res = cv2<span class="hljs-selector-class">.bilateralFilter</span>(<span class="hljs-selector-tag">img</span>, <span class="hljs-number">9</span>, <span class="hljs-number">100</span>, <span class="hljs-number">1000</span>)<br><span class="hljs-function"><span class="hljs-title">PIS</span><span class="hljs-params">(img, res)</span></span><br></code></pre></td></tr></table></figure>
-<p><img src="https://uipv4.zywvvd.com:33030/HexoFiles/mt_images_gitee/20220314201944.png" srcset="/img/loading.gif" lazyload alt=""></p>
+<p><img src="https://img.zywvvd.com:61213/HexoFiles/mt_images_gitee/20220314201944.png" srcset="/img/loading.gif" lazyload alt=""></p>
 <h3 id="参考资料">参考资料</h3>
 <ul>
 <li>
@@ -1410,11 +1410,11 @@ $$
 					<p class="tea">“觉得不错的话，给点打赏吧 ୧(๑•̀⌄•́๑)૭”</p>
 					<div id="rewardImgContainer" class="reward-img-container">
 						<div class="singleImgContainer">
-							<img id="wechatImg" class="reward-img" src="https://uipv4.zywvvd.com:33030/HexoFiles/vvd_pc_upload/wechatpay.png" srcset="/img/loading.gif" lazyload alt="微信二维码">
+							<img id="wechatImg" class="reward-img" src="https://img.zywvvd.com:61213/HexoFiles/vvd_pc_upload/wechatpay.png" srcset="/img/loading.gif" lazyload alt="微信二维码">
 							<p class="wechatPay">微信支付</p>
 						</div>
 						<div class="singleImgContainer">
-							<img id="alipayImg" class="reward-img" src="https://uipv4.zywvvd.com:33030/HexoFiles/vvd_pc_upload/alipay.png" srcset="/img/loading.gif" lazyload alt="支付宝二维码">
+							<img id="alipayImg" class="reward-img" src="https://img.zywvvd.com:61213/HexoFiles/vvd_pc_upload/alipay.png" srcset="/img/loading.gif" lazyload alt="支付宝二维码">
 							<p class="aliPay">支付宝支付</p>
 						</div>
 					</div>
@@ -2016,7 +2016,7 @@ $$
 		var s = document.createElement('script');
 		s.type='text/javascript';
 		document.body.appendChild(s);
-		s.src='https://uipv4.zywvvd.com:33030/HexoFiles/js/games/airplane/airplane.js';
+		s.src='https://img.zywvvd.com:61213/HexoFiles/js/games/airplane/airplane.js';
 		void(0);
 		};
 	}

@@ -27,9 +27,9 @@
 <meta property="og:site_name" content="又见苍岚">
 <meta property="og:description" content="搭一组四相机阵列、做完内外参标定后，重投影 RMS 落在约 0.12px。本文记录从标定到回答&quot;这套系统到底有多准、又被什么限制&quot;的完整判断：用 Fisher 信息给出精度的理论下界，实测它，再逐步找出真正的瓶颈——不是模型拟合得不够好，而是检测噪声本身。一个贯穿全文的结论：系统已经贴着自己的检测噪声地板，五个看上去能提精度的杠杆，逐一试过，增益全为零。">
 <meta property="og:locale" content="zh_CN">
-<meta property="og:image" content="https://uipv4.zywvvd.com:33030/HexoFiles/files/four-eyed-vision-calibration/rig_photo.jpg">
+<meta property="og:image" content="https://img.zywvvd.com:61213/HexoFiles/files/four-eyed-vision-calibration/rig_photo.jpg">
 <meta property="article:published_time" content="2026-08-11T02:00:00.000Z">
-<meta property="article:modified_time" content="2026-10-10T01:09:25.120Z">
+<meta property="article:modified_time" content="2026-11-13T07:07:54.273Z">
 <meta property="article:author" content="Yiwei Zhang">
 <meta property="article:tag" content="3D">
 <meta property="article:tag" content="Calibration">
@@ -39,7 +39,7 @@
 <meta property="article:tag" content="外参标定">
 <meta property="article:tag" content="多目视觉">
 <meta name="twitter:card" content="summary_large_image">
-<meta name="twitter:image" content="https://uipv4.zywvvd.com:33030/HexoFiles/files/four-eyed-vision-calibration/rig_photo.jpg">
+<meta name="twitter:image" content="https://img.zywvvd.com:61213/HexoFiles/files/four-eyed-vision-calibration/rig_photo.jpg">
   
   
   
@@ -1083,7 +1083,7 @@ document.addEventListener("readystatechange", function() {
   
 
 <div id="banner" class="banner" parallax=true
-     style="background: url('https://uipv4.zywvvd.com:33030/HexoFiles/new/bg-trans.png') no-repeat center center; background-size: cover;">
+     style="background: url('https://img.zywvvd.com:61213/HexoFiles/new/bg-trans.png') no-repeat center center; background-size: cover;">
   <div class="full-bg-img">
     <div class="mask flex-center" style="background-color: rgba(0, 0, 0, 0)">
       <div class="banner-text text-center fade-in-up">
@@ -1284,7 +1284,7 @@ document.addEventListener("readystatechange", function() {
                 
                   
                     <!-- compatible with older versions-->
-                    本文最后更新于：2026年10月10日 上午
+                    本文最后更新于：2026年11月13日 下午
                   
                 
               </p>
@@ -1327,7 +1327,7 @@ document.addEventListener("readystatechange", function() {
 <p>对高斯观测 z ~ N(g($\theta$), $\Sigma$),<strong>Fisher 信息矩阵</strong>为 I($\theta$) = $J<sup>{\mathsf{T}}\Sigma</sup>{-1}J$,其中 J = $\partial g/\partial\theta$ 是测量模型对参数的雅可比。Cramér–Rao 不等式给出任何无偏估计器的方差下界:$\operatorname{Cov}(\hat{\theta})$ $\succeq I(\theta)^{-1}$,即 $\mathrm{CRLB}=\sqrt{\operatorname{diag}(I^{-1})}$。</p>
 <p>本管线 <code>J</code> 用<strong>数值中心差分</strong>求:逐列扰动该参数 $\theta$ ± h·e_k,投影全部角点取差 J[:,k] = (g($\theta$+h·e_k) − g($\theta$−h·e_k))/(2h)——避免手写畸变解析导数的易错性,且天然兼容 5 参/8 参 rational 两种模型(只需切换 $\theta$ 的列数,雅可比代码不变)。</p>
 <p><strong>边缘化干扰参数(Schur 补)</strong>:参数常分待估 β 与干扰 γ(如每图外参),$\theta$=(β,γ)。把信息矩阵分块 $I=\begin{bmatrix}A&amp;B\B^{\mathsf{T}}&amp;C\end{bmatrix}$(A=ββ 块、B=βγ 块、C=γγ 块),则只关心 β 时的<strong>边际信息</strong> $I_\beta=A-BC<sup>{-1}B</sup>{\mathsf{T}}$(等价于把 γ 积分掉的边缘后验),$\mathrm{CRLB}<em>\beta=\sqrt{\operatorname{diag}(I</em>\beta^{-1})}$。本管线三种 Fisher 都靠这一步消去外参/板位姿/内参等干扰量。</p>
-<p><img src="https://uipv4.zywvvd.com:33030/HexoFiles/files/four-eyed-vision-calibration/stage8_fisher_pipeline.png" srcset="/img/loading.gif" lazyload alt="fisher_pipeline"></p>
+<p><img src="https://img.zywvvd.com:61213/HexoFiles/files/four-eyed-vision-calibration/stage8_fisher_pipeline.png" srcset="/img/loading.gif" lazyload alt="fisher_pipeline"></p>
 <p><em>Fisher 信息计算管线:观测 → 测量模型 g($\theta$) → 数值雅可比 <code>J</code> → 信息矩阵 I=$J<sup>{\mathsf{T}}\Sigma</sup>{-1}J$ → Schur 边缘化干扰量 → CRLB;底部分支为本管线的三种 Fisher 计算(内参/外参/三角化),共享 I=$J<sup>{\mathsf{T}}\Sigma</sup>{-1}J$ 这一核心,差别仅在待估/干扰/边缘化的对象。</em></p>
 <h4 id="2-4-本管线的三种-Fisher-计算">2.4 本管线的三种 Fisher 计算</h4>
 <p>全管线有 <strong>3 个独立的 Fisher 计算</strong>,参数、干扰量、边缘化对象各不同,但共享 I=$J<sup>{\mathsf{T}}\Sigma</sup>{-1}J$ 这一核心,差别仅在「把什么当待估、把什么当干扰、消掉什么」:</p>
@@ -1409,7 +1409,7 @@ document.addEventListener("readystatechange", function() {
 <li>与之自洽:残差校正场、鱼眼、部分重叠外参、板非平面、联合 BA <strong>五个杠杆全部零增益</strong> ⇒ 模型方差为 0。</li>
 <li>有效噪声 $\sigma_{\text{eff}}$=ratio·$\sigma_{\text{det}}$ 恰 = $\sigma_{\text{real}}$,故 $\sigma_{\text{eff}}$ 曲线贴合实测——「Fisher 曲线贴合实测」即源于分母取了 $\sigma_{\text{real}}$。</li>
 </ul>
-<p><img src="https://uipv4.zywvvd.com:33030/HexoFiles/files/four-eyed-vision-calibration/stage8_triangulation_geom.png" srcset="/img/loading.gif" lazyload alt="triangulation_geom"></p>
+<p><img src="https://img.zywvvd.com:61213/HexoFiles/files/four-eyed-vision-calibration/stage8_triangulation_geom.png" srcset="/img/loading.gif" lazyload alt="triangulation_geom"></p>
 <p><em>左:三角化误差椭圆——深度 <code>z</code> 是多目几何的固有弱轴(椭圆纵向拉长),横向 <code>x</code> 视差大故精度好。</em><br>
 <em>右:解析双目 $\sigma_z$ = z²·$\sigma_{\text{det}}$/(f·B)(视差 <code>d=fB/z</code>,dz/dd = −z²/(fB)):深度误差 ∝ 距离²、反比于(基线×焦距)。但本 rig 会聚角有限,远场 z² 近似不成立,实测/理论同为 $\sigma$ ∝ $z^{\sim1.5}$(两曲线平行,只差常数倍 ratio;)。</em></p>
 <h4 id="2-7-约定-rig-系、角点序消歧、单位">2.7 约定:rig 系、角点序消歧、单位</h4>
@@ -1428,7 +1428,7 @@ document.addEventListener("readystatechange", function() {
 <p>2 目堆叠得 4 行 <code>A·X = 0</code>(<code>A</code> 为 4×4),SVD 取最小奇异向量 <code>Vt[-1]</code>,齐次除 <code>Xh[3]</code>(保号)得 3D 点——4 行恰好定解(噪声下唯一)。深度由<strong>视差</strong>决定:视差 <code>d=fB/z</code> ⇒ $\sigma_z$ = |dz/dd|·$\sigma$ = z²·$\sigma$/(f·B)——深度是<strong>弱轴</strong>(误差 ∝ 距离²、反比基线×焦距)。</p>
 <p><strong>② 多目融合(&gt;2 目)—— 堆叠 SVD 全局最小二乘</strong>。把全部 C 机的 DLT 行堆叠:每机 2 行 ⇒ <code>A</code> 为 <code>2C×4</code>,SVD 最小奇异向量 = <strong>全局最小二乘解</strong>。在「各机观测独立高斯」假设下,这<strong>等价于最大似然估计</strong>(所有视角同时最优,信息一次性用尽;而非先两两交会再加权平均——后者会丢信息)。其精度正是三角化 Fisher:$I_X=\sum_c J_c<sup>{\mathsf{T}}\Sigma_c</sup>{-1}J_c$,C 个相机各自贡献信息、矩阵相加 ⇒ <strong>精度相加</strong>(协方差减小);双目是 C=2 的特例。</p>
 <p><strong>为何加相机收益递减</strong>(实测边际仅 ~1–2%/目):深度轴主要由<strong>视差/基线</strong>约束,本 rig 最长基线 cam1–cam2(1207mm)已把深度卡到地板;新增的 cam3/cam4 基线更短、且多在前向(与已有相机视角相关性强),边际相机主要补充<strong>横向</strong>信息与冗余,而非深度。故 4 目深度 ≈ 2 目深度(实测),加相机的价值在<strong>视场/冗余/横向</strong>,而非深度精度本身。</p>
-<p><img src="https://uipv4.zywvvd.com:33030/HexoFiles/files/four-eyed-vision-calibration/concept_multiview_fusion.png" srcset="/img/loading.gif" lazyload alt="fusion"><br>
+<p><img src="https://img.zywvvd.com:61213/HexoFiles/files/four-eyed-vision-calibration/concept_multiview_fusion.png" srcset="/img/loading.gif" lazyload alt="fusion"><br>
 <em>左:双目 DLT——每机 2 行射线方程(共 4 行),视差 <code>d=fB/z</code> 决定深度(弱轴),$\sigma_z=z^2\sigma/(fB)$。右:&gt;2 目融合——堆叠全部 C 机 DLT 行(2C×4)→ SVD 最小奇异向量 = 全局最小二乘(高斯下 ML);Fisher 不确定椭球随相机数增加而缩小($I_X=\sum_c J_c<sup>{\mathsf{T}}\Sigma_c</sup>{-1}J_c$,精度相加),4 目椭球 &lt; 2 目椭球。实现见 <code>lib/geometry.py::triangulate_dlt</code>。</em></p>
 <h3 id="3-设备、数据采集与筛选">3. 设备、数据采集与筛选</h3>
 <h4 id="3-1-设备">3.1 设备</h4>
@@ -1496,9 +1496,9 @@ document.addEventListener("readystatechange", function() {
 </tbody>
 </table>
 <p>⇒ rig 占据约 <strong>1.15m(水平)× 0.4m(竖直)× 0.4m(深度)</strong> 的三维体积(非共面),cam1–cam2 为最长基线(水平+前探),4 机汇聚观测前方 ~1–3m 的共享测量区。</p>
-<p><img src="https://uipv4.zywvvd.com:33030/HexoFiles/files/four-eyed-vision-calibration/rig_photo.jpg" srcset="/img/loading.gif" lazyload alt="rig_photo"><br>
+<p><img src="https://img.zywvvd.com:61213/HexoFiles/files/four-eyed-vision-calibration/rig_photo.jpg" srcset="/img/loading.gif" lazyload alt="rig_photo"><br>
 <em>四目 rig 实拍:4 台相机刚性安装在同一框架上,硬件同步触发。</em></p>
-<p><img src="https://uipv4.zywvvd.com:33030/HexoFiles/files/four-eyed-vision-calibration/rig_3d_layout.png" srcset="/img/loading.gif" lazyload alt="rig3d"><br>
+<p><img src="https://img.zywvvd.com:61213/HexoFiles/files/four-eyed-vision-calibration/rig_3d_layout.png" srcset="/img/loading.gif" lazyload alt="rig3d"><br>
 <em>四目 rig 结构 3D 示意:4 相机(色块)刚性安装,光轴(箭头)汇聚观测前方测量区;蓝面 = 标定板(12×9 方格,300×225mm)在 ~1m 处示意位置;灰线 = 基线。cam1 = 世界原点。</em></p>
 <h4 id="3-2-数据采集">3.2 数据采集</h4>
 <p>数据集 <code>data_0807</code>,分 3 组(均 4 机同步):</p>
@@ -1536,11 +1536,11 @@ document.addEventListener("readystatechange", function() {
 <p>同步:每姿态 4 机硬件触发同时采集;<code>sigama</code> 是单机静态连拍(测本机噪声)。<code>cali</code> 与 <code>test</code> 的&quot;组&quot;= 一次同步采集(4 机各 1 帧)。</p>
 </blockquote>
 <p><strong>标定板采集覆盖</strong>(<code>cali</code> good pool,每机 ~146–158 张):</p>
-<p><img src="https://uipv4.zywvvd.com:33030/HexoFiles/files/four-eyed-vision-calibration/calib_coverage.png" srcset="/img/loading.gif" lazyload alt="coverage"><br>
+<p><img src="https://img.zywvvd.com:61213/HexoFiles/files/four-eyed-vision-calibration/calib_coverage.png" srcset="/img/loading.gif" lazyload alt="coverage"><br>
 <em>上排:图像平面角点密度 —— 88 角点 × ~150 图 = ~13000 点散布全视场(红 + = 主点);覆盖到边缘(畸变最大处)是内参标定质量的保障。<br>
 下排:板心空间分布(深度 Z × 横向 X)—— 标定姿态覆盖 ~500–3000mm 深度、±横向偏移,姿态多样性充足。</em></p>
 <p><strong>逐机像面覆盖热力图</strong>(<code>cali</code> 全姿态 ~217 张/机,2×2 = cam1–4;色标蓝→红 = 角点检测频次低→高):</p>
-<p><img src="https://uipv4.zywvvd.com:33030/HexoFiles/files/four-eyed-vision-calibration/calib_coverage_heatmap.png" srcset="/img/loading.gif" lazyload alt="coverage heatmap"><br>
+<p><img src="https://img.zywvvd.com:61213/HexoFiles/files/four-eyed-vision-calibration/calib_coverage_heatmap.png" srcset="/img/loading.gif" lazyload alt="coverage heatmap"><br>
 <em>每机把全部标定姿态的检出角点投回各自像面统计密度。4 机均<strong>覆盖到视场四角与边缘</strong>(畸变最大、标定最关键的区域),中央与主点附近(日常成像区)采样最密(红)。边缘也有低-中密度覆盖(青/黄)⇒ 内参畸变项在全视场都有约束,无大片盲区 —— 这是内参标定可信(而非仅中心区域准)的几何前提。</em></p>
 <h4 id="3-3-数据筛选">3.3 数据筛选</h4>
 <p><strong>目标</strong>:把每台相机 <code>cali</code> 的 ~217 张,按&quot;角点检测能否成功 + 重投影误差大小&quot;分成<strong>三类</strong>,只保留干净的好图进入标定池。目的是<strong>剔除会污染标定的图</strong>:出画/遮挡的(检测失败)、以及模型在该位姿拟合不足的高误差图(畸变吃不掉的极端斜姿/微抖)。</p>
@@ -1551,7 +1551,7 @@ document.addEventListener("readystatechange", function() {
 <li><strong>阈值分类</strong>:RMS &gt; <strong>1px</strong> ⇒ <strong><code>2_误差超限</code></strong>(扔);RMS ≤ 1px ⇒ <strong><code>3_good</code></strong>(留 = 标定池)。</li>
 </ol>
 <p><strong>三类长什么样</strong>(cam1 示例,已带角点/重投影箭头/RMS 标注):</p>
-<p><img src="https://uipv4.zywvvd.com:33030/HexoFiles/files/four-eyed-vision-calibration/stage1_categories.png" srcset="/img/loading.gif" lazyload alt="cats"><br>
+<p><img src="https://img.zywvvd.com:61213/HexoFiles/files/four-eyed-vision-calibration/stage1_categories.png" srcset="/img/loading.gif" lazyload alt="cats"><br>
 <em>左:出画(检测失败,板部分出画/遮挡,戳记原因);中:误差超限(RMS&gt;1px,红箭头大 = 极端斜姿/微抖致模型拟合不足,扔);右:正常 good(RMS≤1px,绿角点+小红箭头,留作标定池)。</em></p>
 <p><strong>数据(分类计数 + 每类 RMS)</strong>:</p>
 <table>
@@ -1605,7 +1605,7 @@ document.addEventListener("readystatechange", function() {
 </tr>
 </tbody>
 </table>
-<p><img src="https://uipv4.zywvvd.com:33030/HexoFiles/files/four-eyed-vision-calibration/stage1_data_prep.png" srcset="/img/loading.gif" lazyload alt="stage1"></p>
+<p><img src="https://img.zywvvd.com:61213/HexoFiles/files/four-eyed-vision-calibration/stage1_data_prep.png" srcset="/img/loading.gif" lazyload alt="stage1"></p>
 <p><strong>为什么阈值定 1px(不用旧 8px、不做 10% trim)</strong>:data_0807 极干净——per-image RMS <strong>median≈0.2px、p95≈0.5–1.9px</strong>,cam1/2 原生 4MP + 对焦改善后 5 参 Brown 几乎无高 RMS 位姿。旧 8px 阈值在此太松(超限≈0,放任坏图);10% trim 又会误剔一堆 RMS 0.3–0.7px 的好图。1px 恰切掉真高 RMS 尾(各 0–4 张,RMS 1–5.5px,多为极端斜姿/微抖),保留 ~146–158 张/机干净池。</p>
 <h3 id="4-检测噪声地板-sigma-text-det-与真实噪声-sigma-text-real">4. 检测噪声地板 $\sigma_{\text{det}}$ 与真实噪声 $\sigma_{\text{real}}$</h3>
 <p>本节先测<strong>理想条件下的检测噪声地板 $\sigma_{\text{det}}$</strong>,再辨析<strong>真实工作点噪声 $\sigma_{\text{real}}$</strong>:为何 $\sigma_{\text{det}}$ 会低估真实噪声约 5×、$\sigma_{\text{real}}$ 如何定义(≈ 标定 RMS,到 10⁻⁶)、其中可建模的系统偏差 var(b) 仅 1.5–3.3% 且减之无效。</p>
@@ -1661,7 +1661,7 @@ document.addEventListener("readystatechange", function() {
 </tr>
 </tbody>
 </table>
-<p><img src="https://uipv4.zywvvd.com:33030/HexoFiles/files/four-eyed-vision-calibration/stage2_sdet_vs_dist.png" srcset="/img/loading.gif" lazyload alt="sdet_dist"><br>
+<p><img src="https://img.zywvvd.com:61213/HexoFiles/files/four-eyed-vision-calibration/stage2_sdet_vs_dist.png" srcset="/img/loading.gif" lazyload alt="sdet_dist"><br>
 <em>$\sigma_{\text{det}}$ vs 板距:$\sigma_{\text{det}}$ 随距离<strong>略降</strong>(0.028→0.018),远距板小但检测更稳(板更正面、光照更匀)。各机趋势一致、绝对值接近(0.018–0.028px),差异主要来自传感器/对焦。</em></p>
 <p><strong>跨组池化(后续 Fisher 用此 $\sigma_{\text{det}}$)</strong>:</p>
 <table>
@@ -1856,7 +1856,7 @@ document.addEventListener("readystatechange", function() {
 </tr>
 </tbody>
 </table>
-<p><img src="https://uipv4.zywvvd.com:33030/HexoFiles/files/four-eyed-vision-calibration/exp_sigma_hierarchy.png" srcset="/img/loading.gif" lazyload alt="$\sigma_{\text{real}}$ 噪声层级"></p>
+<p><img src="https://img.zywvvd.com:61213/HexoFiles/files/four-eyed-vision-calibration/exp_sigma_hierarchy.png" srcset="/img/loading.gif" lazyload alt="$\sigma_{\text{real}}$ 噪声层级"></p>
 <h4 id="4-5-var-b-拆解-——-系统偏差-b-vs-随机噪声-逐格算法-可视化">4.5 var(b) 拆解 —— 系统偏差 b vs 随机噪声(逐格算法 + 可视化)</h4>
 <p>$\sigma_{\text{real}}$ 里有多少是<strong>系统偏差 b</strong>(可建模、可消除),多少是<strong>随机</strong>(不可消除)?关键:残差是 2D 矢量,只有把像面分格、看<strong>同一格跨多张图</strong>的统计,才能区分「跨图一致的固定偏置 b」与「跨图抖动的随机散布」——单张图无法区分二者(模型偏差与噪声叠在一起)。</p>
 <p><strong>逐机算法</strong>(与 <code>lib/experiments.py::_cell_diagnostic</code> 一致;网格版见 <code>lib/exp_sigma_real.py::_cell_grids</code> / <code>_fig_resid_grid</code>):</p>
@@ -1926,12 +1926,12 @@ document.addEventListener("readystatechange", function() {
 <p><strong>怎么读</strong>:b 是<strong>典型格</strong>(跨格取中位)的系统偏置;var(b)=1.5–3.3% ⇒ 即便按振幅 b/$\sigma_{\text{real}}$ 也只 12–18%,<strong>系统偏差是 $\sigma_{\text{real}}$ 的次要项</strong>;随机/b ≈ 5–6× ⇒ 残差能量里随机主导约一个量级。(注:b 与「随机」是<strong>典型格</strong>的中位估计,而 $\sigma_{\text{real}}$ 是全点<strong>均值</strong> RMS、被高方差的边缘格抬高,故 var(b)+var(随机)≈62–88% 而 ≠100%——这不影响「系统偏差占比」结论,因分子分母同源比较。)</p>
 </blockquote>
 <p><strong>24×24 残差格可视化</strong>(上排=固定 b,下排=随机;每格即算法第 4–5 步的 b_mag/r_mag):</p>
-<p><img src="https://uipv4.zywvvd.com:33030/HexoFiles/files/four-eyed-vision-calibration/exp_sigma_resid_grid.png" srcset="/img/loading.gif" lazyload alt="归一化像面残差格"><br>
+<p><img src="https://img.zywvvd.com:61213/HexoFiles/files/four-eyed-vision-calibration/exp_sigma_resid_grid.png" srcset="/img/loading.gif" lazyload alt="归一化像面残差格"><br>
 <em>上排(固定 b,magma):全视场中位 ≈0.015–0.021px、与 $\sigma_{\text{det}}$ 同量级、<strong>无中心大块亮斑</strong>——若有 ⇒ 存在未被模型吃掉的空间结构畸变。下排(随机,viridis):≈0.09–0.11px、比 b 大 ~6×、相当均匀 ⇒ 残差是逐图随机噪声。这与残差校正场因果干预的 <strong>0% 增益</strong>互为印证:减掉任何低阶空间场 test RMS 纹丝不动 ⇒ 残差里确无可建模的大块结构。</em></p>
 <blockquote>
 <p>var(b) 是<strong>方差</strong>占比:残差是 2D 矢量,方差才是 RMS² 的线性贡献者,故判据用 var(b) 而非振幅。两台 rational(1.5–1.7%)显著低于两台 brown5(3.0–3.3%),与「rational 多 3 个径向项吃掉更多系统偏差」一致。</p>
 </blockquote>
-<p><img src="https://uipv4.zywvvd.com:33030/HexoFiles/files/four-eyed-vision-calibration/exp_sigma_variance.png" srcset="/img/loading.gif" lazyload alt="残差方差拆解"></p>
+<p><img src="https://img.zywvvd.com:61213/HexoFiles/files/four-eyed-vision-calibration/exp_sigma_variance.png" srcset="/img/loading.gif" lazyload alt="残差方差拆解"></p>
 <h4 id="4-6-b-可忽略的两条独立证据">4.6 b 可忽略的两条独立证据</h4>
 <p><strong>(证据① 网格中位直测)</strong>:上表 b≈0.015–0.021px,与 $\sigma_{\text{det}}$≈0.023px <strong>同量级</strong>。若 b 是大块未建模畸变,它应 ≫ $\sigma_{\text{det}}$;实测仅与传感器噪声相当 ⇒ 没有未被模型吃掉的大块系统偏差。</p>
 <p><strong>(证据② 残差校正因果干预,决定性)</strong>:把测出的 b 场当<strong>固定偏移</strong>从独立测试集投影里减掉,看 test RMS 降不降。b 若真是系统偏差,减掉它必线性降 test RMS;若纹丝不动,则 b 是标定集过拟合产物、无泛化意义。</p>
@@ -1982,7 +1982,7 @@ document.addEventListener("readystatechange", function() {
 </tbody>
 </table>
 <p>⇒ <strong>P 法 4 机全部 ≈0.0%、G 法反升 −0.7~−1.3%(过拟合)</strong>。减掉 b 场 test RMS 纹丝不动 ⇒ <strong>b 不可建模利用,可忽略</strong>。与残差校正场实验互为印证。</p>
-<p><img src="https://uipv4.zywvvd.com:33030/HexoFiles/files/four-eyed-vision-calibration/exp_sigma_correction.png" srcset="/img/loading.gif" lazyload alt="残差校正因果干预"></p>
+<p><img src="https://img.zywvvd.com:61213/HexoFiles/files/four-eyed-vision-calibration/exp_sigma_correction.png" srcset="/img/loading.gif" lazyload alt="残差校正因果干预"></p>
 <h4 id="4-7-模型选型自洽-cam3-4-用-brown5-的-var-b-同样受控">4.7 模型选型自洽:cam3/4 用 brown5 的 var(b) 同样受控</h4>
 <p>四机内参按相机选畸变模型(选型细节见 §5.3):cam1/2(4MP)用 rational(12 参),cam3/4(2MP)用 brown5(9 参),判据是独立测试 RMS 而非训练 RMS。cam3/4 用更简单的 brown5,var(b) 却同样小,因为<strong>选阶机制本身就是对系统偏差的内置惩罚</strong>。</p>
 <table>
@@ -2022,7 +2022,7 @@ document.addEventListener("readystatechange", function() {
 </tbody>
 </table>
 <p>cam1/2 是 4MP、边缘畸变大,brown5 拟合不足(test +47%);选 rational 吃掉这部分 ⇒ var(b) 降到 1.5–1.7%。cam3/4 是 2MP、视场小、畸变温和,rational 的 k4–k6 在 test 上几乎无增益(1–1.5%,低于标定噪声);留 brown5 反而省 3 个不可辨识自由度(条件数更低更稳),var(b)=3.0–3.3% 仍与 $\sigma_{\text{det}}$ 同量级。选阶判据(test RMS)本身就是「系统偏差有多大」的度量——凡被选中的模型,都是该机系统偏差已被压到最小的那个,故「逐机 var(b) 都小」是选型机制的必然,非巧合。cam3/4 不上 rational 的原因也在此:其 +1% 增益低于标定噪声,多出的 k4–k6 不可辨识(条件数≈10⁸),只会让 Fisher 协方差病态。</p>
-<p><img src="https://uipv4.zywvvd.com:33030/HexoFiles/files/four-eyed-vision-calibration/exp_sigma_model_select.png" srcset="/img/loading.gif" lazyload alt="模型选型自洽"></p>
+<p><img src="https://img.zywvvd.com:61213/HexoFiles/files/four-eyed-vision-calibration/exp_sigma_model_select.png" srcset="/img/loading.gif" lazyload alt="模型选型自洽"></p>
 <h4 id="4-8-边界与结论">4.8 边界与结论</h4>
 <ul>
 <li><strong>边界</strong>:b 只测了<strong>空间固定</strong>的系统偏差;<strong>逐图变化</strong>的偏差(每图位姿/对焦/光照微变引起的)被统计进「随机」分量,故 var(b)=1.5–3.3% 是系统偏差下界。残差校正因果干预(§4.6)的零增益兜底:即便把逐图变化的偏差也算上,test RMS 也降不动。§4.9© 给出能直接分离「姿态依赖模型偏差」与纯噪声的决定性实验。</li>
@@ -2152,7 +2152,7 @@ document.addEventListener("readystatechange", function() {
 </tr>
 </tbody>
 </table>
-<p><img src="https://uipv4.zywvvd.com:33030/HexoFiles/files/four-eyed-vision-calibration/stage3_intrinsics.png" srcset="/img/loading.gif" lazyload alt="stage3"><br>
+<p><img src="https://img.zywvvd.com:61213/HexoFiles/files/four-eyed-vision-calibration/stage3_intrinsics.png" srcset="/img/loading.gif" lazyload alt="stage3"><br>
 <em>左:fx;中:训练 RMS;右:测试泛化 RMS by 距离。测试 RMS = 真实逐图定位噪声 $\sigma_{\text{real}}$,auto 后 0.10–0.14px。</em></p>
 <h4 id="5-2-最终内参与测试泛化">5.2 最终内参与测试泛化</h4>
 <p><strong>最终内参 $\theta$ ± 10 折不确定度</strong>(交付值;auto 亚像素窗口已部署,值 ± kfold $\sigma$):</p>
@@ -2327,9 +2327,9 @@ document.addEventListener("readystatechange", function() {
 </tr>
 </tbody>
 </table>
-<p><img src="https://uipv4.zywvvd.com:33030/HexoFiles/files/four-eyed-vision-calibration/exp_model_compare.png" srcset="/img/loading.gif" lazyload alt="model_compare"><br>
+<p><img src="https://img.zywvvd.com:61213/HexoFiles/files/four-eyed-vision-calibration/exp_model_compare.png" srcset="/img/loading.gif" lazyload alt="model_compare"><br>
 <em>cam1/cam2 分距离测试 RMS:brown5 在<strong>全部 5 个距离</strong>都高于 rational(均值 +47%)。</em></p>
-<p><img src="https://uipv4.zywvvd.com:33030/HexoFiles/files/four-eyed-vision-calibration/exp_model_compare_theta.png" srcset="/img/loading.gif" lazyload alt="model_compare_theta"><br>
+<p><img src="https://img.zywvvd.com:61213/HexoFiles/files/four-eyed-vision-calibration/exp_model_compare_theta.png" srcset="/img/loading.gif" lazyload alt="model_compare_theta"><br>
 <em>(a) 训练 vs 测试 RMS:brown5 <strong>训练 RMS 也高一倍</strong>(0.26 vs 0.12)—— 模型本身拟合不了,不是过拟合;(b) 径向畸变系数:brown5 把畸变硬塞进 k1-3,与 rational 的 k1-6 数值完全不同(不可逐参比,只比净畸变曲线)。</em></p>
 <p><strong>cam1/2 的 brown5 完整内参 $\theta$ ± 10 折 $\sigma$</strong>(对照 rational 表):</p>
 <table>
@@ -2453,14 +2453,14 @@ test RMS 用「fisheye.undistortPoints → 归一化光线 → solvePnP(I,0) →
 <p><strong>结论:不值得切换</strong>。四机相对增益均在 ±3.1% 内(远未达&quot;切换阈值&quot; 5%),且 cam2(最高分辨率)<br>
 鱼眼反而更差。物理上 cam1/2 视场 ≈64°、cam3/4 ≈71°,<strong>均非鱼眼镜头</strong>(鱼眼 &gt;100°),强套<br>
 Kannala-Brandt 径向模型无优势。这与全文主诊断一致:<strong>模型不是瓶颈</strong>,换更丰富畸变提不了精度。</p>
-<p><img src="https://uipv4.zywvvd.com:33030/HexoFiles/files/four-eyed-vision-calibration/exp_fisheye_compare.png" srcset="/img/loading.gif" lazyload alt="fisheye"> <img src="https://uipv4.zywvvd.com:33030/HexoFiles/files/four-eyed-vision-calibration/exp_fisheye_kfold.png" srcset="/img/loading.gif" lazyload alt="fisheyekf"></p>
+<p><img src="https://img.zywvvd.com:61213/HexoFiles/files/four-eyed-vision-calibration/exp_fisheye_compare.png" srcset="/img/loading.gif" lazyload alt="fisheye"> <img src="https://img.zywvvd.com:61213/HexoFiles/files/four-eyed-vision-calibration/exp_fisheye_kfold.png" srcset="/img/loading.gif" lazyload alt="fisheyekf"></p>
 <p><em>左:pooled test RMS 鱼眼 vs 现行,基本并列(cam1 鱼眼略高);右:K 折留出 RMS 鱼眼 ≥ 现行 train RMS,无泛化优势。</em></p>
 <h4 id="5-5-10-折交叉验证-经验不确定度">5.5 10 折交叉验证:经验不确定度</h4>
 <p><strong>方法</strong>(经验 Monte Carlo 不确定度):把每机 good pool(~146–158 张)随机均分 10 份;每次留 1 份作验证、其余 ~130 张标定得 $\theta_k$;跨 10 折 $\theta_k$ 的 <code>std(ddof=1)</code> = 该参数的经验不确定度(回答&quot;如果重新采集等量数据,$\theta$ 会飘多少&quot;)。最终 $\theta$ = 全 good pool 标定(用全部数据,精度最高);kfold $\sigma$ 衡量 $\theta$ 的<strong>可重复性</strong>。固定随机种子(seed=42)保证可复现。</p>
 <p><strong>结果图表</strong>:</p>
-<p><img src="https://uipv4.zywvvd.com:33030/HexoFiles/files/four-eyed-vision-calibration/exp_kfold_detail.png" srcset="/img/loading.gif" lazyload alt="kfold_detail"><br>
+<p><img src="https://img.zywvvd.com:61213/HexoFiles/files/four-eyed-vision-calibration/exp_kfold_detail.png" srcset="/img/loading.gif" lazyload alt="kfold_detail"><br>
 <em>逐参数 kfold $\sigma$ 分组柱(4 相机 × 9/12 参数,对数纵轴)。主参(fx/fy/cx/cy)&lt;1px;畸变项 cam1/2(rational)$\sigma$ 大(参数间近退化),cam3/4(brown5)$\sigma$ 极小。</em></p>
-<p><img src="https://uipv4.zywvvd.com:33030/HexoFiles/files/four-eyed-vision-calibration/exp_kfold_ratio.png" srcset="/img/loading.gif" lazyload alt="kfold_ratio"><br>
+<p><img src="https://img.zywvvd.com:61213/HexoFiles/files/four-eyed-vision-calibration/exp_kfold_ratio.png" srcset="/img/loading.gif" lazyload alt="kfold_ratio"><br>
 <em>kfold $\sigma$ / Fisher CRLB($\sigma_{\text{det}}$) 比值热图:fx 比值 24–81×($\sigma_{\text{det}}$ 口径);换 $\sigma_{\text{real}}$ 后 4.7–15.6×(参数非唯一)。</em></p>
 <p><strong>解读</strong>:</p>
 <ul>
@@ -2519,7 +2519,7 @@ Kannala-Brandt 径向模型无优势。这与全文主诊断一致:<strong>模�
 </tr>
 </tbody>
 </table>
-<p><img src="https://uipv4.zywvvd.com:33030/HexoFiles/files/four-eyed-vision-calibration/stage4_fisher_check.png" srcset="/img/loading.gif" lazyload alt="stage4"></p>
+<p><img src="https://img.zywvvd.com:61213/HexoFiles/files/four-eyed-vision-calibration/stage4_fisher_check.png" srcset="/img/loading.gif" lazyload alt="stage4"></p>
 <blockquote>
 <p>「比值($\sigma_{\text{det}}$)≫1 ⇒ 模型/数据受限」不成立:CRLB 分母用 $\sigma_{\text{det}}$(静态≈0.023px),而真实逐图噪声 $\sigma_{\text{real}}$≈RMS≈0.12px 是其 ~5.3×,CRLB∝$\sigma$ 线性 ⇒ 比值被同比放大。$\sigma_{\text{real}}$ 口径下 fx k/CRLB 仅 4.7–15.6×,残差 = Brown 近退化的<strong>参数非唯一性</strong>(非可降 RMS)。主结论 = <strong>检测噪声 $\sigma_{\text{real}}$ 受限</strong>,非模型受限。畸变项(k1–k6)CRLB 因 cond≈10⁸ 不可靠,不作诊断。</p>
 </blockquote>
@@ -2794,7 +2794,7 @@ Kannala-Brandt 径向模型无优势。这与全文主诊断一致:<strong>模�
 <li><strong>横向 J 一致优于 S</strong>(−7.5/−14.5/−20.6%,随相机数增大):联合 BA 松开内参后 rig 跨机旋转落到更优几何 ⇒ 横向收紧;相机越多越依赖跨机外参一致性 ⇒ 收益越大。</li>
 <li><strong>为什么不直接用 J 作生产外参</strong>:① 横向改善的绝对量亚 0.1mm(横向本就优秀 0.08–0.35mm),统计一致但实际边际;② J 把 rig 基线<strong>系统性放大</strong> +0.8~+1.3mm(三机同向,fx↔tz 病态方向的指纹 ⇒ 准确度顾虑);③ 参数从 18(+板位姿)暴涨到 552,过拟合风险(cam1 fx 滑 8$\sigma$)。<strong>收益不抵代价</strong>,生产仍选冻结内参。</li>
 </ul>
-<p><img src="https://uipv4.zywvvd.com:33030/HexoFiles/files/four-eyed-vision-calibration/exp_jointba_test.png" srcset="/img/loading.gif" lazyload alt="jointba_test"><br>
+<p><img src="https://img.zywvvd.com:61213/HexoFiles/files/four-eyed-vision-calibration/exp_jointba_test.png" srcset="/img/loading.gif" lazyload alt="jointba_test"><br>
 <em>左:深度 z J≈S 持平(BA 无增益,贴地板);中:横向 xy J 一致优于 S(BA 收紧外参);右:Δ%——深度~0、横向随相机数负向增大。</em></p>
 <blockquote>
 <p>内参泛化判定:<strong>主指标用 rig 无关的单机测试 RMS</strong>(每张测试图每机独立 PnP+投影,完全不用外参,无法被共享板位姿过拟合)。它显示 J vs S 差 &lt;0.004px ⇒ <strong>内参没变好</strong>;端到端横向改善来自 rig 外参(独立参数),不来自内参。注意:多机 rig 拟合 RMS 会给 J 报 −44%(0.098px&lt;$\sigma_{\text{real}}$ 物理不可能)——那是对共享板位姿过拟合的指标伪影,<strong>不可作判定</strong>,必须配单机泛化或端到端测试交叉验证。机理与信息椭球见 §6.6。</p>
@@ -2894,13 +2894,13 @@ Kannala-Brandt 径向模型无优势。这与全文主诊断一致:<strong>模�
 </li>
 </ol>
 <p><strong>结论</strong>:J 横向边际更优但绝对量可忽略(亚 0.1mm);J 基线被系统性放大(+0.8~+1.3mm,两独立方法之外的高估 ⇒ 准确度顾虑);552 参过拟合风险(cam1 fx 滑 8$\sigma$)。生产选方案二(冻结),是「收益不抵代价」,非 J 不可用。联合 BA 的价值有二:① 公平口径下证明「冻结 vs 联合」在深度上无差别(反证深度已贴地板);② 主动暴露 fx↔tz 不可辨识(§6.6),印证「外参必须冻结内参估」。</p>
-<p><img src="https://uipv4.zywvvd.com:33030/HexoFiles/files/four-eyed-vision-calibration/exp_extr_baselines.png" srcset="/img/loading.gif" lazyload alt="外参四方案逐机基线"><br>
+<p><img src="https://img.zywvvd.com:61213/HexoFiles/files/four-eyed-vision-calibration/exp_extr_baselines.png" srcset="/img/loading.gif" lazyload alt="外参四方案逐机基线"><br>
 <em>四方案逐机基线:方案一/二重合、方案三系统偏高 1.3mm;方案四≈方案二。</em></p>
-<p><img src="https://uipv4.zywvvd.com:33030/HexoFiles/files/four-eyed-vision-calibration/exp_extr_rig_overlay.png" srcset="/img/loading.gif" lazyload alt="四方案 rig 几何叠加"><br>
+<p><img src="https://img.zywvvd.com:61213/HexoFiles/files/four-eyed-vision-calibration/exp_extr_rig_overlay.png" srcset="/img/loading.gif" lazyload alt="四方案 rig 几何叠加"><br>
 <em>rig 叠加俯视图(cam1 原点,各方案 rig 几何几乎重合)。</em></p>
-<p><img src="https://uipv4.zywvvd.com:33030/HexoFiles/files/four-eyed-vision-calibration/exp_extr_generalization.png" srcset="/img/loading.gif" lazyload alt="外参泛化"><br>
+<p><img src="https://img.zywvvd.com:61213/HexoFiles/files/four-eyed-vision-calibration/exp_extr_generalization.png" srcset="/img/loading.gif" lazyload alt="外参泛化"><br>
 <em>训练 rig-RMS(紫)vs 诚实单机泛化测试 RMS(红星,rig 无关):方案三训练最低、单机泛化正常(0.121px≈$\sigma_{\text{real}}$)。端到端公平口径见 §6.2.3 表。</em></p>
-<p><img src="https://uipv4.zywvvd.com:33030/HexoFiles/files/four-eyed-vision-calibration/exp_extr_kfold.png" srcset="/img/loading.gif" lazyload alt="外参 10 折"><br>
+<p><img src="https://img.zywvvd.com:61213/HexoFiles/files/four-eyed-vision-calibration/exp_extr_kfold.png" srcset="/img/loading.gif" lazyload alt="外参 10 折"><br>
 <em>10 折基线 $\sigma$ vs Fisher CRLB(对数轴):各方案均远高于 CRLB 但绝对值 &lt;0.11mm ⇒ 外参过定;方案二/四最稳($\sigma$≈0.01mm)、方案一/三中等($\sigma$≈0.07–0.10mm)。注意:方案三的 fx↔tz 非唯一性<strong>不</strong>表现在 kfold $\sigma$(0.07mm &lt; 方案一 0.10mm),而表现在上表「基线偏离均值」1.29mm 的系统性放大——是偏置,不是方差。</em></p>
 <p><strong>置信度评定</strong>(rubric:基线偏差 &lt;1mm 且 kfold $\sigma_{\max}$ &lt;1mm ⇒ High;否则按非唯一性降级):</p>
 <table>
@@ -2945,7 +2945,7 @@ Kannala-Brandt 径向模型无优势。这与全文主诊断一致:<strong>模�
 <li><strong>相对位姿导出</strong>:rig 外参由各机绝对位姿换算:$R_{jw}=R_j R_1^{\mathsf{T}}$,<code>t_jw = t_j − R_jw·t_1</code>。</li>
 </ol>
 <p><strong>数据</strong>:96 个<strong>四机同检</strong>同步快照(从 217 个同步快照筛出,<code>if any(cam 未检出): continue</code>);标定板 11×8 内角点、25mm 方格(<code>core/base/board.yaml</code>,square_size 为标称值,TODO 复测——仅缩放 t/CRLB 的绝对 mm,不影响比值结论);内参冻结 = cam1/2 rational、cam3/4 brown5。BA RMS = <strong>0.295 px</strong>(96 快照、四机重投影),较消歧均值 <code>scheme1</code> 的 0.391 px 降 24%;消歧簇内翻转快照数 <strong>cam2/3/4 全为 0</strong>(数据干净,无歧义残留)。</p>
-<p><img src="https://uipv4.zywvvd.com:33030/HexoFiles/files/four-eyed-vision-calibration/stage5_rig.png" srcset="/img/loading.gif" lazyload alt="stage5"> <img src="https://uipv4.zywvvd.com:33030/HexoFiles/files/four-eyed-vision-calibration/stage8_rig_3d.png" srcset="/img/loading.gif" lazyload alt="rig3d"><br>
+<p><img src="https://img.zywvvd.com:61213/HexoFiles/files/four-eyed-vision-calibration/stage5_rig.png" srcset="/img/loading.gif" lazyload alt="stage5"> <img src="https://img.zywvvd.com:61213/HexoFiles/files/four-eyed-vision-calibration/stage8_rig_3d.png" srcset="/img/loading.gif" lazyload alt="rig3d"><br>
 <em>左:生产 rig 外参俯视图(cam1 原点)。右:同一 rig 的 3D 位姿(4 机光学中心 + 光轴朝向 + 板心视锥连线),梯形布局——cam1/cam2(4MP)顶宽边 1207mm、cam3/cam4(2MP)底窄边 340mm、高 ~380mm。</em></p>
 <h4 id="6-4-外参-Fisher-基线能定多准">6.4 外参 Fisher:基线能定多准</h4>
 <p><strong>目标</strong>:用 Fisher 信息问&quot;rig 相对位姿(基线)能定多准&quot;。把每快照板位姿(6/快照)+ 各机内参当干扰<strong>边缘化掉</strong>(Schur 补),得只含 rig 外参的边际信息 → 基线 CRLB。看外参是否过定(远小于基线 ⇒ 强约束 ⇒ 外参不是瓶颈)。</p>
@@ -3037,9 +3037,9 @@ Kannala-Brandt 径向模型无优势。这与全文主诊断一致:<strong>模�
 </tr>
 </tbody>
 </table>
-<p><img src="https://uipv4.zywvvd.com:33030/HexoFiles/files/four-eyed-vision-calibration/exp_jointba_train_test.png" srcset="/img/loading.gif" lazyload alt="jointba1"><br>
+<p><img src="https://img.zywvvd.com:61213/HexoFiles/files/four-eyed-vision-calibration/exp_jointba_train_test.png" srcset="/img/loading.gif" lazyload alt="jointba1"><br>
 <em>训练 RMS 逐机(J 微降)、诚实单机测试 RMS 逐距离/逐机(J≈S 持平,主判定)、三指标增益对比(训练↓、诚实测试→0、多机 rig 拟合伪↓)。</em></p>
-<p><img src="https://uipv4.zywvvd.com:33030/HexoFiles/files/four-eyed-vision-calibration/exp_jointba_intr_shift.png" srcset="/img/loading.gif" lazyload alt="jointba2"><br>
+<p><img src="https://img.zywvvd.com:61213/HexoFiles/files/four-eyed-vision-calibration/exp_jointba_intr_shift.png" srcset="/img/loading.gif" lazyload alt="jointba2"><br>
 <em>内参移动 Δ$\theta$(J−S),误差棒 = k 折 $\sigma$。cam1 fx +2.68px=8.1$\sigma$(远超误差棒),却对单机测试 RMS 零影响 ⇒ fx↔tz 不可辨识(参数非唯一),非系统修正。</em></p>
 <p><strong>过拟合警示</strong>:多机 rig 拟合 RMS 给 J 报 −44%(0.098px&lt;$\sigma_{\text{real}}$≈0.12px 物理不可能),是它<strong>奖励对共享板位姿结构的过拟合</strong>(板位姿 6DOF/快照足以吸掉大量残差)。⇒ 凡用 BA 拟合 RMS 判&quot;哪个方案更精&quot;,都需配 <strong>rig 无关的单机泛化</strong>或<strong>端到端测试集测量</strong>(<code>exp_joint_ba_test.py</code>,§6.2.3)交叉验证,否则必被过拟合欺骗。这正说明为何 §6.2.3 端到端表才是联合 BA 的公平口径。</p>
 <h4 id="6-6-fx↔tz-尺度退化-联合-BA-基线为何被放大">6.6 fx↔tz 尺度退化:联合 BA 基线为何被放大</h4>
@@ -3101,7 +3101,7 @@ Fisher 信息 ∝ L² ≈ 0.1–0.4%,CRLB 比典型方向松 ~15–25×。<stron
 </table>
 <p>⇒ 联合信息椭球<strong>最扁的那根轴 = fx↔tz 尺度方向</strong>,被几何判定为全局优化的最弱点。优化器一旦沿它滑(哪怕几 $\sigma$),重投影不报警,<br>
 但绝对 rig 尺度已漂——这正是 cam1 fx 滑 8$\sigma$ 的数学身份。</p>
-<p><img src="https://uipv4.zywvvd.com:33030/HexoFiles/files/four-eyed-vision-calibration/exp_jointba_ellipsoid.png" srcset="/img/loading.gif" lazyload alt="ellipsoid"><br>
+<p><img src="https://img.zywvvd.com:61213/HexoFiles/files/four-eyed-vision-calibration/exp_jointba_ellipsoid.png" srcset="/img/loading.gif" lazyload alt="ellipsoid"><br>
 <em>左:联合 Fisher 信息特征值谱(对数轴),最弱值比最强小 10¹⁰×。右:最弱特征向量组成——焦距 + 深度平移占 99%,证实最扁轴 = 尺度协同漂移方向。</em></p>
 <p><strong>(3) 高斯先验反证:钉住尺度方向 ⇒ 收敛回冻结解、零增益</strong></p>
 <p>若病根真是这条弱尺度方向,那么<strong>只用先验把它钉住</strong>(不冻结其余)就应让 J 收敛回 S。变体 P = 联合 BA + 内参高斯先验<br>
@@ -3139,7 +3139,7 @@ Fisher 信息 ∝ L² ≈ 0.1–0.4%,CRLB 比典型方向松 ~15–25×。<stron
 <p>先验把 fx↔tz 方向钉住后:fx 漂移 8$\sigma$ → 0.6$\sigma$、基线回到 S 的 10⁻³ 量级、单机泛化 <strong>P ≈ S(−0.07%,无增益)</strong>。<br>
 即<strong>先验 ≈ 冻结</strong>——用&quot;单目已知的 fx&quot;软钉病态方向,与硬冻结等价,<strong>换不来精度</strong>(单目 fx 本就在 $\sigma_{\text{real}}$ 地板,无头部空间可挖;<br>
 任何联合移动都是纯漂移而非改进)。先验权重调对(= k 折 $\sigma$)⇒ 塌缩成冻结;调松 ⇒ 漂移复来。</p>
-<p><img src="https://uipv4.zywvvd.com:33030/HexoFiles/files/four-eyed-vision-calibration/exp_jointba_prior.png" srcset="/img/loading.gif" lazyload alt="prior"><br>
+<p><img src="https://img.zywvvd.com:61213/HexoFiles/files/four-eyed-vision-calibration/exp_jointba_prior.png" srcset="/img/loading.gif" lazyload alt="prior"><br>
 <em>逐机 Δfx(相对 S):J 漂移多 $\sigma$(cam1 8.1$\sigma$)、P 收敛回 0(误差棒 = k 折 $\sigma$)。先验把 fx↔tz 病态方向钉住 ⇒ P ≈ S,数值印证&quot;先验 ≈ 冻结&quot;。</em></p>
 <p><strong>三角度合一的结论</strong>:联合优化并非&quot;处处不准&quot;,而是<strong>在 fx↔tz 尺度方向上病态</strong>(信息椭球最扁轴,κ ≈ 10¹⁰);<br>
 该方向天生最弱(板尺寸/距离 ≈ 1/8 的二阶杠杆,正对姿态下精确退化),rig 平移的加入让它成为全局最弱点。<br>
@@ -3311,9 +3311,9 @@ Fisher 信息 ∝ L² ≈ 0.1–0.4%,CRLB 比典型方向松 ~15–25×。<stron
 </table>
 <p><em>深度 z 实测 / CRLB($\sigma_{\text{real}}$)≈<strong>0.7–0.9×</strong>(贴理论下界,$\sigma_{\text{model}}$≈0);横向 xy≈<strong>1.2–2.4×</strong>(略高于极限,边缘帧 $\sigma_{\text{real}}$ 更大所致)。$\sigma_{\text{det}}$ 口径下 z 比值虚高至 4–5×,是分母用 $\sigma_{\text{det}}$ 被低估 5.3× 所致。</em></p>
 <p><strong>按相机数 / 基线分档</strong>(替换原 10 张逐组合子表;完整组合数据基线·相机数曲线):</p>
-<p><img src="https://uipv4.zywvvd.com:33030/HexoFiles/files/four-eyed-vision-calibration/report_depth_vs_real.png" srcset="/img/loading.gif" lazyload alt="depth_vs_real"><br>
+<p><img src="https://img.zywvvd.com:61213/HexoFiles/files/four-eyed-vision-calibration/report_depth_vs_real.png" srcset="/img/loading.gif" lazyload alt="depth_vs_real"><br>
 <em>实测 z RMS vs 真实板心深度,按相机数/基线分档:2 目最长基线 cam1+cam2(B=1207mm)与 4 目几乎重合(加相机对深度收益仅 ~1–2%/目);2 目最短基线 cam3+cam4(B=340mm)显著最差。灰虚线=解析地板 $\sigma_z$=z²·$\sigma_{\text{real}}$/(f·B)。深度 ∝ $z^{\sim1.5}$(非教科书 z²——本 rig 有限会聚角下远场近似不成立)。</em></p>
-<p><img src="https://uipv4.zywvvd.com:33030/HexoFiles/files/four-eyed-vision-calibration/report_measured_vs_crlb.png" srcset="/img/loading.gif" lazyload alt="measured_vs_crlb"><br>
+<p><img src="https://img.zywvvd.com:61213/HexoFiles/files/four-eyed-vision-calibration/report_measured_vs_crlb.png" srcset="/img/loading.gif" lazyload alt="measured_vs_crlb"><br>
 <em>4 目实测 vs Fisher CRLB($\sigma_{\text{real}}$):实测 z(红实线)贴 CRLB z($\sigma_{\text{real}}$)(红虚线,z/CRLB≈0.8×);实测 xy(蓝实线)略高于 CRLB xy($\sigma_{\text{real}}$)(蓝虚线,xy/CRLB≈1.9×)。$\sigma_{\text{real}}$ 口径下理论与实测闭环。</em></p>
 <p><strong>全 11 组相机组合的实测精度</strong>(生产 4 目 + 其余 10 组子配置;行按相机数分组、组内按 z 中位升序;CRLB 用 <strong>$\sigma_{\text{real}}$ 口径</strong> = $\sigma_{\text{det}}$×5.3):</p>
 <p><em>深度 z RMS(mm)</em> —— 基线主导,非相机数主导:</p>
@@ -3570,7 +3570,7 @@ Fisher 信息 ∝ L² ≈ 0.1–0.4%,CRLB 比典型方向松 ~15–25×。<stron
 </tr>
 </tbody>
 </table>
-<p><img src="https://uipv4.zywvvd.com:33030/HexoFiles/files/four-eyed-vision-calibration/report_all_combos.png" srcset="/img/loading.gif" lazyload alt="all_combos"><br>
+<p><img src="https://img.zywvvd.com:61213/HexoFiles/files/four-eyed-vision-calibration/report_all_combos.png" srcset="/img/loading.gif" lazyload alt="all_combos"><br>
 <em>全 11 组合 × 5 真实距离的实测 z(左)/xy(右)RMS 热图(对数色,按 z 中位升序 ⇒ 基线长→短)。读图:① 顶 4 行(cam1+cam2 长基线核心, B=1207mm)z 列几近重合 —— 加目对深度收益 ≤1–2%/目,深度精度由最长基线独占;② 底行 cam3+cam4(B=340mm)整片最亮,z 差 5–6×;③ xy(右)大体随相机数增多而下降(4 目最优),同一相机数下含 cam1+cam2 核心的组合横向也更准;④ 全部组合 z/CRLB($\sigma_{\text{real}}$)≤1.1×,整张配置空间贴 $\sigma_{\text{real}}$ 地板,非模型受限 —— 生产 4 目同时吃到了 cam1-cam2 的长基线深度红利与全视角的横向红利。</em></p>
 <h4 id="7-3-多目三角化的-Fisher-原理">7.3 多目三角化的 Fisher 原理</h4>
 <p>融合算法(如何把 C 机观测合成一个 3D 点)见 §2.8;本节专讲<strong>这个估计能多准</strong> —— 即三角化 Fisher 信息给出的理论精度下界(CRLB),以及它为何把深度判为弱轴。</p>
@@ -3654,9 +3654,9 @@ Fisher 信息 ∝ L² ≈ 0.1–0.4%,CRLB 比典型方向松 ~15–25×。<stron
 </tr>
 </tbody>
 </table>
-<p><img src="https://uipv4.zywvvd.com:33030/HexoFiles/files/four-eyed-vision-calibration/stage8_rig_front.png" srcset="/img/loading.gif" lazyload alt="stage8_rig_front"></p>
-<p><img src="https://uipv4.zywvvd.com:33030/HexoFiles/files/four-eyed-vision-calibration/stage8_rig_topdown.png" srcset="/img/loading.gif" lazyload alt="stage8_rig_topdown"></p>
-<p><img src="https://uipv4.zywvvd.com:33030/HexoFiles/files/four-eyed-vision-calibration/stage8_rig_3d.png" srcset="/img/loading.gif" lazyload alt="stage8_rig_3d"></p>
+<p><img src="https://img.zywvvd.com:61213/HexoFiles/files/four-eyed-vision-calibration/stage8_rig_front.png" srcset="/img/loading.gif" lazyload alt="stage8_rig_front"></p>
+<p><img src="https://img.zywvvd.com:61213/HexoFiles/files/four-eyed-vision-calibration/stage8_rig_topdown.png" srcset="/img/loading.gif" lazyload alt="stage8_rig_topdown"></p>
+<p><img src="https://img.zywvvd.com:61213/HexoFiles/files/four-eyed-vision-calibration/stage8_rig_3d.png" srcset="/img/loading.gif" lazyload alt="stage8_rig_3d"></p>
 <p><em>正视=相机平面(梯形面,标边长);俯视=水平-深度(板心在各真实距离,绿虚线=相机平面);3D=相机+板心+视锥连线。cam1/cam2(4MP)=顶宽边 1207mm,cam3/cam4(2MP)=底窄边 340mm,高 ~380mm。</em></p>
 <h4 id="7-6-真实距离与测量重复性">7.6 真实距离与测量重复性</h4>
 <p><strong>目标</strong>:确定每个测试档的真实距离,并量化&quot;同一距离反复摆放&quot;的重复性。文件夹名(1/1.5/2/2.5/3m)只是标称,精确分析须用<strong>实测</strong>距离 —— 把每快照的板心三角化、投影到 rig 深度法向,取组内均值作为该档真实距离(比 cam1 世界 Z 或标称更准,因为 rig 原点在质心)。</p>
@@ -3703,14 +3703,14 @@ Fisher 信息 ∝ L² ≈ 0.1–0.4%,CRLB 比典型方向松 ~15–25×。<stron
 </tbody>
 </table>
 <p><em>距离=板心到 rig 平面<strong>垂直距离</strong>(每快照三角化板心→投影到深度法向→组内<strong>均值</strong>),非 cam1 世界 Z、非文件夹标称。</em></p>
-<p><img src="https://uipv4.zywvvd.com:33030/HexoFiles/files/four-eyed-vision-calibration/stage8_distance_repeatability.png" srcset="/img/loading.gif" lazyload alt="repeatability"><br>
+<p><img src="https://img.zywvvd.com:61213/HexoFiles/files/four-eyed-vision-calibration/stage8_distance_repeatability.png" srcset="/img/loading.gif" lazyload alt="repeatability"><br>
 <em>每组每快照的实测深度箱线(◆=均值,散点=各快照)。组内$\sigma$(13-30mm)= 同一距离多次摆放的重复性,随距离增大(远距定位更难);各档均值与标称 1/1.5/2/2.5/3m 系统偏小 = rig 原点(质心)在板与相机之间。</em></p>
 <h4 id="7-7-Fisher-信息-vs-真实误差-精确剖析">7.7 Fisher 信息 vs 真实误差:精确剖析</h4>
 <p>§7.2 给出了 4 目(及全 11 组合)的实测误差与 CRLB($\sigma_{\text{real}}$)对比,结论是<strong>深度贴理论下界、横向略高</strong>。本节从四个互补角度印证该结论(方差分解、有效噪声、几何依赖、边缘 $\sigma_{\text{real}}$),并解释 $\sigma_{\text{det}}$ 口径下「差 4–5×」的来源(分母被低估 5.3×,详见 §10)。$\sigma_{\text{det}}$/$\sigma_{\text{real}}$ 的区分与数学在 §4/§10 已建立,此处只做实测剖析。</p>
-<p><img src="https://uipv4.zywvvd.com:33030/HexoFiles/files/four-eyed-vision-calibration/stage8_theory_vs_actual.png" srcset="/img/loading.gif" lazyload alt="theory"><br>
+<p><img src="https://img.zywvvd.com:61213/HexoFiles/files/four-eyed-vision-calibration/stage8_theory_vs_actual.png" srcset="/img/loading.gif" lazyload alt="theory"><br>
 <em>左:深度 z;右:横向 xy。实线=实测(最优组合),虚线=Fisher 理论($\sigma_{\text{det}}$ 口径,故低于实测 ~5×),点线=解析双目 $\sigma_z$=z²$\sigma_{\text{det}}$/(fB)。$\sigma_{\text{real}}$ 重标(×5.3)后二者贴合。</em></p>
 <h5 id="7-7-1-误差预算-方差分解">7.7.1 误差预算:方差分解</h5>
-<p><img src="https://uipv4.zywvvd.com:33030/HexoFiles/files/four-eyed-vision-calibration/stage8_error_decomposition.png" srcset="/img/loading.gif" lazyload alt="decomp"></p>
+<p><img src="https://img.zywvvd.com:61213/HexoFiles/files/four-eyed-vision-calibration/stage8_error_decomposition.png" srcset="/img/loading.gif" lazyload alt="decomp"></p>
 <p>方差分解 $\sigma_{\text{meas}}$² = $\sigma_{\text{CRLB}}$($\sigma_{\text{real}}$)² + $\sigma_{\text{model}}$²。下表按管线原样的 <strong>$\sigma_{\text{det}}$ 口径</strong>展示(故 CRLB 被低估 5.3×,把 $\sigma_{\text{real}}$ 噪声虚算成「模型方差」);$\sigma_{\text{real}}$ 重算见结论。</p>
 <p><strong>深度 z</strong>(4 目最优,mm²):</p>
 <table>
@@ -3813,7 +3813,7 @@ Fisher 信息 ∝ L² ≈ 0.1–0.4%,CRLB 比典型方向松 ~15–25×。<stron
 <p><strong>$\sigma_{\text{real}}$ 口径重算</strong>(CRLB 换 $\sigma_{\text{real}}$):深度 $\sigma_{\text{model}}$=√($\sigma$实测²−CRLB($\sigma_{\text{real}}$)²),因实测/CRLB($\sigma_{\text{real}}$)≈0.8–1.0、实测²&lt;CRLB($\sigma_{\text{real}}$)² ⇒ <strong>$\sigma_{\text{model}}$≈0</strong>(方差为负→裁零=已贴极限),深度<strong>无模型偏差</strong>。横向 xy 实测/CRLB($\sigma_{\text{real}}$)≈1–3×(略高于极限),小幅超出由边缘帧 $\sigma_{\text{real}}$ 更大拉高,仍以检测噪声主导。⇒ <strong>系统贴 $\sigma_{\text{real}}$ 检测噪声地板,非模型受限</strong>;五杠杆零增益正交证实。</p>
 <h5 id="7-7-2-有效噪声-sigma-text-eff">7.7.2 有效噪声 $\sigma_{\text{eff}}$</h5>
 <p>Fisher CRLB <strong>线性于 $\sigma_{\text{det}}$</strong>(I∝1/$\sigma$²)。若把 $\sigma_{\text{det}}$ 放大 ratio 倍,Fisher 曲线 = ratio×原曲线。下图显示这条「Fisher($\sigma_{\text{eff}}$)」曲线几乎精确穿过实测。</p>
-<p><img src="https://uipv4.zywvvd.com:33030/HexoFiles/files/four-eyed-vision-calibration/stage8_effective_noise.png" srcset="/img/loading.gif" lazyload alt="effnoise"></p>
+<p><img src="https://img.zywvvd.com:61213/HexoFiles/files/four-eyed-vision-calibration/stage8_effective_noise.png" srcset="/img/loading.gif" lazyload alt="effnoise"></p>
 <table>
 <thead>
 <tr>
@@ -3849,9 +3849,9 @@ Fisher 信息 ∝ L² ≈ 0.1–0.4%,CRLB 比典型方向松 ~15–25×。<stron
 </table>
 <p><strong>关键洞察:$\sigma_{\text{eff}}$=ratio×$\sigma_{\text{det}}$ 恰=$\sigma_{\text{real}}$</strong>(深度 0.099px、横向 0.244px ≈ 逐图 $\sigma_{\text{real}}$)——即「Fisher($\sigma_{\text{eff}}$) 曲线贴合实测」<strong>不是因为模型误差冒充噪声,而是因为分母终于用对了($\sigma_{\text{real}}$)</strong>;ratio≈4–11× 正是 $\sigma_{\text{real}}$/$\sigma_{\text{det}}$。实测与理论幂律斜率几乎相同($z^{\sim1.6}$ vs $z^{\sim1.5}$,二者<strong>平行</strong>;非教科书 z²——本 rig 有限会聚角下远场近似不成立)。⇒ 整体噪声地板=$\sigma_{\text{real}}$,非被模型偏差抬高。</p>
 <h5 id="7-7-3-比值的几何依赖">7.7.3 比值的几何依赖</h5>
-<p><img src="https://uipv4.zywvvd.com:33030/HexoFiles/files/four-eyed-vision-calibration/stage8_ratio_curves.png" srcset="/img/loading.gif" lazyload alt="ratiocurves"><br>
+<p><img src="https://img.zywvvd.com:61213/HexoFiles/files/four-eyed-vision-calibration/stage8_ratio_curves.png" srcset="/img/loading.gif" lazyload alt="ratiocurves"><br>
 <em>左:比值 vs 距离(每相机数曲线基本水平)⇒ $\sigma_{\text{real}}$/$\sigma_{\text{det}}$ 跨距离恒定;右:比值 vs 基线(短基线偏高)。全网中位 <strong>5.0×</strong>≈$\sigma_{\text{real}}$/$\sigma_{\text{det}}$。</em></p>
-<p><img src="https://uipv4.zywvvd.com:33030/HexoFiles/files/four-eyed-vision-calibration/stage8_ratio_heatmap.png" srcset="/img/loading.gif" lazyload alt="heatmap"><br>
+<p><img src="https://img.zywvvd.com:61213/HexoFiles/files/four-eyed-vision-calibration/stage8_ratio_heatmap.png" srcset="/img/loading.gif" lazyload alt="heatmap"><br>
 <em>组合 × 距离的比值热图:全网均匀偏高(无个别异常)⇒ $\sigma_{\text{real}}$/$\sigma_{\text{det}}$ 全网一致。</em></p>
 <ul>
 <li><strong>距离无关</strong>:固定组合下比值跨 5 档距离几乎不变 ⇒ $\sigma_{\text{real}}$/$\sigma_{\text{det}}$ 在各距离大致恒定($\sigma_{\text{real}}$ 始终≈5×$\sigma_{\text{det}}$)。</li>
@@ -3859,17 +3859,17 @@ Fisher 信息 ∝ L² ≈ 0.1–0.4%,CRLB 比典型方向松 ~15–25×。<stron
 </ul>
 <h5 id="7-7-4-边缘-sigma-text-real-更大-检测噪声的实测根源">7.7.4 边缘 $\sigma_{\text{real}}$ 更大:检测噪声的实测根源</h5>
 <p>系统贴 $\sigma_{\text{real}}$ 地板,但 $\sigma_{\text{real}}$ 并非处处相等——逐图 $\sigma_{\text{real}}$ 跨度 0.07–0.19px,最差 10% 帧的定位噪声是最优 10% 的 2.7×。把 4 目三角化的板点回投到各机,残差随<strong>像径(距主点)增大</strong>而上升:</p>
-<p><img src="https://uipv4.zywvvd.com:33030/HexoFiles/files/four-eyed-vision-calibration/stage8_reproj_vs_radius.png" srcset="/img/loading.gif" lazyload alt="reproj"><br>
+<p><img src="https://img.zywvvd.com:61213/HexoFiles/files/four-eyed-vision-calibration/stage8_reproj_vs_radius.png" srcset="/img/loading.gif" lazyload alt="reproj"><br>
 <em>像场边缘残差↑ = <strong>边缘 $\sigma_{\text{real}}$ 更大</strong>(边缘分辨率下降/畸变大→角点变钝、对比度低→SNR 低;离焦),<strong>非「畸变模型吃不掉高阶畸变」</strong>——鱼眼、rational 加阶、残差校正场全部零增益已排除模型归因。</em></p>
-<p><img src="https://uipv4.zywvvd.com:33030/HexoFiles/files/four-eyed-vision-calibration/stage8_board_error_field.png" srcset="/img/loading.gif" lazyload alt="boardfield"><br>
+<p><img src="https://img.zywvvd.com:61213/HexoFiles/files/four-eyed-vision-calibration/stage8_board_error_field.png" srcset="/img/loading.gif" lazyload alt="boardfield"><br>
 <em>板上各角点平均误差的空间分布(上=深度 z,下=横向 xy)。误差呈空间结构(边缘/特定区偏高)⇒ 这是 <strong>$\sigma_{\text{real}}$ 在像场上的不均匀</strong>(边缘高)经同一多目几何放大后的几何印记,而非系统模型偏差(已证模型项≈0)。</em></p>
 <h5 id="7-7-5-空间精度足迹">7.7.5 空间精度足迹</h5>
-<p><img src="https://uipv4.zywvvd.com:33030/HexoFiles/files/four-eyed-vision-calibration/stage8_fisher_ellipses.png" srcset="/img/loading.gif" lazyload alt="ellipses"><br>
+<p><img src="https://img.zywvvd.com:61213/HexoFiles/files/four-eyed-vision-calibration/stage8_fisher_ellipses.png" srcset="/img/loading.gif" lazyload alt="ellipses"><br>
 <em>各距离 4 目 1$\sigma$ 椭圆(×30 放大;实线=Fisher 理论($\sigma_{\text{det}}$),虚线=实测(=$\sigma_{\text{real}}$))。纵轴(深度 z)远长于横轴(水平 x)⇒ <strong>深度是多目几何的固有弱轴</strong>;实测椭圆比 $\sigma_{\text{det}}$ 理论大~5×、两轴同步放大 = $\sigma_{\text{real}}$&gt;$\sigma_{\text{det}}$ 的均匀缩放,非各向异性模型误差。椭圆随距离增长 = $\sigma$∝$z^{\sim1.5}$ 的几何体现。</em></p>
 <h4 id="7-8-精度-vs-基线、vs-相机数">7.8 精度 vs 基线、vs 相机数</h4>
 <p><strong>目标</strong>:回答三个工程问题 —— (1) 精度随<strong>基线长度</strong>怎么变?(2) 加更多<strong>相机</strong>还有收益吗?(3) rig 外参(基线)本身定得够不够准?前两者看实测,第三者看外参 CRLB(与 §6.4 互证)。</p>
-<p><img src="https://uipv4.zywvvd.com:33030/HexoFiles/files/four-eyed-vision-calibration/stage8_precision_vs_baseline.png" srcset="/img/loading.gif" lazyload alt="stage8_precision_vs_baseline"></p>
-<p><img src="https://uipv4.zywvvd.com:33030/HexoFiles/files/four-eyed-vision-calibration/stage8_precision_vs_camcount.png" srcset="/img/loading.gif" lazyload alt="stage8_precision_vs_camcount"></p>
+<p><img src="https://img.zywvvd.com:61213/HexoFiles/files/four-eyed-vision-calibration/stage8_precision_vs_baseline.png" srcset="/img/loading.gif" lazyload alt="stage8_precision_vs_baseline"></p>
+<p><img src="https://img.zywvvd.com:61213/HexoFiles/files/four-eyed-vision-calibration/stage8_precision_vs_camcount.png" srcset="/img/loading.gif" lazyload alt="stage8_precision_vs_camcount"></p>
 <p><em>左:固定距离下 z ∝ 1/B(点沿 1/B 参考线分布,颜色=距离);右:各距离 2/3/4 目最优组合(○△□)。<br>
 <strong>相机数收益递减</strong>:最长基线 cam1-cam2(1207mm)已被 2 目覆盖,加第 3、4 目(主要引入更短基线)对深度 z 的边际增益仅 ~1-2%/目;真正卡精度的是<strong>基线长度</strong>与<strong>检测噪声 $\sigma_{\text{real}}$</strong>,不是相机数。</em></p>
 <p><strong>外参 CRLB vs 联合标定相机数</strong>(与 §6.4 互证外参过定):基线估计精度 ~0.01μm(亚微米),与相机数<strong>几乎无关</strong>——25 个共享板位姿已充分过定相对位姿,加相机不再提升外参精度(旋转 CRLB 仅小幅改善 0.319°→0.192°)。</p>
@@ -3911,7 +3911,7 @@ Fisher 信息 ∝ L² ≈ 0.1–0.4%,CRLB 比典型方向松 ~15–25×。<stron
 </tr>
 </tbody>
 </table>
-<p><img src="https://uipv4.zywvvd.com:33030/HexoFiles/files/four-eyed-vision-calibration/stage8_extrinsic_precision.png" srcset="/img/loading.gif" lazyload alt="extr"></p>
+<p><img src="https://img.zywvvd.com:61213/HexoFiles/files/four-eyed-vision-calibration/stage8_extrinsic_precision.png" srcset="/img/loading.gif" lazyload alt="extr"></p>
 <p>⇒ <strong>外参不是精度瓶颈</strong>(内参/外参/模型均非瓶颈,五杠杆零增益);加相机的真正价值是提供<strong>更多/不同基线</strong>(2 目 1 条 → 4 目 6 条配对基线),提升测量冗余与视场覆盖,而非外参精度本身。</p>
 <h4 id="7-9-多目精度-结果与测量极限">7.9 多目精度:结果与测量极限</h4>
 <p><strong>最终结论</strong>:</p>
@@ -3987,7 +3987,7 @@ Fisher 信息 ∝ L² ≈ 0.1–0.4%,CRLB 比典型方向松 ~15–25×。<stron
 </tr>
 </tbody>
 </table>
-<p><img src="https://uipv4.zywvvd.com:33030/HexoFiles/files/four-eyed-vision-calibration/report_measured_vs_crlb.png" srcset="/img/loading.gif" lazyload alt="measured_vs_crlb"><br>
+<p><img src="https://img.zywvvd.com:61213/HexoFiles/files/four-eyed-vision-calibration/report_measured_vs_crlb.png" srcset="/img/loading.gif" lazyload alt="measured_vs_crlb"><br>
 <em>4 目实测 z(红实线)贴 CRLB z($\sigma_{\text{real}}$)(红虚线,z/CRLB≈0.8× ⇒ 深度达理论极限);实测 xy(蓝实线)略高于 CRLB xy($\sigma_{\text{real}}$)(蓝虚线,xy/CRLB≈1.9× ⇒ 横向小幅超出,边缘 $\sigma_{\text{real}}$ 更大所致)。</em></p>
 <p><strong>读法</strong>:4 目在 1–3m 工作距离上,深度测量精度 <strong>0.06–0.31mm</strong>、横向 <strong>0.08–0.29mm</strong>;深度已在 CRLB($\sigma_{\text{real}}$)理论极限上(z/CRLB≈0.8×,模型项≈0),横向在极限的 ~1.9× 处(可解释为边缘帧 $\sigma_{\text{real}}$ 更大,非模型偏差)。<strong>这就是本组数据在当前检测噪声 $\sigma_{\text{real}}$≈0.12px 下的测量极限</strong>;深度无系统性压缩空间,横向的边缘偏高只能靠降低 $\sigma_{\text{real}}$(检测侧,§11)缩小。</p>
 <p><strong>可靠性边界</strong>:</p>
@@ -4080,25 +4080,25 @@ Fisher 信息 ∝ L² ≈ 0.1–0.4%,CRLB 比典型方向松 ~15–25×。<stron
 </table>
 <p>测试 RMS 校正前后<strong>完全相同</strong>(增益 0.0%);多项式各阶留出 RMS 都 ≈ 无场 baseline(CV 一律选最低阶 2);<br>
 拟合集上反而 −7%(过拟合噪声)。⇒ <strong>固定残差场不可行</strong>。</p>
-<p><img src="https://uipv4.zywvvd.com:33030/HexoFiles/files/four-eyed-vision-calibration/exp_residual_test_rms.png" srcset="/img/loading.gif" lazyload alt="testrms"></p>
+<p><img src="https://img.zywvvd.com:61213/HexoFiles/files/four-eyed-vision-calibration/exp_residual_test_rms.png" srcset="/img/loading.gif" lazyload alt="testrms"></p>
 <p><em>独立测试集(5 距离)RMS:校正前(浅)/后(深)几乎重合 ⇒ 固定场对测试精度零增益。</em></p>
-<p><img src="https://uipv4.zywvvd.com:33030/HexoFiles/files/four-eyed-vision-calibration/exp_residual_cv.png" srcset="/img/loading.gif" lazyload alt="cv"> <img src="https://uipv4.zywvvd.com:33030/HexoFiles/files/four-eyed-vision-calibration/exp_residual_methods.png" srcset="/img/loading.gif" lazyload alt="methods"></p>
+<p><img src="https://img.zywvvd.com:61213/HexoFiles/files/four-eyed-vision-calibration/exp_residual_cv.png" srcset="/img/loading.gif" lazyload alt="cv"> <img src="https://img.zywvvd.com:61213/HexoFiles/files/four-eyed-vision-calibration/exp_residual_methods.png" srcset="/img/loading.gif" lazyload alt="methods"></p>
 <p><em>左:多项式各阶 K 折留出 RMS ≈ baseline(虚线),★=最优(都选最低阶)⇒ 加场不降残差;</em><br>
 <em>右:无校正 / 多项式 P / 网格-RBF G 三者 pooled 测试 RMS 并列 ⇒ 与方法无关,均无增益。</em></p>
-<p><img src="https://uipv4.zywvvd.com:33030/HexoFiles/files/four-eyed-vision-calibration/exp_residual_field.png" srcset="/img/loading.gif" lazyload alt="field"></p>
+<p><img src="https://img.zywvvd.com:61213/HexoFiles/files/four-eyed-vision-calibration/exp_residual_field.png" srcset="/img/loading.gif" lazyload alt="field"></p>
 <p><em>全局残差矩阵(模型 G 稠密化,du/dv):全场幅值 ~0.01px,已低于 $\sigma_{\text{det}}$ ⇒ 几乎没有可建模结构。</em></p>
-<p><img src="https://uipv4.zywvvd.com:33030/HexoFiles/files/four-eyed-vision-calibration/exp_residual_quiver.png" srcset="/img/loading.gif" lazyload alt="quiver"> <img src="https://uipv4.zywvvd.com:33030/HexoFiles/files/four-eyed-vision-calibration/exp_residual_vs_radius.png" srcset="/img/loading.gif" lazyload alt="radius"></p>
+<p><img src="https://img.zywvvd.com:61213/HexoFiles/files/four-eyed-vision-calibration/exp_residual_quiver.png" srcset="/img/loading.gif" lazyload alt="quiver"> <img src="https://img.zywvvd.com:61213/HexoFiles/files/four-eyed-vision-calibration/exp_residual_vs_radius.png" srcset="/img/loading.gif" lazyload alt="radius"></p>
 <p><em>左:固定校正偏移场矢量(箭长=px),整体极短 ⇒ 场接近零;右:残差幅值 vs 归一化半径,校正前后重合 ⇒ 未吃掉任何径向结构。</em></p>
 <h4 id="8-4-真因定位-固定场无效的根源">8.4 真因定位:固定场无效的根源</h4>
 <p><strong>(B) 空间一致性诊断 —— 核心证据</strong>。把归一化平面分格,同一格 = 同一图像位置,跨多张图看残差:</p>
-<p><img src="https://uipv4.zywvvd.com:33030/HexoFiles/files/four-eyed-vision-calibration/exp_residual_diagnostic.png" srcset="/img/loading.gif" lazyload alt="diag"></p>
+<p><img src="https://img.zywvvd.com:61213/HexoFiles/files/four-eyed-vision-calibration/exp_residual_diagnostic.png" srcset="/img/loading.gif" lazyload alt="diag"></p>
 <p><em>同一图像位置的残差:格内跨图 std(逐图随机,0.094–0.109px)≫ 格中位 |残差|(固定可建模,0.015–0.021px),比值 5–6×。<br>
 固定分量 0.015–0.021px 与 $\sigma_{\text{det}}$(0.021–0.024px)<strong>同量级</strong>,且 var(b) 仅占残差方差 1.5–3.3% ⇒ 没有显著超噪声的、可插值的空间结构,残差主体(方差 60–85%)是逐图随机。</em></p>
 <p><strong>© 板非平面排除</strong>。联合求解每角点板系 z 偏移(88 个跨图共享未知数,res ≈ g·z_j):RMS 仅降 0.4–0.7%,<br>
 反解 |z| ≤ 0.06mm(板厚量级)⇒ 标定板足够平,<strong>非平面不是原因</strong>。</p>
 <p><strong>(D) 真实定位噪声</strong>。逐图残差全局偏置仅 ~0.0001px(solvePnP 已吸收刚体平移),残差是纯单角点散布;<br>
 其有效 2D $\sigma$($\sigma_{\text{real}}$)≈ 0.12px,是静态爆发 $\sigma_{\text{det}}$(0.023px)的 <strong>5.1–5.7×</strong>。</p>
-<p><img src="https://uipv4.zywvvd.com:33030/HexoFiles/files/four-eyed-vision-calibration/exp_residual_floor.png" srcset="/img/loading.gif" lazyload alt="floor"></p>
+<p><img src="https://img.zywvvd.com:61213/HexoFiles/files/four-eyed-vision-calibration/exp_residual_floor.png" srcset="/img/loading.gif" lazyload alt="floor"></p>
 <p><em>噪声层级:静态 $\sigma_{\text{det}}$ ≪ 真实逐图 $\sigma_{\text{real}}$ ≈ 重投影 RMS。真实逐图定位噪声远大于静态估计。</em></p>
 <h4 id="8-5-结论">8.5 结论</h4>
 <ul>
@@ -4182,7 +4182,7 @@ Fisher 信息 ∝ L² ≈ 0.1–0.4%,CRLB 比典型方向松 ~15–25×。<stron
 </tr>
 </tbody>
 </table>
-<p><img src="https://uipv4.zywvvd.com:33030/HexoFiles/files/four-eyed-vision-calibration/exp_kfold_detail.png" srcset="/img/loading.gif" lazyload alt="kfdetail"> <img src="https://uipv4.zywvvd.com:33030/HexoFiles/files/four-eyed-vision-calibration/exp_kfold_ratio.png" srcset="/img/loading.gif" lazyload alt="kfratio"></p>
+<p><img src="https://img.zywvvd.com:61213/HexoFiles/files/four-eyed-vision-calibration/exp_kfold_detail.png" srcset="/img/loading.gif" lazyload alt="kfdetail"> <img src="https://img.zywvvd.com:61213/HexoFiles/files/four-eyed-vision-calibration/exp_kfold_ratio.png" srcset="/img/loading.gif" lazyload alt="kfratio"></p>
 <p><em>左:逐参数 k 折 $\sigma$(经验)vs CRLB(理论下界);右:比值热图(对数色),畸变项比值极大。</em></p>
 <p><strong>(b) 为何比值 ≫1 —— 分母是关键</strong>。CRLB 用的 $\sigma_a$ 来自<strong>静态爆发</strong> $\sigma_{\text{det}}$(0.023px),<br>
 而 k 折散布含<strong>真实逐图定位噪声</strong> $\sigma_{\text{real}}$≈0.12px(单轴 $\sigma$≈0.085px,是 $\sigma_a$ 的 <strong>~5.3×</strong>)。<br>
@@ -4194,7 +4194,7 @@ Fisher 信息 ∝ L² ≈ 0.1–0.4%,CRLB 比典型方向松 ~15–25×。<stron
 cx↔p1)弱约束、强耦合(相关阵非对角绝对值可达 0.5–0.9)。但参数<strong>仍可分辨</strong>:k 折间 $\theta$ 稳定(fx $\sigma$ 0.19–0.56px,<br>
 相对 fx≈2034/1346 仅 0.01–0.04%),高 cond 反映&quot;参数沿耦合方向联合不确定&quot;而非&quot;无法求解&quot;。<br>
 cam4 k 折散布最大(fx 0.56、cx 0.79),可信度略低。</p>
-<p><img src="https://uipv4.zywvvd.com:33030/HexoFiles/files/four-eyed-vision-calibration/exp_kfold_stability.png" srcset="/img/loading.gif" lazyload alt="kfstab"></p>
+<p><img src="https://img.zywvvd.com:61213/HexoFiles/files/four-eyed-vision-calibration/exp_kfold_stability.png" srcset="/img/loading.gif" lazyload alt="kfstab"></p>
 <p><em>K 折稳定性:$\sigma_{fx}$ 随 K=2…15 收敛(经验不确定度已饱和,不再随抽样数下降);条件数柱;cam1/cam3 参数相关阵(红=正相关/蓝=负相关,对角为 1)。</em></p>
 <h3 id="10-Fisher-精度的-sigma-口径-sigma-text-det-与-sigma-text-real-的区分">10. Fisher 精度的 $\sigma$ 口径:$\sigma_{\text{det}}$ 与 $\sigma_{\text{real}}$ 的区分</h3>
 <p>若系统已贴噪声地板、无系统误差可建模(四杠杆 + 联合 BA 全零增益),为何 Fisher 理论精度看起来还差好几倍到几十倍(kfold/CRLB≈24–81×、深度实测/CRLB($\sigma_{\text{det}}$)≈4–5×、“模型方差占 95%”)?根源在 Fisher 信息矩阵 I=$J<sup>{\mathsf{T}}\Sigma</sup>{-1}J$ 的 $\Sigma$ 选取。</p>
@@ -4242,7 +4242,7 @@ cam4 k 折散布最大(fx 0.56、cx 0.79),可信度略低。</p>
 </tr>
 </tbody>
 </table>
-<p><img src="https://uipv4.zywvvd.com:33030/HexoFiles/files/four-eyed-vision-calibration/exp_fisher_sigma_intrinsics.png" srcset="/img/loading.gif" lazyload alt="fsig1"><br>
+<p><img src="https://img.zywvvd.com:61213/HexoFiles/files/four-eyed-vision-calibration/exp_fisher_sigma_intrinsics.png" srcset="/img/loading.gif" lazyload alt="fsig1"><br>
 <em>把 Fisher 的 $\sigma_{\text{det}}$ 换成 $\sigma_{\text{real}}$(放大 ~5.3×)后,fx 的 kfold/CRLB 由 24–81× 降到 4.7–15.6×(对数轴)。</em></p>
 <p><strong>(b) 深度实测/CRLB:4.3–5.5× → 0.81–1.04×(贴 CRLB!)</strong>(下表为全部 2/3/4 目组合的平均 z 误差;与 © 用 「4 目最优」单列不同,故 1m 的 0.129 &gt; © 的 0.071,但两表的<strong>比值结论一致</strong>)</p>
 <table>
@@ -4299,7 +4299,7 @@ cam4 k 折散布最大(fx 0.56、cx 0.79),可信度略低。</p>
 </tr>
 </tbody>
 </table>
-<p><img src="https://uipv4.zywvvd.com:33030/HexoFiles/files/four-eyed-vision-calibration/exp_fisher_sigma_depth.png" srcset="/img/loading.gif" lazyload alt="fsig2"><br>
+<p><img src="https://img.zywvvd.com:61213/HexoFiles/files/four-eyed-vision-calibration/exp_fisher_sigma_depth.png" srcset="/img/loading.gif" lazyload alt="fsig2"><br>
 <em>左:深度误差实测(黑)贴在 CRLB($\sigma_{\text{real}}$,蓝)上,远高于 CRLB($\sigma_{\text{det}}$,红虚线);右:$\sigma_{\text{real}}$ 口径下实测/CRLB≈0.9(达理论极限)。</em></p>
 <p><strong>深度「差 4 倍」不存在</strong>——用 $\sigma_{\text{real}}$ 重标定 Fisher 后,rig 深度精度<strong>本就在理论 CRLB 上</strong>(比值 0.81–1.04,集中在 ~0.9,部分 &lt;1 是因为&quot;实测&quot;是组内 Kabsch 对齐的重复性散布而非绝对误差,且 CRLB 对单点三角化;≈0.9 即&quot;达极限&quot;),没有模型误差可挖。</p>
 <p><strong>© 「模型方差占 95%」同样是 $\sigma_{\text{det}}$ 分母所致</strong>。分解 $\sigma_{\text{model}}$²=$\sigma_{\text{real}}$²−$\sigma_{\text{CRLB}}$($\sigma_{\text{det}}$)² 把&quot;$\sigma_{\text{real}}$ 与 $\sigma_{\text{det}}$ 的差&quot;记成了模型误差。换成 $\sigma_{\text{real}}$ 口径:</p>
@@ -4358,7 +4358,7 @@ cam4 k 折散布最大(fx 0.56、cx 0.79),可信度略低。</p>
 </tbody>
 </table>
 <p>$\sigma_{\text{model}}$²=$\sigma$实测²−$\sigma_{\text{CRLB}}$($\sigma_{\text{real}}$)² 全部为<strong>负</strong> ⇒ 模型方差 = 0,实测完全落在(乃至低于)$\sigma_{\text{real}}$ 噪声预算内。「95% 模型方差」是 $\sigma_{\text{det}}$ 记账造成的错觉,不是物理。</p>
-<p><img src="https://uipv4.zywvvd.com:33030/HexoFiles/files/four-eyed-vision-calibration/exp_fisher_sigma_decomp.png" srcset="/img/loading.gif" lazyload alt="fsig3"><br>
+<p><img src="https://img.zywvvd.com:61213/HexoFiles/files/four-eyed-vision-calibration/exp_fisher_sigma_decomp.png" srcset="/img/loading.gif" lazyload alt="fsig3"><br>
 <em>fx kfold/CRLB($\sigma_{\text{det}}$) 总差距的对数分解 = $\sigma$ 口径因子(橙,≈5.3×,$\sigma_{\text{det}}$ 低估所致)+ 参数不稳定残差(紫,4.7–15.6×)。</em></p>
 <p><strong>(d) 内参的剩余 4.7–15.6× 是什么?不是&quot;可降 RMS 的模型误差&quot;,是&quot;参数非唯一性&quot;</strong>。四杠杆 + 联合 BA<br>
 已证:任何模型侧手段都<strong>降不动 RMS</strong>(残差多项式 K 折留出曲线在阶 2→6 走平 = 无可建模结构;鱼眼/联合 BA 零增益)。<br>
@@ -4567,9 +4567,9 @@ cornerSubPix <strong>亚像素窗口/参数</strong>(<code>lib/exp_subpixel_swee
 <li><strong>cam4 auto −13.5%</strong>(远超最优安全固定 (7,7) −7.5%——因为 auto 近距用大窗(<sub>11)、远距用小窗(</sub>7),逐距离取最优,而固定 (7,7) 全程保守)。</li>
 <li>auto 逐距离:cam4 1m 0.141→0.134、2m 0.152→0.122、3m 0.161→0.150(<strong>各距离全降,3m 不发散</strong>);cam1 1m 0.125→0.097、3m 0.129→0.128(近距大降、远距持平)。</li>
 </ul>
-<p><img src="https://uipv4.zywvvd.com:33030/HexoFiles/files/four-eyed-vision-calibration/exp_subpixel_recal.png" srcset="/img/loading.gif" lazyload alt="subpix"><br>
+<p><img src="https://img.zywvvd.com:61213/HexoFiles/files/four-eyed-vision-calibration/exp_subpixel_recal.png" srcset="/img/loading.gif" lazyload alt="subpix"><br>
 <em>窗口扫描(5–13)+ auto(粗线):auto 各距离贴最优曲线、且永不双峰发散(4MP (13,13)、2MP (9,9)+ 均发散)。</em></p>
-<p><img src="https://uipv4.zywvvd.com:33030/HexoFiles/files/four-eyed-vision-calibration/exp_subpixel_trend.png" srcset="/img/loading.gif" lazyload alt="trend"><br>
+<p><img src="https://img.zywvvd.com:61213/HexoFiles/files/four-eyed-vision-calibration/exp_subpixel_trend.png" srcset="/img/loading.gif" lazyload alt="trend"><br>
 <em>趋势曲线(稳定区,线性):(a) 测试 RMS 随窗口<strong>单调下降</strong>(更多像素平均 ⇒ 更准)——4MP 从 w=5 的 0.119 降到 w=11 的 0.108、<br>
 2MP 从 w=5 的 0.152 降到 w=7 的 0.143;<strong>× 标在边界=双峰发散</strong>(超出稳定区,不画进曲线:4MP w=13、2MP w=9+)。<br>
 <strong>auto(★)取各机稳定区的最优点</strong>(cam1 0.1085、cam4 0.1334),又准又稳。(b) auto 两阶段逐距离<strong>全稳定无发散</strong>且优于 (5,5)。</em></p>
@@ -4680,11 +4680,11 @@ cornerSubPix 在 <code>winSize</code> 半窗(实采 (2w+1)² 像素)内<strong>�
 					<p class="tea">“觉得不错的话，给点打赏吧 ୧(๑•̀⌄•́๑)૭”</p>
 					<div id="rewardImgContainer" class="reward-img-container">
 						<div class="singleImgContainer">
-							<img id="wechatImg" class="reward-img" src="https://uipv4.zywvvd.com:33030/HexoFiles/vvd_pc_upload/wechatpay.png" srcset="/img/loading.gif" lazyload alt="微信二维码">
+							<img id="wechatImg" class="reward-img" src="https://img.zywvvd.com:61213/HexoFiles/vvd_pc_upload/wechatpay.png" srcset="/img/loading.gif" lazyload alt="微信二维码">
 							<p class="wechatPay">微信支付</p>
 						</div>
 						<div class="singleImgContainer">
-							<img id="alipayImg" class="reward-img" src="https://uipv4.zywvvd.com:33030/HexoFiles/vvd_pc_upload/alipay.png" srcset="/img/loading.gif" lazyload alt="支付宝二维码">
+							<img id="alipayImg" class="reward-img" src="https://img.zywvvd.com:61213/HexoFiles/vvd_pc_upload/alipay.png" srcset="/img/loading.gif" lazyload alt="支付宝二维码">
 							<p class="aliPay">支付宝支付</p>
 						</div>
 					</div>
@@ -5305,7 +5305,7 @@ cornerSubPix 在 <code>winSize</code> 半窗(实采 (2w+1)² 像素)内<strong>�
 		var s = document.createElement('script');
 		s.type='text/javascript';
 		document.body.appendChild(s);
-		s.src='https://uipv4.zywvvd.com:33030/HexoFiles/js/games/airplane/airplane.js';
+		s.src='https://img.zywvvd.com:61213/HexoFiles/js/games/airplane/airplane.js';
 		void(0);
 		};
 	}

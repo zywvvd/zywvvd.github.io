@@ -27,16 +27,16 @@
 <meta property="og:site_name" content="又见苍岚">
 <meta property="og:description" content="本文整理机械臂的基础:坐标系体系、位姿与旋转表示、正&#x2F;逆运动学、雅可比、奇异与冗余、动力学与力控,以及 TCP 与坐标系标定,作为后续雷达—机械臂手眼标定的前置准备。属 Robotics 笔记系列,另两篇为《齐次变换矩阵与 SE(3)》与《万向节死锁》。">
 <meta property="og:locale" content="zh_CN">
-<meta property="og:image" content="https://uipv4.zywvvd.com:33030/HexoFiles/files/robot-arm-fundamentals/raf_structure.png">
+<meta property="og:image" content="https://img.zywvvd.com:61213/HexoFiles/files/robot-arm-fundamentals/raf_structure.png">
 <meta property="article:published_time" content="2026-07-31T01:00:00.000Z">
-<meta property="article:modified_time" content="2026-10-10T01:09:25.122Z">
+<meta property="article:modified_time" content="2026-11-13T07:07:54.274Z">
 <meta property="article:author" content="Yiwei Zhang">
 <meta property="article:tag" content="Control">
 <meta property="article:tag" content="Kinematics">
 <meta property="article:tag" content="Manipulator">
 <meta property="article:tag" content="Robotics">
 <meta name="twitter:card" content="summary_large_image">
-<meta name="twitter:image" content="https://uipv4.zywvvd.com:33030/HexoFiles/files/robot-arm-fundamentals/raf_structure.png">
+<meta name="twitter:image" content="https://img.zywvvd.com:61213/HexoFiles/files/robot-arm-fundamentals/raf_structure.png">
   
   
   
@@ -1080,7 +1080,7 @@ document.addEventListener("readystatechange", function() {
   
 
 <div id="banner" class="banner" parallax=true
-     style="background: url('https://uipv4.zywvvd.com:33030/HexoFiles/new/bg-trans.png') no-repeat center center; background-size: cover;">
+     style="background: url('https://img.zywvvd.com:61213/HexoFiles/new/bg-trans.png') no-repeat center center; background-size: cover;">
   <div class="full-bg-img">
     <div class="mask flex-center" style="background-color: rgba(0, 0, 0, 0)">
       <div class="banner-text text-center fade-in-up">
@@ -1281,7 +1281,7 @@ document.addEventListener("readystatechange", function() {
                 
                   
                     <!-- compatible with older versions-->
-                    本文最后更新于：2026年10月10日 上午
+                    本文最后更新于：2026年11月13日 下午
                   
                 
               </p>
@@ -1304,7 +1304,7 @@ document.addEventListener("readystatechange", function() {
 </ul>
 <p>一个机械臂的&quot;几轴&quot;通常指旋转关节数。常见的六轴(6-DoF)工业机器人之所以是主流,是因为在三维空间中完整确定一个刚体的位姿(position + orientation)恰好需要 6 个自由度——3 个位置 + 3 个姿态。少于 6 个自由度的机械臂无法在任意位姿下定位末端;多于 6 个则称为<strong>冗余</strong>机械臂(见第 7 节)。</p>
 <p>末端位姿是关节变量的函数,这个&quot;关节 → 末端&quot;的映射由**运动学(kinematics)**描述。运动学不涉及力,只关心几何关系。</p>
-<p><img src="https://uipv4.zywvvd.com:33030/HexoFiles/files/robot-arm-fundamentals/raf_structure.png" srcset="/img/loading.gif" lazyload alt="机械臂的基本结构:基座、连杆、关节与末端执行器,旋转关节与移动关节,6 自由度对应 3 位置 + 3 姿态"></p>
+<p><img src="https://img.zywvvd.com:61213/HexoFiles/files/robot-arm-fundamentals/raf_structure.png" srcset="/img/loading.gif" lazyload alt="机械臂的基本结构:基座、连杆、关节与末端执行器,旋转关节与移动关节,6 自由度对应 3 位置 + 3 姿态"></p>
 <h3 id="2-坐标系体系">2. 坐标系体系</h3>
 <p>机器人用一组分层的(parent-child)坐标系来描述自身与工件。这一套坐标系由国际标准 ISO 8373(术语) 与 ISO 9787(坐标系与命名) 规范。常用的有以下几个:</p>
 <table>
@@ -1343,7 +1343,7 @@ document.addEventListener("readystatechange", function() {
 </table>
 <p>ISO 8373 对 TCP 的定义原文是:“tool centre point (TCP): point defined for a given application with regard to the mechanical interface coordinate system”。换句话说,TCP 是相对法兰定义的功能工作点——焊枪的焊嘴尖、夹爪的抓取中心、钻头的尖端,而不是法兰安装面本身。这一点在第 11 节还会展开。</p>
 <p>需要区分的一个细节:World 与 Base 不是天然相同的两个概念,但在最常见的&quot;机器人用螺栓固定在地面、不做底座偏移&quot;的安装下,二者数值上重合。在本文以及后续标定文档中,只要底座固定,<strong>用 World 还是 Base 指代同一个固定参考系都成立</strong>。</p>
-<p><img src="https://uipv4.zywvvd.com:33030/HexoFiles/files/robot-arm-fundamentals/raf_coords.png" srcset="/img/loading.gif" lazyload alt="机器人坐标系体系:World / Base / Joint / Flange(tool0) / Tool(TCP) / User Frame 的分层关系"></p>
+<p><img src="https://img.zywvvd.com:61213/HexoFiles/files/robot-arm-fundamentals/raf_coords.png" srcset="/img/loading.gif" lazyload alt="机器人坐标系体系:World / Base / Joint / Flange(tool0) / Tool(TCP) / User Frame 的分层关系"></p>
 <h3 id="3-位姿与旋转的数学表示">3. 位姿与旋转的数学表示</h3>
 <p>一个刚体在三维空间中的位姿由<strong>位置</strong>(3 个量)和<strong>姿态/朝向</strong>(3 个自由度)组成。姿态的表示方式有多种,各有取舍。这一节先建立数学对象,再给出工程选型建议。</p>
 <h4 id="3-1-旋转矩阵与-SO-3">3.1 旋转矩阵与 SO(3)</h4>
@@ -1411,7 +1411,7 @@ $$q = \cos(\theta/2) + \sin(\theta/2)\,(u_x\mathbf{i}+u_y\mathbf{j}+u_z\mathbf{k
 </tbody>
 </table>
 <p>一句话:<strong>控制器内部与插值用四元数,变换与运算用旋转矩阵,与用户交流用欧拉角。</strong></p>
-<p><img src="https://uipv4.zywvvd.com:33030/HexoFiles/files/robot-arm-fundamentals/raf_rotations.png" srcset="/img/loading.gif" lazyload alt="四种旋转表示的对比:欧拉角、旋转矩阵、轴角/旋转向量、单位四元数,各自的参数数与适用场景"></p>
+<p><img src="https://img.zywvvd.com:61213/HexoFiles/files/robot-arm-fundamentals/raf_rotations.png" srcset="/img/loading.gif" lazyload alt="四种旋转表示的对比:欧拉角、旋转矩阵、轴角/旋转向量、单位四元数,各自的参数数与适用场景"></p>
 <h4 id="3-7-伴随-Adjoint-矩阵">3.7 伴随(Adjoint)矩阵</h4>
 <p>在更现代的几何框架(如 Lynch &amp; Park《Modern Robotics》)中,刚体瞬时速度用 6 维<strong>旋量(twist)<strong>表示(3 维角速度 + 3 维线速度)。一个 SE(3) 变换 $T$(旋转 $R$、平移 $\mathbf{p}$)的</strong>伴随矩阵</strong>用于在坐标系之间变换旋量与力旋量:</p>
 $$[\mathrm{Ad}_T] = \begin{bmatrix} R & \mathbf{0} \\ [\mathbf{p}]_\times R & R \end{bmatrix}$$
@@ -1456,7 +1456,7 @@ $$\text{关节变量 } (q_1,\dots,q_n) \;\longrightarrow\; \text{末端位姿 } 
 </table>
 <p>每个关节的四个参数中<strong>只有一个是变量</strong>:旋转关节为 $\theta_i$,移动关节为 $d_i$;其余三个是结构常量。</p>
 <p>坐标系分配的规则是:$z_i$ 轴对齐关节轴线;$x_i$ 轴沿 $z_{i-1}$ 与 $z_i$ 的公垂线(公法线),指向从 $z_{i-1}$ 到 $z_i$;$y_i$ 由右手定则确定。当相邻两 $z$ 轴平行时公垂线不唯一($d_i$ 有任意性),相交时 $x_i$ 取两轴所在平面的法线($a_i=0$)——这导致 DH 参数<strong>并非唯一</strong>,同一台机器人可有多组等价参数表,比较不同教材/软件的参数时须先确认约定。</p>
-<p><img src="https://uipv4.zywvvd.com:33030/HexoFiles/files/robot-arm-fundamentals/raf_dh.png" srcset="/img/loading.gif" lazyload alt="DH 四参数的几何含义:连杆长度 a、扭角 α、偏距 d、关节角 θ,以及 z 轴对齐关节轴线、x 轴沿公垂线的坐标系分配"></p>
+<p><img src="https://img.zywvvd.com:61213/HexoFiles/files/robot-arm-fundamentals/raf_dh.png" srcset="/img/loading.gif" lazyload alt="DH 四参数的几何含义:连杆长度 a、扭角 α、偏距 d、关节角 θ,以及 z 轴对齐关节轴线、x 轴沿公垂线的坐标系分配"></p>
 <h4 id="4-3-标准-DH-与修正-DH">4.3 标准 DH 与修正 DH</h4>
 <p>这是最常见的混淆点。两种约定的差异体现在三处:</p>
 <table>
@@ -1495,7 +1495,7 @@ $${}^{i-1}T_i = \begin{bmatrix} c_\theta & -s_\theta & 0 & a_{i-1} \\ s_\theta c
 <p>$n$ 关节串联机械臂末端(相对基座)的位姿,等于各连杆变换矩阵的依次乘积:</p>
 $$T_n^0 = A_1(q_1)\, A_2(q_2)\, \cdots\, A_n(q_n)$$
 <p>其中每个 $A_i$ 仅是单个关节变量 $q_i$ 的函数。结果的左上 3×3 子矩阵是末端姿态,右上 3×1 列向量是末端位置。这条连乘关系是后续一切(逆运动学、控制、标定)的出发点。</p>
-<p><img src="https://uipv4.zywvvd.com:33030/HexoFiles/files/robot-arm-fundamentals/raf_fk.png" srcset="/img/loading.gif" lazyload alt="正运动学连乘:各连杆变换矩阵 A₁·A₂·…·Aₙ 依次相乘,把关节变量映射为末端位姿"></p>
+<p><img src="https://img.zywvvd.com:61213/HexoFiles/files/robot-arm-fundamentals/raf_fk.png" srcset="/img/loading.gif" lazyload alt="正运动学连乘:各连杆变换矩阵 A₁·A₂·…·Aₙ 依次相乘,把关节变量映射为末端位姿"></p>
 <h4 id="4-5-DH-数值算例">4.5 DH 数值算例</h4>
 <p>三个典型机型可对照&quot;标准 DH vs 修正 DH&quot;与不同自由度。</p>
 <p><strong>Universal Robots UR5(标准 DH)。</strong> UR 官方公布的标准 DH 参数:</p>
@@ -1726,7 +1726,7 @@ $$
 <blockquote>
 <p>工程启示:采集标定数据时应主动避开奇异位姿,否则即使能运动,IK 的数值误差也会污染位姿读数。</p>
 </blockquote>
-<p><img src="https://uipv4.zywvvd.com:33030/HexoFiles/files/robot-arm-fundamentals/raf_singularity.png" srcset="/img/loading.gif" lazyload alt="6 轴臂的三类奇异:腕部奇异(关节 4、6 轴线重合)、肘部奇异(臂完全伸直)、肩部奇异(腕心在关节 1、2 轴线平面内)"></p>
+<p><img src="https://img.zywvvd.com:61213/HexoFiles/files/robot-arm-fundamentals/raf_singularity.png" srcset="/img/loading.gif" lazyload alt="6 轴臂的三类奇异:腕部奇异(关节 4、6 轴线重合)、肘部奇异(臂完全伸直)、肩部奇异(腕心在关节 1、2 轴线平面内)"></p>
 <h4 id="7-2-工作空间">7.2 工作空间</h4>
 <p>Modern Robotics 区分几个相关概念:</p>
 <ul>
@@ -1753,7 +1753,7 @@ $$
 <li><strong>最小奇异值</strong> $\sigma_m$:最差方向的运动能力。</li>
 </ul>
 <p>冗余臂可在 §7.3 的零空间项里取 $\dot{\mathbf{z}}=\nabla f(\mathbf{q})$,$f=-\log w$ 以最大化操作度、主动规避奇异;或与阻尼最小二乘(DLS)$\dot{\mathbf{q}}=J^\top(JJ^\top+\lambda^2 I)^{-1}\dot{\mathbf{x}}$ 结合,$\lambda$ 随 $\sigma_m$ 减小而增大。</p>
-<p><img src="https://uipv4.zywvvd.com:33030/HexoFiles/files/robot-arm-fundamentals/raf_manipulability.png" srcset="/img/loading.gif" lazyload alt="操作度椭球:雅可比奇异值 σᵢ 为各主轴长度,椭球越接近球则各向同性越好、越扁则该方向运动能力越差,塌缩即奇异"></p>
+<p><img src="https://img.zywvvd.com:61213/HexoFiles/files/robot-arm-fundamentals/raf_manipulability.png" srcset="/img/loading.gif" lazyload alt="操作度椭球:雅可比奇异值 σᵢ 为各主轴长度,椭球越接近球则各向同性越好、越扁则该方向运动能力越差,塌缩即奇异"></p>
 <h3 id="8-关节空间与笛卡尔空间控制">8. 关节空间与笛卡尔空间控制</h3>
 <h4 id="8-1-两种控制空间">8.1 两种控制空间</h4>
 <p>机器人可以在两个空间中受控:</p>
@@ -2126,11 +2126,11 @@ $$
 					<p class="tea">“觉得不错的话，给点打赏吧 ୧(๑•̀⌄•́๑)૭”</p>
 					<div id="rewardImgContainer" class="reward-img-container">
 						<div class="singleImgContainer">
-							<img id="wechatImg" class="reward-img" src="https://uipv4.zywvvd.com:33030/HexoFiles/vvd_pc_upload/wechatpay.png" srcset="/img/loading.gif" lazyload alt="微信二维码">
+							<img id="wechatImg" class="reward-img" src="https://img.zywvvd.com:61213/HexoFiles/vvd_pc_upload/wechatpay.png" srcset="/img/loading.gif" lazyload alt="微信二维码">
 							<p class="wechatPay">微信支付</p>
 						</div>
 						<div class="singleImgContainer">
-							<img id="alipayImg" class="reward-img" src="https://uipv4.zywvvd.com:33030/HexoFiles/vvd_pc_upload/alipay.png" srcset="/img/loading.gif" lazyload alt="支付宝二维码">
+							<img id="alipayImg" class="reward-img" src="https://img.zywvvd.com:61213/HexoFiles/vvd_pc_upload/alipay.png" srcset="/img/loading.gif" lazyload alt="支付宝二维码">
 							<p class="aliPay">支付宝支付</p>
 						</div>
 					</div>
@@ -2738,7 +2738,7 @@ $$
 		var s = document.createElement('script');
 		s.type='text/javascript';
 		document.body.appendChild(s);
-		s.src='https://uipv4.zywvvd.com:33030/HexoFiles/js/games/airplane/airplane.js';
+		s.src='https://img.zywvvd.com:61213/HexoFiles/js/games/airplane/airplane.js';
 		void(0);
 		};
 	}

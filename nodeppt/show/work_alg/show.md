@@ -46,7 +46,7 @@ Boeye 算法适用于以**可编程控制的 DJI 无人机数据采集系统**�
 
 :::{.content-right}
 
-![](https://uipv4.zywvvd.com:33030/HexoFiles/vvd_image_files/202501151420088.png)
+![](https://img.zywvvd.com:61213/HexoFiles/vvd_image_files/202501151420088.png)
 
 :::
 
@@ -205,7 +205,7 @@ H -->I
 
 #### 模块协作流程
 
-![](https://uipv4.zywvvd.com:33030/HexoFiles/vvd_image_files/202503111006204.png)
+![](https://img.zywvvd.com:61213/HexoFiles/vvd_image_files/202503111006204.png)
 
 <slide class="bg-white">
 
@@ -265,13 +265,13 @@ H -->I
 
 Task
 
-![](https://uipv4.zywvvd.com:33030/HexoFiles/vvd_image_files/202501151139619.jpg)
+![](https://img.zywvvd.com:61213/HexoFiles/vvd_image_files/202501151139619.jpg)
 
 ---
 
 AlgTask
 
-![](https://uipv4.zywvvd.com:33030/HexoFiles/vvd_image_files/202501151142970.jpg)
+![](https://img.zywvvd.com:61213/HexoFiles/vvd_image_files/202501151142970.jpg)
 
 :::
 
@@ -289,13 +289,13 @@ AlgTask
 
 1. 面状航线
 
-   ![](https://uipv4.zywvvd.com:33030/HexoFiles/vvd_image_files/202501151150955.png)
+   ![](https://img.zywvvd.com:61213/HexoFiles/vvd_image_files/202501151150955.png)
 
 ---
 
 2. 线状航线
 
-   ![](https://uipv4.zywvvd.com:33030/HexoFiles/vvd_image_files/202501151149664.png)
+   ![](https://img.zywvvd.com:61213/HexoFiles/vvd_image_files/202501151149664.png)
 
 :::
 
@@ -339,7 +339,7 @@ AlgTask
 
 :::{.content-right}
 
-![](https://uipv4.zywvvd.com:33030/HexoFiles/vvd_image_files/202501151147013.jpg)
+![](https://img.zywvvd.com:61213/HexoFiles/vvd_image_files/202501151147013.jpg)
 
 :::
 
@@ -395,9 +395,9 @@ AlgTask
 
 :::{.content-right}
 
-![](https://uipv4.zywvvd.com:33030/HexoFiles/vvd_image_files/202501151308922.png)
+![](https://img.zywvvd.com:61213/HexoFiles/vvd_image_files/202501151308922.png)
 
-![](https://uipv4.zywvvd.com:33030/HexoFiles/vvd_image_files/202501151616478.png)
+![](https://img.zywvvd.com:61213/HexoFiles/vvd_image_files/202501151616478.png)
 
 :::
 
@@ -413,7 +413,7 @@ AlgTask
 
 :::{.content-left}
 
-<img src="https://uipv4.zywvvd.com:33030/HexoFiles/vvd_image_files/202501151316072.jpg" width=1600 >
+<img src="https://img.zywvvd.com:61213/HexoFiles/vvd_image_files/202501151316072.jpg" width=1600 >
 
 :::
 
@@ -477,7 +477,7 @@ AlgTask
 
 :::{.content-right}
 
-![](https://uipv4.zywvvd.com:33030/HexoFiles/vvd_image_files/202501151318093.jpeg)
+![](https://img.zywvvd.com:61213/HexoFiles/vvd_image_files/202501151318093.jpeg)
 
 :::
 
@@ -521,7 +521,7 @@ AlgTask
 
 :::{.content-left}
 
-![](https://uipv4.zywvvd.com:33030/HexoFiles/vvd_image_files/202501151329881.png)
+![](https://img.zywvvd.com:61213/HexoFiles/vvd_image_files/202501151329881.png)
 
 :::
 
@@ -591,7 +591,7 @@ AlgTask
 
 :::{.content-center}
 
-![](https://uipv4.zywvvd.com:33030/HexoFiles/vvd_image_files/202501151332007.png)
+![](https://img.zywvvd.com:61213/HexoFiles/vvd_image_files/202501151332007.png)
 
 :::
 
@@ -641,7 +641,7 @@ AlgTask
 
 :::{.content-left}
 
-![](https://uipv4.zywvvd.com:33030/HexoFiles/vvd_image_files/202501151337219.png)
+![](https://img.zywvvd.com:61213/HexoFiles/vvd_image_files/202501151337219.png)
 
 :::
 
@@ -689,7 +689,7 @@ AlgTask
 
 :::{.content-left}
 
-![](https://uipv4.zywvvd.com:33030/HexoFiles/vvd_image_files/202501151337049.png)
+![](https://img.zywvvd.com:61213/HexoFiles/vvd_image_files/202501151337049.png)
 
 :::
 
@@ -769,7 +769,7 @@ AlgTask
 
 :::{.content-right}
 
-![](https://uipv4.zywvvd.com:33030/HexoFiles/vvd_image_files/202501151343906.png)
+![](https://img.zywvvd.com:61213/HexoFiles/vvd_image_files/202501151343906.png)
 
 :::
 
@@ -783,7 +783,7 @@ AlgTask
 
 ---
 
-![](https://uipv4.zywvvd.com:33030/HexoFiles/vvd_image_files/202501151346498.png)
+![](https://img.zywvvd.com:61213/HexoFiles/vvd_image_files/202501151346498.png)
 
 <slide :class="size-80 bg-blue">
 

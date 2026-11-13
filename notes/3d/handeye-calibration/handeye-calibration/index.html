@@ -27,16 +27,16 @@
 <meta property="og:site_name" content="又见苍岚">
 <meta property="og:description" content="本文梳理激光雷达(纯点云)与机械臂的手眼标定理论,覆盖**眼在手上(eye-in-hand,雷达随臂动)与眼在手外(eye-to-hand,雷达固定)**两种配置:从 $AX&#x3D;XB$ 方程的来源、经典求解器,到纯点云场景下用自然环境替代标定物的可行性、可观测性条件与采集运动设计。一个贯穿全文的判断:外参是雷达与机械臂的固定物理关系,与环境无关;环境只是测量工具——理解它,一类常见疑虑(如&amp;quo">
 <meta property="og:locale" content="zh_CN">
-<meta property="og:image" content="https://uipv4.zywvvd.com:33030/HexoFiles/files/handeye-calibration/handeye_setup.png">
+<meta property="og:image" content="https://img.zywvvd.com:61213/HexoFiles/files/handeye-calibration/handeye_setup.png">
 <meta property="article:published_time" content="2026-07-31T01:30:00.000Z">
-<meta property="article:modified_time" content="2026-10-10T01:09:25.121Z">
+<meta property="article:modified_time" content="2026-11-13T07:07:54.277Z">
 <meta property="article:author" content="Yiwei Zhang">
 <meta property="article:tag" content="Calibration">
 <meta property="article:tag" content="HandEye">
 <meta property="article:tag" content="LiDAR">
 <meta property="article:tag" content="Robotics">
 <meta name="twitter:card" content="summary_large_image">
-<meta name="twitter:image" content="https://uipv4.zywvvd.com:33030/HexoFiles/files/handeye-calibration/handeye_setup.png">
+<meta name="twitter:image" content="https://img.zywvvd.com:61213/HexoFiles/files/handeye-calibration/handeye_setup.png">
   
   
   
@@ -1080,7 +1080,7 @@ document.addEventListener("readystatechange", function() {
   
 
 <div id="banner" class="banner" parallax=true
-     style="background: url('https://uipv4.zywvvd.com:33030/HexoFiles/new/bg-trans.png') no-repeat center center; background-size: cover;">
+     style="background: url('https://img.zywvvd.com:61213/HexoFiles/new/bg-trans.png') no-repeat center center; background-size: cover;">
   <div class="full-bg-img">
     <div class="mask flex-center" style="background-color: rgba(0, 0, 0, 0)">
       <div class="banner-text text-center fade-in-up">
@@ -1281,7 +1281,7 @@ document.addEventListener("readystatechange", function() {
                 
                   
                     <!-- compatible with older versions-->
-                    本文最后更新于：2026年10月10日 上午
+                    本文最后更新于：2026年11月13日 下午
                   
                 
               </p>
@@ -1303,8 +1303,8 @@ document.addEventListener("readystatechange", function() {
 <li><strong>眼在手外(eye-to-hand)</strong>:雷达固定在外部(三脚架、天花板),不随臂动,待标定的是雷达在基座系下的位姿 $X={}^{W}T_L$。</li>
 </ul>
 <p>两种配置下机械臂底座都固定安装,世界系 $W$ 与基座系重合(见《机械臂技术基础》第 2 节)。eye-in-hand 涉及三个坐标系:世界系 $W$(固定)、末端系 $E_i$(随位姿变化,可取法兰 tool0 或已标定的 TCP,见《机械臂技术基础》第 11、12 节)、雷达系 $L_i$(随末端一起运动);eye-to-hand 中雷达系 $L$ 固定不动,随时间变化的是被观测物(末端上的标定物)在雷达系里的位姿。</p>
-<p><img src="https://uipv4.zywvvd.com:33030/HexoFiles/files/handeye-calibration/handeye_setup.png" srcset="/img/loading.gif" lazyload alt="eye-in-hand 配置:世界系 W、末端系 E、雷达系 L,雷达刚性固连末端,外参 X 固定不变"></p>
-<p><img src="https://uipv4.zywvvd.com:33030/HexoFiles/files/handeye-calibration/handeye_setup_e2h.png" srcset="/img/loading.gif" lazyload alt="eye-to-hand 配置:雷达固定在外部(三脚架),观测末端上的标定物,外参 X 为雷达在基座系的位姿"></p>
+<p><img src="https://img.zywvvd.com:61213/HexoFiles/files/handeye-calibration/handeye_setup.png" srcset="/img/loading.gif" lazyload alt="eye-in-hand 配置:世界系 W、末端系 E、雷达系 L,雷达刚性固连末端,外参 X 固定不变"></p>
+<p><img src="https://img.zywvvd.com:61213/HexoFiles/files/handeye-calibration/handeye_setup_e2h.png" srcset="/img/loading.gif" lazyload alt="eye-to-hand 配置:雷达固定在外部(三脚架),观测末端上的标定物,外参 X 为雷达在基座系的位姿"></p>
 <p>本文以 eye-in-hand 为主线展开(其点云配准与&quot;用环境替代标定物&quot;的故事更丰富,§4–§8),eye-to-hand 的方程与差异在 §2.3 给出,并在相关处标注两种配置的不同。</p>
 <h4 id="1-2-记号约定">1.2 记号约定</h4>
 <p>全文用 4×4 齐次变换描述刚体位姿,记 ${}^{A}T_B$ 为 $B$ 系在 $A$ 系下的位姿。齐次变换同时承载坐标变换、位姿描述、相对运动三层含义,以及复合、求逆的链式规则——完整论述见《<a href="/notes/3d/homogeneous-transform/homogeneous-transform/">齐次变换矩阵与 SE(3)</a>》,这里只列后文反复用到的两条:</p>
@@ -1402,7 +1402,7 @@ $$B_i = C_{i+1}C_i^{-1} = {}^{L_{i+1}}T_{\text{obj}}\,({}^{L_i}T_{\text{obj}})^{
 <p>即传感器从 $L_i$ 到 $L_{i+1}$ 的相对运动(新系 $L_{i+1}$ 回看旧系 $L_i$,由观测标定物得到)。两者同取“新看旧”方向、同向配对——这正是 $AX=XB$ 形式对称的来源。记作:</p>
 $$\boxed{A_i\, X = X\, B_i}$$
 <p>这就是手眼标定方程 $AX = XB$:$A$ 已知、$B$ 由观测得到、$X$ 待求。</p>
-<p><img src="https://uipv4.zywvvd.com:33030/HexoFiles/files/handeye-calibration/handeye_axxb.png" srcset="/img/loading.gif" lazyload alt="AX=XB 的闭环推导链:标定物世界位姿经 W→E→L→obj 两条路径表达,消去后得 A·X = X·B"></p>
+<p><img src="https://img.zywvvd.com:61213/HexoFiles/files/handeye-calibration/handeye_axxb.png" srcset="/img/loading.gif" lazyload alt="AX=XB 的闭环推导链:标定物世界位姿经 W→E→L→obj 两条路径表达,消去后得 A·X = X·B"></p>
 <h4 id="2-2-数据要求">2.2 数据要求</h4>
 <p>把 $A=(R_A,\mathbf{t}_A)$、$X=(R_X,\mathbf{t}_X)$、$B=(R_B,\mathbf{t}_B)$ 代入 $AX=XB$:两端都是齐次变换,左端 $AX=(R_A R_X,\ R_A\mathbf{t}_X+\mathbf{t}_A)$、右端 $XB=(R_X R_B,\ R_X\mathbf{t}_B+\mathbf{t}_X)$。两个齐次变换相等,要求旋转块、平移块分别相等:</p>
 <ul>
@@ -1429,7 +1429,7 @@ $$B = C_{i+1}C_i^{-1} = {}^{L}T_{\text{obj}_{i+1}}\,({}^{L}T_{\text{obj}_i})^{-1
 <blockquote>
 <p>记号:下文 $[\mathbf v]_\times$ 为向量 $\mathbf v$ 的反对称矩阵;$\mathbf n_A$ 等为 $A$ 等的旋转轴单位向量、$\theta_X$ 为 $X$ 的旋转角,Tsai 法的 $\mathbf n'_X$ 为其旋转轴的修正参数;Park 法的 $\boldsymbol\alpha_i,\boldsymbol\beta_i$ 是 $A_i,B_i$ 的旋转向量(即李代数对数 $\log A_i,\log B_i$)。</p>
 </blockquote>
-<p><img src="https://uipv4.zywvvd.com:33030/HexoFiles/files/handeye-calibration/handeye_solvers.png" srcset="/img/loading.gif" lazyload alt="闭式求解器谱系:分离法(先 R 后 t:Tsai-Lenz / Park / Shah)vs 同时法(R、t 联立:Andreff / Daniilidis / Horaud)"></p>
+<p><img src="https://img.zywvvd.com:61213/HexoFiles/files/handeye-calibration/handeye_solvers.png" srcset="/img/loading.gif" lazyload alt="闭式求解器谱系:分离法(先 R 后 t:Tsai-Lenz / Park / Shah)vs 同时法(R、t 联立:Andreff / Daniilidis / Horaud)"></p>
 <p><strong>分离法(先解旋转 $R_X$,再代入解平移 $\mathbf{t}_X$)</strong>:</p>
 <ul>
 <li><strong>Tsai-Lenz (1989)</strong>:用旋转轴的对偶性 $[\mathbf{n}_A+\mathbf{n}_B]_\times \mathbf{n}'_X = \mathbf{n}_A-\mathbf{n}_B$ 解旋转,旋转角 $\theta_X=2\tan^{-1}\|\mathbf{n}'_X\|$;平移由 $(R_A-I)\mathbf{t}_X = R_X\mathbf{t}_B-\mathbf{t}_A$ 最小二乘求解。简单、极快,但对旋转噪声敏感。</li>
@@ -1571,7 +1571,7 @@ $${}^{W}T_{L_{i+1}} = {}^{W}T_{L_i}\cdot{}^{L_i}T_{L_{i+1}} = {}^{W}T_{L_i}\cdot
 </tbody>
 </table>
 <p>所以推荐两步法:它把&quot;配准&quot;和&quot;求解&quot;分离,每一步都可独立检查,误差结构清晰。这不是说自洽融合法&quot;理论上行不通&quot;,而是说它把本可分离的误差耦合在一起,在工程上更难诊断和控制。</p>
-<p><img src="https://uipv4.zywvvd.com:33030/HexoFiles/files/handeye-calibration/handeye_twostep.png" srcset="/img/loading.gif" lazyload alt="两步法(配准求 B 与求解 X 解耦)与自洽融合法(B 与 X 耦合优化)的流程对比"></p>
+<p><img src="https://img.zywvvd.com:61213/HexoFiles/files/handeye-calibration/handeye_twostep.png" srcset="/img/loading.gif" lazyload alt="两步法(配准求 B 与求解 X 解耦)与自洽融合法(B 与 X 耦合优化)的流程对比"></p>
 <h4 id="5-4-环境对称性是另一个独立问题">5.4 环境对称性是另一个独立问题</h4>
 <p>需要明确区分:5.2 讨论的是&quot;物理旋转一个<strong>不对称</strong>环境&quot;,结果是 $X$ 不变。但如果环境<strong>本身具有对称性</strong>(房间精确 90° 旋转对称、长走廊的平移对称、重复柱阵),那确实会出问题——但那是另一个机制:</p>
 <ul>
@@ -1631,7 +1631,7 @@ $$\text{可观测性} \;\longleftarrow\; \text{堆叠的 } (\mathrm{Ad}_{B_k}-I_
 </table>
 <p>($m$ 为雅可比的行数,见各指标定义。)</p>
 <p>Nahvi &amp; Hollerbach (1996) 证明 <strong>$O_4$ 对标定误差最敏感</strong>;Schroer 等建议<strong>条件数应低于 100</strong> 才能获得可靠结果。Sun &amp; Hollerbach (2008) 的比较表明 $O_1$ 表现差于 $O_2$–$O_4$。</p>
-<p><img src="https://uipv4.zywvvd.com:33030/HexoFiles/files/handeye-calibration/handeye_observability.png" srcset="/img/loading.gif" lazyload alt="可观测性:雅可比 J=Ad_B−I 的奇异值椭球,σ_min 越小该方向越不可观;纯平移/共轴旋转使椭球塌缩"></p>
+<p><img src="https://img.zywvvd.com:61213/HexoFiles/files/handeye-calibration/handeye_observability.png" srcset="/img/loading.gif" lazyload alt="可观测性:雅可比 J=Ad_B−I 的奇异值椭球,σ_min 越小该方向越不可观;纯平移/共轴旋转使椭球塌缩"></p>
 <h4 id="6-4-退化运动">6.4 退化运动</h4>
 <p>退化运动的本质是雅可比降秩(某些奇异值趋于零),对应方向参数不可辨识:</p>
 <ol>
@@ -1677,7 +1677,7 @@ $$\text{可观测性} \;\longleftarrow\; \text{堆叠的 } (\mathrm{Ad}_{B_k}-I_
 <p>但需注意:<strong>同一退化运动在不同算法框架下可观测性不同</strong>。Daniilidis 的对偶四元数解耦解法无法利用纯平移的旋转信息——纯平移对应 screw 角 $\theta=0$,旋转方程退化为恒等 $q_r=q_r$,对旋转无约束。也就是说,同样的数据,用 Andreff 的线性框架能提取旋转,用 Daniilidis 的对偶四元数框架却不能——这是选择算法时必须留意的。</p>
 <h3 id="7-单面墙平面标定">7. 单面墙平面标定</h3>
 <p>前几节的环境标定用到了两帧点云的<strong>完整</strong>配准($B_k$ 是 6 自由度刚体变换)。一个常见的简化想法是:办公室里有平整墙面,能否只利用&quot;墙是一个固定平面&quot;这个约束?这避开了完整 ICP 的初值与退化难题(平面拟合是凸问题,RANSAC + 主成分稳定),代价是只用到了环境的低维信息。这一节分析它到底能解出多少、精度受什么制约。一个关键结论先行:<strong>单面墙缺的不是一个固定的旋转自由度,而是要求运动里有&quot;横向旋转&quot;;运动选对了,一面墙就够。</strong></p>
-<p><img src="https://uipv4.zywvvd.com:33030/HexoFiles/files/handeye-calibration/handeye_single_wall.png" srcset="/img/loading.gif" lazyload alt="单面墙平面约束:法向(只含旋转)定 R_X,距离(含平移)定 t_X;退化运动是纯绕墙法向自转"></p>
+<p><img src="https://img.zywvvd.com:61213/HexoFiles/files/handeye-calibration/handeye_single_wall.png" srcset="/img/loading.gif" lazyload alt="单面墙平面约束:法向(只含旋转)定 R_X,距离(含平移)定 t_X;退化运动是纯绕墙法向自转"></p>
 <p><strong>(1) 平面的变换。</strong> 设墙在世界系 $W$ 中是固定平面,方程 ${}^{W}\mathbf{n}^\top\mathbf{x}={}^{W}d$(${}^{W}\mathbf{n}$ 单位法向,${}^{W}d$ 有向距离,$\mathbf{x}$ 为平面上任意一点)。雷达在位姿 ${}^{W}T_{L_i}=G_iX$ 下观测墙面,拟合出雷达系内的平面 ${}^{L_i}\mathbf{n}_i^\top\mathbf{x}={}^{L_i}d_i$。这里 ${}^{W}T_{L_i}=G_iX$ 是雷达的世界位姿(eye-in-hand 链式合成:$G_i={}^{W}T_{E_i}$ 为末端世界位姿、$X={}^{E}T_L$ 为待标手眼)。要用这帧雷达系观测去约束世界系里的墙,得先把点坐标在两系之间搬运——把位姿 ${}^{W}T_{L_i}$ 作用在齐次点上:</p>
 $$\begin{pmatrix}{}^{W}\mathbf{x}\\1\end{pmatrix}=\begin{pmatrix}R(G_iX)&\mathbf{t}(G_iX)\\0&1\end{pmatrix}\begin{pmatrix}{}^{L}\mathbf{x}\\1\end{pmatrix}=\begin{pmatrix}R(G_iX)\,{}^{L}\mathbf{x}+\mathbf{t}(G_iX)\\1\end{pmatrix}$$
 <p>旋转块 $R(G_iX)$ 的三列正是雷达系三轴在世界系里的指向,负责把雷达系下测得的分量 ${}^{L}\mathbf{x}$ 重排成世界朝向;平移块 $\mathbf{t}(G_iX)$ 是雷达原点的世界位置,补上原点偏移。丢掉齐次占位行即点变换 ${}^{W}\mathbf{x}=R(G_iX)\,{}^{L}\mathbf{x}+\mathbf{t}(G_iX)$——齐次位姿左乘点,就是&quot;先按 $R$ 旋回世界朝向、再按 $\mathbf{t}$ 平移到世界原点&quot;。代入墙方程 ${}^{W}\mathbf{n}^\top{}^{W}\mathbf{x}={}^{W}d$ 整理得</p>
@@ -2031,11 +2031,11 @@ $$S \;=\; \sum_{i=1}^{N}\mathbf{a}_i\mathbf{a}_i^\top,\qquad \mathrm{eig}(S)=(\l
 					<p class="tea">“觉得不错的话，给点打赏吧 ୧(๑•̀⌄•́๑)૭”</p>
 					<div id="rewardImgContainer" class="reward-img-container">
 						<div class="singleImgContainer">
-							<img id="wechatImg" class="reward-img" src="https://uipv4.zywvvd.com:33030/HexoFiles/vvd_pc_upload/wechatpay.png" srcset="/img/loading.gif" lazyload alt="微信二维码">
+							<img id="wechatImg" class="reward-img" src="https://img.zywvvd.com:61213/HexoFiles/vvd_pc_upload/wechatpay.png" srcset="/img/loading.gif" lazyload alt="微信二维码">
 							<p class="wechatPay">微信支付</p>
 						</div>
 						<div class="singleImgContainer">
-							<img id="alipayImg" class="reward-img" src="https://uipv4.zywvvd.com:33030/HexoFiles/vvd_pc_upload/alipay.png" srcset="/img/loading.gif" lazyload alt="支付宝二维码">
+							<img id="alipayImg" class="reward-img" src="https://img.zywvvd.com:61213/HexoFiles/vvd_pc_upload/alipay.png" srcset="/img/loading.gif" lazyload alt="支付宝二维码">
 							<p class="aliPay">支付宝支付</p>
 						</div>
 					</div>
@@ -2643,7 +2643,7 @@ $$S \;=\; \sum_{i=1}^{N}\mathbf{a}_i\mathbf{a}_i^\top,\qquad \mathrm{eig}(S)=(\l
 		var s = document.createElement('script');
 		s.type='text/javascript';
 		document.body.appendChild(s);
-		s.src='https://uipv4.zywvvd.com:33030/HexoFiles/js/games/airplane/airplane.js';
+		s.src='https://img.zywvvd.com:61213/HexoFiles/js/games/airplane/airplane.js';
 		void(0);
 		};
 	}

@@ -27,9 +27,9 @@
 <meta property="og:site_name" content="又见苍岚">
 <meta property="og:description" content="本文记录图漾 FM815-IX-E1 结构光深度相机的成像原理推导，以及一组距离-精度的实测。先梳理结构光与双目立体视觉的基础（针孔模型、三角测量、视差、SGBM、整流），再把设备的实测参数代入，和 9 个距离的平面墙平整度数据对照。数值取自设备特性转储、出厂标定和实测采集。">
 <meta property="og:locale" content="zh_CN">
-<meta property="og:image" content="https://uipv4.zywvvd.com:33030/HexoFiles/files/structured_light/stereo_triangulation.png">
+<meta property="og:image" content="https://img.zywvvd.com:61213/HexoFiles/files/structured_light/stereo_triangulation.png">
 <meta property="article:published_time" content="2026-07-30T02:00:00.000Z">
-<meta property="article:modified_time" content="2026-10-10T01:09:25.123Z">
+<meta property="article:modified_time" content="2026-11-13T07:07:54.274Z">
 <meta property="article:author" content="Yiwei Zhang">
 <meta property="article:tag" content="3D">
 <meta property="article:tag" content="SGBM">
@@ -37,7 +37,7 @@
 <meta property="article:tag" content="深度相机">
 <meta property="article:tag" content="结构光">
 <meta name="twitter:card" content="summary_large_image">
-<meta name="twitter:image" content="https://uipv4.zywvvd.com:33030/HexoFiles/files/structured_light/stereo_triangulation.png">
+<meta name="twitter:image" content="https://img.zywvvd.com:61213/HexoFiles/files/structured_light/stereo_triangulation.png">
   
   
   
@@ -1081,7 +1081,7 @@ document.addEventListener("readystatechange", function() {
   
 
 <div id="banner" class="banner" parallax=true
-     style="background: url('https://uipv4.zywvvd.com:33030/HexoFiles/new/bg-trans.png') no-repeat center center; background-size: cover;">
+     style="background: url('https://img.zywvvd.com:61213/HexoFiles/new/bg-trans.png') no-repeat center center; background-size: cover;">
   <div class="full-bg-img">
     <div class="mask flex-center" style="background-color: rgba(0, 0, 0, 0)">
       <div class="banner-text text-center fade-in-up">
@@ -1282,7 +1282,7 @@ document.addEventListener("readystatechange", function() {
                 
                   
                     <!-- compatible with older versions-->
-                    本文最后更新于：2026年10月10日 上午
+                    本文最后更新于：2026年11月13日 下午
                   
                 
               </p>
@@ -1435,11 +1435,11 @@ $$
 \frac{x}{f}=\frac{X}{Z}\quad\Longrightarrow\quad x=f\frac{X}{Z}
 $$
 
-<p><img src="https://uipv4.zywvvd.com:33030/HexoFiles/files/structured_light/pinhole_model.png" srcset="/img/loading.gif" lazyload alt="针孔相机模型：光心 O、像面 z=f、物点 P、像点 p；小三角形 O-f-p 与大三角形 O-Z-P 相似"></p>
+<p><img src="https://img.zywvvd.com:61213/HexoFiles/files/structured_light/pinhole_model.png" srcset="/img/loading.gif" lazyload alt="针孔相机模型：光心 O、像面 z=f、物点 P、像点 p；小三角形 O-f-p 与大三角形 O-Z-P 相似"></p>
 <p>投影把三维 $(X,Y,Z)$ 压成二维 $(x,y)$，$Z$ 消失——同一光线上远近不同的点投到同一像点。故单张图像无法测距，需要双目（两个观察点）做三角测量。</p>
 <h4 id="1-3-双目三角测量与深度公式">1.3 双目三角测量与深度公式</h4>
 <p>两个相机从不同位置观察同一物点，各得一条指向它的光线，两线交点即物点的 3D 位置。</p>
-<p><img src="https://uipv4.zywvvd.com:33030/HexoFiles/files/structured_light/stereo_triangulation.png" srcset="/img/loading.gif" lazyload alt="双目三角测量：两条光线交于物点 P，水平位置差即视差 d"></p>
+<p><img src="https://img.zywvvd.com:61213/HexoFiles/files/structured_light/stereo_triangulation.png" srcset="/img/loading.gif" lazyload alt="双目三角测量：两条光线交于物点 P，水平位置差即视差 d"></p>
 <p>设两相机焦距同为 $f$、光轴平行、光心横向相距基线 $B$（整流后的标准姿态，见 §1.6）。物点 $P=(X,Y,Z)$：</p>
 <ul>
 <li>$P$ 在左相机像横坐标 $x_L=f\dfrac{X}{Z}$</li>
@@ -1514,7 +1514,7 @@ H_L=K_{\text{new}}R_{\text{rect}}K_L^{-1},\qquad H_R=K_{\text{new}}R_{\text{rect
 $$
 
 <p><strong>焦距如何被统一</strong>：$H_L$、$H_R$ 输出端用的是<strong>同一个公共内参 $K_{\text{new}}$</strong>，输入端才保留各自不同的 $K_L$、$K_R$。这和前面「两端同一个 $K$」的单应不同——那只统一朝向，焦距仍各是各的（左 $f_L$、右 $f_R$）。把输出端换成 $K_{\text{new}}$ 后，两张图都被重采样进同一个虚拟相机，焦距统一为公共值 $f_{\text{new}}$；镜头本身不动，只是每个像素按 $H$ 重新落位、新像素网格改用 $f_{\text{new}}$ 计量。读法从右往左：$K_i$ 的逆把原图像素还原成光线（剥掉该相机自己的 $f_i$），$R_i$ 把光线转到公共朝向，$K_{\text{new}}$ 用公共焦距投回像素。$f_{\text{new}}$ 是算法自选的自由参数，Bouguet / OpenCV 取<strong>两个相机焦距的平均</strong>，让整流图像素尺度贴近原图。基线则化为两个投影中心在水平方向的错开 $f_{\text{new}}B$，即视差——整流后两相机除这点水平错开外其余内参全同，故式子里只剩一个 $f$（即 $f_{\text{new}}$）。</p>
-<p><img src="https://uipv4.zywvvd.com:33030/HexoFiles/files/structured_light/rectification.png" srcset="/img/loading.gif" lazyload alt="整流：把两幅图变换到对应点同行，匹配由二维搜索降为一维"></p>
+<p><img src="https://img.zywvvd.com:61213/HexoFiles/files/structured_light/rectification.png" srcset="/img/loading.gif" lazyload alt="整流：把两幅图变换到对应点同行，匹配由二维搜索降为一维"></p>
 <p><strong>视差搜索窗</strong> $[d_{\min},d_{\max}]$：SGBM 的配置参数，非物理常量。由 <code>DISPARITY_OFFSET</code>（$d_{\min}$）和 <code>DISPARITY_NUM</code>（$N$）决定，$d_{\max}=d_{\min}+N$。该窗经 $Z=fB/d$ 换算即工作量程：</p>
 
 $$
@@ -1523,7 +1523,7 @@ $$
 
 <h4 id="1-7-单目结构光（对照）">1.7 单目结构光（对照）</h4>
 <p>单目结构光理论可行且为成熟技术（初代 Kinect、RealSense F200）。1 投射器 + 1 相机；投射器投已知图案，相机观察其被 3D 表面调制后的形态，将投射器视为第二只「虚拟眼」做三角测量。</p>
-<p><img src="https://uipv4.zywvvd.com:33030/HexoFiles/files/structured_light/mono_triangulation.png" srcset="/img/loading.gif" lazyload alt="单目结构光：投射器投已知图案（$u_p$ 已知）+ 相机观察（$u_c$），三角测量解出深度"></p>
+<p><img src="https://img.zywvvd.com:61213/HexoFiles/files/structured_light/mono_triangulation.png" srcset="/img/loading.gif" lazyload alt="单目结构光：投射器投已知图案（$u_p$ 已知）+ 相机观察（$u_c$），三角测量解出深度"></p>
 <p>推导同形 $Z=fB/d$，差异在于 $d=u_c-u_p$：单目中 $u_p$ 由已知图案给定（不搜索两图），双目中 $d=u_c-u_{\text{另一相机}}$（需搜索两图对应）。精度仍为 $\Delta Z=Z^2/(fB)$。本设备选用双目是工程取舍（廉价投射器 + 鲁棒匹配），非单目不可行。</p>
 <h3 id="图漾-FM815-IX-E1-实测">图漾 FM815-IX-E1 实测</h3>
 <h4 id="2-1-设备架构与参数">2.1 设备架构与参数</h4>
@@ -1566,7 +1566,7 @@ $$
 </table>
 <h4 id="2-2-散斑投射与成像流水线">2.2 散斑投射与成像流水线</h4>
 <p>投射器内置 DOE，把红外激光打散为静态随机散斑（对人眼/RGB 不可见），左右 IR 相机成像。深度 = SGBM 左右 IR 匹配出视差 → $Z=fB/d$。RGB 另拍一张贴色得上色点云。</p>
-<p><img src="https://uipv4.zywvvd.com:33030/HexoFiles/files/structured_light/speckle_pipeline.png" srcset="/img/loading.gif" lazyload alt="散斑结构光成像流水线：左右 IR 散斑→SGBM 深度→RGB 上色→点云"></p>
+<p><img src="https://img.zywvvd.com:61213/HexoFiles/files/structured_light/speckle_pipeline.png" srcset="/img/loading.gif" lazyload alt="散斑结构光成像流水线：左右 IR 散斑→SGBM 深度→RGB 上色→点云"></p>
 <h4 id="2-3-设备参数套入理论">2.3 设备参数套入理论</h4>
 <ul>
 <li>$f=1102.09$ px，$B=99.89$ mm，$fB\approx 110080$ px·mm</li>
@@ -1574,7 +1574,7 @@ $$
 <li>视差窗 <code>DISPARITY_OFFSET=25</code>, <code>DISPARITY_NUM=162</code> → $d\in[25,187]$</li>
 <li>量程预测：$Z_{\min}=110080/187\approx589$ mm $\approx0.59$ m，$Z_{\max}=110080/25\approx4403$ mm $\approx4.41$ m</li>
 </ul>
-<p><img src="https://uipv4.zywvvd.com:33030/HexoFiles/files/structured_light/disparity_range.png" srcset="/img/loading.gif" lazyload alt="视差-距离曲线与搜索窗：窗 [25,187] px 对应量程 0.59–4.4 m"></p>
+<p><img src="https://img.zywvvd.com:61213/HexoFiles/files/structured_light/disparity_range.png" srcset="/img/loading.gif" lazyload alt="视差-距离曲线与搜索窗：窗 [25,187] px 对应量程 0.59–4.4 m"></p>
 <h3 id="理论预测与实测对照">理论预测与实测对照</h3>
 <h4 id="3-1-工作量程：预测-0-59–4-4-m-vs-越界实测">3.1 工作量程：预测 0.59–4.4 m vs 越界实测</h4>
 <table>
@@ -1675,8 +1675,8 @@ $$
 </tr>
 </tbody>
 </table>
-<p><img src="https://uipv4.zywvvd.com:33030/HexoFiles/files/structured_light/precision_vs_distance.png" srcset="/img/loading.gif" lazyload alt="距离 vs 精度曲线"></p>
-<p><img src="https://uipv4.zywvvd.com:33030/HexoFiles/files/structured_light/flatness_map.png" srcset="/img/loading.gif" lazyload alt="单距离平整度热力图（1 m：左为平面内残差，右为残差直方图）"></p>
+<p><img src="https://img.zywvvd.com:61213/HexoFiles/files/structured_light/precision_vs_distance.png" srcset="/img/loading.gif" lazyload alt="距离 vs 精度曲线"></p>
+<p><img src="https://img.zywvvd.com:61213/HexoFiles/files/structured_light/flatness_map.png" srcset="/img/loading.gif" lazyload alt="单距离平整度热力图（1 m：左为平面内残差，右为残差直方图）"></p>
 <p><strong>对照</strong>：以实测 RMS 反推 $\sigma_d$（末列），1–3.3 m 段 $\sigma_d=0.114$–$0.138$ px，中位 0.126，基本恒定——单次匹配的视差抖动稳定在 ~0.13 px，深度噪声大致随 $\Delta Z\propto Z^2$ 走。理论曲线 $0.126Z^2/(fB)$ 与实测吻合。</p>
 <p>完整精度模型（近端地板 + 视差量化）：</p>
 
@@ -1721,7 +1721,7 @@ $$
 <h4 id="4-1-标定与-RGB-镜头畸变">4.1 标定与 RGB 镜头畸变</h4>
 <p>出厂标定 <code>access=1</code>（只读），不可写回设备。双目外参（基线/整流）出厂锁死，自标等同重写深度引擎。</p>
 <p><strong>RGB 镜头畸变</strong>：带色点云中墙上直线（凹槽）弯曲——几何无畸变（整流已消 IR 畸变，<code>depth</code>=轴向 z），弯曲来自 RGB 独立镜头的桶形畸变（$k_1=-0.2334$）。去畸变用 SDK 的 <code>TYUndistortImage</code>（Percipio 12 系数模型，非 OpenCV）。</p>
-<p><img src="https://uipv4.zywvvd.com:33030/HexoFiles/files/structured_light/colored_front.png" srcset="/img/loading.gif" lazyload alt="去畸变后的带色点云（墙上直线已直）"></p>
+<p><img src="https://img.zywvvd.com:61213/HexoFiles/files/structured_light/colored_front.png" srcset="/img/loading.gif" lazyload alt="去畸变后的带色点云（墙上直线已直）"></p>
 <h4 id="4-2-投射器与-IR-成像特性">4.2 投射器与 IR 成像特性</h4>
 <p><strong>depth+IR 同开时 IR 帧全黑</strong>：投射器光照路由至主流量（depth），旁路 IR 组件取到灭灯相位。</p>
 <table>
@@ -1750,7 +1750,7 @@ $$
 </tr>
 </tbody>
 </table>
-<p><img src="https://uipv4.zywvvd.com:33030/HexoFiles/files/structured_light/speckle_left_vis.png" srcset="/img/loading.gif" lazyload alt="IR-only 模式采集的散斑"></p>
+<p><img src="https://img.zywvvd.com:61213/HexoFiles/files/structured_light/speckle_left_vis.png" srcset="/img/loading.gif" lazyload alt="IR-only 模式采集的散斑"></p>
 <p>本设备无独立 IR 泛光灯。</p>
 <h4 id="4-3-距离选型">4.3 距离选型</h4>
 <table>
@@ -1812,11 +1812,11 @@ $$
 					<p class="tea">“觉得不错的话，给点打赏吧 ୧(๑•̀⌄•́๑)૭”</p>
 					<div id="rewardImgContainer" class="reward-img-container">
 						<div class="singleImgContainer">
-							<img id="wechatImg" class="reward-img" src="https://uipv4.zywvvd.com:33030/HexoFiles/vvd_pc_upload/wechatpay.png" srcset="/img/loading.gif" lazyload alt="微信二维码">
+							<img id="wechatImg" class="reward-img" src="https://img.zywvvd.com:61213/HexoFiles/vvd_pc_upload/wechatpay.png" srcset="/img/loading.gif" lazyload alt="微信二维码">
 							<p class="wechatPay">微信支付</p>
 						</div>
 						<div class="singleImgContainer">
-							<img id="alipayImg" class="reward-img" src="https://uipv4.zywvvd.com:33030/HexoFiles/vvd_pc_upload/alipay.png" srcset="/img/loading.gif" lazyload alt="支付宝二维码">
+							<img id="alipayImg" class="reward-img" src="https://img.zywvvd.com:61213/HexoFiles/vvd_pc_upload/alipay.png" srcset="/img/loading.gif" lazyload alt="支付宝二维码">
 							<p class="aliPay">支付宝支付</p>
 						</div>
 					</div>
@@ -2433,7 +2433,7 @@ $$
 		var s = document.createElement('script');
 		s.type='text/javascript';
 		document.body.appendChild(s);
-		s.src='https://uipv4.zywvvd.com:33030/HexoFiles/js/games/airplane/airplane.js';
+		s.src='https://img.zywvvd.com:61213/HexoFiles/js/games/airplane/airplane.js';
 		void(0);
 		};
 	}

@@ -9,7 +9,7 @@ css:
 
 <slide class="bg-apple aligncenter">
 
-<img src="https://uipv4.zywvvd.com:33030/HexoFiles/ppt/project-intr/media/avator.jpg" style="width:130px;height:130px;border-radius:50%;object-fit:cover;border:3px solid rgba(255,255,255,0.3);box-shadow:0 6px 24px rgba(0,0,0,0.45);margin-bottom:8px;">
+<img src="https://img.zywvvd.com:61213/HexoFiles/ppt/project-intr/media/avator.jpg" style="width:130px;height:130px;border-radius:50%;object-fit:cover;border:3px solid rgba(255,255,255,0.3);box-shadow:0 6px 24px rgba(0,0,0,0.45);margin-bottom:8px;">
 
 ---
 
@@ -190,7 +190,7 @@ css:
 
 :::{.content-right}
 
-<img src="https://uipv4.zywvvd.com:33030/HexoFiles/ppt/project-intr/media/bearing_defect.jpg" style="width:100%;height:560px;object-fit:cover;border-radius:8px;display:block;">
+<img src="https://img.zywvvd.com:61213/HexoFiles/ppt/project-intr/media/bearing_defect.jpg" style="width:100%;height:560px;object-fit:cover;border-radius:8px;display:block;">
 
 :::
 
@@ -223,13 +223,13 @@ css:
 :::{.content-right}
 
 <font size=2 color=#888>端面视角</font>
-<img src="https://uipv4.zywvvd.com:33030/HexoFiles/ppt/project-intr/media/nozzle_tip_view.jpg" style="width:100%;height:175px;object-fit:cover;border-radius:4px;display:block;">
+<img src="https://img.zywvvd.com:61213/HexoFiles/ppt/project-intr/media/nozzle_tip_view.jpg" style="width:100%;height:175px;object-fit:cover;border-radius:4px;display:block;">
 
 <font size=2 color=#888>底部视角</font>
-<img src="https://uipv4.zywvvd.com:33030/HexoFiles/ppt/project-intr/media/nozzle_bottom_view.jpg" style="width:100%;height:175px;object-fit:cover;border-radius:4px;display:block;">
+<img src="https://img.zywvvd.com:61213/HexoFiles/ppt/project-intr/media/nozzle_bottom_view.jpg" style="width:100%;height:175px;object-fit:cover;border-radius:4px;display:block;">
 
 <font size=2 color=#888>内窥视角</font>
-<img src="https://uipv4.zywvvd.com:33030/HexoFiles/ppt/project-intr/media/nozzle_endoscopy_2.jpg" style="width:100%;height:175px;object-fit:cover;border-radius:4px;display:block;">
+<img src="https://img.zywvvd.com:61213/HexoFiles/ppt/project-intr/media/nozzle_endoscopy_2.jpg" style="width:100%;height:175px;object-fit:cover;border-radius:4px;display:block;">
 
 :::
 
@@ -265,7 +265,7 @@ css:
 
 :::{.content-right}
 
-<img src="https://uipv4.zywvvd.com:33030/HexoFiles/ppt/project-intr/media/adc_wafer_full.jpg" style="width:100%;height:560px;object-fit:cover;border-radius:8px;display:block;">
+<img src="https://img.zywvvd.com:61213/HexoFiles/ppt/project-intr/media/adc_wafer_full.jpg" style="width:100%;height:560px;object-fit:cover;border-radius:8px;display:block;">
 
 :::
 
@@ -298,7 +298,7 @@ css:
 
 :::{.content-right}
 
-<img src="https://uipv4.zywvvd.com:33030/HexoFiles/ppt/project-intr/media/js6000_autofind.jpg" style="width:100%;max-height:580px;object-fit:contain;border-radius:6px;display:block;margin:auto;">
+<img src="https://img.zywvvd.com:61213/HexoFiles/ppt/project-intr/media/js6000_autofind.jpg" style="width:100%;max-height:580px;object-fit:contain;border-radius:6px;display:block;margin:auto;">
 
 :::
 
@@ -330,7 +330,7 @@ css:
 
 :::{.content-right}
 
-<img src="https://uipv4.zywvvd.com:33030/HexoFiles/ppt/project-intr/media/apple_golden.jpg" style="width:100%;height:560px;object-fit:cover;border-radius:8px;display:block;">
+<img src="https://img.zywvvd.com:61213/HexoFiles/ppt/project-intr/media/apple_golden.jpg" style="width:100%;height:560px;object-fit:cover;border-radius:8px;display:block;">
 
 :::
 
@@ -360,7 +360,7 @@ css:
 
 :::{.content-right}
 
-<video src="https://uipv4.zywvvd.com:33030/HexoFiles/ppt/project-intr/media/bolight_flow.mp4" data-autoplay loop muted playsinline controls style="max-width:100%;max-height:660px;width:auto;height:auto;border-radius:6px;display:block;margin:auto;"></video>
+<video src="https://img.zywvvd.com:61213/HexoFiles/ppt/project-intr/media/bolight_flow.mp4" data-autoplay loop muted playsinline controls style="max-width:100%;max-height:660px;width:auto;height:auto;border-radius:6px;display:block;margin:auto;"></video>
 
 <font size=2 color=#888>业务流程演示</font>
 
@@ -392,7 +392,7 @@ css:
 
 :::{.content-right}
 
-<video src="https://uipv4.zywvvd.com:33030/HexoFiles/ppt/project-intr/media/bolight_demo.mp4" data-autoplay loop muted playsinline controls style="max-width:100%;max-height:792px;width:auto;height:auto;border-radius:6px;display:block;margin:auto;"></video>
+<video src="https://img.zywvvd.com:61213/HexoFiles/ppt/project-intr/media/bolight_demo.mp4" data-autoplay loop muted playsinline controls style="max-width:100%;max-height:792px;width:auto;height:auto;border-radius:6px;display:block;margin:auto;"></video>
 
 <font size=2 color=#888>运动规划演示</font>
 
@@ -424,7 +424,7 @@ css:
 
 :::{.content-right}
 
-<video src="https://uipv4.zywvvd.com:33030/HexoFiles/ppt/project-intr/media/bolight_mapf.mp4" data-autoplay loop muted playsinline controls style="max-width:100%;max-height:792px;width:auto;height:auto;border-radius:6px;display:block;margin:auto;"></video>
+<video src="https://img.zywvvd.com:61213/HexoFiles/ppt/project-intr/media/bolight_mapf.mp4" data-autoplay loop muted playsinline controls style="max-width:100%;max-height:792px;width:auto;height:auto;border-radius:6px;display:block;margin:auto;"></video>
 
 <font size=2 color=#888>多车调度演示</font>
 
@@ -462,7 +462,7 @@ css:
 
 :::{.content-right}
 
-<img src="https://uipv4.zywvvd.com:33030/HexoFiles/ppt/project-intr/media/boeye_jiagou.png" style="width:100%;max-height:560px;object-fit:contain;border-radius:6px;display:block;">
+<img src="https://img.zywvvd.com:61213/HexoFiles/ppt/project-intr/media/boeye_jiagou.png" style="width:100%;max-height:560px;object-fit:contain;border-radius:6px;display:block;">
 
 <font size=2 color=#888>系统架构</font>
 
@@ -500,11 +500,11 @@ css:
 
 <div style="display:flex;gap:6px;">
 <div style="flex:1;text-align:center;">
-<img src="https://uipv4.zywvvd.com:33030/HexoFiles/ppt/project-intr/media/boeye_3d_ziyan.jpg" style="width:100%;max-height:480px;object-fit:contain;border-radius:6px;display:block;">
+<img src="https://img.zywvvd.com:61213/HexoFiles/ppt/project-intr/media/boeye_3d_ziyan.jpg" style="width:100%;max-height:480px;object-fit:contain;border-radius:6px;display:block;">
 <font size=2 color=#888>自研管线</font>
 </div>
 <div style="flex:1;text-align:center;">
-<img src="https://uipv4.zywvvd.com:33030/HexoFiles/ppt/project-intr/media/boeye_3d_dji.jpg" style="width:100%;max-height:480px;object-fit:contain;border-radius:6px;display:block;">
+<img src="https://img.zywvvd.com:61213/HexoFiles/ppt/project-intr/media/boeye_3d_dji.jpg" style="width:100%;max-height:480px;object-fit:contain;border-radius:6px;display:block;">
 <font size=2 color=#888>DJI Terra</font>
 </div>
 </div>
@@ -539,7 +539,7 @@ css:
 
 :::{.content-right}
 
-<video src="https://uipv4.zywvvd.com:33030/HexoFiles/ppt/project-intr/media/boeye_ai.mp4" data-autoplay loop muted playsinline controls style="max-width:100%;max-height:660px;width:auto;height:auto;border-radius:6px;display:block;margin:auto;"></video>
+<video src="https://img.zywvvd.com:61213/HexoFiles/ppt/project-intr/media/boeye_ai.mp4" data-autoplay loop muted playsinline controls style="max-width:100%;max-height:660px;width:auto;height:auto;border-radius:6px;display:block;margin:auto;"></video>
 
 <font size=2 color=#888>分割识别演示</font>
 
@@ -574,13 +574,13 @@ css:
 
 :::{.content-right}
 
-<img src="https://uipv4.zywvvd.com:33030/HexoFiles/ppt/project-intr/media/boeye_panorama.jpg" style="max-width:100%;max-height:780px;width:auto;height:auto;object-fit:contain;display:block;margin:auto;border-radius:8px;">
+<img src="https://img.zywvvd.com:61213/HexoFiles/ppt/project-intr/media/boeye_panorama.jpg" style="max-width:100%;max-height:780px;width:auto;height:auto;object-fit:contain;display:block;margin:auto;border-radius:8px;">
 
 :::
 
 
 
-<slide class="bg-black aligncenter" image="https://uipv4.zywvvd.com:33030/HexoFiles/ppt/project-intr/media/boeye_result_local.jpg">
+<slide class="bg-black aligncenter" image="https://img.zywvvd.com:61213/HexoFiles/ppt/project-intr/media/boeye_result_local.jpg">
 
 ## BoEye · 局部识别结果{.text-shadow}
 

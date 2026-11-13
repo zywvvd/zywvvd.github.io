@@ -96,7 +96,7 @@ plugins:
 
 :::{.content-right}
 
-!![](https://uipv4.zywvvd.com:33030/HexoFiles/vvd_files/202312261354041.png .size-60.alignright)
+!![](https://img.zywvvd.com:61213/HexoFiles/vvd_files/202312261354041.png .size-60.alignright)
 
 :::
 
@@ -152,7 +152,7 @@ plugins:
 
 :::column
 
-![](https://uipv4.zywvvd.com:33030/HexoFiles/vvd_files/202312141337592.png)
+![](https://img.zywvvd.com:61213/HexoFiles/vvd_files/202312141337592.png)
 
 #### **点异常**
 
@@ -162,7 +162,7 @@ plugins:
 
 </p></p></p></p></p>
 
-![](https://uipv4.zywvvd.com:33030/HexoFiles/vvd_files/202312141340680.png)
+![](https://img.zywvvd.com:61213/HexoFiles/vvd_files/202312141340680.png)
 
 
 
@@ -176,7 +176,7 @@ plugins:
 
 ---
 
-![](https://uipv4.zywvvd.com:33030/HexoFiles/vvd_files/202312141342730.png)
+![](https://img.zywvvd.com:61213/HexoFiles/vvd_files/202312141342730.png)
 
 #### **集群异常**
 
@@ -208,7 +208,7 @@ plugins:
 
 异常检测的本质是将数据<font color="red"> **映射** </font>到一个可度量的空间中, 根据训练样本<font color="red"> **定义 “正常”**</font> 数据在该空间中的区域（数据驱动）. 执行异常检测时通过某种<font color="red"> **度量** </font>手段判断测试数据是否落入此“正常”范围内. 
 
-![](https://uipv4.zywvvd.com:33030/HexoFiles/vvd_pc_upload/202210291222925.jpg)
+![](https://img.zywvvd.com:61213/HexoFiles/vvd_pc_upload/202210291222925.jpg)
 
 ---
 
@@ -675,11 +675,11 @@ AA --> V
 
 假设检验：使用模板匹配的技术完成了对测试数据做的很强的假设, 之后再去判断匹配后的结果与测试数据之间能否通过检验. 
 
-![](https://uipv4.zywvvd.com:33030/HexoFiles/vvd_files/202312270917279.png)
+![](https://img.zywvvd.com:61213/HexoFiles/vvd_files/202312270917279.png)
 
 ---
 
-![](https://uipv4.zywvvd.com:33030/HexoFiles/vvd_files/202312261613757.png)
+![](https://img.zywvvd.com:61213/HexoFiles/vvd_files/202312261613757.png)
 
 
 
@@ -711,11 +711,11 @@ AA --> V
 
 
 
-![](https://uipv4.zywvvd.com:33030/HexoFiles/vvd_files/202312261634445.png)
+![](https://img.zywvvd.com:61213/HexoFiles/vvd_files/202312261634445.png)
 
 ---
 
-![](https://uipv4.zywvvd.com:33030/HexoFiles/vvd_files/202312261629223.png)
+![](https://img.zywvvd.com:61213/HexoFiles/vvd_files/202312261629223.png)
 
 
 
@@ -749,7 +749,7 @@ AA --> V
 
 ---
 
-![](https://uipv4.zywvvd.com:33030/HexoFiles/vvd_files/202312261642814.png)
+![](https://img.zywvvd.com:61213/HexoFiles/vvd_files/202312261642814.png)
 
 :::
 
@@ -769,7 +769,7 @@ AA --> V
 
 #### **背景频谱消除**{.text-subtitle}
 
-<img src="https://uipv4.zywvvd.com:33030/HexoFiles/vvd_files/202312141416099.png" width="600" height="650" align="center">
+<img src="https://img.zywvvd.com:61213/HexoFiles/vvd_files/202312141416099.png" width="600" height="650" align="center">
 
 
 
@@ -790,7 +790,7 @@ $$
 
 POFT比背景频谱消除的方法更为便捷, 但对于长线条或划痕这种面积较大且具有周期性的缺陷 却无法进行检测.
 
-![](https://uipv4.zywvvd.com:33030/HexoFiles/vvd_files/202312261654299.png)
+![](https://img.zywvvd.com:61213/HexoFiles/vvd_files/202312261654299.png)
 
 :::
 
@@ -828,7 +828,7 @@ $$
 
 ---
 
-![](https://uipv4.zywvvd.com:33030/HexoFiles/vvd_files/202312261709004.png)
+![](https://img.zywvvd.com:61213/HexoFiles/vvd_files/202312261709004.png)
 
 不过这类方法依然存在一些不足之处. 首先, 稀疏编码的效率较为低下. 在测试阶段由于需要通过迭代优化的方式寻找最优的编码向量; 其次, 稀疏编码需要较多的空间来保存字典. 为了获得稀疏的编码向量, 一般字典都是过完备的, 即字典中元素的数量要超过样本的维度. 但对于图 像数据而言, 无论是局部图像区域还是特征向量其 维度都比较高, 过大的字典不仅会占用较多的存储 空间, 也会降低算法的运行速度.
 
@@ -854,7 +854,7 @@ OC-SVM通过在高维空间创建超平面来分割正常 样本和潜在异常�
 
 :::column
 
-![](https://uipv4.zywvvd.com:33030/HexoFiles/vvd_files/202312141446997.png)
+![](https://img.zywvvd.com:61213/HexoFiles/vvd_files/202312141446997.png)
 
 上图分别展示了OC-SVM和SVDD构建分类面的示意图, 其中实心与空心的点分别代表已知的正常样本和潜在的异常样本.
 
@@ -994,7 +994,7 @@ OC-SVM仅考虑构建一个超平面来进行异常检测, 这样一个半开放
 
 </p>
 
-<img src="https://uipv4.zywvvd.com:33030/HexoFiles/vvd_files/202312131635094.png" width="1100" class="centered-img ">
+<img src="https://img.zywvvd.com:61213/HexoFiles/vvd_files/202312131635094.png" width="1100" class="centered-img ">
 
 
 
@@ -1166,11 +1166,11 @@ $$
 
 
 
-<img src="https://uipv4.zywvvd.com:33030/HexoFiles/mt_images_gitee/20220214110800.png" width=1000 height=550>
+<img src="https://img.zywvvd.com:61213/HexoFiles/mt_images_gitee/20220214110800.png" width=1000 height=550>
 
 
 
-<slide class="bg-white aligncenter " image="https://uipv4.zywvvd.com:33030/HexoFiles/vvd_files/202312271024233.png .right">
+<slide class="bg-white aligncenter " image="https://img.zywvvd.com:61213/HexoFiles/vvd_files/202312271024233.png .right">
 
 :::header
 :**教师学生网络**:{.alignright}
@@ -1198,7 +1198,7 @@ $$
 
 - 得到最终异常检测 Map
 
-![](https://uipv4.zywvvd.com:33030/HexoFiles/mt_images_gitee/20220214141012.png){.aligncenter}
+![](https://img.zywvvd.com:61213/HexoFiles/mt_images_gitee/20220214141012.png){.aligncenter}
 
 <slide class="bg-white alignleft">
 
@@ -1233,7 +1233,7 @@ $$
 
 ## **一分类 (One-Class Classification)**
 
-![](https://uipv4.zywvvd.com:33030/HexoFiles/vvd_files/202312131710713.png){.aligncenter}
+![](https://img.zywvvd.com:61213/HexoFiles/vvd_files/202312131710713.png){.aligncenter}
 
 一分类区别于监督学习中的二分类、多分类, 属于异常检测的范畴, 数据分类的结果要么是已知类别, 要么属于未知类别. 此类方法将异常检测看做是一个一分类问题, 也就是判断样本是否属于模型熟悉的类别, 也就是说模型会设置一个空间, 在空间内的是正常样本, 除此之外在空间之外都是异常样本. {.text-intro}
 
@@ -1312,7 +1312,7 @@ $$
 - 论文：[Deep One-Class Classification](https://proceedings.mlr.press/v80/ruff18a/ruff18a.pdf)  {.text-intro}
 - 开源代码：https://github.com/lukasruff/Deep-SVDD-PyTorch  {.text-intro}
 
-![](https://uipv4.zywvvd.com:33030/HexoFiles/vvd_files/202312191455508.png)
+![](https://img.zywvvd.com:61213/HexoFiles/vvd_files/202312191455508.png)
 
 基于核的单分类异常检测方法难以处理高维样本特征而且计算效率低, 因此论文中对此类方法进行优化提出了深度 Deep SVDD 模型. 主要想法是利用神经网络训练来最小化计算样本特征空间的划分超球面, 然后根据球心和测试样本点间的距离来判定样本点是否是异常.  {.text-intro}
 
@@ -1424,7 +1424,7 @@ $p_i$ 为轮训图片的一个 Patch, $p_{i}'$ 为 $p_i$ 的空间临近点. {.t
 
 ### **自监督学习**{.text-subtitle}
 
-![](https://uipv4.zywvvd.com:33030/HexoFiles/vvd_files/202312191540761.png){.aligncenter}
+![](https://img.zywvvd.com:61213/HexoFiles/vvd_files/202312191540761.png){.aligncenter}
 
 确定好 patch 的大小后, 随机在图片中选择一个patch, 作为中心位置, 画一个9宫格, 那么对应的位置分别1-8.$C_\phi$ 代表分类网络Classifier, $P_{1}$为中心点, $P_{2}$是8个位置的任意一点, 分类器需要识别 $P_{2}$ 是哪一个位置. {.text-intro}
 
@@ -1473,7 +1473,7 @@ $$
 | 可解释性{.text-intro}           | 原理简单, 但网络对用户来说是黑盒 , 产生的特征不易解释{.text-intro} | 6{.text-intro}    |
 | 适用场景{.text-intro}           | 数据量很少, 异常定义不清晰, 需求不明确, 性能要求不高时的临时异常检测方案{.text-intro} |                   |
 
-<slide class="bg-apple" image="https://uipv4.zywvvd.com:33030/HexoFiles/vvd_files/202312131718143.png .right">
+<slide class="bg-apple" image="https://img.zywvvd.com:61213/HexoFiles/vvd_files/202312131718143.png .right">
 
 :::header
 :**基于特征的异常检测**:{.alignright}
@@ -1594,7 +1594,7 @@ $$
 
 <font face='微软雅黑' size=5>
 
-![](https://uipv4.zywvvd.com:33030/HexoFiles/vvd_files/202312191734015.png)
+![](https://img.zywvvd.com:61213/HexoFiles/vvd_files/202312191734015.png)
 
 文章将标准化流应用到图像异常检测中, 利用流的分布拟合能力构建正常图像特征的分布, 通过输出概率图的概率密度大小实现异常检测. 
 
@@ -1616,7 +1616,7 @@ $$
 
 <font face='微软雅黑' size=5>
 
-![](https://uipv4.zywvvd.com:33030/HexoFiles/vvd_files/202312200947687.png)
+![](https://img.zywvvd.com:61213/HexoFiles/vvd_files/202312200947687.png)
 
 使用 **Real-NVP** Flow 模型构建Flow层, 将输入数据 $x$ 映射为 $z$, 对应概率分布的双射：正常图像分布$x \in p_X(x)$ 到隐变量 $z \in p_Z(z)$ . 根据标准化流的限制, 概率分布变换满足：{.text-intro}
 $$
@@ -1665,7 +1665,7 @@ $$
 
 具体而言, 我们将每个通道的二维概率求和, 得到最终的概率图, 并使用双线性插值将其上采样到输入图像的分辨率（概率求和 -> 概率图 -> 上采样至图像分辨率大小）. {.text-intro}
 
-![](https://uipv4.zywvvd.com:33030/HexoFiles/vvd_files/202312271344414.png)
+![](https://img.zywvvd.com:61213/HexoFiles/vvd_files/202312271344414.png)
 
 
 
@@ -1720,7 +1720,7 @@ $$
 
 ---
 
-![](https://uipv4.zywvvd.com:33030/HexoFiles/vvd_files/202312131729546.png)
+![](https://img.zywvvd.com:61213/HexoFiles/vvd_files/202312131729546.png)
 
 <slide class="bg-apple" >
 
@@ -1819,7 +1819,7 @@ $$
 
 ---
 
-![](https://uipv4.zywvvd.com:33030/HexoFiles/vvd_pc_upload/202208202145109.jpg)
+![](https://img.zywvvd.com:61213/HexoFiles/vvd_pc_upload/202208202145109.jpg)
 
 <font size=5.5>
 
@@ -1915,7 +1915,7 @@ $$
 
 :::
 
-![](https://uipv4.zywvvd.com:33030/HexoFiles/vvd_pc_upload/202208202207239.jpg){.aligncenter}
+![](https://img.zywvvd.com:61213/HexoFiles/vvd_pc_upload/202208202207239.jpg){.aligncenter}
 
 <slide class="bg-white" >
 
@@ -1993,7 +1993,7 @@ $$
 
 ### **自监督学习 (Self-supervised classification)**{.text-subtitle}
 
-![](https://uipv4.zywvvd.com:33030/HexoFiles/vvd_files/202312201516550.png){.aligncenter}
+![](https://img.zywvvd.com:61213/HexoFiles/vvd_files/202312201516550.png){.aligncenter}
 
 
 
@@ -2133,7 +2133,7 @@ $$
 
 </p>
 
-![](https://uipv4.zywvvd.com:33030/HexoFiles/vvd_files/202312201725643.png){.aligncenter}
+![](https://img.zywvvd.com:61213/HexoFiles/vvd_files/202312201725643.png){.aligncenter}
 
 <slide class="bg-white aligntop" >
 
@@ -2147,7 +2147,7 @@ $$
 
 ---
 
-![](https://uipv4.zywvvd.com:33030/HexoFiles/vvd_files/202312201658464.png)
+![](https://img.zywvvd.com:61213/HexoFiles/vvd_files/202312201658464.png)
 
 文章认为简单的变换增强可以让模型学到语义信息, 但是图像纹理上的规律（连续性、平滑性）学到的有限, 作者期望一种变换策略可以打破数据原有的规律, 然后交给模型训练, 使其学到分辨规律被打破的能力. {.text-intro}
 
@@ -2167,7 +2167,7 @@ $$
 
 作者发现简单的 Cutout 对于纹理数据可以起到异常检测的效果, 随后作者将任务变难, 改变 Cutout 区域的颜色, 最后变为复制粘贴, 性能逐步提升. 
 
-![](https://uipv4.zywvvd.com:33030/HexoFiles/vvd_files/202312201707790.png){.aligncenter}
+![](https://img.zywvvd.com:61213/HexoFiles/vvd_files/202312201707790.png){.aligncenter}
 
 在复制粘贴基础上, 进行颜色变化, 得到 CutPaste-Scar 类别的数据, 使用原始数据、CutPaste数据、CutPaste-Scar数据进行三分类训练网络, 完成自监督学习. 
 
@@ -2215,7 +2215,7 @@ $$
 
 文章分析该方法成功的原因, 在于构造的异常图像保留了大部分正常图像的信息, 而且异常区域也和正常图像同源, 对模型来说准确分类更具有挑战性. 那么为了验证 cutpaste 创造的图像是否真的模拟了异常图像的特征分布, 文章展示了经过 t-SNE 降维的数据特征（从训练完成的模型中输出）：
 
-![](https://uipv4.zywvvd.com:33030/HexoFiles/vvd_files/202312201732841.png){.aligncenter}
+![](https://img.zywvvd.com:61213/HexoFiles/vvd_files/202312201732841.png){.aligncenter}
 
 虽然 cutpaste 的结果在特征空间中没有和异常图像完全重合, 但是模型学到的表示也足够区分正常、异常的数据了. 
 
@@ -2271,7 +2271,7 @@ $$
 
 :::
 
-<center><img src="https://uipv4.zywvvd.com:33030/HexoFiles/vvd_files/202312131742171.png"  width="1000" height="600" > </center>
+<center><img src="https://img.zywvvd.com:61213/HexoFiles/vvd_files/202312131742171.png"  width="1000" height="600" > </center>
 
 <font color=#888>因此基于重构的异常检测依赖模型的重构泛化性, 既要良好地构建正常图像, 又要避免对异常数据的重建, 需要精心训练模型. </font>
 
@@ -2297,7 +2297,7 @@ $$
 
 Encoder 提取输入图像的 latent code, 可以理解为一个在低维空间中的高级语义编码, 它与输入图像之间存在映射. 而Decoder负责根据 latent code 进行图像重构, 使得重构后的图像与输入尽可能一致. 整体过程如下所示：
 
-<center><img src="https://uipv4.zywvvd.com:33030/HexoFiles/vvd_files/202312211401670.png"  width="1300" height="400" > </center>
+<center><img src="https://img.zywvvd.com:61213/HexoFiles/vvd_files/202312211401670.png"  width="1300" height="400" > </center>
 
 </p>
 
@@ -2408,7 +2408,7 @@ Encoder 提取输入图像的 latent code, 可以理解为一个在低维空间�
 
 </p>
 
-![](https://uipv4.zywvvd.com:33030/HexoFiles/vvd_files/202312211522591.png){.aligncenter}
+![](https://img.zywvvd.com:61213/HexoFiles/vvd_files/202312211522591.png){.aligncenter}
 
 </p>
 
@@ -2434,7 +2434,7 @@ DSR 的 Encoder 将图像映射到一个量化的隐空间中, 随后用两种 D
 
 ---
 
-![](https://uipv4.zywvvd.com:33030/HexoFiles/vvd_files/202312211608805.png){.aligncenter}
+![](https://img.zywvvd.com:61213/HexoFiles/vvd_files/202312211608805.png){.aligncenter}
 
 该方法基于一组特征字典 $K$, 该字典由解码器在大量复杂的自然图像高清重建任务中训练得到, 保留了很多重要的自然图像信息. 
 
@@ -2468,13 +2468,13 @@ $$
 
 ---
 
-![](https://uipv4.zywvvd.com:33030/HexoFiles/vvd_files/202312211628791.png){.aligncenter}
+![](https://img.zywvvd.com:61213/HexoFiles/vvd_files/202312211628791.png){.aligncenter}
 
 该解码器的任务是将输入图像中的可见异常重建为正常图像, 思路是将图像的特征子空间限制在正常图像的范围内, 实现架构如上图所示. 
 
 将  $Q_{lo}$ 和 $Q_{hi}$ 通过网络转换为非量化的特征子空间, $\tilde{\mathbf{F}}_{\mathrm{lo}},\tilde{\mathbf{F}}_{\mathrm{hi}}$ , 随后再次用 $K$ 对该特征进行量化, 得到 $\tilde{\mathbf{Q}}_{\mathrm{lo}},\tilde{\mathbf{Q}}_{\mathrm{hi}}$ , 通过对这两组特征的下采样两次、上采样四次得到重构的特定对象图 $I_{spc}$, 部分重构效果如下图所示：
 
-![](https://uipv4.zywvvd.com:33030/HexoFiles/vvd_files/202312211704133.png){.aligncenter}
+![](https://img.zywvvd.com:61213/HexoFiles/vvd_files/202312211704133.png){.aligncenter}
 
 
 
@@ -2609,7 +2609,7 @@ $$
 
 </p></p>
 
-![](https://uipv4.zywvvd.com:33030/HexoFiles/vvd_files/202312131803967.png){.aligncenter}
+![](https://img.zywvvd.com:61213/HexoFiles/vvd_files/202312131803967.png){.aligncenter}
 
 </p></p>
 
@@ -2734,7 +2734,7 @@ $$
 :**生成对抗网络**:{.alignright}
 :::
 
-![](https://uipv4.zywvvd.com:33030/HexoFiles/vvd_files/202312131803967.png)
+![](https://img.zywvvd.com:61213/HexoFiles/vvd_files/202312131803967.png)
 
 
 
@@ -2854,7 +2854,7 @@ $$
 
 ---
 
-![](https://uipv4.zywvvd.com:33030/HexoFiles/vvd_file_bed/202207222304177.jpg){.aligncenter}
+![](https://img.zywvvd.com:61213/HexoFiles/vvd_file_bed/202207222304177.jpg){.aligncenter}
 
 扩散模型(Diffusion Models )是生成模型的一种, 出现得晚, 性能更好, 可以以极高分辨率重构数据. 基于扩散模型的重构图像的能力, 此类技术路线也可以用于重构的异常检测. 
 
@@ -2872,7 +2872,7 @@ $$
 
 ---
 
-![](https://uipv4.zywvvd.com:33030/HexoFiles/vvd_files/202312221429684.png){.aligncenter}
+![](https://img.zywvvd.com:61213/HexoFiles/vvd_files/202312221429684.png){.aligncenter}
 
 
 
@@ -2936,7 +2936,7 @@ $$
 
 下图为扩散过程, 从 $x_0$ 到最后的 $x_T$ 就是一个马尔可夫链, 表示状态空间中经过从一个状态到另一个状态的转换的随机过程. 而下标则是 Diffusion Models 对应的图像扩散过程. 
 
-![](https://uipv4.zywvvd.com:33030/HexoFiles/vvd_files/202312221431633.png){.aligncenter}
+![](https://img.zywvvd.com:61213/HexoFiles/vvd_files/202312221431633.png){.aligncenter}
 
 该过程不需要训练, 将输入的真实图像逐渐变为纯高斯噪声的图像. 
 
@@ -2956,7 +2956,7 @@ $$
 
 - Diffusion Models 跟 GAN 或者 VAE 的最大区别在于不是通过一个模型来进行生成的, 而是基于马尔可夫链, 通过学习噪声来生成数据. 
 
-![](https://uipv4.zywvvd.com:33030/HexoFiles/vvd_file_bed/202207222306753.jpg){.aligncenter}
+![](https://img.zywvvd.com:61213/HexoFiles/vvd_file_bed/202207222306753.jpg){.aligncenter}
 
 
 
@@ -3061,7 +3061,7 @@ $$
 
 ---
 
-![](https://uipv4.zywvvd.com:33030/HexoFiles/vvd_files/202312141713986.png){.aligncenter}
+![](https://img.zywvvd.com:61213/HexoFiles/vvd_files/202312141713986.png){.aligncenter}
 
 
 
@@ -3155,7 +3155,7 @@ $$
 
 ---
 
-![](https://uipv4.zywvvd.com:33030/HexoFiles/vvd_files/202312141800769.png){.aligncenter}
+![](https://img.zywvvd.com:61213/HexoFiles/vvd_files/202312141800769.png){.aligncenter}
 
 <font color='#bbb'>在 `MVTec` 数据集得到 99.8% 的图像 AU-ROC 和 97.2% 的分割 AU-ROC. 
 
@@ -3353,7 +3353,7 @@ WinCLIP 利用 CLIP 大模型的编码器来提取图像特征, 给定文字描�
 
 ---
 
-![](https://uipv4.zywvvd.com:33030/HexoFiles/vvd_files/202312151114158.png)
+![](https://img.zywvvd.com:61213/HexoFiles/vvd_files/202312151114158.png)
 
 该工作基于特征库的思想, 优化了特征相似性的计算方式, 同时训练网络使其更加适应项目数据, 取得了很高的异常检测性能. 
 
@@ -3456,11 +3456,11 @@ $$
 
 常用的异常检测特征提取网络都是 ImageNet 预训练的 backbone, 典型的是 WideResNet-101, 文章使用四次卷积的网络作为特征提取器
 
-![](https://uipv4.zywvvd.com:33030/HexoFiles/vvd_files/202312151425851.png){.aligncenter}
+![](https://img.zywvvd.com:61213/HexoFiles/vvd_files/202312151425851.png){.aligncenter}
 
 输入 Patch 为 $33\times 33$, 即每组输出描述一个 patch 的特征, 网络被称为 patchd escription network (PDN), 这个小网络可以在 1ms 内提取 $256\times 256$ 的图像特征. 该网络的训练使用的就是 WideResNet-101 进行蒸馏, 训练数据为 ImageNet, 损失为 MSE. 
 
-![](https://uipv4.zywvvd.com:33030/HexoFiles/vvd_files/202312151452251.png){.aligncenter}
+![](https://img.zywvvd.com:61213/HexoFiles/vvd_files/202312151452251.png){.aligncenter}
 
 该 PDN 相比于之前的预训练网络还有一个优势, 预训练网络将整幅图像作为输入, 产生的异常特征很有可能外溢到图像的其他区域中, 而 PDN 则会将异常的影响限制在自己的感受野之内, 这会使得网络具有更精准的定位能力. 
 
@@ -3486,7 +3486,7 @@ $$
 
 为此, 文章设计了类似在线困难样本挖掘的实现思想, 限制学生网络梯度回传的区域, 仅在学生没有很好模仿老师行为的区域上进行梯度回传. 
 
-![](https://uipv4.zywvvd.com:33030/HexoFiles/vvd_files/202312151545149.png){.aligncenter}
+![](https://img.zywvvd.com:61213/HexoFiles/vvd_files/202312151545149.png){.aligncenter}
 
 <font face='微软雅黑' size=5>
 
@@ -3568,7 +3568,7 @@ $$
 
 
 
-![](https://uipv4.zywvvd.com:33030/HexoFiles/vvd_files/202312151716476.png){.aligncenter}
+![](https://img.zywvvd.com:61213/HexoFiles/vvd_files/202312151716476.png){.aligncenter}
 
 <font face='微软雅黑' >
 
@@ -3624,7 +3624,7 @@ $$
 
 
 
-<slide class="bg-white aligntop" image="https://uipv4.zywvvd.com:33030/HexoFiles/vvd_files/202312180853822.png .right">
+<slide class="bg-white aligntop" image="https://img.zywvvd.com:61213/HexoFiles/vvd_files/202312180853822.png .right">
 
 :::header
 :**CPR**:{.alignright}
@@ -3804,7 +3804,7 @@ $$
 
 #### 训练
 
-![](https://uipv4.zywvvd.com:33030/HexoFiles/vvd_files/202312181133346.png){.aligncenter}
+![](https://img.zywvvd.com:61213/HexoFiles/vvd_files/202312181133346.png){.aligncenter}
 
 <font color=#aaa>使用了复杂的方案和调整过的一种对比损失, 用于检测和定位图像异常的 CPR 推理程序.  请注意, 远程特征对（绿色）和异常特征对（蓝色）被标记为负特征, 而正特征对（红色）是从两个特征张量上相同且无缺陷的位置提取的. </font>
 
@@ -3854,7 +3854,7 @@ $$
 
 </p>
 
-![](https://uipv4.zywvvd.com:33030/HexoFiles/vvd_files/202312181121746.png){.aligncenter}
+![](https://img.zywvvd.com:61213/HexoFiles/vvd_files/202312181121746.png){.aligncenter}
 
 用于分类每个像素是前景还是背景, 将输入特征进行编码, 然后图像周围区域被视为背景, 中心被视为前景, 背景中的最多数量的标签被用于背景训练, 中心该标签的数据被丢弃. 
 
@@ -3882,7 +3882,7 @@ $$
 
  CPR 通过修改 BackBone 调整特征通道数, 将通道数从 384 降低至 64 / 16 , 同时应用 TensorRT 加速技术, 可以分别得到 CPR-Fast 和 CPR-Faster 版本, 性能没有严重下降, 但是速度提升很大 （320 $\times$ 320）
 
-![](https://uipv4.zywvvd.com:33030/HexoFiles/vvd_files/202312181318332.png)
+![](https://img.zywvvd.com:61213/HexoFiles/vvd_files/202312181318332.png)
 
 
 
@@ -3931,7 +3931,7 @@ $$
 
 ---
 
-![](https://uipv4.zywvvd.com:33030/HexoFiles/vvd_files/202312181350845.png){.aligncenter}
+![](https://img.zywvvd.com:61213/HexoFiles/vvd_files/202312181350845.png){.aligncenter}
 
 文章通过多尺度特征金字塔提取结合多尺度的 Flow 模型预测异常的概率, 最后多尺度输出聚合为图像异常得分和异常位置检测. 
 
@@ -4046,7 +4046,7 @@ $$
 
 ---
 
-![](https://uipv4.zywvvd.com:33030/HexoFiles/vvd_files/202312251353151.png)
+![](https://img.zywvvd.com:61213/HexoFiles/vvd_files/202312251353151.png)
 
 提出的基于生成模型的框架由两个组件组成：**重建子网络** 和 **分割子网络**
 
@@ -4080,7 +4080,7 @@ $$
 
 文章发现如果直接将 $x_{t_s}$  和 $x_{t_b}$ 恢复为正常图像, 由于 $\hat{x_{0_s}}$ 带有更多原始图像的特征, 由他恢复出的图像细节和原始图像更接近, 但是扩散模型一步难以恢复较严重的异常, 而  $\hat{x_{0_b}}$ 基本上是正常图像的样貌. 
 
-![](https://uipv4.zywvvd.com:33030/HexoFiles/vvd_files/202312251448730.png){.aligncenter}
+![](https://img.zywvvd.com:61213/HexoFiles/vvd_files/202312251448730.png){.aligncenter}
 
 也就是说 $x_{t_s}$ 细节较好,  $x_{t_b}$ 的大局观更好, 为了结合二者的优点, 文章使用了带引导的扩散模型恢复  $\hat{x_{0_s}}$ . 
 
@@ -4139,7 +4139,7 @@ $$
 
 上述过程中需要大量带异常的数据才可以训练起来, 论文中使用了人工制造异常的方式实现. 
 
-![](https://uipv4.zywvvd.com:33030/HexoFiles/vvd_files/202312251511756.png){.aligncenter}
+![](https://img.zywvvd.com:61213/HexoFiles/vvd_files/202312251511756.png){.aligncenter}
 
 通过随机创造一些 mask 将其他数据集的数据以一定透明度叠加到正常图像上, 得到异常数据：
 $$
@@ -4190,7 +4190,7 @@ $$
 
 ---
 
-![](https://uipv4.zywvvd.com:33030/HexoFiles/vvd_files/202312251527367.png)
+![](https://img.zywvvd.com:61213/HexoFiles/vvd_files/202312251527367.png)
 
 SimpleNet 包含 特征提取器, 特征适配器, 异常特征生成器和判别器. 
 
@@ -4375,7 +4375,7 @@ $$
 
 #### **论文框架**{.text-subtitle}
 
-![](https://uipv4.zywvvd.com:33030/HexoFiles/vvd_files/202312251710914.png)
+![](https://img.zywvvd.com:61213/HexoFiles/vvd_files/202312251710914.png)
 
 
 
@@ -4403,11 +4403,11 @@ I_n'=\delta\left(M\odot I_n\right)+\left(1-\delta\right)\left(M\odot I\right)
 $$
 </p>
 
-![](https://uipv4.zywvvd.com:33030/HexoFiles/vvd_files/202312251714069.png){.aligncenter}
+![](https://img.zywvvd.com:61213/HexoFiles/vvd_files/202312251714069.png){.aligncenter}
 
 生成的异常样本在特征空间中的表现：
 
-![](https://uipv4.zywvvd.com:33030/HexoFiles/vvd_files/202312251733180.png){.aligncenter}
+![](https://img.zywvvd.com:61213/HexoFiles/vvd_files/202312251733180.png){.aligncenter}
 
 
 
@@ -4433,7 +4433,7 @@ $$
 $$
 DI^{*}=arg_{DI_{i}\in DI}\sum_{x\in DI_{i}}
 $$
-![](https://uipv4.zywvvd.com:33030/HexoFiles/vvd_files/202312251726530.png){.aligncenter}
+![](https://img.zywvvd.com:61213/HexoFiles/vvd_files/202312251726530.png){.aligncenter}
 
 N个存储信息中, 每个包括块1/2/3生成的三张特征图, 将输入的三张特征图与N中所有的三个特征图比较找出距离最小的N中的三张特征图. 将输入的三张特征图与和其距离最小的三张特征图连接形成CI. 后经多尺度特征融合块, 经U-Net跳跃连接进入解码器. 
 
