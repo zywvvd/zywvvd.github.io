@@ -23,16 +23,16 @@
   <meta name="author" content="Yiwei Zhang">
   <meta name="keywords" content="人工智能, 深度学习, 个人博客, 机器学习">
   
-    <meta name="description" content="老 NAS 时代的公网暴露面是三十多个转发端口，uipv4.zywvvd.com:33030 到 33060 连成一片，每个服务一个口。这次虚拟化迁移把公网入口统一收敛到网关虚拟机的 nginx 上：一个 HTTPS 端口按 SNI 分发全部 web 服务，外加三个各司其职的独立端口，总共四个。本文记录收敛方案、通配符证书与 WireGuard 回国代理的完整配置。">
+    <meta name="description" content="老 NAS 时代的公网暴露面是一长列转发端口，连成一片的裸 IP 高位口，每个服务一个。这次虚拟化迁移把公网入口统一收敛到网关虚拟机的 nginx 上：全部 web 服务共享一个 HTTPS 端口按 SNI 分发，外加几个各司其职的独立端口。本文记录收敛方案、通配符证书与 WireGuard 回国代理的技术要点。">
 <meta property="og:type" content="article">
-<meta property="og:title" content="NAS 网关收敛：三十个公网端口变四个">
+<meta property="og:title" content="NAS 网关升级：公网入口单端口收敛">
 <meta property="og:url" content="https://www.zywvvd.com/notes/environment/nas/nas-gateway-port/nas-gateway-port/index.html">
 <meta property="og:site_name" content="又见苍岚">
-<meta property="og:description" content="老 NAS 时代的公网暴露面是三十多个转发端口，uipv4.zywvvd.com:33030 到 33060 连成一片，每个服务一个口。这次虚拟化迁移把公网入口统一收敛到网关虚拟机的 nginx 上：一个 HTTPS 端口按 SNI 分发全部 web 服务，外加三个各司其职的独立端口，总共四个。本文记录收敛方案、通配符证书与 WireGuard 回国代理的完整配置。">
+<meta property="og:description" content="老 NAS 时代的公网暴露面是一长列转发端口，连成一片的裸 IP 高位口，每个服务一个。这次虚拟化迁移把公网入口统一收敛到网关虚拟机的 nginx 上：全部 web 服务共享一个 HTTPS 端口按 SNI 分发，外加几个各司其职的独立端口。本文记录收敛方案、通配符证书与 WireGuard 回国代理的技术要点。">
 <meta property="og:locale" content="zh_CN">
 <meta property="og:image" content="https://img.zywvvd.com:61213/HexoFiles/blog-2026-11/port-convergence.png">
 <meta property="article:published_time" content="2026-11-14T13:00:00.000Z">
-<meta property="article:modified_time" content="2026-11-14T02:10:27.448Z">
+<meta property="article:modified_time" content="2026-11-14T02:36:32.750Z">
 <meta property="article:author" content="Yiwei Zhang">
 <meta property="article:tag" content="Environment">
 <meta property="article:tag" content="Nas">
@@ -43,7 +43,7 @@
   
   
   
-  <title>NAS 网关收敛：三十个公网端口变四个 - 又见苍岚</title>
+  <title>NAS 网关升级：公网入口单端口收敛 - 又见苍岚</title>
 
   <link  rel="stylesheet" href="https://lib.baomitu.com/twitter-bootstrap/4.6.1/css/bootstrap.min.css" />
 
@@ -1089,7 +1089,7 @@ document.addEventListener("readystatechange", function() {
       <div class="banner-text text-center fade-in-up">
         <div class="h2">
           
-            <span id="subtitle">NAS 网关收敛：三十个公网端口变四个</span>
+            <span id="subtitle">NAS 网关升级：公网入口单端口收敛</span>
           
         </div>
 
@@ -1118,7 +1118,7 @@ document.addEventListener("readystatechange", function() {
         <i class="iconfont icon-chart"></i>
         
           <!-- compatible with older versions-->
-          2.7k 字
+          2.6k 字
         
       </span>
     
@@ -1130,7 +1130,7 @@ document.addEventListener("readystatechange", function() {
         
         
           <!-- compatible with older versions-->
-          23 分钟
+          22 分钟
         
       </span>
     
@@ -1274,7 +1274,7 @@ document.addEventListener("readystatechange", function() {
           <article class="post-content mx-auto" data-pagefind-body>
           <span data-pagefind-sort="date_sort" style="display:none">1794661200000</span>
 
-            <!-- <h1 id="seo-header">NAS 网关收敛：三十个公网端口变四个</h1> -->
+            <!-- <h1 id="seo-header">NAS 网关升级：公网入口单端口收敛</h1> -->
 
             
               <p id="updated-time" class="note note-info" style="">
@@ -1290,41 +1290,41 @@ document.addEventListener("readystatechange", function() {
               <div class="markdown-body">
                 
                 <blockquote>
-<p>老 NAS 时代的公网暴露面是三十多个转发端口，<code>uipv4.zywvvd.com:33030</code> 到 <code>33060</code> 连成一片，每个服务一个口。这次虚拟化迁移把公网入口统一收敛到网关虚拟机的 nginx 上：一个 HTTPS 端口按 SNI 分发全部 web 服务，外加三个各司其职的独立端口，总共四个。本文记录收敛方案、通配符证书与 WireGuard 回国代理的完整配置。</p>
+<p>老 NAS 时代的公网暴露面是一长列转发端口，连成一片的裸 IP 高位口，每个服务一个。这次虚拟化迁移把公网入口统一收敛到网关虚拟机的 nginx 上：全部 web 服务共享一个 HTTPS 端口按 SNI 分发，外加几个各司其职的独立端口。本文记录收敛方案、通配符证书与 WireGuard 回国代理的技术要点。</p>
 </blockquote>
 <span id="more"></span>
-<p><img src="https://img.zywvvd.com:61213/HexoFiles/blog-2026-11/port-convergence.png" srcset="/img/loading.gif" lazyload alt="公网端口收敛：30+ 到 4"></p>
+<p><img src="https://img.zywvvd.com:61213/HexoFiles/blog-2026-11/port-convergence.png" srcset="/img/loading.gif" lazyload alt="公网入口收敛：数十端口到极简暴露面"></p>
 <h3 id="为什么要收敛">为什么要收敛</h3>
-<p>三十多个端口的问题不只是难记：</p>
+<p>一长列端口的问题不只是难记：</p>
 <ul>
-<li><strong>暴露面大</strong>：每个端口都是扫描器的靶子，安全组、证书、日志分散在三十多个地方</li>
+<li><strong>暴露面大</strong>：每个端口都是扫描器的靶子，安全组、证书、日志分散在几十个地方</li>
 <li><strong>证书散乱</strong>：旧方案靠第三方证书服务逐端口部署，续期链路脆弱，一次故障全站 https 报错</li>
 <li><strong>无备案的约束</strong>：家宽没有 ICP 备案，运营商封 80/443，所有服务只能挂高位端口，端口越多个性越强</li>
 </ul>
 <p>收敛的前提是 DNS 与证书问题的解法：域名在百度云解析，通配符证书走 DNS-01 验证——<code>acme.sh</code> 原生支持百度云 DNS 插件，用 AccessKey 自动添加验证记录签发 <code>*.zywvvd.com</code>，不依赖任何 80/443 端口，续期全自动。家宽 IP 由 DDNS 每十分钟刷新一次 A 记录，配合泛解析一条 <code>*</code> CNAME 顶掉过去十几个子域名的逐条配置。</p>
 <h3 id="SNI-分发原理">SNI 分发原理</h3>
 <p><img src="https://img.zywvvd.com:61213/HexoFiles/blog-2026-11/sni-dispatch.png" srcset="/img/loading.gif" lazyload alt="单端口 SNI 分发全链路"></p>
-<p>家宽没有 80/443，所以入口不能做成传统的&quot;80 跳转 443&quot;。方案是让全部 web 服务共享一个高位端口（61213），nginx 在 TLS 握手阶段读取 ClientHello 里的 SNI（Server Name Indication）字段——这个字段在加密握手的最开始明文传输，nginx 据此把 <code>img.zywvvd.com</code> 路由到图床、<code>waline.zywvvd.com</code> 路由到评论系统，一个端口承载全部子域名。</p>
+<p>家宽没有 80/443，所以入口不能做成传统的&quot;80 跳转 443&quot;。方案是让全部 web 服务共享一个 HTTPS 高位端口，nginx 在 TLS 握手阶段读取 ClientHello 里的 SNI（Server Name Indication）字段——这个字段在加密握手的最开始明文传输，nginx 据此把 <code>img.zywvvd.com</code> 路由到图床、<code>waline.zywvvd.com</code> 路由到评论系统，一个端口承载全部子域名。</p>
 <p>nginx 的实现比想象中简单，因为后端全是纯 HTTP，TLS 在网关终结，直接用 http 层的 <code>server_name</code> 分发，不需要上 stream 模块的 ssl_preread：</p>
-<figure class="highlight nginx"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><code class="hljs nginx"><span class="hljs-comment"># /etc/nginx/snippets/sni-tls.conf —— 全部子域名 server 块共享</span><br><span class="hljs-attribute">listen</span> <span class="hljs-number">61213</span> ssl;<br><span class="hljs-attribute">ssl_certificate</span> /etc/nginx/certs/wildcard.fullchain.pem;<br><span class="hljs-attribute">ssl_certificate_key</span> /etc/nginx/certs/wildcard.key.pem;<br><span class="hljs-attribute">ssl_protocols</span> TLSv1.<span class="hljs-number">2</span> TLSv1.<span class="hljs-number">3</span>;<br></code></pre></td></tr></table></figure>
-<figure class="highlight nginx"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br></pre></td><td class="code"><pre><code class="hljs nginx"><span class="hljs-comment"># /etc/nginx/sites-available/sni-61213 —— 每个子域名一个 server 块</span><br><span class="hljs-section">server</span> &#123;<br>    <span class="hljs-attribute">include</span> snippets/sni-tls.conf;<br>    <span class="hljs-attribute">server_name</span> img.zywvvd.com;<br>    <span class="hljs-section">location</span> / &#123; <span class="hljs-attribute">proxy_pass</span> http://192.168.5.120:33030; &#125;<br>&#125;<br><span class="hljs-section">server</span> &#123;<br>    <span class="hljs-attribute">include</span> snippets/sni-tls.conf;<br>    <span class="hljs-attribute">server_name</span> waline.zywvvd.com;<br>    <span class="hljs-section">location</span> / &#123;<br>        <span class="hljs-attribute">proxy_pass</span> http://192.168.5.120:8360;<br>        <span class="hljs-attribute">proxy_set_header</span> Host <span class="hljs-variable">$http_host</span>;   <span class="hljs-comment"># 带端口的 Host，评论组件拼 serverURL 依赖它</span><br>    &#125;<br>&#125;<br><span class="hljs-comment"># ……图床/统计/一言/云盘/代码仓/状态页，同款 server 块</span><br><span class="hljs-section">server</span> &#123;<br>    <span class="hljs-attribute">include</span> snippets/sni-tls.conf;<br>    <span class="hljs-comment"># 未知的 SNI 直接拒绝握手</span><br>    <span class="hljs-attribute">ssl_reject_handshake</span> <span class="hljs-literal">on</span>;<br>&#125;<br></code></pre></td></tr></table></figure>
+<figure class="highlight nginx"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><code class="hljs nginx"><span class="hljs-comment"># /etc/nginx/snippets/sni-tls.conf —— 全部子域名 server 块共享</span><br><span class="hljs-attribute">listen</span> &lt;port&gt; ssl;   <span class="hljs-comment"># 单一 HTTPS 端口，全部 server 块共用</span><br><span class="hljs-attribute">ssl_certificate</span> /etc/nginx/certs/wildcard.fullchain.pem;<br><span class="hljs-attribute">ssl_certificate_key</span> /etc/nginx/certs/wildcard.key.pem;<br><span class="hljs-attribute">ssl_protocols</span> TLSv1.<span class="hljs-number">2</span> TLSv1.<span class="hljs-number">3</span>;<br></code></pre></td></tr></table></figure>
+<figure class="highlight nginx"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br></pre></td><td class="code"><pre><code class="hljs nginx"><span class="hljs-comment"># 每个子域名一个 server 块</span><br><span class="hljs-section">server</span> &#123;<br>    <span class="hljs-attribute">include</span> snippets/sni-tls.conf;<br>    <span class="hljs-attribute">server_name</span> img.zywvvd.com;<br>    <span class="hljs-section">location</span> / &#123; <span class="hljs-attribute">proxy_pass</span> http://192.168.5.120:&lt;内部端口&gt;; &#125;<br>&#125;<br><span class="hljs-section">server</span> &#123;<br>    <span class="hljs-attribute">include</span> snippets/sni-tls.conf;<br>    <span class="hljs-attribute">server_name</span> waline.zywvvd.com;<br>    <span class="hljs-section">location</span> / &#123;<br>        <span class="hljs-attribute">proxy_pass</span> http://192.168.5.120:&lt;内部端口&gt;;<br>        <span class="hljs-attribute">proxy_set_header</span> Host <span class="hljs-variable">$http_host</span>;   <span class="hljs-comment"># 带端口的 Host，评论组件拼 serverURL 依赖它</span><br>    &#125;<br>&#125;<br><span class="hljs-comment"># ……图床/统计/一言/云盘/代码仓/状态页，同款 server 块</span><br><span class="hljs-section">server</span> &#123;<br>    <span class="hljs-attribute">include</span> snippets/sni-tls.conf;<br>    <span class="hljs-comment"># 未知的 SNI 直接拒绝握手</span><br>    <span class="hljs-attribute">ssl_reject_handshake</span> <span class="hljs-literal">on</span>;<br>&#125;<br></code></pre></td></tr></table></figure>
 <p>两个细节值得记。一是 <code>proxy_set_header Host</code> 必须用 <code>$http_host</code> 而不是 <code>$host</code>——前者带端口后者不带，评论系统的服务端靠它拼出正确的 API 地址，丢了端口前端就会把请求打到不存在的 443 上干等超时。二是最后一个拒绝握手的兜底 server 块，扫描器随便伪造 SNI 探测时拿到的是 TLS 层的拒绝，连 HTTP 404 都不给。</p>
 <h3 id="证书自动化">证书自动化</h3>
 <p>证书链路全部收敛到网关自己持有：</p>
 <figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><code class="hljs bash">acme.sh --issue --dns dns_baidu -d <span class="hljs-string">&#x27;*.zywvvd.com&#x27;</span> -d <span class="hljs-string">&#x27;zywvvd.com&#x27;</span> --server letsencrypt<br>acme.sh --install-cert -d zywvvd.com \<br>  --key-file /etc/nginx/certs/wildcard.key.pem \<br>  --fullchain-file /etc/nginx/certs/wildcard.fullchain.pem \<br>  --reloadcmd <span class="hljs-string">&quot;systemctl reload nginx&quot;</span><br></code></pre></td></tr></table></figure>
 <p>DNS-01 的验证记录由百度云 API 自动增删，签出的 ECC 证书覆盖全部子域名，<a target="_blank" rel="noopener" href="http://acme.sh">acme.sh</a> 自己的定时任务负责续期，续完自动 reload nginx。第三方证书服务从架构里彻底退役。</p>
 <h3 id="独立端口与-WireGuard">独立端口与 WireGuard</h3>
-<p>三个不走的 SNI 的端口各有理由：</p>
+<p>几个不走 SNI 的端口各有理由：</p>
 <ul>
-<li><strong>49512 → 代码仓 SSH</strong>：git 走 SSH 协议不是 HTTP，独立端口转发到 OneDev 内置的 SSH 服务，只认公钥无密码可爆，客户端 <code>~/.ssh/config</code> 配一条就是 GitHub 体验</li>
-<li><strong>63197 → 开发机 SSH</strong>：远程开发的直达通道</li>
-<li><strong>51128/UDP → WireGuard</strong>：回国代理</li>
+<li><strong>代码仓 SSH 独立端口</strong>：git 走 SSH 协议不是 HTTP，独立端口转发到 OneDev 内置的 SSH 服务，只认公钥无密码可爆，客户端 <code>~/.ssh/config</code> 配一条就是 GitHub 体验</li>
+<li><strong>开发机 SSH 独立端口</strong>：远程开发的直达通道</li>
+<li><strong>WireGuard 独立 UDP 端口</strong>：回国代理</li>
 </ul>
-<p>WireGuard 用 wg-easy 容器跑在网关上，人在外面时手机或电脑连上隧道，家里整个内网（网关后台、监控面板、文件服务）全部直达，零新增暴露面。这里踩过一个映射坑记录一下：wg-easy 新版把 <code>WG_PORT</code> 应用到了容器内 wireguard 的实际监听口，而 compose 映射还写的旧默认口，结果入站 UDP 全部送到一个没人监听的端口上静默丢弃——客户端只发包不收包、服务端零字节收到。修复就是让映射两端端口号一致（<code>51128:51128/udp</code>），一次握手就通了。</p>
+<p>WireGuard 用 wg-easy 容器跑在网关上，人在外面时手机或电脑连上隧道，家里整个内网（网关后台、监控面板、文件服务）全部直达，零新增暴露面。这里踩过一个映射坑记录一下：wg-easy 新版把 <code>WG_PORT</code> 应用到了容器内 wireguard 的实际监听口，而 compose 映射还写的旧默认口，结果入站 UDP 全部送到一个没人监听的端口上静默丢弃——客户端只发包不收包、服务端零字节收到。修复就是让映射两端端口号保持一致，一次握手就通了。</p>
 <h3 id="验证">验证</h3>
 <p>收敛完成的验收两条：一是外部网络逐个子域名 curl 全部返回预期状态码；二是 hairpin 回流——在家内网里用公网域名访问，流量从路由器出去再折返回网关，全部子域名实测可达。hairpin 通了，家里家外用同一套地址，配置零分歧。</p>
 <h3 id="尾声">尾声</h3>
-<p>从三十多个端口到四个，删掉的不只是路由器里的转发规则，还有每次上新的心智负担：现在加一个服务，就是在网关加一个 server 块、DNS 加一条泛解析已覆盖的记录，完了。</p>
+<p>从一长列端口到极简暴露面，删掉的不只是路由器里的转发规则，还有每次上新的心智负担：现在加一个服务，就是在网关加一个 server 块、DNS 加一条泛解析已覆盖的记录，完了。</p>
 <link rel="stylesheet" href="/css/spoiler.css" type="text/css"><script src="/js/spoiler.js" type="text/javascript" async></script>
                 
 
@@ -1416,7 +1416,7 @@ document.addEventListener("readystatechange", function() {
 
   <div class="license-box my-3">
     <div class="license-title">
-      <div>NAS 网关收敛：三十个公网端口变四个</div>
+      <div>NAS 网关升级：公网入口单端口收敛</div>
       <div>https://www.zywvvd.com/notes/environment/nas/nas-gateway-port/nas-gateway-port/</div>
     </div>
     <div class="license-meta">
