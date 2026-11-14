@@ -23,16 +23,16 @@
   <meta name="author" content="Yiwei Zhang">
   <meta name="keywords" content="人工智能, 深度学习, 个人博客, 机器学习">
   
-    <meta name="description" content="整个升级的地基：新平台点亮、虚拟化层落成、八台虚拟机各就各位。这一层决定了后面所有服务怎么摆——本文记录从装机破案到最终形态的完整过程，以及三条用故障换来的纪律。">
+    <meta name="description" content="整个升级的地基。旧 NAS 五年服役攒下的账——CPU 撑不住、内存加不动、系统盘悬在 USB 上、所有服务挤在一个系统里互相缠绕——这次全部在基础设施层一次性解决。本文记录从&quot;为什么选虚拟化&quot;到八台虚拟机落位的完整决策与实施，以及三条用故障换来的纪律。">
 <meta property="og:type" content="article">
 <meta property="og:title" content="NAS 基础设施：从裸机到八台虚拟机">
 <meta property="og:url" content="https://www.zywvvd.com/notes/environment/nas/nas-infra/nas-infra/index.html">
 <meta property="og:site_name" content="又见苍岚">
-<meta property="og:description" content="整个升级的地基：新平台点亮、虚拟化层落成、八台虚拟机各就各位。这一层决定了后面所有服务怎么摆——本文记录从装机破案到最终形态的完整过程，以及三条用故障换来的纪律。">
+<meta property="og:description" content="整个升级的地基。旧 NAS 五年服役攒下的账——CPU 撑不住、内存加不动、系统盘悬在 USB 上、所有服务挤在一个系统里互相缠绕——这次全部在基础设施层一次性解决。本文记录从&quot;为什么选虚拟化&quot;到八台虚拟机落位的完整决策与实施，以及三条用故障换来的纪律。">
 <meta property="og:locale" content="zh_CN">
 <meta property="og:image" content="https://img.zywvvd.com:61213/HexoFiles/blog-2026-11/nas-topology.png">
 <meta property="article:published_time" content="2026-11-14T15:00:00.000Z">
-<meta property="article:modified_time" content="2026-11-14T03:01:18.150Z">
+<meta property="article:modified_time" content="2026-11-14T03:09:53.624Z">
 <meta property="article:author" content="Yiwei Zhang">
 <meta property="article:tag" content="Environment">
 <meta property="article:tag" content="Nas">
@@ -1118,7 +1118,7 @@ document.addEventListener("readystatechange", function() {
         <i class="iconfont icon-chart"></i>
         
           <!-- compatible with older versions-->
-          1.2k 字
+          1.7k 字
         
       </span>
     
@@ -1130,7 +1130,7 @@ document.addEventListener("readystatechange", function() {
         
         
           <!-- compatible with older versions-->
-          11 分钟
+          14 分钟
         
       </span>
     
@@ -1290,28 +1290,37 @@ document.addEventListener("readystatechange", function() {
               <div class="markdown-body">
                 
                 <blockquote>
-<p>整个升级的地基：新平台点亮、虚拟化层落成、八台虚拟机各就各位。这一层决定了后面所有服务怎么摆——本文记录从装机破案到最终形态的完整过程，以及三条用故障换来的纪律。</p>
+<p>整个升级的地基。旧 NAS 五年服役攒下的账——CPU 撑不住、内存加不动、系统盘悬在 USB 上、所有服务挤在一个系统里互相缠绕——这次全部在基础设施层一次性解决。本文记录从&quot;为什么选虚拟化&quot;到八台虚拟机落位的完整决策与实施，以及三条用故障换来的纪律。</p>
 </blockquote>
 <span id="more"></span>
-<h3 id="装机与破案">装机与破案</h3>
-<p>新平台硬件是一次性到位的：Ryzen 7 9700X、B850M 追击炮、双 1TB SSD、32GB DDR5。PVE 9.2 的安装本身顺利，双盘组 ZFS mirror 一次装成——但点亮后的头三天，系统接连崩溃了四次。</p>
-<p>排查走了弯路：先怀疑主板，换了一块；再怀疑系统安装，重装无效。最后用逐槽轮换内存的方式定位——<strong>是内存条颗粒与这代平台的兼容性问题</strong>，换成另一品牌后彻底稳定，此后再没崩过。这次破案确立了一个朴素的原则：新平台连续异常时先怀疑内存兼容性，比换板子便宜得多。</p>
-<p>板载网卡倒是意外之喜：规划按千兆做的，实际是 2.5G——白捡的升级位，虽然当前瓶颈在路由器侧。</p>
-<h3 id="八台虚拟机：按职责切分">八台虚拟机：按职责切分</h3>
-<p>虚拟化的意义不是&quot;能开很多机器&quot;，而是<strong>爆炸半径、生命周期、备份方式按职责解耦</strong>。最终的切分：</p>
+<p><img src="https://img.zywvvd.com:61213/HexoFiles/blog-2026-11/nas-topology.png" srcset="/img/loading.gif" lazyload alt="NAS 新平台拓扑：一台物理机八个虚拟机"></p>
+<h3 id="背景：旧平台撑不住了">背景：旧平台撑不住了</h3>
+<p>旧 NAS 是 2021 年装配的 J3455 平台，五年下来每一层都到了极限：四核四线程的低功耗 CPU 跑着&quot;宿主系统 + 存储虚拟机 + 应用虚拟机&quot;三层，服务一忙全家都卡；DDR3L 12GB 内存开两个虚拟机就见底；SATA 接口用尽原生加转接的全部七个；系统盘挂在一个 USB SATA 盘上，五年里始终是心里的一根刺。更深层的问题是<strong>架构</strong>：所有服务共享一个故障域，升任何组件都要掂量全局，动一发牵全身。</p>
+<h3 id="目的">目的</h3>
+<p>新平台要达到四条：性能余量足够跑全部现有服务加未来扩展；<strong>服务之间故障隔离</strong>——博客挂不影响家人相册，存储维护不停应用；系统盘可靠性质变（USB → 双 SSD 镜像）；整机可维护——任何一台&quot;虚拟的服务器&quot;可以单独备份、回滚、重建。</p>
+<h3 id="方案选择：为什么是-PVE-而不是继续裸机-Docker">方案选择：为什么是 PVE 而不是继续裸机 Docker</h3>
+<p>两条路线摆在一起过：</p>
+<ul>
+<li><strong>裸机 + Docker</strong>：简单直接，但回到了老路——所有服务一个故障域，Docker 网络和系统配置互相缠绕，正是旧平台五年攒下的乱象源头</li>
+<li><strong>Proxmox VE 虚拟化</strong>：多一层抽象的开销，换来按职责切虚拟机的能力——存储归存储、应用归应用、网关归网关，每台独立快照/备份/重建</li>
+</ul>
+<p>判断依据回到目的：要的是故障隔离和可维护，虚拟化的开销（约 5% 性能 + 内存预分配）对 8 核 16 线程的新平台完全可接受。选 PVE。硬件上 CPU 选 9700X（性能够、发热低）、双 1TB SATA SSD 组 ZFS mirror 做虚拟化层存储（校验和 + 镜像双保险，对虚拟机磁盘这种&quot;坏了就灾难&quot;的数据比普通 RAID 更合适）、六块机械盘暂不动等整体搬迁。</p>
+<h3 id="实施：装机、破案、落位">实施：装机、破案、落位</h3>
+<p><strong>装机与破案。</strong> PVE 9.2 安装本身一次成，但点亮后三天崩了四次。排查走了弯路：先怀疑主板换了一块，无效；最后逐槽轮换内存定位——<strong>内存颗粒与这代平台不兼容</strong>，换品牌后彻底稳定。这次破案确立的排查优先级：新平台连续异常，先怀疑内存兼容性，比换主板便宜得多。</p>
+<p><strong>八台虚拟机落位。</strong> 按职责切分，VMID 与内网地址尾号一致（“110 就是点 110”）：</p>
 <table>
 <thead>
 <tr>
 <th>VM</th>
 <th>职责</th>
-<th>一句话定位</th>
+<th>定位</th>
 </tr>
 </thead>
 <tbody>
 <tr>
 <td>存储层</td>
 <td>OMV</td>
-<td>全部文件服务的家，等机械盘到位</td>
+<td>全部文件服务的家</td>
 </tr>
 <tr>
 <td>应用层</td>
@@ -1341,7 +1350,7 @@ document.addEventListener("readystatechange", function() {
 <tr>
 <td>支撑层</td>
 <td>图形排障</td>
-<td>按需启动，平时关机</td>
+<td>按需启动</td>
 </tr>
 <tr>
 <td>模板</td>
@@ -1350,15 +1359,22 @@ document.addEventListener("readystatechange", function() {
 </tr>
 </tbody>
 </table>
-<p>VMID 与内网地址尾号一致——“110 就是点 110”，终身免查表。</p>
-<h3 id="三条用故障换来的纪律">三条用故障换来的纪律</h3>
-<p><strong>CPU 指令集要显式指定。</strong> 虚拟化平台默认给虚拟机的 CPU 类型是最保守的兼容档，缺现代指令集——家庭服务里的新版 MongoDB 一启动就崩，根因是它依赖的指令在默认档位里不存在。全家统一指定到 x86-64-v3 后再没犯过。教训的深层版本是：<strong>模板是隐性的配置继承源</strong>，改模板等于改未来所有克隆，克隆前必查模板配置。</p>
-<p><strong>磁盘要配 discard。</strong> 数据盘不开 unmap 的话，虚拟机里的 fstrim 无法穿透释放，空间只会涨不会跌——老平台四百 GB 的&quot;虚胖&quot;系统盘就是这么来的。新平台所有盘统一配好，配合宿主机定期 TRIM。</p>
-<p><strong>备份要验真。</strong> 收官前核查发现，VM 备份任务从未真正自动跑过——调度器曾在某次维护后挂死，界面上的&quot;任务已建&quot;掩盖了&quot;从未执行&quot;。手动全量跑通验证机制本身可用后，按&quot;备份归数据盘&quot;的决策显式延后到搬盘批次。宁可承认没备份，不要假装有备份。</p>
-<h3 id="按需扩容">按需扩容</h3>
-<p>虚拟化带来的弹性在后面持续兑现：应用机内存因一次评论服务的 OOM 从 6G 在线提到 10G；观测机为容纳监控栈从 1G 提到 2G。都是分钟级操作，业务无感——这在&quot;一台机器一个系统&quot;的时代是不可想象的。</p>
+<p><strong>三条用故障换来的纪律</strong>，都是踩过才写进流程的：</p>
+<ol>
+<li><strong>虚拟机 CPU 显式指定指令集档位</strong>——默认档缺现代指令，新版 MongoDB 一启动就崩；更深的教训是模板是隐性继承源，改模板等于改未来所有克隆</li>
+<li><strong>数据盘配 discard</strong>——不开的话虚拟机内的空间释放无法穿透，老平台四百 GB&quot;虚胖&quot;系统盘就是这么来的</li>
+<li><strong>备份要验真</strong>——收官核查发现备份任务从未真正自动跑过（调度器曾挂死，“任务已建&quot;掩盖了&quot;从未执行”）；宁可承认没备份，不要假装有备份</li>
+</ol>
+<h3 id="结果：对照目的验收">结果：对照目的验收</h3>
+<ul>
+<li>性能余量：全部服务迁入后资源占用远低于容量，且出现瓶颈时可在线扩（应用机一次 OOM 后内存在线翻倍，分钟级）</li>
+<li>故障隔离：后续迁移中应用虚拟机反复重建配置，家人服务零感知——隔离真实生效</li>
+<li>系统盘质变：ZFS mirror + 校验和，定期 scrub 有主动体检</li>
+<li>可维护：八台虚拟机全部纳入统一快照策略，配置全部进仓</li>
+</ul>
+<p>四条目的全部落地。基础设施层做完的最大感受：后面所有迁移和折腾都变成了&quot;虚拟机里的事&quot;——炸了重建、小了扩容、闲了关机，物理机退回它该在的位置：稳定跑着，别的不管。</p>
 <h3 id="尾声">尾声</h3>
-<p>这一层做完的感受是：后面所有服务的迁移和折腾，都变成了&quot;虚拟机里的事&quot;——炸了重建、小了扩容、闲了关机，物理机退回到它该在的位置：稳定地跑着，别的不用管。</p>
+<p>老平台教会我&quot;一台机器能跑多少东西&quot;，新平台教会我&quot;跑坏了怎么救&quot;——后一种能力，才是这次地基工程真正买到的东西。</p>
 <link rel="stylesheet" href="/css/spoiler.css" type="text/css"><script src="/js/spoiler.js" type="text/javascript" async></script>
                 
 

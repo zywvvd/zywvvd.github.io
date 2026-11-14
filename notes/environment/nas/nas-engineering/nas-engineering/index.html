@@ -23,15 +23,15 @@
   <meta name="author" content="Yiwei Zhang">
   <meta name="keywords" content="人工智能, 深度学习, 个人博客, 机器学习">
   
-    <meta name="description" content="两周迁移上百次变更，能不乱的底气不在技术方案里，在四件&quot;不显眼&quot;的工程治理上：配置进仓、发布流一键化、密钥归档、过程全记录。这些事单看每一件都不紧急，但缺任何一件，这次迁移的复杂度都会翻倍。本文记录这四件事的做法。">
+    <meta name="description" content="两周迁移上百次变更、二十多个服务跨机器搬家，能不乱的底气不在技术方案里，在四件&quot;不显眼&quot;的基础工作上：配置进仓、发布流一键化、密钥归档、过程全记录。本文记录这四件事各自解决什么问题、怎么做的——它们单看没有一件紧急，但缺任何一件，这次迁移的复杂度都会翻倍。">
 <meta property="og:type" content="article">
 <meta property="og:title" content="升级背后的工程治理：配置、发布流与记录">
 <meta property="og:url" content="https://www.zywvvd.com/notes/environment/nas/nas-engineering/nas-engineering/index.html">
 <meta property="og:site_name" content="又见苍岚">
-<meta property="og:description" content="两周迁移上百次变更，能不乱的底气不在技术方案里，在四件&quot;不显眼&quot;的工程治理上：配置进仓、发布流一键化、密钥归档、过程全记录。这些事单看每一件都不紧急，但缺任何一件，这次迁移的复杂度都会翻倍。本文记录这四件事的做法。">
+<meta property="og:description" content="两周迁移上百次变更、二十多个服务跨机器搬家，能不乱的底气不在技术方案里，在四件&quot;不显眼&quot;的基础工作上：配置进仓、发布流一键化、密钥归档、过程全记录。本文记录这四件事各自解决什么问题、怎么做的——它们单看没有一件紧急，但缺任何一件，这次迁移的复杂度都会翻倍。">
 <meta property="og:locale" content="zh_CN">
 <meta property="article:published_time" content="2026-11-14T16:40:00.000Z">
-<meta property="article:modified_time" content="2026-11-14T03:03:04.895Z">
+<meta property="article:modified_time" content="2026-11-14T03:11:47.010Z">
 <meta property="article:author" content="Yiwei Zhang">
 <meta property="article:tag" content="DevOps">
 <meta property="article:tag" content="Environment">
@@ -1116,7 +1116,7 @@ document.addEventListener("readystatechange", function() {
         <i class="iconfont icon-chart"></i>
         
           <!-- compatible with older versions-->
-          1.2k 字
+          1.3k 字
         
       </span>
     
@@ -1128,7 +1128,7 @@ document.addEventListener("readystatechange", function() {
         
         
           <!-- compatible with older versions-->
-          10 分钟
+          11 分钟
         
       </span>
     
@@ -1288,36 +1288,23 @@ document.addEventListener("readystatechange", function() {
               <div class="markdown-body">
                 
                 <blockquote>
-<p>两周迁移上百次变更，能不乱的底气不在技术方案里，在四件&quot;不显眼&quot;的工程治理上：配置进仓、发布流一键化、密钥归档、过程全记录。这些事单看每一件都不紧急，但缺任何一件，这次迁移的复杂度都会翻倍。本文记录这四件事的做法。</p>
+<p>两周迁移上百次变更、二十多个服务跨机器搬家，能不乱的底气不在技术方案里，在四件&quot;不显眼&quot;的基础工作上：配置进仓、发布流一键化、密钥归档、过程全记录。本文记录这四件事各自解决什么问题、怎么做的——它们单看没有一件紧急，但缺任何一件，这次迁移的复杂度都会翻倍。</p>
 </blockquote>
 <span id="more"></span>
-<h3 id="配置仓库化：一切可重建">配置仓库化：一切可重建</h3>
-<p>二十六个服务的配置各自独立成 Git 仓，集中托管在自建的代码仓服务上。原则简单：</p>
-<ul>
-<li><strong>配置全进</strong>：compose、nginx、应用配置、部署脚本</li>
-<li><strong>数据不进</strong>：数据库文件、大文件、运行日志</li>
-<li><strong>密钥绝不进</strong>：凭据走独立通道</li>
-</ul>
-<p>仓库结构是&quot;一服务一文件夹&quot;，谁改了什么、什么时候改的，提交历史一目了然。配套一个<strong>每日凌晨的漂移快照</strong>：定时任务把机器上实际运行的配置与仓内版本比对，有差异自动提交——哪怕有人半夜手改了配置忘了入库，第二天也会被快照兜住。</p>
-<p>这套体系的价值在灾难场景兑现：任何一台虚拟机彻底损坏，配置从仓里拉出来、数据从备份里恢复，重建是小时级的事。“机器会死，配置永生”。</p>
-<h3 id="发布流：五步变一步">发布流：五步变一步</h3>
-<p>博客发布原来是一串手工操作：拉代码、构建、生成索引、同步索引、部署——五步任何一步忘了就是线上事故。收敛为一条命令后，构建产物和索引同步全部自动化，人只负责最后看一眼结果。</p>
-<p>顺手清了发布脚本里的历史遗留：早已退役的搜索仓库推送段、指向旧服务器的索引同步目标——脚本和文章一样会积累过时引用，<strong>流程自动化之前先做流程清洁</strong>。</p>
-<h3 id="密钥档案：凭据的集中与轮换">密钥档案：凭据的集中与轮换</h3>
-<p>迁移涉及几十项凭据：数据库密码、API 令牌、管理后台、SSH 密钥。做法是集中到一个<strong>仓库之外的加密档案</strong>，按服务分节，新增凭据随手记、作废凭据即标注。</p>
-<p>这次迁移还处理了一个历史欠账：数年前误提交到公开仓库的恢复码和 API 令牌——逐一确认泄露面、全部轮换作废、仓内文件下架。教训只有一条：<strong>密钥泄露的补救不是删除文件（git 历史删不干净），而是轮换本体</strong>。</p>
-<h3 id="过程记录：写给三个月后的自己">过程记录：写给三个月后的自己</h3>
-<p>迁移全程产生了三十余篇编号工作记录加一份&quot;活状态&quot;总览文档。记录有两条纪律：</p>
-<ul>
-<li><strong>每个决策写清为什么</strong>：当时显而易见的选择，三个月后只剩&quot;当时为什么不用另一种方案&quot;的疑惑</li>
-<li><strong>踩坑当天入册</strong>：排障的弯路最容易被事后省略，但下一个人（往往是未来的自己）还会走一遍</li>
-</ul>
-<p>这次写系列博客时，全部素材——时间、数字、根因、对账口径——都从工作记录里直接取用。<strong>记录的成本在当下，收益在任何一次回溯</strong>。</p>
-<h3 id="四件事的内在关系">四件事的内在关系</h3>
-<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><code class="hljs text">配置仓   → 机器可重建（对抗硬件死亡）<br>发布流   → 变更可重复（对抗人为失误）<br>密钥档   → 凭据可轮换（对抗时间带来的泄露）<br>过程记录 → 决策可回溯（对抗遗忘）<br></code></pre></td></tr></table></figure>
-<p>四件事合起来是一个朴素的定位：<strong>基础设施的价值不在它多先进，而在它出事之后你还能不能站起来</strong>。</p>
+<h3 id="背景：规模变了，管理方式没跟上的隐患">背景：规模变了，管理方式没跟上的隐患</h3>
+<p>旧 NAS 时代的服务管理方式是&quot;登进机器手改&quot;：配置散落在各台虚拟机的文件系统里，发布博客靠五步手工命令，密钥记在脑子里和聊天记录里，做过什么靠回忆。服务少的时候这套没问题——但这次迁移一口气要动二十多个服务、上百次变更，散装管理立刻露馅：改过哪些配置？发布到哪一步了？哪个密钥在哪儿？每答一次都要翻半天。</p>
+<h3 id="目的">目的</h3>
+<p>四个&quot;可&quot;：<strong>配置可重建</strong>（机器炸了能从仓里拉回来）、<strong>变更可重复</strong>（发布从五步手工变一条命令）、<strong>凭据可轮换</strong>（密钥集中管理、泄露可处置）、<strong>决策可回溯</strong>（三个月后还能查到当时为什么这么做）。</p>
+<h3 id="方案选择与实施">方案选择与实施</h3>
+<p><strong>配置仓库化：一服务一仓 + 每日漂移快照。</strong> 二十六个服务的配置各自独立成 Git 仓集中托管。三条边界：配置全进（compose、nginx、应用配置、部署脚本）；数据不进（数据库文件、大文件、日志）；<strong>密钥绝不进</strong>。单靠人自觉入库不够，配了一个每日凌晨的漂移快照——定时比对机器上实际运行的配置与仓内版本，有差异自动提交。哪怕有人半夜手改忘了入库，第二天快照兜住。这套体系的价值在灾难场景兑现：任何一台虚拟机彻底损坏，配置拉仓、数据拉备份，重建是小时级的事。</p>
+<p><strong>发布流：先流程清洁再自动化。</strong> 博客发布原来是&quot;拉代码、构建、生成索引、同步索引、部署&quot;五步手工。自动化之前先做了一件事：<strong>清掉脚本里的历史遗留</strong>——早已退役的搜索仓库推送段、指向旧服务器的同步目标。流程自动化会把垃圾也固化进去，清洁在前、自动化在后。之后收敛为一条命令，人只看结果。</p>
+<p><strong>密钥档案：仓外集中 + 轮换正解。</strong> 迁移涉及几十项凭据，集中到仓库之外的加密档案按服务分节管理。这次顺手清了个历史欠账：数年前误提交到公开仓库的恢复码和令牌——逐一确认泄露面、全部轮换作废。教训只有一条：<strong>密钥泄露的补救不是删文件（git 历史删不干净），是轮换本体</strong>。</p>
+<p><strong>过程记录：写给三个月后的自己。</strong> 迁移全程三十余篇编号工作记录加一份活状态总览。两条纪律：每个决策写清为什么（当时显而易见的选择，三个月后只剩疑惑）；踩坑当天入册（排障弯路最容易被事后省略，但下一个人往往还是自己）。这次写系列博客时，全部时间、数字、根因都从记录里直接取——记录的成本在当下，收益在任何一次回溯。</p>
+<h3 id="结果">结果</h3>
+<p>四件事在迁移全程的真实兑现：应用虚拟机迁移期反复重建，配置全部从仓恢复；发布流在十几轮发布中零人为失误；密钥零遗失、泄露历史全部处置；这篇系列文章本身就是过程记录的产物。对照四个&quot;可&quot;，全部达成。</p>
+<p>四件事合起来是一个朴素的定位：<strong>基础设施的价值不在多先进，在出事之后你还能不能站起来</strong>。</p>
 <h3 id="尾声">尾声</h3>
-<p>这些治理动作没有一个是这次发明的——都是业界常识。差别只在于：以前觉得&quot;以后再说&quot;，这次趁迁移一起还了债。工程债和技术债一样，越早还利息越低。</p>
+<p>这些没有一件是这次发明的，全是业界常识。差别只在于：以前觉得&quot;以后再说&quot;，这次趁迁移一起还了债。工程债和技术债一样——越早还，利息越低。</p>
 <link rel="stylesheet" href="/css/spoiler.css" type="text/css"><script src="/js/spoiler.js" type="text/javascript" async></script>
                 
 

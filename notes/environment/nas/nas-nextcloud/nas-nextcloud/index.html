@@ -23,16 +23,16 @@
   <meta name="author" content="Yiwei Zhang">
   <meta name="keywords" content="人工智能, 深度学习, 个人博客, 机器学习">
   
-    <meta name="description" content="老云盘还停在 Nextcloud 31，而且病了半年（503）；新虚拟机上直接装了 35.0.2。中间隔着四个大版本，官方只允许逐版升级，但盘点完数据后我选择了放弃升级路线：全新安装 + 数据导入 + 密码哈希回填。之后追新版 35.0.3 时又撞上一场上游发布事故，顺手用 registry API 做了次考古。本文记录整个过程。">
+    <meta name="description" content="NAS 架构升级的收官阶段，自建网盘是数据面最重的一块。本文记录这次迁移的完整决策与实施：从&quot;为什么敢跳过四个大版本直接新装&quot;，到密码哈希回填让家人无感切换，再到追新版时撞上的一场上游发布事故——用 registry API 做的取证过程也一并记录。">
 <meta property="og:type" content="article">
 <meta property="og:title" content="Nextcloud 迁移实录：跳过四个大版本与一次上游事故考古">
 <meta property="og:url" content="https://www.zywvvd.com/notes/environment/nas/nas-nextcloud/nas-nextcloud/index.html">
 <meta property="og:site_name" content="又见苍岚">
-<meta property="og:description" content="老云盘还停在 Nextcloud 31，而且病了半年（503）；新虚拟机上直接装了 35.0.2。中间隔着四个大版本，官方只允许逐版升级，但盘点完数据后我选择了放弃升级路线：全新安装 + 数据导入 + 密码哈希回填。之后追新版 35.0.3 时又撞上一场上游发布事故，顺手用 registry API 做了次考古。本文记录整个过程。">
+<meta property="og:description" content="NAS 架构升级的收官阶段，自建网盘是数据面最重的一块。本文记录这次迁移的完整决策与实施：从&quot;为什么敢跳过四个大版本直接新装&quot;，到密码哈希回填让家人无感切换，再到追新版时撞上的一场上游发布事故——用 registry API 做的取证过程也一并记录。">
 <meta property="og:locale" content="zh_CN">
 <meta property="og:image" content="https://img.zywvvd.com:61213/HexoFiles/blog-2026-11/registry-archaeology.png">
 <meta property="article:published_time" content="2026-11-14T14:00:00.000Z">
-<meta property="article:modified_time" content="2026-11-14T02:51:20.891Z">
+<meta property="article:modified_time" content="2026-11-14T03:09:15.585Z">
 <meta property="article:author" content="Yiwei Zhang">
 <meta property="article:tag" content="Docker">
 <meta property="article:tag" content="Environment">
@@ -1118,7 +1118,7 @@ document.addEventListener("readystatechange", function() {
         <i class="iconfont icon-chart"></i>
         
           <!-- compatible with older versions-->
-          2.4k 字
+          2.2k 字
         
       </span>
     
@@ -1130,7 +1130,7 @@ document.addEventListener("readystatechange", function() {
         
         
           <!-- compatible with older versions-->
-          20 分钟
+          19 分钟
         
       </span>
     
@@ -1290,46 +1290,40 @@ document.addEventListener("readystatechange", function() {
               <div class="markdown-body">
                 
                 <blockquote>
-<p>老云盘还停在 Nextcloud 31，而且病了半年（503）；新虚拟机上直接装了 35.0.2。中间隔着四个大版本，官方只允许逐版升级，但盘点完数据后我选择了放弃升级路线：全新安装 + 数据导入 + 密码哈希回填。之后追新版 35.0.3 时又撞上一场上游发布事故，顺手用 registry API 做了次考古。本文记录整个过程。</p>
+<p>NAS 架构升级的收官阶段，自建网盘是数据面最重的一块。本文记录这次迁移的完整决策与实施：从&quot;为什么敢跳过四个大版本直接新装&quot;，到密码哈希回填让家人无感切换，再到追新版时撞上的一场上游发布事故——用 registry API 做的取证过程也一并记录。</p>
 </blockquote>
 <span id="more"></span>
-<h3 id="旧实例盘点：先搞清楚在迁什么">旧实例盘点：先搞清楚在迁什么</h3>
-<p>迁移前先把旧实例摸了个底：三容器（app 31.0.5.1 + redis + MariaDB 10.6）跑在旧 OMV 虚拟机上，503 半年——根因是配置文件属主不对，容器内的 www-data 读不了，这次新装自然根治。</p>
-<p>数据面盘点是决定迁移路线的关键：</p>
-<ul>
-<li>用户文件：两个账号各 52 个文件，共约 82MB——<strong>纯文件库</strong></li>
-<li>日历：0 条；联系人：1 条（自建）；分享链接：0 条</li>
-<li>数据库 dump：6MB</li>
-</ul>
-<p>没有日历、没有分享、没有应用生态，这个形态下&quot;逐版本升级保数据库&quot;的价值就只剩情怀了。</p>
-<h3 id="路线取舍：四级连跳为什么放弃">路线取舍：四级连跳为什么放弃</h3>
-<p>Nextcloud 官方只支持相邻大版本升级，31 到 35 要 31→32→33→34→35 走四步，每步都要换镜像跑 occ upgrade。而我这套旧实例是整目录挂载的传统部署，每级升级还得换目录结构，四步走完至少一小时起步，且每步都可能撞上应用不兼容。</p>
-<p>对照全新安装的代价：丢掉的只有&quot;回收站历史、文件版本、设备令牌&quot;这类 ephemeral 数据（回收站和版本历史在旧实例上本就没启用几年，设备令牌重登一次就好）。<strong>用一小时的不确定换十分钟的确定性</strong>，选后者：</p>
-<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><code class="hljs text">1. 全新 compose 起 35.0.2（MariaDB 新库）<br>2. occ maintenance:install 初始化<br>3. 老库 dump 留三份（旧机 + 工作站 + 新机）<br>4. 文件树 tar 管道直传新机<br>5. chown -R 33:33（503 根治动作）<br>6. occ files:scan --all 入缓存<br></code></pre></td></tr></table></figure>
-<h3 id="密码哈希回填：旧密码原样可用">密码哈希回填：旧密码原样可用</h3>
-<p>新装实例要建同名用户，但 <code>occ user:add</code> 只能设新密码。两个家人账号（包括一个不常动手的）都换密码不可接受。</p>
-<p>翻了下 Nextcloud 的用户表结构，密码是 argon2id 哈希存在 <code>oc_users</code> 的 <code>password</code> 字段——新老版本算法一致，直接把旧哈希 UPDATE 回去：</p>
-<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs sql"><span class="hljs-keyword">UPDATE</span> oc_users <span class="hljs-keyword">SET</span> password <span class="hljs-operator">=</span> <span class="hljs-string">&#x27;$argon2id$v=19$...&#x27;</span> <span class="hljs-keyword">WHERE</span> uid <span class="hljs-operator">=</span> <span class="hljs-string">&#x27;zywvvd&#x27;</span>;<br></code></pre></td></tr></table></figure>
-<p>实测旧密码原样可登，家人无感。这类&quot;看起来要重置的东西，先看看底层存了什么再下结论&quot;的思路，之后还救了我一次（后面 35.0.3 的考古）。</p>
-<h3 id="版本考古：35-0-3-为什么拉不到">版本考古：35.0.3 为什么拉不到</h3>
 <p><img src="https://img.zywvvd.com:61213/HexoFiles/blog-2026-11/registry-archaeology.png" srcset="/img/loading.gif" lazyload alt="同一 registry API 查询下的两个 tag：空清单 vs 八平台"></p>
-<p>新实例稳定后去追 35.0.3（例行补丁版），结果中国镜像链全线报错。这个报错值得展开讲，因为&quot;镜像拉不到&quot;至少有三种可能，处置完全不同：</p>
-<ol>
-<li><strong>镜像站拒答</strong>：白名单机制，报 <code>denied</code>——换源或本地构建</li>
-<li><strong>缓存残缺</strong>：报 <code>no matching manifest</code>——等同步或换源</li>
-<li><strong>上游发布事故</strong>：所有镜像源一致的异常——不折腾了，等上游修</li>
-</ol>
-<p>定性手段是绕过 docker 客户端直接问 registry API。两个独立镜像源都给出了同一个答案：</p>
-<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><code class="hljs bash"><span class="hljs-comment"># 1. 拿匿名 token</span><br>curl <span class="hljs-string">&quot;https://&lt;mirror&gt;/auth/token?service=&lt;mirror&gt;&amp;scope=repository:library/nextcloud:pull&quot;</span><br><br><span class="hljs-comment"># 2. 带 token 拉 manifest list</span><br>curl -H <span class="hljs-string">&quot;Authorization: Bearer <span class="hljs-variable">$TOKEN</span>&quot;</span> \<br>     -H <span class="hljs-string">&quot;Accept: application/vnd.oci.image.index.v1+json&quot;</span> \<br>     <span class="hljs-string">&quot;https://&lt;mirror&gt;/v2/library/nextcloud/manifests/35.0.3&quot;</span><br></code></pre></td></tr></table></figure>
-<p>35.0.3 返回的是 <code>{&quot;manifests&quot;:[]}</code>——<strong>空的 OCI index</strong>，一个平台条目都没有；对照组 35.0.2 返回完整清单（amd64/arm64 等 8 个平台）。两个独立源同见空清单，说明上游 Docker Hub 的这个 tag 本身就是坏的：版本号推了，镜像没推上来。全球任何机器此刻都拉不到 35.0.3，不是我方网络问题。</p>
-<p>再验证一层：<code>latest</code> 标签的 digest 和本地 35.0.2 不同，说明 latest 移位过。把新 digest 拉下来读容器里的 <code>version.php</code>——<code>$OC_VersionString = '35.0.2'</code>，构建时间 11 月 5 日，早于 35.0.3 发布日。实锤 latest 只是 35.0.2 的重建，上游没有藏一个更新的版本。</p>
-<h3 id="钉版：latest-的静默跳版风险">钉版：latest 的静默跳版风险</h3>
-<p>这次迁移顺手把一个隐患处理了：compose 里原来写的是 <code>nextcloud:latest</code>。Nextcloud 不支持跨大版本升级，<code>latest</code> 意味着上游哪天发 36，我一次 <code>docker compose pull</code> 就会把实例推进不支持的场景。</p>
-<p>改成钉大版本 tag：</p>
-<figure class="highlight yaml"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs yaml"><span class="hljs-attr">image:</span> <span class="hljs-string">nextcloud:35</span>   <span class="hljs-comment"># 35 代的补丁自动跟，36 出来必须显式决策</span><br></code></pre></td></tr></table></figure>
-<p>配合升级前留的双份备份（DB dump + config 归档）和本地打好的回滚镜像 tag，上游修复 35.0.3 推送之后，一条 <code>docker compose pull &amp;&amp; up -d</code> 完成升级，其余什么都不用动。</p>
+<h3 id="背景：一个带病服役的旧网盘">背景：一个带病服役的旧网盘</h3>
+<p>旧网盘自 2023 年部署后一直运行在旧 NAS 的虚拟机上：Nextcloud 31 版、三容器（应用 + Redis + MariaDB），两个家人账号，存的都是文档和软件安装包这类小文件。它有两个长期问题：一是<strong>版本落后</strong>——官方已发布 35 版，中间隔着四个大版本；二是<strong>带病</strong>——半年前开始页面持续 503，根因是配置文件属主不对导致容器进程读不到配置，一直没修。</p>
+<p>这次架构升级把全部服务迁往新虚拟机，网盘跟着搬。<strong>迁移前先盘点数据形态</strong>，这决定了后面所有方案选择：两个账号合计一百余个文件、共八十余 MB；日历零条、联系人一条（自建）、分享链接零个；数据库全量导出仅六 MB。一句话：一个纯文件库，没有日历/协作/应用生态。</p>
+<h3 id="目的">目的</h3>
+<p>三条：数据零丢失搬进新栈；服务恢复健康（503 根治）；版本升到最新。外加一条软目标——<strong>家人无感</strong>：账号不换、密码不改，客户端不用重新折腾。</p>
+<h3 id="方案选择：为什么放弃逐版本升级">方案选择：为什么放弃逐版本升级</h3>
+<p>Nextcloud 官方只支持相邻大版本升级，31 到 35 要走四步，每步换镜像跑升级、涉及目录结构调整，预计一小时起步且每步都可能撞应用不兼容。这是&quot;标准答案&quot;。</p>
+<p>但回到数据形态盘点：逐版本升级保的是数据库里的日历、协作、应用数据——而这些我<strong>一条都没有</strong>。我有的只是文件本体和密码哈希，这两样都可以脱离数据库迁移。于是备选方案浮现：<strong>全新安装 35 + 文件导入 + 密码哈希回填</strong>，十分钟确定性流程换一小时的不确定性。</p>
+<p>判断标准就一条：升级保护的东西你是不是真的有。没有，就不必为它付升级的成本。选全新安装。</p>
+<h3 id="实施：三步搬完">实施：三步搬完</h3>
+<p><strong>第一步，全新起栈。</strong> 新虚拟机上 compose 拉起 Nextcloud 35 官方镜像加 MariaDB 新库，初始化建管理员。旧库先做全量导出，三份留档（旧机、工作站，新机各一）——这是整个迁移的后悔药。</p>
+<p><strong>第二步，文件直传。</strong> 旧实例的文件树打包走局域网管道直传新机，落盘后修正属主（503 的根因正是属主问题，这一步在新栈从机制上根治），再触发全量扫描入缓存。文件数逐一对账，一百零四对一百零四。</p>
+<p><strong>第三步，密码哈希回填——&quot;密码不用改&quot;的关键。</strong> 新装实例建用户只能设新密码，直接违背&quot;家人无感&quot;目标。查用户表结构：密码以 argon2id 哈希存在 <code>oc_users</code> 的 <code>password</code> 字段，而<strong>新旧版本算法一致</strong>——意味着哈希可以直接搬运：</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><code class="hljs sql"><span class="hljs-comment">-- 把旧实例导出的哈希写回新实例同名账号</span><br><span class="hljs-keyword">UPDATE</span> oc_users <span class="hljs-keyword">SET</span> password <span class="hljs-operator">=</span> <span class="hljs-string">&#x27;&lt;旧实例导出的哈希&gt;&#x27;</span> <span class="hljs-keyword">WHERE</span> uid <span class="hljs-operator">=</span> <span class="hljs-string">&#x27;&lt;账号&gt;&#x27;</span>;<br></code></pre></td></tr></table></figure>
+<p>执行后旧密码原样可登，两个家人账号全部无感。这一步的通用启示：<strong>看起来必须重置的东西，先看底层存的是什么再下结论</strong>——存的是哈希且算法没变，就能搬。</p>
+<h3 id="结果：目标逐条对账">结果：目标逐条对账</h3>
+<ul>
+<li>数据零丢失：文件逐一对账一致，回收站/版本历史这类 ephemeral 数据明确不迁（旧实例本就没启用几年，提前盘过损失面）</li>
+<li>503 根治：新栈属主正确，服务健康检查全绿</li>
+<li>版本最新：35 版，官方当前大版本</li>
+<li>家人无感：旧密码直登，App 连新域名即用 ✓</li>
+</ul>
+<p>全部达标。唯一主动放弃的是设备访问令牌——安全起见不迁，各设备重新登录一次。</p>
+<h3 id="意外收获：一次上游发布事故的考古">意外收获：一次上游发布事故的考古</h3>
+<p>迁移完成后追 35.0.3 补丁版，结果所有镜像源一致报&quot;找不到 amd64 清单&quot;。这个现象值得较真，因为&quot;镜像拉不到&quot;至少有三种可能：镜像站拒答（换源可解）、缓存残缺（等同步可解）、<strong>上游发布事故</strong>（只能等修复）——处置完全不同。</p>
+<p>定性手段是绕过 docker 客户端直接问 registry API：拿匿名 token、带 Accept 头拉 manifest list、数 platforms。结果两个独立镜像源给出同一个答案——35.0.3 的清单是空的（<code>{&quot;manifests&quot;:[]}</code>，一个平台都没有），而 35.0.2 是完整的八平台清单。两个独立源同见空清单即为上游实锤：<strong>官方把版本号推了、镜像没推上来</strong>，全球任何机器此刻都拉不到，不是我方问题。</p>
+<p>再验证一层：<code>latest</code> 标签的摘要和本地不同，把新摘要拉下来读容器里的版本声明——35.0.2、构建时间早于 35.0.3 发布日，证明 latest 只是重建、没有藏新版。结论：35.0.2 就是当前真实存在的最新版，我的实例已在最新上。</p>
+<p>顺手处理一个隐患：compose 原来写 <code>nextcloud:latest</code>——Nextcloud 不支持跨大版本升级，latest 意味着上游哪天发 36，一次 pull 就把实例推进不支持的场景。改为钉大版本 tag（<code>nextcloud:35</code>），35 代内的补丁自动跟、跨代升级必须显式决策。上游修复 35.0.3 后，一条 <code>docker compose pull &amp;&amp; up -d</code> 完成，其余零改动。</p>
 <h3 id="尾声">尾声</h3>
-<p>这次迁移最有意思的不是搬了多少文件，是两次&quot;先看底层再下结论&quot;：密码不用重置，因为哈希算法没变；35.0.3 不用等镜像站，因为坏的是上游。数据层的真相永远比流程文档写得直白。</p>
+<p>这次迁移最值钱的不是搬了一百个文件，是两次&quot;先看底层再下结论&quot;：密码不用重置，因为哈希算法没变；35.0.3 不用等镜像站，因为坏的是上游。数据层的真相，永远比流程文档写得直白。</p>
 <link rel="stylesheet" href="/css/spoiler.css" type="text/css"><script src="/js/spoiler.js" type="text/javascript" async></script>
                 
 
