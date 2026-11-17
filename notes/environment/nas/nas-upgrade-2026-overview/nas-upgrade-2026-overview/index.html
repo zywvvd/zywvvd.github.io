@@ -23,15 +23,15 @@
   <meta name="author" content="Yiwei Zhang">
   <meta name="keywords" content="人工智能, 深度学习, 个人博客, 机器学习">
   
-    <meta name="description" content="十月末新平台点亮，十一月中旬旧机停机，这次升级前后持续了两周：一台服役五年的 NAS 要换成全新平台，上面所有的服务、数据、网络入口、监控治理，都要搬过去或者重新做一遍。升级期间基础设施、网络、服务与数据、观测、治理五条线并行推进，系列文章按战线各自成篇；本文按事情发生的先后，把整个过程串成一条完整的线——每一步做了什么、为什么这样做，细节顺着专文链接深入。">
+    <meta name="description" content="十月末新平台上线，十一月中旬旧机服务停机，升级周期两周。要做的事由旧机的状态决定：计算、内存、IO 接口、系统盘四项瓶颈同时出现，继续修补的成本高于更换。本文按实施顺序记录整个过程——每一步的现状、决策依据与结果，细节见各模块专文。">
 <meta property="og:type" content="article">
 <meta property="og:title" content="NAS 2026 升级总览">
 <meta property="og:url" content="https://www.zywvvd.com/notes/environment/nas/nas-upgrade-2026-overview/nas-upgrade-2026-overview/index.html">
 <meta property="og:site_name" content="又见苍岚">
-<meta property="og:description" content="十月末新平台点亮，十一月中旬旧机停机，这次升级前后持续了两周：一台服役五年的 NAS 要换成全新平台，上面所有的服务、数据、网络入口、监控治理，都要搬过去或者重新做一遍。升级期间基础设施、网络、服务与数据、观测、治理五条线并行推进，系列文章按战线各自成篇；本文按事情发生的先后，把整个过程串成一条完整的线——每一步做了什么、为什么这样做，细节顺着专文链接深入。">
+<meta property="og:description" content="十月末新平台上线，十一月中旬旧机服务停机，升级周期两周。要做的事由旧机的状态决定：计算、内存、IO 接口、系统盘四项瓶颈同时出现，继续修补的成本高于更换。本文按实施顺序记录整个过程——每一步的现状、决策依据与结果，细节见各模块专文。">
 <meta property="og:locale" content="zh_CN">
 <meta property="article:published_time" content="2026-11-14T17:00:00.000Z">
-<meta property="article:modified_time" content="2026-11-17T15:31:55.039Z">
+<meta property="article:modified_time" content="2026-11-17T15:54:25.039Z">
 <meta property="article:author" content="Yiwei Zhang">
 <meta property="article:tag" content="Environment">
 <meta property="article:tag" content="Nas">
@@ -1116,7 +1116,7 @@ document.addEventListener("readystatechange", function() {
         <i class="iconfont icon-chart"></i>
         
           <!-- compatible with older versions-->
-          2.8k 字
+          3.8k 字
         
       </span>
     
@@ -1128,7 +1128,7 @@ document.addEventListener("readystatechange", function() {
         
         
           <!-- compatible with older versions-->
-          24 分钟
+          33 分钟
         
       </span>
     
@@ -1288,40 +1288,58 @@ document.addEventListener("readystatechange", function() {
               <div class="markdown-body">
                 
                 <blockquote>
-<p>十月末新平台点亮，十一月中旬旧机停机，这次升级前后持续了两周：一台服役五年的 NAS 要换成全新平台，上面所有的服务、数据、网络入口、监控治理，都要搬过去或者重新做一遍。升级期间基础设施、网络、服务与数据、观测、治理五条线并行推进，系列文章按战线各自成篇；本文按事情发生的先后，把整个过程串成一条完整的线——每一步做了什么、为什么这样做，细节顺着专文链接深入。</p>
+<p>十月末新平台上线，十一月中旬旧机服务停机，升级周期两周。要做的事由旧机的状态决定：计算、内存、IO 接口、系统盘四项瓶颈同时出现，继续修补的成本高于更换。本文按实施顺序记录整个过程——每一步的现状、决策依据与结果，细节见各模块专文。</p>
 </blockquote>
 <span id="more"></span>
-<h3 id="缘起：为什么要升级">缘起：为什么要升级</h3>
-<p>服役五年的旧机，计算、内存、存储接口与系统盘都已逼近瓶颈：虚拟机开不动、内存常年吃满、新硬盘接口对不上、系统盘也是老旧的小容量设备。修补的价值越来越低，换平台的价值越来越高，于是有了整套方案——一台新主机跑八台按职责划分的虚拟机，全部服务在不停机的前提下完成迁移。方案的完整推演在<a href="/notes/environment/nas/nas-upgrade-2026/nas-upgrade-2026/">NAS 硬件升级方案</a>一篇，这里不再展开。</p>
-<h3 id="第一步：新平台点亮">第一步：新平台点亮</h3>
-<p>新平台是 PVE 9.2 加双 SSD 组 ZFS mirror，装机一次成功——但点亮后的头三天连续崩溃，逐槽排查后定位到是内存插槽兼容性问题，换掉内存条后故障再没出现过。这次&quot;装机破案&quot;也定下了新平台的基调：出问题就查到根因，不留&quot;大概是这样&quot;的结论。</p>
-<p>虚拟机按职责切了八台：存储、应用、网关、观测、家庭、开发、支撑、模板，VMID 与内网地址尾号一致，终身免查表。两条纪律在装机阶段就定了下来：虚拟机 CPU 显式指定现代指令集等级——默认的保守档位会让新版 MongoDB 直接崩，这是全家后来统一补的课；数据盘配 <code>discard=unmap</code>，让虚拟机内部的 fstrim 能穿透释放真实空间。</p>
-<p>后续还有两次按需扩容：应用机内存因评论服务一次 OOM 从 6G 提到 10G，观测机为容纳新栈从 1G 提到 2G——都是在线操作，分钟级完成。此外核查时发现一件不太体面的事：VM 备份任务从未真正自动跑过（调度器曾挂死），按&quot;备份归数据盘&quot;的决策显式延后到搬盘批次——宁可推迟，也不留一个假就绪。这一阶段的完整记录在<a href="/notes/environment/nas/nas-pve-migration/nas-pve-migration/">基于 PVE 的 NAS 架构升级</a>。</p>
-<h3 id="第二步：网络与入口收敛">第二步：网络与入口收敛</h3>
-<p>旧的公网入口是&quot;一个服务一个口&quot;，几十个高位端口挂在域名下，证书逐端口部署、续期链路脆弱。新网关把全部 web 服务收敛进一个 HTTPS 端口，按 SNI 分发；通配符证书走 DNS-01 验证、续期全自动，第三方证书服务从架构里退役；DNS 记录用一条泛解析顶掉过去十几条子域名，顺带逐条考证清理了十来条历史化石——其中一条差点误杀仍在线的服务，教训是删记录前先验证线上引用。</p>
-<p>远程访问换成 WireGuard：人在外面连上隧道即达全家内网，零新增暴露面；上线时修过一个端口映射错位导致的静默丢包。最后做 hairpin 回流验证：在家里用公网域名访问全部子域名实测全通——家里家外同一套地址，配置零分歧。这一步的完整过程在<a href="/notes/environment/nas/nas-gateway-port/nas-gateway-port/">NAS 网关升级</a>。</p>
-<h3 id="第三步：服务与数据搬家">第三步：服务与数据搬家</h3>
-<p>这是两周里最密集的战线：博客的五个后台服务、家庭的网盘和相册，加上几个没人用的存量，逐个处理。方法论是&quot;逐个新装最新版 + 数据迁移&quot;，不把旧系统的积弊原样带走；每个服务搬完都对账，数据零丢失是硬指标。</p>
+<h3 id="升级原因">升级原因</h3>
+<p>旧机四个瓶颈各自独立又同时存在：CPU 与内存规格无法支撑更多虚拟机；新硬盘的接口规格与主板不匹配，存储扩容路径中断；系统盘容量小且型号老旧，系统组件已经多次出现空间告警。逐项更换硬件（换 CPU 需换主板、换主板牵动内存与接口）等于重建一台机器，因此决策为整机更换。新平台的形态在<a href="/notes/environment/nas/nas-upgrade-2026/nas-upgrade-2026/">NAS 硬件升级方案</a>中推导：虚拟化层用 PVE 9.2，原因是它是裸金属上开虚拟机的成熟方案，且 Web 管理面、集群、备份工具齐备；系统盘用双 SSD 组 ZFS mirror，原因有二：ZFS 的数据校验能发现静默损坏，mirror 保证任一盘故障时系统可继续运行。</p>
+<h3 id="平台搭建">平台搭建</h3>
+<p>安装一次成功。之后三天内出现连续崩溃，崩溃点不定。排查方法是控制变量：逐槽轮换内存，最终定位为某内存插槽与该批次内存条的兼容性问题，更换后故障不再复现。记录此事的原因在于它发生在平台早期，若误判为系统或硬盘问题，后续所有稳定性结论都会建立在错误前提上。</p>
+<p>虚拟机划分为八台：存储、应用、网关、观测、家庭、开发、支撑、模板。划分依据是故障域与资源特征——数据库类服务内存占用大且需要独立调整，网关需要独立网卡配置，观测栈采集频率高但计算轻。VMID 与内网地址尾号保持一致，这是纯运维约定，目的是消除查表成本。两个配置项对所有虚拟机统一生效：</p>
 <ul>
-<li><strong>评论系统</strong>：跨一年半的大版本升级迁移，一千余条评论逐条对齐；环境对齐过程中挖出三个隐藏问题（登录签名钥静默失效、社交登录列表拖慢全站、头像走境外源），逐一修复后管理端加载从数秒降到两秒内</li>
-<li><strong>访问统计</strong>：跨两个大版本迁移，四十六万事件百分百落位；切换时间差造成的统计缺口用跨版本手工合并补齐；顺带修正了地理显示口径，面板图标改走国内路径</li>
-<li><strong>图床</strong>：四十余 GB 图片资产整体迁移，站内一万七千余处引用全量切换到新子域名，跨域头补齐后搜索索引等跨域场景一并打通</li>
-<li><strong>一言服务</strong>：语料同步源被墙，换镜像源后一万一千余句语料恢复自动更新</li>
-<li><strong>静态站本身</strong>：Hexo 跨一个大版本升级（沙箱全量生成对比零差异后上线）、主题合并上游两年积压的更新、站内搜索从 27MB XML 重构为分片索引、发布流固化为一条命令</li>
-<li><strong>网盘</strong>：跨四个大版本——放弃逐版本升级，全新安装替代，文件对账加密码哈希回填让家人无感切换</li>
-<li><strong>家庭相册</strong>：三库（关系库/文档库/对象存储）全量迁移，逐项对账一致，手机 App 无感切换</li>
-<li><strong>服务裁撤</strong>：确认不再使用的知识库、笔记、同步观影三个服务全链路下线（容器/路由/监控/旧实例四处清干净，数据留档可回滚）</li>
-<li><strong>旧机对账定版</strong>：旧机上三十余项现役组件逐一定性——哪些延续、哪些随迁移消亡，形成退役台账</li>
+<li>CPU 类型显式指定为 host：PVE 默认的 kvm64 档位不含 AVX 指令集，而 MongoDB 4.4 起要求 AVX，默认档位下数据库进程会直接退出</li>
+<li>数据盘配置 <code>discard=unmap</code>：虚拟机内 fstrim 释放的块通过 TRIM 穿透到宿主存储，否则删除文件后 ZFS pool 的实际占用不会下降，时间越长空间泄漏越大</li>
 </ul>
-<p>这批的完整过程在<a href="/notes/environment/nas/nas-data-services/nas-data-services/">服务迁移记录</a>一篇。</p>
-<h3 id="第四步：观测与告警补位">第四步：观测与告警补位</h3>
-<p>新栈的服务多了，观测必须补位。最终形态：拨测三十项全覆盖（虚拟机/服务/底层/对外链路），宿主机硬件心跳按阈值静默即告警；指标三十天轮换，Grafana 内部全量板；另做了一个公开健康页——采集层脱敏管道加零依赖单文件页面，访客看得见健康、看不见内网。从零到全栈的过程在<a href="/notes/environment/nas/nas-observability/nas-observability/">自建观测栈</a>。</p>
-<h3 id="第五步：工程治理">第五步：工程治理</h3>
-<p>最不显眼但决定长期成本的一条线：二十六个服务配置各自成独立 Git 仓集中托管，每日凌晨自动快照比对漂移——任何一台机器炸了，配置可以从仓里完整重建；博客发布从五步手工操作收敛为一条命令；全链路凭据集中到仓外加密档案，页面泄露过的恢复码全部轮换作废；迁移全程三十余篇编号工作记录加活状态 README——每个决策有出处、每次踩坑有归档。这一条线在<a href="/notes/environment/nas/nas-engineering/nas-engineering/">升级背后的工程治理</a>。</p>
+<p>两次资源调整在运行期完成：应用机内存 6G→10G（评论服务一次 OOM 后的定位结论），观测机 1G→2G（新观测栈的常驻需求），均为在线扩容。</p>
+<p>备份一项核查出问题：VM 备份任务的调度器曾挂死，此后备份从未执行成功。处理方式不是立即修复，而是按既定决策归入搬盘批次统一处理——备份目标盘尚未迁移，此时修复备份链路得到的仍是到旧盘的备份。发现假就绪比没有备份更有害，因为前者会给出错误的安全感。</p>
+<p>此阶段记录：<a href="/notes/environment/nas/nas-pve-migration/nas-pve-migration/">基于 PVE 的 NAS 架构升级</a>。</p>
+<h3 id="网络入口收敛">网络入口收敛</h3>
+<p>旧入口模式是一个服务一个公网端口。该模式的三个成本：每个端口都是独立攻击面；证书逐端口部署，续期依赖第三方服务，任一环节失败导致对应服务 HTTPS 报错；端口数量多导致安全组与转发规则难以审计。</p>
+<p>收敛方案：全部 web 服务共用一个 HTTPS 端口，nginx 在 TLS 握手阶段读取 ClientHello 中的 SNI 字段决定转发目标。SNI 在握手明文阶段可读，因此不需要解密即可分发，后端全部走内网 HTTP。证书用通配符证书覆盖全部子域名，签发走 DNS-01 验证——家宽无 ICP 备案，80/443 端口被封，HTTP 验证不可行，DNS 验证通过域名托管商 API 增删 TXT 记录完成，续期由 <a target="_blank" rel="noopener" href="http://acme.sh">acme.sh</a> 定时任务自动执行。</p>
+<p>DNS 侧用一条泛解析替代十几条子域名记录，新增子域名不再需要 DNS 操作。清理历史记录时发现一条仍被线上服务引用，删除前逐条验证引用成为固定流程。</p>
+<p>非 HTTP 服务的处理：SSH 类服务保留独立端口（协议不走 SNI），WireGuard 走 UDP 端口提供远程内网访问，不新增任何服务暴露面。上线时排查过一个静默丢包问题，原因是容器化 WireGuard 新版将端口配置应用到了容器内实际监听口，而端口映射仍写旧默认口，入站包全部送到无人监听的端口，两端均无报错日志。最后验证 hairpin 回流：内网经公网域名访问全部子域名可达，内外地址一致。</p>
+<p>此阶段记录：<a href="/notes/environment/nas/nas-gateway-port/nas-gateway-port/">NAS 网关升级</a>。</p>
+<h3 id="服务与数据迁移">服务与数据迁移</h3>
+<p>迁移方法在两种之间选择：旧虚拟机整体镜像搬运，或逐服务新装最新版加数据迁移。选择后者的依据：旧镜像携带 EOL 系统组件（MongoDB 3.6 官方支持早已结束），搬运等于把淘汰版本带入新平台；逐服务迁移虽慢，但每个服务完成时版本欠账同时清零。第一个服务（评论）验证流程可行后，其余服务复制该流程。</p>
+<p>各服务的迁移要点：</p>
+<ul>
+<li><strong>评论系统</strong>：数据库 MongoDB 3.6→8.x 跨五个大版本，逻辑导出导入。环境对齐后暴露四个问题，各有明确机理：登录签名钥在旧环境静默借用数据库密码，环境变量逐项对齐时该借用关系断裂，管理端登录失效；服务端每个请求向境外的社交登录列表端点发起请求，境内访问延迟叠加导致全部接口变慢；存量评论头像 URL 指向境外源，需批量改写；反向代理缺端口头，管理端按默认 443 拼接 API 地址，请求发向不存在的端口。逐项修复后管理端加载稳定在两秒内</li>
+<li><strong>访问统计</strong>：跨两个大版本。两个数据问题需要处理：新版会话模型会重建旧数据，逐表核对确认是合并语义而非丢失；新栈上线使用的备份存在快照时间差，切换前数日的访问记录仅在旧库，按时间区间导出、手工映射列名、幂等写回</li>
+<li><strong>图床</strong>：四十余 GB 文件走局域网直传。难点在引用替换：全站一万七千余处地址存在&quot;双端口形态&quot;变体，直接批量替换会让变体残留并在后续替换中滚雪球，因此先扫描归一变体再统一替换，替换后全站产物扫描归零确认</li>
+<li><strong>一言</strong>：服务版本为上游终版无需升级，问题在语料同步源被墙导致一万一千余句数月未更新，换镜像源后恢复</li>
+<li><strong>静态站</strong>：Hexo 跨一个大版本，升级后在沙箱全量生成并与线上两千余页逐页对比，一致后切换；站内搜索从 27MB 单文件索引改为分片索引；发布流程收敛为单命令</li>
+<li><strong>网盘</strong>：跨四个大版本。逐版本升级路径长且每步有数据迁移风险，改为全新安装加数据导入，文件级对账加密码哈希算法差异的回填处理，家人端无感</li>
+<li><strong>家庭相册</strong>：三个库按特性分别迁移——MySQL 逻辑导出导入（对账用精确计数，存储引擎的行数估计值与真实值有偏差）；MongoDB 文档逻辑还原；MinIO 对象走 tar 管道直传，两千对象逐一对账，差额为对象存储内部临时文件</li>
+<li><strong>服务裁撤</strong>：三个使用记录趋近于零的服务（知识库、笔记、同步观影）不迁移。每个被裁服务需清理四处痕迹：框架容器、网关路由、监控项、旧机实例，残留任何一处会产生空转容器或永久告警。数据 dump 归档，回滚成本为半小时回放</li>
+<li><strong>旧机台账</strong>：三十余项现役组件逐一定性（延续/消亡及去向），同时修正两处历史文档误判</li>
+</ul>
+<p>此阶段记录：<a href="/notes/environment/nas/nas-data-services/nas-data-services/">服务迁移记录</a>。</p>
+<h3 id="观测与告警">观测与告警</h3>
+<p>迁移期间变更频繁，出问题需要区分&quot;变更引起&quot;还是&quot;原本存在&quot;，这要求有变更前后的指标对比——观测栈因此在迁移完成前部署。结构：每台机器运行 node_exporter，ZFS 无现成指标的部分用 textfile collector 自产；Prometheus 保留三十天数据覆盖一个变更周期；拨测三十项覆盖虚拟机、服务、底层组件与公网链路，按各服务真实响应码配置基线；宿主机硬件心跳为 push 型，判断逻辑在本地执行，任一阈值越界则本轮静默，两分钟无心跳即告警——判断本地化避免了把阈值逻辑和硬件数据暴露在公网。对外提供公开健康页，脱敏在采集层完成（relabel 白名单过滤、instance 改写、设备名映射），公网管道中不存在未脱敏数据。</p>
+<p>此阶段记录：<a href="/notes/environment/nas/nas-observability/nas-observability/">自建观测栈</a>。</p>
+<h3 id="工程治理">工程治理</h3>
+<p>迁移暴露的维护成本集中在三处，对应三个治理动作：</p>
+<ul>
+<li>配置分散在各机器上，任何一台故障后配置不可恢复——二十六个服务的配置各自成独立 Git 仓集中托管，数据与密钥排除在外，每日凌晨快照比对漂移，漂移即意味着有人绕过流程改了配置</li>
+<li>发布流程五步手工操作，步骤遗漏会导致线上与源码不一致——收敛为单命令，构建、索引、同步、部署串联执行</li>
+<li>密钥散落在配置与文档中——集中到仓外加密档案，页面泄露过的恢复码全部轮换</li>
+</ul>
+<p>此外迁移全程以编号工作记录加活状态 README 承载决策过程，每个决策可回溯到当时的约束条件。</p>
+<p>此阶段记录：<a href="/notes/environment/nas/nas-engineering/nas-engineering/">升级背后的工程治理</a>。</p>
 <h3 id="旧机退役">旧机退役</h3>
-<p>确认迁移完成的服务分批停机：评论、一言、旧监控、统计、网关壳、旧网盘三件、家庭旧套件六件、裁撤服务残留，外加定时脚本清理。停机后跑全站验证，十项核心服务全绿零破坏。旧机上仅存&quot;数据未迁的小服务 + 备份链 + 公网 DDNS&quot;三类等待搬盘批次，搬完拔电入库。</p>
+<p>迁移完成的服务按依赖顺序分批停机：先停应用层（评论、一言、统计），再停旧网关与旧监控，最后清理裁撤服务残留与定时脚本。每批停机后执行全站回源验证，十项核心服务全部正常后进入下一批。旧机仅存三类等待搬盘批次：数据未迁的小服务、备份链、公网 DDNS，机械盘迁移完成后整机下线。</p>
 <h3 id="时间线">时间线</h3>
-<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><code class="hljs text">10月末   新平台点亮 → 装机破案 → ZFS 装成 → 存储虚拟机就位<br>11月初   应用虚拟机框架夜 → 数据填充夜（评论/统计库恢复）<br>        全家虚拟机建齐 → 网关上线 SNI 分发 → 监控迁移<br>        内存扩容/换板插曲 → 配置仓库化<br>11月中   网盘/家庭数据迁移 → 图床全量切换 → 博客前端修复批<br>        观测栈上线 → 公开健康页改版 → 监控全覆盖<br>        旧机确认迁移服务全量停机 → 系列文章收官<br></code></pre></td></tr></table></figure>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><code class="hljs text">10月末   平台安装 → 内存问题定位 → ZFS 就位 → 存储虚拟机上线<br>11月初   应用虚拟机批量创建 → 评论/统计数据库恢复<br>        虚拟机建齐 → 网关 SNI 上线 → 监控迁移<br>        内存扩容 → 配置仓库化<br>11月中   网盘/家庭数据迁移 → 图床引用全量切换 → 静态站升级<br>        观测栈上线 → 公开健康页 → 拨测全覆盖<br>        旧机服务分批停机 → 系列文章定稿<br></code></pre></td></tr></table></figure>
 <h3 id="系列文章索引">系列文章索引</h3>
 <table>
 <thead>
@@ -1341,7 +1359,7 @@ document.addEventListener("readystatechange", function() {
 </tr>
 <tr>
 <td><a href="/notes/environment/nas/nas-data-services/nas-data-services/">服务迁移记录</a></td>
-<td>博客部件与家庭数据的搬家、闲置服务退役</td>
+<td>博客部件与家庭数据的迁移、闲置服务退役</td>
 </tr>
 <tr>
 <td><a href="/notes/environment/nas/nas-observability/nas-observability/">自建观测栈</a></td>
@@ -1349,7 +1367,7 @@ document.addEventListener("readystatechange", function() {
 </tr>
 <tr>
 <td><a href="/notes/environment/nas/nas-pve-migration/nas-pve-migration/">基于 PVE 的 NAS 架构升级</a></td>
-<td>方案决策、装机破案、八台虚拟机、迁移策略、终态全景、旧机下线</td>
+<td>方案决策、装机、虚拟机划分、迁移策略</td>
 </tr>
 <tr>
 <td><a href="/notes/hexo/theme/fluid/fluid-47-theme-merge/fluid-47-theme-merge/">Fluid -47- 主题升级</a></td>
@@ -1361,8 +1379,8 @@ document.addEventListener("readystatechange", function() {
 </tr>
 </tbody>
 </table>
-<h3 id="尾声">尾声</h3>
-<p>两周的改动密度是建站五年之最，但真正的产出不是&quot;换了一台机器&quot;，而是每一层都有了可维护的形态：配置在仓里、决策在文档里、变更在提交里、健康在曲线上。剩下的机械盘搬完，这次升级就画上句号了。</p>
+<h3 id="小结">小结</h3>
+<p>两周内完成平台重建、网络收敛、服务迁移、观测部署与治理沉淀。产出不只是硬件更换：每个服务版本归零、每项配置入仓、每个决策有记录，后续维护成本相应下降。剩余工作为机械盘数据迁移，完成后旧机下线。</p>
 <link rel="stylesheet" href="/css/spoiler.css" type="text/css"><script src="/js/spoiler.js" type="text/javascript" async></script>
                 
 
